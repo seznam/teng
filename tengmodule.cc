@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengmodule.cc,v 1.1 2004-07-29 20:46:53 solamyl Exp $
+ * $Id: tengmodule.cc,v 1.2 2004-12-30 12:42:01 vasek Exp $
  *
  * DESCRIPTION
  * Teng python module.
@@ -186,9 +186,6 @@ PyObject* Teng_Teng(TengObject *self, PyObject *args, PyObject *keywds) {
     if (templateCacheSize < 0) templateCacheSize = 0;
     if (dictionaryCacheSize < 0) dictionaryCacheSize = 0;
 
-    int logMode = ((logToOutput ? Teng_t::LM_LOG_TO_OUTPUT : 0) |
-                   (errorFragment ? Teng_t::LM_ERROR_FRAGMENT : 0));
-                   
 #if (MY_PYTHON_VER < 20)
     // create new memory for object
     TengObject *s = (TengObject *) _PyObject_New(&Teng_Type);
@@ -201,20 +198,26 @@ PyObject* Teng_Teng(TengObject *self, PyObject *args, PyObject *keywds) {
     if (!s) return 0;
 
     // create settings
-    Teng_t::Settings_t settings(logMode, validate, templateCacheSize,
-                                dictionaryCacheSize);
+    Teng_t::Settings_t settings(templateCacheSize, dictionaryCacheSize);
 
-    // create teng object
-    new (&s->teng) Teng_t((root) ? root : string(), settings);
+    try {
+        // create teng object
+        new (&s->teng) Teng_t((root) ? root : string(), settings);
+        
+        // set default encoding
+        new (&s->defaultEncoding) string(encoding ? encoding
+                                         : DEFAULT_DEFAULT_ENCODING);
+        
+        // set default contentType
+        new (&s->defaultContentType) string(contentType ? contentType
+                                            : DEFAULT_DEFAULT_CONTENT_TYPE);
+        // OK
+    } catch (bad_alloc &e) {
+        PyErr_SetString(PyExc_MemoryError, "Out of memory");
+        return 0;
+    }
 
-    // set default encoding
-    new (&s->defaultEncoding) string(encoding ? encoding
-                                     : DEFAULT_DEFAULT_ENCODING);
-
-    // set default contentType
-    new (&s->defaultContentType) string(contentType ? contentType
-                                        : DEFAULT_DEFAULT_CONTENT_TYPE);
-    // OK
+    // return created teng object
     return reinterpret_cast<PyObject*>(s);
 }
 
@@ -545,12 +548,6 @@ static char Teng_Teng__doc__[] =
 "    root                      Root path for relative paths\n"
 "    encoding                  Default encoding for generatePage()\n"
 "    contentType               Defautl contentType for generatePage()\n"
-"    logToOutput               When non zero the error log is append\n"
-"                              at theend of template and is commented out\n"
-"    errorFragment             The error log is available from the\n"
-"                              template as special fragment '._error' \n"
-"    validate                  Data and templates will be validated to\n"
-"                              comply with data definition.\n"
 "    templateCacheSize         Specifies maximal number of templates in the\n"
 "                              cache.\n"
 "    dictionaryCacheSize       Specifies maximal number of dictionaries\n"
@@ -585,7 +582,6 @@ static char Teng_generatePage__doc__[] =
 "    string configFilename     File with configuration.\n"
 "\n"
 "4. and other arguments are:\n"
-"    string dataDefinitionFilename Data definition file\n"
 "    string contentType        Content-type of template.\n"
 "                              Use teng.listSupportedContentTypes()\n"
 "                              for accepted values\n"
@@ -622,11 +618,12 @@ static char Teng_dictionaryLookup__doc__[] =
 "Finds item in dictionary.\n"
 "\n"
 "arguments:\n"
-"    string dictionaryFilename File with language dictionary.\n"
-"    string language           Language variation.\n"
-"                              Appended after last dot of filename.\n"
-"                              (..../x.dict en -> ..../x.en.dict)\n"
-"    string item               item name.\n"
+"    string dictionaryFilename  File with language dictionary.\n"
+"    string language            Language variation.\n"
+"                               Appended after last dot of filename.\n"
+"                               (..../x.dict en -> ..../x.en.dict)\n"
+"    string key                 item name.\n"
+"    string configFilename = "" File with configuration.\n"
 "\n"
 "result:\n"
 "    string or None \n"
@@ -677,30 +674,37 @@ static char Fragment_addVariable__doc__[] =
  * @param keywds keyword arguments
  * @return -1 error or 0 OK
  */
-static PyObject* Teng_dictionaryLookup(TengObject *self,
-                                   PyObject *args, PyObject *keywds)
+static PyObject* Teng_dictionaryLookup(TengObject *self, PyObject *args,
+                                       PyObject *keywds)
 {
     // allowed keywords
-    static char *kwlist[] = {"dictionaryFilename", "language",
-                             "key", 0};
+    static char *kwlist[] = {"dictionaryFilename", "configFilename",
+                             "language", "key", 0};
 
     // values of arguments
+    const char *configFilename = "";
     const char *dictionaryFilename;
     const char *language;
     const char *key;
 
     // parse arguments from input
     if (!PyArg_ParseTupleAndKeywords(args, keywds,
-                                     "sss|:dictionaryLookup", kwlist,
-                                     &dictionaryFilename, &language,
-                                     &key))
+                                     "sss|s:dictionaryLookup", kwlist,
+                                     &dictionaryFilename, &language, &key,
+                                     &configFilename))
         return 0;
-    string s;
-    if (self->teng.dictionaryLookup(dictionaryFilename, language, key, s)){
-        Py_INCREF(Py_None);
-        return Py_None;
+    try {
+        string s;
+        if (self->teng.dictionaryLookup(configFilename, dictionaryFilename,
+                                        language, key, s)) {
+            Py_INCREF(Py_None);
+            return Py_None;
+        }
+        return Py_BuildValue("s#", s.data(), s.length());
+    } catch (bad_alloc &e) {
+        PyErr_SetString(PyExc_MemoryError, "Out of memory");
+        return 0;
     }
-    return Py_BuildValue("s#", s.data(), s.length());
 }
 
 
@@ -752,42 +756,48 @@ static PyObject* listSupportedContentTypes(PyObject *self, PyObject *args) {
     // parse arguments
     if (!PyArg_ParseTuple(args, ":listSupportedContentTypes"))
         return 0;
-    vector<pair<string, string> > _contentTypes;
-    Teng_t::listSupportedContentTypes(_contentTypes);
 
-    // create output list
-    PyObject *contentTypes = PyTuple_New(_contentTypes.size());
-    if (!contentTypes) return 0;
-
-    // run through entries
-    int pos = 0;
-    for (vector<pair<string, string> >::const_iterator
-             icontentTypes = _contentTypes.begin();
-         icontentTypes != _contentTypes.end(); ++icontentTypes, ++pos) {
-        // create new python string from C++ string
-        PyObject *contentType =
-            Py_BuildValue("(s#s#)",
-                          icontentTypes->first.data(),
-                          icontentTypes->first.length(),
-                          icontentTypes->second.data(),
-                          icontentTypes->second.length());
-        if (!contentType) {
-            // on error destroy list
-            Py_XDECREF(contentTypes);
-            return 0;
+    try {
+        vector<pair<string, string> > vcontentTypes;
+        Teng_t::listSupportedContentTypes(vcontentTypes);
+        
+        // create output list
+        PyObject *contentTypes = PyTuple_New(vcontentTypes.size());
+        if (!contentTypes) return 0;
+        
+        // run through entries
+        int pos = 0;
+        for (vector<pair<string, string> >::const_iterator
+                 icontentTypes = vcontentTypes.begin();
+             icontentTypes != vcontentTypes.end(); ++icontentTypes, ++pos) {
+            // create new python string from C++ string
+            PyObject *contentType =
+                Py_BuildValue("(s#s#)",
+                              icontentTypes->first.data(),
+                              icontentTypes->first.length(),
+                              icontentTypes->second.data(),
+                              icontentTypes->second.length());
+            if (!contentType) {
+                // on error destroy list
+                Py_XDECREF(contentTypes);
+                return 0;
+            }
+            
+            // add entry into python error log
+            if (PyTuple_SetItem(contentTypes, pos, contentType)) {
+                // on error destroy list and entry
+                Py_XDECREF(contentTypes);
+                Py_XDECREF(contentType);
+                return 0;
+            }
         }
-
-        // add entry into python error log
-        if (PyTuple_SetItem(contentTypes, pos, contentType)) {
-            // on error destroy list and entry
-            Py_XDECREF(contentTypes);
-            Py_XDECREF(contentType);
-            return 0;
-        }
+        
+        // return created tuple
+        return contentTypes;
+    } catch (bad_alloc &e) {
+        PyErr_SetString(PyExc_MemoryError, "Out of memory");
+        return 0;
     }
-
-    // return created tuple
-    return contentTypes;
 }
 
 // ===================================================================
@@ -974,58 +984,61 @@ PyObject* Teng_createDataRoot(TengObject *self, PyObject *args,
 
     // values of arguments
     PyObject *data = 0;
-    const char *_encoding = 0;
+    const char *pencoding = 0;
     
     // parse arguments from input
     if (!PyArg_ParseTupleAndKeywords(args, keywds,
                                      "O|z:createDataRoot", kwlist,
-                                     &data, &_encoding))
+                                     &data, &pencoding))
         return 0;
 
-    // determine encoding
-    string encoding = (_encoding ? string(_encoding)
-                       : self->defaultEncoding);
-    
-    // create (empty) data tree
-    TengTree_t *dataTree = new TengTree_t(encoding);
-
-    // if any data given
-    if (data) {
-        // process them
-        if (DataConverter_t(encoding)(data, *dataTree->getRoot())) {
+    try {
+        // determine encoding
+        string encoding = (pencoding ? string(pencoding)
+                           : self->defaultEncoding);
+        
+        // create (empty) data tree
+        TengTree_t *dataTree = new TengTree_t(encoding);
+        
+        // if any data given
+        if (data) {
+            // process them
+            if (DataConverter_t(encoding)(data, *dataTree->getRoot())) {
+                // on error destroy data tree
+                delete dataTree;
+                return 0;
+            }
+        }
+        
+#if (MY_PYTHON_VER < 20)
+        // create new memory for object
+        FragmentObject *fragment =
+            reinterpret_cast<FragmentObject *>(_PyObject_New(&Fragment_Type));
+#else
+        // create new memory for object
+        FragmentObject *fragment = PyObject_New(FragmentObject, &Fragment_Type);
+#endif
+        
+        // check for error
+        if (!fragment) {
             // on error destroy data tree
             delete dataTree;
             return 0;
         }
-    }
-
-#if (MY_PYTHON_VER < 20)
-    // create new memory for object
-    FragmentObject *fragment =
-        (FragmentObject *) _PyObject_New(&Fragment_Type);
-#else
-    // create new memory for object
-    FragmentObject *fragment =
-        PyObject_New(FragmentObject, &Fragment_Type);
-#endif
-
-    // check for error
-    if (!fragment) {
-        // on error destroy data tree
-        delete dataTree;
+        
+        // fill fragment with data tree and fragment pointer
+        fragment->dataTree = dataTree;
+        fragment->fragment = dataTree->getRoot();
+        // remember this fragment
+        dataTree->addReferrer(fragment);
+        
+        // OK
+        return reinterpret_cast<PyObject*>(fragment);
+    } catch (bad_alloc &e) {
+        PyErr_SetString(PyExc_MemoryError, "Out of memory");
         return 0;
     }
-    
-    // fill fragment with data tree and fragment pointer
-    fragment->dataTree = dataTree;
-    fragment->fragment = dataTree->getRoot();
-    // remember this fragment
-    dataTree->addReferrer(fragment);
-
-    // OK
-    return reinterpret_cast<PyObject*>(fragment);
 }
-
 /**
  * @short Generate page from template, dictionaries and data.
  * @param self python Teng object
@@ -1048,31 +1061,37 @@ static PyObject* Fragment_addFragment(FragmentObject *self,
                                      "sO:addFragment", kwlist, &name, &data))
         return 0;
 
-    // create child fragment
-    Fragment_t *childFragment = 
-        DataConverter_t(self->dataTree->getEncoding())
-        (data, string(name), *self->fragment);
 
-    if (!childFragment) return 0;
-
+    try {
+        // create child fragment
+        Fragment_t *childFragment = 
+            DataConverter_t(self->dataTree->getEncoding())
+            (data, string(name), *self->fragment);
+        
+        if (!childFragment) return 0;
+        
 #if (MY_PYTHON_VER < 20)
-    // create new memory for object
-    FragmentObject *child = (FragmentObject *) _PyObject_New(&Fragment_Type);
+        // create new memory for object
+        FragmentObject *child = (FragmentObject *) _PyObject_New(&Fragment_Type);
 #else
-    // create new memory for object
-    FragmentObject *child = PyObject_New(FragmentObject, &Fragment_Type);
+        // create new memory for object
+        FragmentObject *child = PyObject_New(FragmentObject, &Fragment_Type);
 #endif
-
-    // check for error
-    if (!child) return 0;
-
-    // fill fragment with data tree and fragment pointer
-    child->dataTree = self->dataTree;
-    child->fragment = childFragment;
-    // remember this fragment
-    self->dataTree->addReferrer(child);
-    
-    return reinterpret_cast<PyObject*>(child);
+        
+        // check for error
+        if (!child) return 0;
+        
+        // fill fragment with data tree and fragment pointer
+        child->dataTree = self->dataTree;
+        child->fragment = childFragment;
+        // remember this fragment
+        self->dataTree->addReferrer(child);
+        
+        return reinterpret_cast<PyObject*>(child);
+    } catch (bad_alloc &e) {
+        PyErr_SetString(PyExc_MemoryError, "Out of memory");
+        return 0;
+    }
 }
 
 /**
@@ -1097,9 +1116,14 @@ static PyObject* Fragment_addVariable(FragmentObject *self,
                                      kwlist, &name, &value))
         return 0;
 
-    if (DataConverter_t(self->dataTree->getEncoding())
-        .addVariable(name, value, *self->fragment))
+    try {
+        if (DataConverter_t(self->dataTree->getEncoding())
+            .addVariable(name, value, *self->fragment))
+            return 0;
+    } catch (bad_alloc &e) {
+        PyErr_SetString(PyExc_MemoryError, "Out of memory");
         return 0;
+    }
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -1153,7 +1177,7 @@ PyObject* Teng_generatePage(TengObject *self,
     PyObject *data = 0;
     const char *outputFilename = 0;
     PyObject *outputFile = 0;
-    const char *_encoding = 0;
+    const char *pencoding = 0;
 
     // parse arguments from input
     if (!PyArg_ParseTupleAndKeywords(args, keywds,
@@ -1165,7 +1189,7 @@ PyObject* Teng_generatePage(TengObject *self,
                                      &configFilename, &contentType, &data,
                                      &outputFilename,
                                      &PyFile_Type, &outputFile,
-                                     &_encoding))
+                                     &pencoding))
         return 0;
 
     // status of page generation
@@ -1201,118 +1225,119 @@ PyObject* Teng_generatePage(TengObject *self,
                         " and 'outputFile'.");
         return 0;
     }
-    
-    // output writer
-    Writer_t *writer = 0;
-    // indicates that writer is string writer
-    bool stringOutput = false;
-    // the output from string writer
-    string output;
 
-    if (outputFilename) {
-        // output to file -> create new file writer
-        writer = new FileWriter_t(outputFilename);
-    } else if (outputFile) {
-        // create new file writer
-        writer = new FileWriter_t(PyFile_AsFile(outputFile));
-    } else {
-        // output to string
-        writer = new StringWriter_t(output);
-        // indicate string writer
-        stringOutput = true;
-    }
-
-    string encoding = (_encoding ? string(_encoding)
-                       : self->defaultEncoding);
-
-    // root fragment
-    Fragment_t defaultRoot;
-
-    Fragment_t *root = &defaultRoot;
-    bool deleteRoot = false;
-    // if any data given, convert then to fragment
-    if (data) {
-        if (data->ob_type == &Fragment_Type) {
-            FragmentObject *fragment = reinterpret_cast<FragmentObject*>(data);
-            if (!fragment->dataTree) {
-                PyErr_SetString(PyExc_AttributeError,
-                                "Fragment object points to deleted data.");
-                return 0;
-            }
-            if (!fragment->dataTree->isRoot(fragment)) {
-                PyErr_SetString(PyExc_AttributeError,
-                                "This fragment is not a root fragment.");
-                return 0;
-            }
-            root = fragment->dataTree->getRoot();
-            encoding = fragment->dataTree->getEncoding();
+    try {    
+        // output writer
+        Writer_t *writer = 0;
+        // indicates that writer is string writer
+        bool stringOutput = false;
+        // the output from string writer
+        string output;
+        
+        if (outputFilename) {
+            // output to file -> create new file writer
+            writer = new FileWriter_t(outputFilename);
+        } else if (outputFile) {
+            // create new file writer
+            writer = new FileWriter_t(PyFile_AsFile(outputFile));
         } else {
-            root = new Fragment_t();
-            deleteRoot = true;
-            if (DataConverter_t(encoding)(data, *root)) {
-                delete root;
-                return 0;
+            // output to string
+            writer = new StringWriter_t(output);
+            // indicate string writer
+            stringOutput = true;
+        }
+        
+        string encoding = (pencoding ? string(pencoding)
+                           : self->defaultEncoding);
+        
+        // root fragment
+        Fragment_t defaultRoot;
+        
+        Fragment_t *root = &defaultRoot;
+        bool deleteRoot = false;
+        // if any data given, convert then to fragment
+        if (data) {
+            if (data->ob_type == &Fragment_Type) {
+                FragmentObject *fragment = reinterpret_cast<FragmentObject*>(data);
+                if (!fragment->dataTree) {
+                    PyErr_SetString(PyExc_AttributeError,
+                                    "Fragment object points to deleted data.");
+                    return 0;
+                }
+                if (!fragment->dataTree->isRoot(fragment)) {
+                    PyErr_SetString(PyExc_AttributeError,
+                                    "This fragment is not a root fragment.");
+                    return 0;
+                }
+                root = fragment->dataTree->getRoot();
+                encoding = fragment->dataTree->getEncoding();
+            } else {
+                root = new Fragment_t();
+                deleteRoot = true;
+                if (DataConverter_t(encoding)(data, *root)) {
+                    delete root;
+                    return 0;
+                }
             }
         }
-    }
-    // error log
-    Error_t err;
-
-    // this macro converts C string into C++ string
-    // NULL pointer is converted as empty string
+        // error log
+        Error_t err;
+        
+        // this macro converts C string into C++ string
+        // NULL pointer is converted as empty string
 #define S(str) (str ? string(str) : string())
-    // this macro converts C string into C++ string
-    // NULL pointer is converted as defaul value
+        // this macro converts C string into C++ string
+        // NULL pointer is converted as defaul value
 #define SD(str, default) (str ? string(str) : default)
-    // this macro converts C string into C++ string
-    // NULL pointer is converted as empty string
-    // len is length of string
+        // this macro converts C string into C++ string
+        // NULL pointer is converted as empty string
+        // len is length of string
 #define SL(str, len) (str ? string(str, len) : string())
-    // generate page from file
-    if (templateFilename) {
-        status = self->teng.generatePage(S(templateFilename), S(skin),
-                                         S(dataDefinitionFilename),
-                                         S(dictionaryFilename), S(language),
-                                         S(configFilename),
-                                         SD(contentType,
-                                            self->defaultContentType),
-                                         encoding,
-                                         *root, *writer, err);
-    } else {
-        status = self->teng.generatePage(SL(templateString, templateLength),
-                                         S(dataDefinitionFilename),
-                                         S(dictionaryFilename), S(language),
-                                         S(configFilename),
-                                         SD(contentType,
-                                            self->defaultContentType),
-                                         encoding, *root, *writer, err);
-    }
+        // generate page from file
+        if (templateFilename) {
+            status = self->teng.generatePage(S(templateFilename), S(skin),
+                                             S(dictionaryFilename), S(language),
+                                             S(configFilename),
+                                             SD(contentType,
+                                                self->defaultContentType),
+                                             encoding, *root, *writer, err);
+        } else {
+            status = self->teng.generatePage(SL(templateString, templateLength),
+                                             S(dictionaryFilename), S(language),
+                                             S(configFilename),
+                                             SD(contentType,
+                                                self->defaultContentType),
+                                             encoding, *root, *writer, err);
+        }
 #undef SL
 #undef SD
 #undef S
-
-    if (deleteRoot) delete root;
-
-    // process error log
-    PyObject *errorLog = createErrorLog(err);
-    if (!errorLog) {
+        
+        if (deleteRoot) delete root;
+        
+        // process error log
+        PyObject *errorLog = createErrorLog(err);
+        if (!errorLog) {
+            delete writer;
+            return 0;
+        }
+        
+        // create result object
+        PyObject *result = Py_BuildValue("{s:i,s:s#,s:O}", "status", status,
+                                         "output", output.data(),
+                                         output.length(),
+                                         "errorLog", errorLog);
+        Py_XDECREF(errorLog);
+        
+        // destroy writer
         delete writer;
+        
+        // return result
+        return result;
+    } catch (bad_alloc &e) {
+        PyErr_SetString(PyExc_MemoryError, "Out of memory");
         return 0;
     }
-
-    // create result object
-    PyObject *result = 0;
-    result = Py_BuildValue("{s:i,s:s#,s:O}", "status", status,
-                           "output", output.data(),
-                           output.length(),
-                           "errorLog", errorLog);
-    Py_XDECREF(errorLog);
-    
-    // destroy writer
-    delete writer;
-    
-    // return result
-    return result;
 }
 
 // ===================================================================
