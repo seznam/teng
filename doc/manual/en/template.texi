@@ -1,4 +1,4 @@
-@c $Id: template.texi,v 1.1 2004-07-12 07:14:18 franci_cz Exp $
+@c $Id: template.texi,v 1.1 2004-07-12 09:35:45 franci_cz Exp $
 @chapter Syntax
 
 Tags are enclosed by @strong{<?teng} and @strong{?>} marks.
