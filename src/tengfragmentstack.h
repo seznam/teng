@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfragmentstack.h,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengfragmentstack.h,v 1.2 2004-08-25 16:43:36 vasek Exp $
  *
  * DESCRIPTION
  * Teng stack fragment frame.
@@ -178,7 +178,18 @@ public:
     }
 
     virtual bool exists(const string &name, bool onlyData = false) const {
-        if (fragment->find(name) != fragment->end()) return true;
+        Fragment_t::const_iterator ffragment = fragment->find(name);
+        if (ffragment != fragment->end()) {
+            // we have found identifier in data
+            if (ffragment->second->nestedFragments) {
+                // identifier is fragment -- we have test whether it has any
+                // iteration
+                if (!ffragment->second->nestedFragments->empty())
+                    return true;
+                // fragment is empty => there can be local variable of
+                // this name
+            } else return true; // identifier is variable => exists
+        }
         return onlyData ? false : localExists(name);
     }
 
