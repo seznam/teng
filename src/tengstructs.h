@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengstructs.h,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengstructs.h,v 1.2 2004-08-25 16:51:03 vasek Exp $
  *
  * DESCRIPTION
  * Teng data types.
@@ -106,6 +106,8 @@ public:
 
     using std::map<std::string, FragmentValue_t*>::find;
 
+    using std::map<std::string, FragmentValue_t*>::const_iterator;
+
 private:
     /**
      * @short Copy constructor intentionally private -- copying
@@ -155,6 +157,8 @@ public:
     using std::vector<Fragment_t*>::empty;
 
     using std::vector<Fragment_t*>::operator [];
+
+    using std::vector<Fragment_t*>::const_iterator;
 
 private:
     /**
