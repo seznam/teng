@@ -1,4 +1,4 @@
-@c $Id: template.texi,v 1.9 2004-11-11 13:23:12 franci_cz Exp $
+@c $Id: template.texi,v 1.10 2004-11-17 10:36:39 franci_cz Exp $
 @c Syntax index
 @defindex sy
 
@@ -147,7 +147,7 @@ tabelator
 @syindex operator, bit
 
 @multitable {mmmmm} {mmmmm} {mmmmmmmmmmmmmmmmmmmm}
-@headitem numeric @tab string @tab description
+@item @strong{numeric} @tab @strong{string} @tab @strong{description}
 @item ==, eq 	@tab =~ 	@tab equal
 @item !=, ne	@tab !~	@tab not equal
 @item >=, ge	@tab		@tab greater or equal
@@ -237,7 +237,7 @@ Returns:
 @syindex wordsubstr
 
 @multitable {mmmmmmmmmmmmmmm} {mmm} {mmmmmmmmmmmmmmmmmmmmmmmmmmmmm}
-@headitem function									@tab	type	@tab	description
+@item @strong{function}									@tab	@strong{type}	@tab	@strong{description}
 @item date(@var{format}, @var{date}, @var{conf})					@tab	T	@tab	formatting of date (@var{format} - C-like syntax, see strftime(3))
 @item escape(@var{text})								@tab	T	@tab	escapes @var{text} by current content-type
 @item int(@var{number})									@tab	T	@tab	integer of @var{number}
