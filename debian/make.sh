@@ -22,7 +22,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: make.sh,v 1.3 2004-07-29 07:34:01 solamyl Exp $
+# $Id: make.sh,v 1.4 2004-07-29 08:37:40 solamyl Exp $
 #
 # DESCRIPTION
 # Packager for Teng library.
@@ -51,9 +51,9 @@ while [ "$#" != "0" ]; do
             echo "    libteng[-dev].control file."
             echo ""
             echo "    You can also create libteng[-dev].postinst, libteng[-dev].preinst,"
-	    echo "    libteng[-dev].conffiles, libteng[-dev].prerm and libteng[-dev].postrm files"
-	    echo "    that would be used as postinst, preinst, conffiles, prerm and postrm"
-	    echo "    files in the package."
+            echo "    libteng[-dev].conffiles, libteng[-dev].prerm and libteng[-dev].postrm files"
+            echo "    that would be used as postinst, preinst, conffiles, prerm and postrm"
+            echo "    files in the package."
             exit 0
         ;;
 
@@ -89,12 +89,15 @@ done
 
 function make_dirs {
     # Compose package name
-    _NAME=`echo ${PROJECT_NAME} | cut -f1 -d'-'`
-    _SUFF=`echo ${PROJECT_NAME} | cut -f2- -d'-'`
-    if test "${_SUFF}" = ""; then
-        PACKAGE_NAME=${_NAME}${LIBRARY_VERSION}
+    dash=`echo ${PROJECT_NAME} | grep -e'-'`
+    if test "${dash}" = ""; then
+        # libteng0
+        PACKAGE_NAME=${PROJECT_NAME}${LIBRARY_VERSION}
     else
-        PACKAGE_NAME=${_NAME}${LIBRARY_VERSION}-${_SUFF}
+        # libteng0-dev
+        name=`echo ${PROJECT_NAME} | cut -f1 -d'-'`
+        suff=`echo ${PROJECT_NAME} | cut -f2- -d'-'`
+        PACKAGE_NAME=${name}${LIBRARY_VERSION}-${suff}
     fi
 
     # Create package destination directory.
@@ -204,7 +207,7 @@ elif test "${MODE}" = "dev"; then
     # Compose extra dependencies: we must depend on teng library with
     # exactly same version.
     VERSION=$(< ../version)
-    EXTRA_DEPEND=", ${BINARY_PROJECT_NAME}${LIBRARY_VERSION} (= ${VERSION})"
+    EXTRA_DEPEND="${BINARY_PROJECT_NAME}${LIBRARY_VERSION} (= ${VERSION})"
 
     # Build the package
     build_package
