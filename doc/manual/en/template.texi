@@ -1,4 +1,4 @@
-@c $Id: template.texi,v 1.6 2004-09-10 12:48:30 franci_cz Exp $
+@c $Id: template.texi,v 1.7 2004-09-21 12:09:50 franci_cz Exp $
 @c Syntax index
 @defindex sy
 
@@ -148,7 +148,7 @@ tabelator
 @syindex operator, bit
 
 @multitable {mmmmm} {mmmmm} {mmmmmmmmmmmmmmmmmmmm}
-@item numeric @tab string @tab description
+@headitem numeric @tab string @tab description
 @item ==, eq 	@tab =~ 	@tab equal
 @item !=, ne	@tab !~	@tab not equal
 @item >=, ge	@tab		@tab greater or equal
@@ -202,24 +202,62 @@ Returns:
 
 @section Functions
 @syindex functions
-@syindex function, len
-@syindex len
-@syindex function, substr
-@syindex substr
 @syindex function, date
 @syindex date
-@syindex function, round
-@syindex round
+@syindex function, escape
+@syindex escape
+@syindex function, int
+@syindex int
+@syindex function, isenabled
+@syindex isenabled
+@syindex function, isnumber
+@syindex isnumber
+@syindex function, len
+@syindex len
+@syindex function, nl2br
+@syindex nl2br
+@syindex function, now
+@syindex now
+@syindex function, numformat
+@syindex numformat
 @syindex function, random
 @syindex random
+@syindex function, reorder
+@syindex reorder
+@syindex function, round
+@syindex round
+@syindex function, sectotime
+@syindex sectotime
+@syindex function, substr
+@syindex substr
+@syindex function, unescape
+@syindex unescape
+@syindex function, urlescape
+@syindex urlescape
+@syindex function, wordsubstr
+@syindex wordsubstr
 
-@multitable {mmmmmmmmmmmmmmm} {mmm} {mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm}
-@item function					@tab	type	@tab	description
-@item len(@emph{text}				@tab	T	@tab	length of string (number of characters)
-@item substr(@emph{text},@emph{n},@emph{len})	@tab	T	@tab	substring, @emph{len} characters from string @emph{text} begining from @emph{n}
-@item date(@emph{format}, @emph{date}, @emph{conf}) @tab	T	@tab	formatting of date
-@item round(@emph{n}, @emph{prec})		@tab	N	@tab	rounds number with @emph{prec} precision
-@item random(@emph{n})					@tab	N	@tab	random number in interval 0 .. @emph{n}
+@multitable {mmmmmmmmmmmmmmm} {mmm} {mmmmmmmmmmmmmmmmmmmmmmmmmmmmm}
+@headitem function									@tab	type	@tab	description
+@item date(@var{format}, @var{date}, @var{conf})					@tab	T	@tab	formatting of date (@var{format} - C-like syntax, see strftime(3))
+@item escape(@var{text})								@tab	T	@tab	escapes @var{text} by current content-type
+@item int(@var{number})									@tab	T	@tab	integer of @var{number}
+@item isenabled(@var{feature})								@tab	T	@tab	returns 1 if @var{feature} is enabled @*
+"debug" - <?teng debug ?>
+"bytecode" - <?teng bytecode ?>
+@item isnumber(@var{value})								@tab	T	@tab	returns 1 if @var{value} is number, otherwise 0
+@item len(@var{text})									@tab	T	@tab	length of string (number of characters, supports utf-8)
+@item nl2br(@var{text})									@tab	T	@tab	replace newline char ('\n') by '\n<br />'
+@item now()										@tab	N	@tab	seconds since begin of epoch (1.1.1970)
+@item numformat(@var{number}, @var{prec}, @emph{point}=".", @emph{thousandSep}="")	@tab 	T 	@tab	formats number to precision of @var{prec} with decimal separator @emph{point} and thousand separator @emph{thousandSep}
+@item random(@var{n})									@tab	N	@tab	random number in interval 0 <= x < @var{n}
+@item reorder(@var{text}, ...)								@tab	T	@tab	@var{%number} in @var{text} is substituted by @emph{number}-th parametr @* example: reorder("%2 is %1", "first", "second") => "second is first"
+@item round(@var{n}, @var{prec})							@tab	N	@tab	rounds number with @var{prec} precision
+@item sectotime(@var{number})								@tab	N	@tab	takes @var{number} as seconds and returns H:MM:SS @* example: sectotime(123) => "0:02:03"
+@item substr(@var{text},@var{begin},@var{end}, @emph{prefix}="", @emph{suffix}="")	@tab	T	@tab	substring, characters from string @var{text} beginning in interval @var{begin} <= n < @var{end} @* @emph{prefix} is added only if @var{begin} > 0
+@item unescape(@var{text})								@tab	T	@tab	reverse to @emph{escape}
+@item urlescape(@var{text})								@tab	T	@tab	escape URL
+@item wordsubstr(@var{text},@var{begin},@var{end}, @emph{prefix}="", @emph{suffix}="")	@tab	T	@tab	same like @emph{substr}, but cuts at whole words
 @end multitable
 
 @page
