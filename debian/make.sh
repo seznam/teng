@@ -22,7 +22,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: make.sh,v 1.2 2004-07-28 13:26:00 solamyl Exp $
+# $Id: make.sh,v 1.3 2004-07-29 07:34:01 solamyl Exp $
 #
 # DESCRIPTION
 # Packager for Teng library.
@@ -89,7 +89,13 @@ done
 
 function make_dirs {
     # Compose package name
-    PACKAGE_NAME=${PROJECT_NAME}${LIBRARY_VERSION}
+    _NAME=`echo ${PROJECT_NAME} | cut -f1 -d'-'`
+    _SUFF=`echo ${PROJECT_NAME} | cut -f2- -d'-'`
+    if test "${_SUFF}" = ""; then
+        PACKAGE_NAME=${_NAME}${LIBRARY_VERSION}
+    else
+        PACKAGE_NAME=${_NAME}${LIBRARY_VERSION}-${_SUFF}
+    fi
 
     # Create package destination directory.
     PACKAGE_DIR=pkg
