@@ -1,6 +1,0 @@
-\input texinfo
-@c dsfdsf
-@float
-Pokus
-@caption{Testovaci}
-@end float
