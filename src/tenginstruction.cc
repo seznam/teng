@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tenginstruction.cc,v 1.2 2004-12-30 12:42:02 vasek Exp $
+ * $Id: tenginstruction.cc,v 1.3 2005-01-30 19:32:28 vasek Exp $
  *
  * DESCRIPTION
  * Teng instruction and program types. Syntax analyzer
@@ -264,7 +264,8 @@ void Instruction_t::dump(ostream &os, int ip) const {
         break;
         
     case VAR:
-        os << "VAR             <" << value.stringValue << ">";
+        os << "VAR             <" << value.stringValue << "> ("
+           << identifier.context << ":" << identifier.depth << ")";
         if (value.integerValue) os << " [escaped]";
         os << endl;
         break;
@@ -388,11 +389,15 @@ void Instruction_t::dump(ostream &os, int ip) const {
         break;
         
     case FRAGCNT:
-        os << "FRAGCNT         <" << value.stringValue << '>' << endl;
+        os << "FRAGCNT         <" << value.stringValue << "> ("
+           << identifier.context << ":" << identifier.depth << ")"
+           << endl;
         break;
         
     case XFRAGCNT:
-        os << "XFRAGCNT        <" << value.stringValue << '>' << endl;
+        os << "XFRAGCNT        <" << value.stringValue << "> ("
+           << identifier.context << ":" << identifier.depth << ")"
+           << endl;
         break;
         
     case FRAGITR:
