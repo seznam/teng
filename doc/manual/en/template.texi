@@ -1,4 +1,4 @@
-@c $Id: template.texi,v 1.10 2004-11-17 10:36:39 franci_cz Exp $
+@c $Id: template.texi,v 1.11 2004-11-18 16:12:03 franci_cz Exp $
 @c Syntax index
 @defindex sy
 
@@ -175,14 +175,14 @@ Bit operator can be used only on integer numbers.
 
 @var{expession} ? @var{expression_true} :  @var{expression_false}
 @*@*
-Returns expression_value if expression is @emph{true}.
+Returns expression_true value if expression is @emph{true}. Otherwise returns expresion_false.
 
 @section Case operator
 @syindex operator, case
 
 case(@var{expession}, @var{key1},@var{key2}:@var{expression1},@var{key3}:@var{expression2} ...)@*
 
-Returns corresponding expession to value of key.
+Returns expression corresponding to value of key.
 
 @section Exist operator
 @syindex operator, exist
