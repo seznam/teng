@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengmodule.cc,v 1.2 2004-12-30 12:42:01 vasek Exp $
+ * $Id: tengmodule.cc,v 1.3 2005-03-27 17:24:41 vasek Exp $
  *
  * DESCRIPTION
  * Teng python module.
@@ -37,12 +37,13 @@
 #include <Python.h>
 #include <new>
 #include <set>
+#include <memory>
+
+#include <cstdlib>
 
 #include "teng.h"
 
 #include <iostream>
-
-using namespace std;
 
 using namespace Teng;
 
@@ -59,10 +60,10 @@ using namespace Teng;
 #endif
 
 /** @short Encoding used when no encoding supplied */
-static const string DEFAULT_DEFAULT_ENCODING = "utf-8";
+static const std::string DEFAULT_DEFAULT_ENCODING = "utf-8";
 
 /** @short Format used when no format supplied */
-static const string DEFAULT_DEFAULT_CONTENT_TYPE = "";
+static const std::string DEFAULT_DEFAULT_CONTENT_TYPE = "";
 
 /**
  * @short Python Teng object (teng.Teng).
@@ -81,12 +82,12 @@ struct TengObject {
     /**
      * @short Default encoding for unicode objects.
      */
-    string defaultEncoding;
+    std::string defaultEncoding;
 
     /**
      * @short Default content type of template.
      */
-    string defaultContentType;
+    std::string defaultContentType;
 };
 
 /**
@@ -202,15 +203,15 @@ PyObject* Teng_Teng(TengObject *self, PyObject *args, PyObject *keywds) {
 
     try {
         // create teng object
-        new (&s->teng) Teng_t((root) ? root : string(), settings);
+        new (&s->teng) Teng_t((root) ? root : std::string(), settings);
         
         // set default encoding
-        new (&s->defaultEncoding) string(encoding ? encoding
-                                         : DEFAULT_DEFAULT_ENCODING);
+        new (&s->defaultEncoding) std::string(encoding ? encoding
+                                              : DEFAULT_DEFAULT_ENCODING);
         
         // set default contentType
-        new (&s->defaultContentType) string(contentType ? contentType
-                                            : DEFAULT_DEFAULT_CONTENT_TYPE);
+        new (&s->defaultContentType) std::string(contentType ? contentType
+                                                 : DEFAULT_DEFAULT_CONTENT_TYPE);
         // OK
     } catch (bad_alloc &e) {
         PyErr_SetString(PyExc_MemoryError, "Out of memory");
@@ -221,7 +222,7 @@ PyObject* Teng_Teng(TengObject *self, PyObject *args, PyObject *keywds) {
     return reinterpret_cast<PyObject*>(s);
 }
 
-static int stringFromPythonString(PyObject *pystr, string &str) {
+static int stringFromPythonString(PyObject *pystr, std::string &str) {
 #if MY_PYTHON_VER < 16
     // get plain string
     char *value = PyString_AsString(pystr);
@@ -250,7 +251,7 @@ public:
      * @short Creates new encoder.
      * @param encoding encoding for converting unicode data
      */
-    DataConverter_t(const string &encoding)
+    DataConverter_t(const std::string &encoding)
         : encoding(encoding), objects()
     {}
 
@@ -316,7 +317,7 @@ public:
      * @param fragment root fragment
      * @return 0 OK, !0 exception
      */
-    Fragment_t* operator() (PyObject *data, const string &name,
+    Fragment_t* operator() (PyObject *data, const std::string &name,
                             Fragment_t &parent)
     {
         Fragment_t &child = parent.addFragment(name);
@@ -332,12 +333,12 @@ public:
      * @param framgnet destination fragmengt
      * @return 0 OK, !0 exception
      */
-    int addVariable(const string &name, PyObject *data,
+    int addVariable(const std::string &name, PyObject *data,
                     Fragment_t &fragment)
     {
         if (PyString_Check(data)) {
             // string object -> get data and assign
-            string value;
+            std::string value;
             if (stringFromPythonString(data, value))
                 return -1;
             // add variable
@@ -351,7 +352,7 @@ public:
             PyObject *str = PyUnicode_AsEncodedString(data, encoding.c_str(),
                                                       "replace");
             if (!str) return -1;
-            string value;
+            std::string value;
             if (stringFromPythonString(str, value)) {
                 Py_XDECREF(str);
                 return -1;
@@ -372,12 +373,12 @@ public:
             fragment.addVariable(name, d);
         } else if (data == Py_None) {
             // none object -> assing empty string
-            fragment.addVariable(name, string());
+            fragment.addVariable(name, std::string());
         } else {
             // other object -> get string representation and assign
             PyObject *str = PyObject_Str(data);
             if (!str) return -1;
-            string value;
+            std::string value;
             if (stringFromPythonString(str, value)) {
                 Py_XDECREF(str);
                 return -1;
@@ -460,7 +461,7 @@ private:
             // only string keys are allowed
             if (!PyString_Check(key)) continue;
             // get key value
-            string name;
+            std::string name;
             if (stringFromPythonString(key, name))
                 return -1;
             if (IS_SEQUENCE(value)) {
@@ -487,13 +488,13 @@ private:
     /**
      * @short Encoding for converting unicode -> string.
      */
-    const string encoding;
+    const std::string encoding;
 
     /**
      * @short Set of so far encountered object. Used in cycle
      * detection.
      */
-    set<PyObject*> objects;
+    std::set<PyObject*> objects;
 };
 
 /**
@@ -569,12 +570,12 @@ static char Teng_generatePage__doc__[] =
 "2. output is\n"
 "    string outputFilename     Path to output file.\n"
 "   or:\n"
-"    string outputFile         File object (must beopen for writing).\n"
+"    string outputFile         File object (must be open for writing)\n"
+"                              or file-like object (must have write() method\n"
 "   or:\n"
 "    Returned as item in result structure (see below)\n"
 "\n"
 "3. dictionaries are:\n"
-"    string definitionFilename File with data definition.\n"
 "    string dictionaryFilename File with language dictionary.\n"
 "    string language           Language variation.\n"
 "                              Appended after last dot of filename.\n"
@@ -694,7 +695,7 @@ static PyObject* Teng_dictionaryLookup(TengObject *self, PyObject *args,
                                      &configFilename))
         return 0;
     try {
-        string s;
+        std::string s;
         if (self->teng.dictionaryLookup(configFilename, dictionaryFilename,
                                         language, key, s)) {
             Py_INCREF(Py_None);
@@ -758,7 +759,7 @@ static PyObject* listSupportedContentTypes(PyObject *self, PyObject *args) {
         return 0;
 
     try {
-        vector<pair<string, string> > vcontentTypes;
+        std::vector<std::pair<std::string, std::string> > vcontentTypes;
         Teng_t::listSupportedContentTypes(vcontentTypes);
         
         // create output list
@@ -767,7 +768,7 @@ static PyObject* listSupportedContentTypes(PyObject *self, PyObject *args) {
         
         // run through entries
         int pos = 0;
-        for (vector<pair<string, string> >::const_iterator
+        for (std::vector<std::pair<std::string, std::string> >::const_iterator
                  icontentTypes = vcontentTypes.begin();
              icontentTypes != vcontentTypes.end(); ++icontentTypes, ++pos) {
             // create new python string from C++ string
@@ -835,7 +836,7 @@ public:
     /** @short Create new tree.
      * @param encoding encoding passed to data builder
      */
-    TengTree_t(const string &encoding)
+    TengTree_t(const std::string &encoding)
         : referrers(), rootFragment(new Fragment_t),
           encoding(encoding)
     {}
@@ -884,7 +885,7 @@ public:
     /** @short Get encoding.
      * @return encoding
      */
-    const string& getEncoding() {
+    const std::string& getEncoding() {
         return encoding;
     }
 
@@ -892,7 +893,8 @@ public:
      */
     ~TengTree_t() {
         // invalidate all fragments
-        for (set<FragmentObject *>::iterator ireferrers = referrers.begin();
+        for (std::set<FragmentObject *>::iterator
+                 ireferrers = referrers.begin();
              ireferrers != referrers.end(); ++ireferrers) {
             (*ireferrers)->dataTree = 0;
             (*ireferrers)->fragment = 0;
@@ -905,7 +907,7 @@ public:
 private:
     /** @short Referring fragments.
      */
-    set<FragmentObject *> referrers;
+    std::set<FragmentObject *> referrers;
 
     /** @short The tree.
      */
@@ -913,7 +915,7 @@ private:
 
     /** @short Encoding.
      */
-    string encoding;
+    std::string encoding;
 };
 
 /**
@@ -994,20 +996,17 @@ PyObject* Teng_createDataRoot(TengObject *self, PyObject *args,
 
     try {
         // determine encoding
-        string encoding = (pencoding ? string(pencoding)
-                           : self->defaultEncoding);
+        std::string encoding = (pencoding ? std::string(pencoding)
+                                : self->defaultEncoding);
         
         // create (empty) data tree
-        TengTree_t *dataTree = new TengTree_t(encoding);
+        auto_ptr<TengTree_t> dataTree(new TengTree_t(encoding));
         
         // if any data given
         if (data) {
             // process them
-            if (DataConverter_t(encoding)(data, *dataTree->getRoot())) {
-                // on error destroy data tree
-                delete dataTree;
+            if (DataConverter_t(encoding)(data, *dataTree->getRoot()))
                 return 0;
-            }
         }
         
 #if (MY_PYTHON_VER < 20)
@@ -1020,15 +1019,11 @@ PyObject* Teng_createDataRoot(TengObject *self, PyObject *args,
 #endif
         
         // check for error
-        if (!fragment) {
-            // on error destroy data tree
-            delete dataTree;
-            return 0;
-        }
+        if (!fragment) return 0;
         
         // fill fragment with data tree and fragment pointer
-        fragment->dataTree = dataTree;
-        fragment->fragment = dataTree->getRoot();
+        fragment->dataTree = dataTree.release();
+        fragment->fragment = fragment->dataTree->getRoot();
         // remember this fragment
         dataTree->addReferrer(fragment);
         
@@ -1066,7 +1061,7 @@ static PyObject* Fragment_addFragment(FragmentObject *self,
         // create child fragment
         Fragment_t *childFragment = 
             DataConverter_t(self->dataTree->getEncoding())
-            (data, string(name), *self->fragment);
+            (data, std::string(name), *self->fragment);
         
         if (!childFragment) return 0;
         
@@ -1153,6 +1148,232 @@ PyObject* Fragment_getattr(FragmentObject *self, char *name) {
     return Py_FindMethod(Fragment_methods, (PyObject *)self, name);
 }
 
+namespace {
+    /** @short Exception used to escape from teng is some python
+     *         exception occures.
+     *
+     */
+    struct PyException_t {
+        PyException_t() {}
+    };
+
+    /** @short Output writer. Writes to the associated python
+     *         file-like object.
+     */
+    class PyWriter_t : public Writer_t {
+    public:
+        /** @short Creates new writer. Associates py file-like object.
+         *  @param obj py file-like object
+         */
+        PyWriter_t(PyObject *obj);
+
+        /** @short Destroy writer. If exception occured, hold it here.
+         */
+        virtual ~PyWriter_t();
+        
+        /** @short Write given string to output.
+         *  @param str string to be written
+         *  @return 0 OK, !0 error
+         */
+        virtual int write(const std::string &str);
+        
+        /** @short Write given string to output.
+         *  @param str string to be written
+         *  @return 0 OK, !0 error
+         */
+        virtual int write(const char *str);
+        
+        /** @short Write given string to output.
+         *  @param str string to be written
+         *  @param interval iterators to given string, only this part
+         *                  shall be written
+         *  @return 0 OK, !0 error
+         */
+        virtual int write(const std::string &str,
+                          std::pair<std::string::const_iterator,
+                          std::string::const_iterator> interval);
+        
+        /** @short Flush buffered data to the output.
+         *  No-op.
+         *  @return 0 OK, !0 error
+         */
+        virtual int flush();
+        
+    private:
+        int bufferData(const char *data, int length);
+        
+        int writeData(const char *data, int length);
+
+        int fetchException();
+
+        /** @short Associated py file-like object.
+         */
+        PyObject *obj;
+
+        /** Flags whether underlying file-like object has method
+         *  flush().
+         */
+        bool hasFlush;
+
+        /** Buffer size.
+         */
+        static const int BUFF_SIZE = 1 << 12;
+
+        /** Data buffer used for buffered writing.
+         */
+        char buffer[BUFF_SIZE];
+
+        /** Length of used space in buffer.
+         */
+        int bufferUsed;
+
+        /** Exception.
+         */
+        PyObject *exc_type;
+        PyObject *exc_value;
+        PyObject *exc_traceback;
+    };
+
+    // definition
+    const int PyWriter_t::BUFF_SIZE;
+
+    inline bool hasMethod(PyObject *obj, const char *method_) {
+        // grrrr :-(
+        char *method(const_cast<char*>(method_));
+        return (PyObject_HasAttrString(obj, method) &&
+                PyCallable_Check(PyObject_GetAttrString(obj, method)));
+    }
+
+    PyWriter_t::PyWriter_t(PyObject *obj)
+        : obj(obj), hasFlush(false), bufferUsed(0),
+          exc_type(), exc_value(), exc_traceback()
+    {
+        // check whether obj has write() method
+        if (!hasMethod(obj, "write")) {
+            PyErr_SetString(PyExc_AttributeError,
+                            "outputFile doesn't have write() method.");
+            throw PyException_t();
+        }
+
+        // determine whether obj has method flush
+        hasFlush = hasMethod(obj, "flush");
+    }
+
+    PyWriter_t::~PyWriter_t() {
+        // flush
+        flush();
+
+        // restore exception (if any)
+        if (exc_type && !std::uncaught_exception()) {
+            PyErr_Restore(exc_type, exc_value, exc_traceback);
+            throw PyException_t();
+        }
+
+        // get rid of exception
+        Py_XDECREF(exc_type);
+        Py_XDECREF(exc_value);
+        Py_XDECREF(exc_traceback);
+    }
+
+    int PyWriter_t::flush() {
+        // check for error
+        if (exc_type) return -1;
+
+        // flush buffer's content if any
+        if (bufferUsed) {
+            if (writeData(buffer, bufferUsed)) return -1;
+            bufferUsed = 0;
+        }
+
+        // no-op if no flush method
+        if (!hasFlush) return 0;
+
+        PyObject *res = PyObject_CallMethod(obj, "flush", 0);
+        if (!res) return fetchException();
+
+        // ignore result
+        Py_DECREF(res);
+        return 0;
+    }
+
+    int PyWriter_t::bufferData(const char *data, int length) {
+        // check for error
+        if (exc_type) return -1;
+
+        // check for buffer overflow
+        if (bufferUsed && ((BUFF_SIZE - bufferUsed) > length)) {
+            // flush buffer
+            if (flush()) return -1;
+
+            // check whether string fits to data buffer
+            if (length > BUFF_SIZE) {
+                if (writeData(data, length)) return -1;
+            }
+        }
+
+        // remember data
+        std::memcpy(buffer + bufferUsed, data, length);
+        bufferUsed += length;
+        
+        // OK
+        return 0;
+    }
+
+    int PyWriter_t::writeData(const char *data_, int length) {
+        // sanity check
+        if (length <= 0) return 0;
+
+        // grrrr
+        void *data(const_cast<char*>(data_));
+
+        // create buffer from memory
+        PyObject *pydata = PyBuffer_FromMemory(data, length);
+        if (!pydata) return fetchException();
+
+        // call obj.write(pydata)
+        PyObject *res = PyObject_CallMethod(obj, "write", "O", pydata);
+        // get rid of py-data-buffer
+        Py_DECREF(pydata);
+        if (!res) return fetchException();
+
+        // OK
+        return 0;
+    }
+
+    int PyWriter_t::fetchException() {
+        // fetch exception
+        PyErr_Fetch(&exc_type, &exc_value, &exc_traceback);
+
+        // log error
+        err.logError(Error_t::LL_FATAL, Error_t::Position_t(),
+                     "Python exception occured.");
+
+        // always fail
+        return -1;
+    }
+
+    int PyWriter_t::write(const std::string &str) {
+        // buffer string's content
+        return bufferData(str.data(), str.size());
+    }
+
+    int PyWriter_t::write(const char *str) {
+        // buffer string's content
+        return bufferData(str, std::strlen(str));
+    }
+
+    int PyWriter_t::write(const std::string &str,
+                          std::pair<std::string::const_iterator,
+                          std::string::const_iterator> interval)
+    {
+        // buffer string's content in the range
+        // <interval.first, interval.second)
+        return bufferData(str.data() + std::distance(str.begin(),
+                                                     interval.first),
+                          std::distance(interval.first, interval.second));
+    }
+}
+
 PyObject* Teng_generatePage(TengObject *self,
                             PyObject *args, PyObject *keywds)
 {
@@ -1181,14 +1402,13 @@ PyObject* Teng_generatePage(TengObject *self,
 
     // parse arguments from input
     if (!PyArg_ParseTupleAndKeywords(args, keywds,
-                                     "|zzz#zzzzzOzO!z:generatePage", kwlist,
+                                     "|zzz#zzzzzOzOz:generatePage", kwlist,
                                      &templateFilename, &skin,
                                      &templateString, &templateLength,
                                      &dataDefinitionFilename,
                                      &dictionaryFilename, &language,
                                      &configFilename, &contentType, &data,
-                                     &outputFilename,
-                                     &PyFile_Type, &outputFile,
+                                     &outputFilename, &outputFile,
                                      &pencoding))
         return 0;
 
@@ -1226,35 +1446,46 @@ PyObject* Teng_generatePage(TengObject *self,
         return 0;
     }
 
-    try {    
+    try {
         // output writer
-        Writer_t *writer = 0;
+        auto_ptr<Writer_t> writer(0);
         // indicates that writer is string writer
         bool stringOutput = false;
         // the output from string writer
-        string output;
+        std::string output;
         
         if (outputFilename) {
             // output to file -> create new file writer
-            writer = new FileWriter_t(outputFilename);
+            writer.reset(new FileWriter_t(outputFilename));
         } else if (outputFile) {
-            // create new file writer
-            writer = new FileWriter_t(PyFile_AsFile(outputFile));
+            if (PyFile_Check(outputFile)) {
+                // create new file writer
+                writer.reset(new FileWriter_t(PyFile_AsFile(outputFile)));
+            } else {
+                // probably file-like object (throws exception
+                // PyException_t if no write() method is found
+                writer.reset(new PyWriter_t(outputFile));
+            }
         } else {
             // output to string
-            writer = new StringWriter_t(output);
+            writer.reset(new StringWriter_t(output));
             // indicate string writer
             stringOutput = true;
         }
         
-        string encoding = (pencoding ? string(pencoding)
+        string encoding = (pencoding ? std::string(pencoding)
                            : self->defaultEncoding);
         
         // root fragment
         Fragment_t defaultRoot;
-        
+
+        // root defaults to (empty) default-root
         Fragment_t *root = &defaultRoot;
-        bool deleteRoot = false;
+
+        // this smart-pointer will guard temporary root built from
+        // python native data (if any)
+        auto_ptr<Fragment_t> rootGuard(0);
+
         // if any data given, convert then to fragment
         if (data) {
             if (data->ob_type == &Fragment_Type) {
@@ -1273,11 +1504,11 @@ PyObject* Teng_generatePage(TengObject *self,
                 encoding = fragment->dataTree->getEncoding();
             } else {
                 root = new Fragment_t();
-                deleteRoot = true;
-                if (DataConverter_t(encoding)(data, *root)) {
-                    delete root;
+                // remember new root;
+                rootGuard.reset(root);
+                // convert data
+                if (DataConverter_t(encoding)(data, *root))
                     return 0;
-                }
             }
         }
         // error log
@@ -1285,14 +1516,14 @@ PyObject* Teng_generatePage(TengObject *self,
         
         // this macro converts C string into C++ string
         // NULL pointer is converted as empty string
-#define S(str) (str ? string(str) : string())
+#define S(str) (str ? std::string(str) : std::string())
         // this macro converts C string into C++ string
         // NULL pointer is converted as defaul value
-#define SD(str, default) (str ? string(str) : default)
+#define SD(str, default) (str ? std::string(str) : default)
         // this macro converts C string into C++ string
         // NULL pointer is converted as empty string
         // len is length of string
-#define SL(str, len) (str ? string(str, len) : string())
+#define SL(str, len) (str ? std::string(str, len) : std::string())
         // generate page from file
         if (templateFilename) {
             status = self->teng.generatePage(S(templateFilename), S(skin),
@@ -1313,14 +1544,13 @@ PyObject* Teng_generatePage(TengObject *self,
 #undef SD
 #undef S
         
-        if (deleteRoot) delete root;
-        
+        // get rid of writer (we have to catch any exception it can
+        // throw)
+        delete writer.release();
+
         // process error log
         PyObject *errorLog = createErrorLog(err);
-        if (!errorLog) {
-            delete writer;
-            return 0;
-        }
+        if (!errorLog) return 0;
         
         // create result object
         PyObject *result = Py_BuildValue("{s:i,s:s#,s:O}", "status", status,
@@ -1328,14 +1558,16 @@ PyObject* Teng_generatePage(TengObject *self,
                                          output.length(),
                                          "errorLog", errorLog);
         Py_XDECREF(errorLog);
-        
-        // destroy writer
-        delete writer;
-        
+
         // return result
         return result;
-    } catch (bad_alloc &e) {
+    } catch (const std::bad_alloc &ba) {
         PyErr_SetString(PyExc_MemoryError, "Out of memory");
+        return 0;
+    } catch (const PyException_t &pe) {
+        return 0;
+    } catch (...) {
+        PyErr_SetString(PyExc_Exception, "Unknown C++ exception.");
         return 0;
     }
 }

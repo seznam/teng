@@ -23,7 +23,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: setup.py,v 1.1 2004-07-29 20:46:53 solamyl Exp $
+# $Id: setup.py,v 1.2 2005-03-27 17:24:41 vasek Exp $
 #
 # DESCRIPTION
 # Build script for python teng module.
@@ -57,6 +57,18 @@ LONG_DESCRIPTION = "Teng is a powerful and easy to use templating system.\n"
 # You probably don't need to edit anything below this line
 
 from distutils.core import setup, Extension
+
+### HACK: force g++ as compiler and linker.
+### Credits go to Eric Jones <eric at enthought.com>
+from distutils.unixccompiler import UnixCCompiler
+import distutils.sysconfig
+old_init_posix = distutils.sysconfig._init_posix
+def _init_posix():
+    old_init_posix()
+    distutils.sysconfig._config_vars['LDSHARED'] = 'g++ -shared'
+    distutils.sysconfig._config_vars['CC'] = 'g++'
+#enddef
+distutils.sysconfig._init_posix = _init_posix
 
 # Main core
 setup (
