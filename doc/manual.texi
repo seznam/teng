@@ -1,0 +1,33 @@
+\input texinfo @c -*-texinfo-*-
+@c $Id: manual.texi,v 1.1 2004-07-09 12:16:24 franci_cz Exp $
+@c %**start of header
+
+@c %**end of header
+
+@titlepage
+@title Teng (template engine)
+manual
+@author V@'aclav Bla@v{z}ek, Pavel Franc@'irek, Ond@v{r}ej Proch@'azka, @v{S}t@v{e}p@'an @v{S}krob
+@end titlepage
+@contents
+@page
+@chapter Introduction
+@section Description
+@cindex Teng teng
+@acronym{Teng} (@strong{t}emplate @strong{eng}ine) is general purpose template tool. Primary C++ library but also available as Python module and PHP extension.
+It composes result (web page, mail message or any text file) by combining input template with data supplied by application and optional configuration and localization(language) dictionary.
+@section Characterictics
+@itemize @bullet 
+@item Separation of application code and design templates
+@item Multiple templates
+@item Dictionaries - language dependent or not
+@item Caching of templates and dictionaries - automatic update on change
+@item Possible data integrity control
+@item API for C++, Python and PHP
+@item much more :-)
+@end itemize
+
+@appendix Index
+@printindex cp
+
+@bye
