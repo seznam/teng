@@ -1,10 +1,9 @@
-@c $Id: template.texi,v 1.7 2004-09-21 12:09:50 franci_cz Exp $
+@c $Id: template.texi,v 1.8 2004-10-19 09:26:22 franci_cz Exp $
 @c Syntax index
 @defindex sy
 
-@node Syntax, C++ API, , Top
+@node Syntax, C++ API, Introduction, Top
 @chapter Syntax
-
 
 Tags are enclosed by @strong{<?teng} and @strong{?>} marks.
 

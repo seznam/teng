@@ -1,6 +1,6 @@
 \input texinfo
 @c -*-texinfo-*-
-@c $Id: manual.texi,v 1.4 2004-09-10 12:26:55 franci_cz Exp $
+@c $Id: manual.texi,v 1.5 2004-10-19 09:26:22 franci_cz Exp $
 @c %**start of header
 
 @c %**end of header
@@ -14,6 +14,17 @@ manual
 @end titlepage
 @contents
 @page
+@node Top
+@top Teng (template engine) manual
+@menu
+* Introduction:: Introduction
+* Syntax:: Template syntax
+* C++ API:: API for C++
+* Python Module:: module for Python
+* PHP Extension:: extension for PHP
+@end menu
+
+@node Introduction, Syntax, , Top
 @chapter Introduction
 @section Description
 @acronym{Teng} (@strong{t}emplate @strong{eng}ine) is general purpose template tool. Primary C++ library but also available as Python module and PHP extension.
@@ -29,13 +40,6 @@ It composes result (web page, mail message or any text file) by combining input 
 @item much more :-)
 @end itemize
 
-@node Top, Top, Top
-@menu
-* Syntax:: Template syntax
-* C++ API:: API for C++
-* Python Module:: module for Python
-* PHP Extension:: extension for PHP
-@end menu
 
 @include template.texi
 @page

@@ -1,5 +1,5 @@
 @c -*-texinfo-*-
-@c FILE              $Id: api_php.texi,v 1.4 2004-09-10 12:48:30 franci_cz Exp $
+@c FILE              $Id: api_php.texi,v 1.5 2004-10-19 09:26:21 franci_cz Exp $
 @c
 @c DESCRIPTION       Teng manual -- chapter 'API'.
 @c
@@ -25,7 +25,7 @@
 @c ======================================================================
 @c PHP extension chapter
 @c ======================================================================
-@node PHP Extension, ,Python Module,Top
+@node PHP Extension, Top, Python Module,Top
 @chapter PHP Extension
 @cindex interface
 @cindex API
