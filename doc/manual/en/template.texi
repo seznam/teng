@@ -1,4 +1,4 @@
-@c $Id: template.texi,v 1.5 2004-09-10 12:26:55 franci_cz Exp $
+@c $Id: template.texi,v 1.6 2004-09-10 12:48:30 franci_cz Exp $
 @c Syntax index
 @defindex sy
 
@@ -223,5 +223,5 @@ Returns:
 @end multitable
 
 @page
-@section Index for chapter
+@section Index of chapter
 @printindex sy
