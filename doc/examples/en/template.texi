@@ -1,6 +1,6 @@
 \input texinfo
 @c -*-texinfo-*-
-@c $Id: template.texi,v 1.2 2004-11-18 16:30:34 franci_cz Exp $
+@c $Id: template.texi,v 1.3 2005-01-17 17:49:31 franci_cz Exp $
 
 @setfilename example.info
 @titlepage
@@ -22,7 +22,7 @@ This file is just collection of some template tricks I found during working with
 @section Dictionary by expression
 
 template:@*
-${@@('state_'++$state)}@*
+$@{@@('state_'++$state)@}@*
 @*
 dictionary:@*
 state_enabled	Status is enabled@*
@@ -38,5 +38,21 @@ template:@*
 <input type="CHECKBOX" name="menu" value="4" $@{($menu_mask & 4)?'CHECKED':''@}>@*
 @*
 Sets checkboxes by binary mask.
+
+@section Pseudo case
+
+template:@*
+$@{  $age < 12 ? '0_11'@*
+ : $age < 20 ? '12_19'@*
+ : $age < 30 ? '20_29'@*
+ : $age < 40 ? '30_39'@*
+ : $age < 50 ? '40_49'@*
+ : $age < 60 ? '50_59'@*
+ : $age < 70 ? '60_69'@*
+ : $age < 80 ? '70_79'@*
+ :             '80+'@*
+@}@*
+@*
+Prints age group. Usage of ternary operator.
 
 @bye
