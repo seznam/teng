@@ -22,7 +22,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengsyntax.yy,v 1.3 2004-12-30 12:42:02 vasek Exp $
+ * $Id: tengsyntax.yy,v 1.4 2005-02-17 20:48:54 vasek Exp $
  *
  * DESCRIPTION
  * Teng syntax analyzer.
@@ -306,6 +306,7 @@ static inline void codeForVariable(void *context,
 %token LEX_SHORT_END
 %token LEX_CTYPE
 %token LEX_ENDCTYPE
+%token LEX_REPEATFRAG
 
 // assignment
 %token LEX_ASSIGN
@@ -402,6 +403,7 @@ teng_directive:
     | teng_expr
     | teng_dict
     | teng_ctype
+    | teng_repeatfrag
     ;
 
 
@@ -608,11 +610,7 @@ teng_fragment:
             $$.val.stringValue = $2.val.stringValue;
 
             Identifier_t id;
-            if (CONTEXT->pushFragment($2.pos, $$.id, $$.val.stringValue,
-                                      id)) {
-                // add new context for variable list
-                CONTEXT->variableList.
-                    push_back(ParserContext_t::VariableList_t());
+            if (CONTEXT->pushFragment($2.pos, $$.id, $$.val.stringValue, id)) {
                 // generate code
                 CODE_VAL(FRAG, $$.val);
                 // set identifier
@@ -704,11 +702,7 @@ teng_set:
                     findFragmentForVariable($$.pos, $$.id,
                                             $$.val.stringValue, id)) {
                     // fully qualified variable identifier is in
-                    // $$.val.stringValue add identifier into list of
-                    // vars in this context
-                    CONTEXT->variableList.back().push_back($$.val.stringValue);
-                    // if variable not found in data definition dict
-                    // generate code
+                    // $$.val.stringValue
                     CODE_VAL(SET, $$.val);
                     // set identifier
                     CONTEXT->program->back().identifier = id;
@@ -1098,7 +1092,7 @@ teng_ctype:
             if (!tengSyntax_lastErrorMessage.empty()) {
                 printUnexpectedElement(CONTEXT, yychar, yylval);
                 ERR(ERROR, CONTEXT->position,
-                        "Misplaced <?teng endctyp?> directive");
+                        "Misplaced <?teng endctype?> directive");
             }
             tengSyntax_lastErrorMessage.erase(); //clear error
         }
@@ -1111,6 +1105,29 @@ teng_ctype:
         }
     ;
 
+teng_repeatfrag:
+    LEX_REPEATFRAG variable_identifier LEX_END
+        {
+            // get address of referenced fragment
+            Identifier_t id;
+            int address = CONTEXT->getFragmentAddress($2.pos, $2.id,
+                                                      $2.val.stringValue, id);
+            if (address >= 0) {
+                // set offset
+                $2.val.integerValue = address - CONTEXT->program->size();
+                
+                // generate instruction
+                CODE_VAL(REPEATFRAG, $2.val);
+
+                // set identifier
+                CONTEXT->program->back().identifier = id;
+
+                // do not optimize (join) print-vals across current
+                // prog end-addr
+                CONTEXT->lowestValPrintAddress = CONTEXT->program->size();
+            }
+        }
+    ;
 
 expression:
     LEX_L_PAREN expression LEX_R_PAREN
@@ -1466,26 +1483,26 @@ variable_identifier:
                 $$.id.erase($$.id.begin(), $$.id.end()); //clear
                 const ParserContext_t::FragmentContext_t
                         &fc = CONTEXT->fragContext.back();
-                ParserContext_t::FragmentContext_t::const_reverse_iterator
+                ParserContext_t::IdentifierName_t::const_reverse_iterator
                         ri;
-                for (ri = fc.rbegin(); ri != fc.rend(); ++ri)
+                for (ri = fc.name.rbegin(); ri != fc.name.rend(); ++ri)
                     if (*ri == $1.val.stringValue)
                         break; //found fragment of specified name
                 // if found
                 int err = 0;
-                if (ri == fc.rend()) {
+                if (ri == fc.name.rend()) {
                     err = 1; //not found
                 } else {
                     // check all consequenting parts of the identifier
                     // beware! method forward iterator created using base()
                     // from reverse iterator does not refer to the same
                     // element, but to the next element in forward order.
-                    ParserContext_t::FragmentContext_t::const_iterator
+                    ParserContext_t::IdentifierName_t::const_iterator
                             i = ri.base() - 1;
                     LeftValue_t::Identifier_t::const_iterator
                             id = $2.id.begin();
                     ++i; //skip already matching frag name
-                    while (i != fc.end()
+                    while (i != fc.name.end()
                             && id != $2.id.end()
                             && id != $2.id.end() - 1) {
                         if (*i != *id) {
@@ -1497,7 +1514,7 @@ variable_identifier:
                     }
                     // if overlaying identifier parts are matching
                     if (!err) {
-                        $$.id.insert($$.id.begin(), fc.begin(), i);
+                        $$.id.insert($$.id.begin(), fc.name.begin(), i);
                         $$.id.push_back(*id);
                     } else
                         err = 1; //mis-match
@@ -1775,6 +1792,7 @@ exist:
                     // object found in template => always true
                     $$.val.setInteger(true);
                     CODE_VAL(VAL, $$.val);
+
                     break;
                 case ParserContext_t::ER_RUNTIME:
                     // object may be present in data => resolution postponed
@@ -1782,6 +1800,7 @@ exist:
                     CODE_VAL(EXIST, $$.val);
                     CONTEXT->program->back().identifier = id;
                     break;
+
                 case ParserContext_t::ER_NOT_FOUND:
                     // object cannot be present in data => always false
                     $$.val.setInteger(false);
@@ -2038,6 +2057,10 @@ static void printUnexpectedElement(ParserContext_t *context,
             msg = "directive end '}'"; break;
         case LEX_CTYPE:
             msg = "directive '<?teng ctype'"; break;
+        case LEX_ENDCTYPE:
+            msg = "directive '<?teng endctype'"; break;
+        case LEX_REPEATFRAG:
+            msg = "directive '<?teng repeat'"; break;
 
         // assignment
         case LEX_ASSIGN:

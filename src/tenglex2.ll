@@ -22,7 +22,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tenglex2.ll,v 1.2 2004-12-30 12:42:02 vasek Exp $
+ * $Id: tenglex2.ll,v 1.3 2005-02-17 20:48:54 vasek Exp $
  *
  *
  * DESCRIPTION
@@ -210,6 +210,12 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     // match '<?teng endctype'
     bufferPos.advance(yytext, yyleng);
     RETURN(LEX_ENDCTYPE);
+}
+
+"<?teng"[[:space:]\0]+"repeatfrag" {
+    // match '<?teng repeat'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_REPEATFRAG);
 }
 
 "<?teng"[[:space:]\0]*[[:alnum:]]* {

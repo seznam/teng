@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfragmentstack.h,v 1.4 2005-01-30 19:31:32 vasek Exp $
+ * $Id: tengfragmentstack.h,v 1.5 2005-02-17 20:48:54 vasek Exp $
  *
  * DESCRIPTION
  * Teng stack fragment frame.
@@ -637,6 +637,19 @@ public:
         return S_OUT_OF_CONTEXT;
     };
 
+
+    /** Repeat fragment.
+     *
+     * @param name of fragment to repeat
+     * @param returnAddress return address
+     */
+    inline Status_t repeatFragment(const Identifier_t &name,
+                                   int returnAddress)
+    {
+        cerr << "repeating " << name.name << " [" << hex
+             << returnAddress << "]" << endl;
+        return S_NO_ITERATIONS;
+    }
 
 private:
     FragmentStack_t(const FragmentStack_t&);

@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tenginstruction.h,v 1.2 2004-12-30 12:42:02 vasek Exp $
+ * $Id: tenginstruction.h,v 1.3 2005-02-17 20:48:54 vasek Exp $
  *
  * DESCRIPTION
  * Teng instruction for teng processor.
@@ -120,6 +120,7 @@ struct Instruction_t {
         BYTECODE, /**< Print bytecode -- disassembled program. */
         CTYPE, /**< Change content type (push new). */
         ENDCTYPE, /**< Change content type (pop). */
+        REPEATFRAG, /**< Recursively repeat fragment tree. */
     };
     
     /** Create simple instruction without params.

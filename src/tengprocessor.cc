@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengprocessor.cc,v 1.5 2005-01-02 16:32:16 vasek Exp $
+ * $Id: tengprocessor.cc,v 1.6 2005-02-17 20:48:54 vasek Exp $
  *
  * DESCRIPTION
  * Teng processor. Executes programs.
@@ -881,6 +881,19 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
             }
             break;
             
+        case Instruction_t::REPEATFRAG:
+            if (!fragmentStack.repeatFragment(instr.identifier, ip)) {
+                // OK some iteratiion -> jump to the fragment
+                ip += instr.value.integerValue;
+                if ((ip < 0) || (ip >= (int)program.size())) {
+                    logErr(instr, "Repeat fragment jump points out of "
+                           "program address space",
+                           Error_t::LL_FATAL);
+                    goto flushReturn;
+                }
+            }
+            break;
+
         case Instruction_t::FRAGCNT:
             {
                 unsigned int fragmentSize = 0;

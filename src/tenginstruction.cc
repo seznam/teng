@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tenginstruction.cc,v 1.3 2005-01-30 19:32:28 vasek Exp $
+ * $Id: tenginstruction.cc,v 1.4 2005-02-17 20:48:54 vasek Exp $
  *
  * DESCRIPTION
  * Teng instruction and program types. Syntax analyzer
@@ -439,6 +439,11 @@ void Instruction_t::dump(ostream &os, int ip) const {
 
     case ENDCTYPE:
         os << "ENDCTYPE" << endl;
+        break;
+
+    case REPEATFRAG:
+        os << "REPEATFRAG      <" << value.stringValue << "> "
+           << hexaddr(value.integerValue, ip) << endl;
         break;
 
     default:

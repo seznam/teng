@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengparsercontext.h,v 1.2 2004-12-30 12:42:02 vasek Exp $
+ * $Id: tengparsercontext.h,v 1.3 2005-02-17 20:48:54 vasek Exp $
  *
  * DESCRIPTION
  * Teng parser context.
@@ -54,12 +54,6 @@ namespace Teng {
 /** Parser context contains all necessary parsing-time data. */
 struct ParserContext_t {
 
-    /** Fragment context type used in parse-time. */
-    typedef vector<string> FragmentContext_t;
-    
-    /** Temporary variable list used in parse-time. */
-    typedef vector<string> VariableList_t;
-
     /** Var/frag identifier. */
     typedef vector<string> IdentifierName_t;
     
@@ -74,11 +68,6 @@ struct ParserContext_t {
     /** Delete lexical analyzer objects left on the stack. */
     ~ParserContext_t();
     
-    /** Try to find template-created variable in variable list.
-      * @return 0=not found, 1=found.
-      * @param name Fully qualified name of the variable. */ 
-    int tmpVariableLookup(const string &name);
-
     /** Compile file template into a program.
       * @return Pointer to program compiled within this context.
       * @param filename Template filename. */
@@ -125,6 +114,11 @@ struct ParserContext_t {
                              const string &fullName, Identifier_t &id,
                              bool mustBeOpen = false) const;
     
+    int getFragmentAddress(const Error_t::Position_t &pos,
+                           const IdentifierName_t &id,
+                           const std::string &fullName,
+                           Identifier_t &id) const;
+
     /** Language dictionary. */
     const Dictionary_t *langDictionary;
     
@@ -145,12 +139,53 @@ struct ParserContext_t {
     /** Actual position in input stream.
      * Value is periodicaly updated by yylex(). */
     Error_t::Position_t position;
+
+    struct FragmentContext_t {
+        void reserve(unsigned int n) {
+            name.reserve(n);
+            addresses.reserve(n);
+        }
+
+        std::string fullname() const {
+            std::string fn;
+            for (IdentifierName_t::const_iterator iname = name.begin();
+                 iname != name.end(); ++iname) {
+                fn.push_back('.');
+                fn.append(*iname);
+            }
+            return fn;
+        }
+
+        void push_back(const std::string &n, int a) {
+            name.push_back(n);
+            addresses.push_back(a);
+        }
+
+        void pop_back() {
+            name.pop_back();
+            addresses.pop_back();
+        }
+
+        bool empty() const {
+            return name.empty();
+        }
+
+        unsigned int size() const {
+            return name.size();
+        }
+
+        operator const IdentifierName_t&() const {
+            return name;
+        }
+
+        int getAddress(const IdentifierName_t &id) const;
+
+        IdentifierName_t name;
+        std::vector<int> addresses;
+    };
     
     /** Actual fragment context when parsing a template. */
-    vector<FragmentContext_t> fragContext;
-    
-    /** List of temporary variables created in each fragment contexts. */
-    vector<VariableList_t> variableList;
+    std::vector<FragmentContext_t> fragContext;
     
     /** Program created by parser.
      * Temporary value used when parsing. */

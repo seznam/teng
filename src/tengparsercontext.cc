@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengparsercontext.cc,v 1.3 2004-12-30 12:42:02 vasek Exp $
+ * $Id: tengparsercontext.cc,v 1.4 2005-02-17 20:48:54 vasek Exp $
  *
  * DESCRIPTION
  * Teng parser context -- implementation.
@@ -56,9 +56,7 @@ ParserContext_t::ParserContext_t(const Dictionary_t *langDictionary,
                                  const Configuration_t *paramDictionary,
                                  const string &root)
     : langDictionary(langDictionary), paramDictionary(paramDictionary),
-      root(root), lex2(0),
-      variableList(1), // 1 because of root fragment (without <?teng frag ...)
-      program(0),
+      root(root), lex2(0), program(0),
       lowestValPrintAddress(0), evalProcessor(0)
 {
 }
@@ -74,21 +72,6 @@ ParserContext_t::~ParserContext_t()
     }
     // delete eval proc
     delete evalProcessor;
-}
-
-
-/** Try to find template-created variable in variable list.
-  * @return 0=not found, 1=found.
-  * @param name Fully qualified name of the variable. */ 
-int ParserContext_t::tmpVariableLookup(const string &name)
-{
-    // check all contexts
-    for (vector<VariableList_t>::const_iterator i = variableList.begin();
-            i != variableList.end(); ++i) {
-        if (find(i->begin(), i->end(), name) != i->end())
-            return 1; //found
-    }
-    return 0; //not found
 }
 
 
@@ -222,7 +205,8 @@ Program_t* ParserContext_t::createProgramFromString(const string &str)
 
 bool ParserContext_t::pushFragment(const Error_t::Position_t &pos,
                                    const IdentifierName_t &name,
-                                   const string &fullName, Identifier_t &id)
+                                   const string &fullName,
+                                   Identifier_t &id)
 {
     // check for bad name
     if (name.empty()) {
@@ -260,17 +244,13 @@ bool ParserContext_t::pushFragment(const Error_t::Position_t &pos,
     } else {
         FragmentContext_t &fc = fragContext.back();
         // check for name prefix match
-        if ((name.size() != (fc.size() + 1))
-            || !std::equal(name.begin(), name.end() - 1, fc.begin())) {
-            string fcName;
-            for (FragmentContext_t::const_iterator ifc = fc.begin();
-                 ifc != fc.end(); ++ifc)
-                fcName += "." + *ifc;
+        if ((name.size() != (fc.name.size() + 1))
+            || !std::equal(name.begin(), name.end() - 1, fc.name.begin())) {
             program->getErrors().
                 logError(Error_t::LL_ERROR, pos,
                          ("Fragment '" + fullName +
-                          "' badly nested into context '" + fcName
-                          + "'; discarding fragment block content"));
+                          "' badly nested into context '" + fc.fullname() +
+                          "'; discarding fragment block content"));
             return false;
         }
 
@@ -282,7 +262,7 @@ bool ParserContext_t::pushFragment(const Error_t::Position_t &pos,
     id.name = name.back();
 
     // remember this new fragment
-    fragContext.back().push_back(id.name);
+    fragContext.back().push_back(id.name, program->size());
 
     // OK we have new fragment
     return true;
@@ -291,20 +271,22 @@ bool ParserContext_t::pushFragment(const Error_t::Position_t &pos,
 void ParserContext_t::popFragment(unsigned int fragmentProgramStart) {
     // we have to forget the fragment
     
+    // get current fragment
+    FragmentContext_t &context(fragContext.back());
+
+    const std::string name = context.name.back();
+    unsigned int address = context.addresses.back();
+
     // update context
-    fragContext.back().pop_back();
-    // remove fragments variable list
-    variableList.pop_back();
+    context.pop_back();
     
     // if we are leaving non-default context remove it
-    if ((fragContext.size() > 1) && fragContext.back().empty())
+    if ((fragContext.size() > 1) && context.empty())
         fragContext.pop_back();
     
     // calculate fragment's jumps
-    (*program)[fragmentProgramStart].value.integerValue =
-        program->size() - fragmentProgramStart - 1;
-    program->back().value.integerValue =
-        - (program->size() - fragmentProgramStart - 1);
+    (*program)[address].value.integerValue = program->size() - address - 1;
+    program->back().value.integerValue = - (program->size() - address - 1);
     
     // no print-values join below following address
     lowestValPrintAddress = program->size();
@@ -328,7 +310,7 @@ bool ParserContext_t::findFragmentForVariable(const Error_t::Position_t &pos,
          ifragContext != fragContext.rend(); ++ifragContext) {
         if (((name.size() - 1) <= ifragContext->size())
             && std::equal(name.begin(), name.end() - 1,
-                          ifragContext->begin())) {
+                          ifragContext->name.begin())) {
             // set variables name
             id.name = name.back();
             // set context (how much to go from root)
@@ -377,7 +359,7 @@ ParserContext_t::findFragment(const Error_t::Position_t *pos,
          ifragContext != fragContext.rend(); ++ifragContext) {
         if ((name.size() <= ifragContext->size())
             && std::equal(name.begin(), name.end(),
-                          ifragContext->begin())) {
+                          ifragContext->name.begin())) {
             // set object name
             id.name = name.back();
             // set context (how much to go from the root context)
@@ -388,7 +370,7 @@ ParserContext_t::findFragment(const Error_t::Position_t *pos,
         } else if (parentIsOK // fragment name cannot be empty!
                    && ((name.size() - 1) <= ifragContext->size())
                    && std::equal(name.begin(), name.end() - 1,
-                                 ifragContext->begin())) {
+                                 ifragContext->name.begin())) {
             // we have found parent of requested fragment
             
             // set object name
@@ -441,4 +423,43 @@ ParserContext_t::exists(const Error_t::Position_t &pos,
                  ("Object '" + fullName + "' not found in any context."));
 
     return ER_NOT_FOUND;
+}
+
+int ParserContext_t::getFragmentAddress(const Error_t::Position_t &pos,
+                                        const IdentifierName_t &name,
+                                        const std::string &fullName,
+                                        Identifier_t &id) const
+{
+    int address = fragContext.back().getAddress(name);
+    if (address < 0) {
+        // not found => log error and return bad address
+        program->getErrors().logError
+            (Error_t::LL_ERROR, pos, ("Fragment '" + fullName +
+                                      "' not found in current contenxt."));
+        return -1;
+    }
+    
+    // set id
+    id.name = name.back();
+    // set context (how much to go from the root context)
+    id.context = fragContext.size() - 1;
+    // set fragment depth
+    id.depth = name.size();
+    
+    return address;
+}
+
+int ParserContext_t::FragmentContext_t::
+getAddress(const IdentifierName_t &id) const
+{
+    // match id in name and return associated address
+    if ((id.size() <= name.size())
+        && std::equal(id.begin(), id.end(), name.begin())) {
+        
+        // return address
+        return addresses[id.size() - 1];
+    }
+
+    // not found
+    return -1;
 }
