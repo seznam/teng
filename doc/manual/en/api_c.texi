@@ -1,1 +1,914 @@
-@c $Id: api_c.texi,v 1.1 2004-09-09 13:46:29 franci_cz Exp $
+@c -*-texinfo-*-
+@c FILE              $Id: api_c.texi,v 1.2 2004-09-09 15:56:06 franci_cz Exp $
+@c
+@c DESCRIPTION       Teng manual -- chapter 'C++ API'.
+@c
+@c AUTHOR            Vaclav Blazek <blazek@firma.seznam.cz>
+@c
+@c Copyright (c) 2003 Seznam.cz, a.s.
+@c All Rights Reserved.
+@c
+@c HISTORY
+@c       2003-10-08  (vasek)
+@c                   Created.
+@c
+
+@c C++ class and method index
+@defindex cc
+
+@iftex
+@c new page in printed manual
+@page
+@end iftex
+
+@c ======================================================================
+@c C++ API chapter
+@c ======================================================================
+@node C++ API, Python Module, The Reference Example, Program Interface
+@chapter Documentation of the main (C++) API
+@cindex interface, API, C++
+
+@noindent Teng library provides access to the core of Teng for
+C++ programmers.
+
+@menu
+* Requirements::                 Requirements to Build Library.
+* Installation::                 Installing Library.
+* Classes and Methods::          Classes and Methods.
+* Example::                      An Example.
+@end menu
+
+@c ======================================================================
+@c Requirements subsection
+@c =====================================================================
+@node Requirements, Installation, , C++ API
+@section Requirements
+
+@noindent To use Teng library, you need working C++ compiler.
+The authors of this library made special effort to make it standard
+compliant.  It compiles under @w{GCC v. 3.2.}
+
+Any GCC from @w{v. 2.95} is strongly encouraged but any standard
+compliant C++ compiler.
+
+@c ======================================================================
+@c Installation subsection
+@c ======================================================================
+@node Installation, Classes and Methods, Requirements, C++ API
+@section Installation
+
+@noindent Follow these steps to create and install Python Teng module(s)
+on your system.
+
+@enumerate
+
+@item
+Unpack Teng source into a build directory,
+e.g. @file{/usr/local/src/teng}.
+
+@item
+Enter build directory:
+@example
+$ cd @file{<source_tree>}
+@end example
+
+@item
+Configure teng.
+
+Invoke just this:
+
+@example
+$ ./configure
+@end example
+or if you want to change installation root (default is
+@file{/usr/local}), invoke:
+@example
+$ ./configure --prefix=installation-root
+@end example
+
+to configure Teng.
+
+@item
+Compile teng library:
+@example
+$ make
+@end example
+
+@item
+Built library (@file{libteng.a}) can be found in the @file{src/teng}
+directory.
+
+@example
+@file{<source_tree>/src/teng/libteng.a}.
+@end example
+
+@item
+Install the Teng library and its header files. To do so you have
+probably to change your persona to the super user (root):
+
+@example
+su -
+@end example
+
+And then just invoke:
+
+@example
+make install
+@end example
+
+@end enumerate
+
+@c ======================================================================
+@c Classes and Methods subsection
+@c ======================================================================
+@node Classes and Methods, Example, Installation, C++ API
+@section Classes and Methods
+
+In the following declarations and method descriptions the @code{std::}
+namespace prefix has been intentionally omitted to improve
+readibility.
+
+All classes in the Teng library have intentionally private copy
+constructors and assignment operators to prevent disastrious
+consequences of copying internal data.  Use references or pointers to
+pass values!
+
+Only public interface of classes is documented here.
+
+@subheading Data Tree
+
+@noindent Data tree is composed of three clases (@code{TengFragment_t},
+@code{TengFragmentList_t}, and @code{TengFragmentValue_t}). They can
+be found in the header @file{<tengstructs.h>}.
+
+@c ======================================================================
+@c Class TengFragment_t heading
+@c ======================================================================
+@subsubheading Class TengFragment_t
+@ccindex TengFragment_t (class)
+
+Class @code{TengFragment_t} provides data for one fragment iteration.
+It is simply map between names and values. Value can be string or
+@code{TengFragmentList_t}. In the first case the pair (name, value)
+represents variable and in the second it's just link to data for
+nested fragment.
+
+@noindent Declaration of class TengFragment_t
+
+@example 
+
+class TengFragment_t : public map<string, TengFragmentValue_t*> @{
+public:
+    // Default constructor
+    TengFragment_t();
+
+    // Destructor
+    ~TengFragment_t();
+
+    // Adds new variables to this fragment's data
+    void addVariable(const string &name, const string &value);
+
+    // Adds new variables to this fragment's data
+    void addVariable(const string &name, long int value);
+
+    // Adds new variables to this fragment's data
+    void addVariable(const string &name, double value);
+
+    // Adds new subfragment data to this fragment data
+    TengFragment_t& addFragment(const string &name);
+
+    // Adds new subfragment list to this fragment data
+    TengFragmentList_t& addFragmentList(const string &name);
+@}
+
+@end example 
+
+@c ======================================================================
+@c TengFragment_t::TengFragment_t()
+@c ======================================================================
+@deftypeop Constructor TengFragment_t {} TengFragment_t ()
+@ccindex TengFragment_t (constructor)
+@noindent @code{TengFragment_t} creates new empty subfragment
+data.
+
+@table @asis
+
+@item Parameters:
+
+None
+
+@item Return value:
+
+None
+
+@end table
+
+@end deftypeop
+
+@c ======================================================================
+@c TengFragment_t::~TengFragment_t()
+@c ======================================================================
+@deftypeop Destructor TengFragment_t {} ~TengFragment_t ()
+@ccindex ~TengFragment_t (destructor)
+@noindent @code{~TengFragment_t} destroys subfragment data.
+Deletes all entries.
+
+@table @asis
+
+@item Parameters:
+
+None
+
+@item Return value:
+
+None
+
+@end table
+
+@end deftypeop
+
+@c ======================================================================
+@c Teng_t::addVariable()
+@c ======================================================================
+@deftypemethod TengFragment_t void addVariable (@w{const string &@var{name}}, @w{const string &@var{value}})
+@deftypemethodx TengFragment_t void addVariable (@w{const string &@var{name}}, @w{long int &@var{value}})
+@deftypemethodx TengFragment_t void addVariable (@w{const string &@var{name}}, @w{double &@var{value}})
+@ccindex addVariable (method of TengFragment_t)
+@noindent @code{addVariable} adds new variable (maps @var{name}
+to string value @var{value}). If entry for given @var{name} doesn't
+exist, nothing is inserted.
+
+@table @asis
+
+@item Parameters:
+
+@table @var
+
+@item name
+@var{name} is name of variable.
+
+@item value
+@var{value} is value name of variable.
+
+@end table
+
+@item Return value:
+None
+
+@end table
+
+@end deftypemethod
+
+@c ======================================================================
+@c Teng_t::addFragment()
+@c ======================================================================
+@deftypemethod TengFragment_t TengFragment_t& addFragment (@w{const string &@var{name}})
+@ccindex addFragment (method of TengFragment_t)
+@noindent @code{addFragment} calls
+TengFragment_t::addFragmentList(@var{name}) to obtain reference to
+@var{nestedFragments} and then appends it by new empty subfragment
+data and returns reference to this data.
+
+@table @asis
+
+@item Parameters:
+
+@table @var
+
+@item name
+@var{name} is name of subfragment data.
+
+@end table
+
+@item Return value:
+
+Reference to newly created subfragment data.  It can be used to add
+some variables and subfragment data.
+
+@end table
+
+@end deftypemethod
+
+@c ======================================================================
+@c Teng_t::addFragmentList()
+@c ======================================================================
+@deftypemethod TengFragment_t TengFragmentList_t& addFragmentList (@w{const string &@var{name}})
+@ccindex addFragmentList (method of TengFragment_t)
+@noindent @code{addFragmentList} creates new @code{TengFragmentValue_t}
+of given @var{name} with new empty @var{nestedFragments} and returns
+reference to it.  It's not considered as an error if
+@code{TengFragmentValue_t} already exists or even has non-zero
+@var{nestedFragments}.
+
+@table @asis
+
+@item Parameters:
+
+@table @var
+
+@item name
+@var{name} is name of subfragment data.
+
+@end table
+
+@item Return value:
+
+Reference to newly created @var{nestedList}.  It can be used to add
+subfragment data.
+
+@end table
+
+@end deftypemethod
+
+@c ======================================================================
+@c Class TengFragmentList_t heading
+@c ======================================================================
+@subsubheading Class TengFragmentList_t
+@ccindex TengFragmentList_t (class)
+
+Class @code{TengFragmentList_t} encapsulates data for all iterations
+of one fragment. Its placeholder for list of fragments.
+
+@noindent Declaration of class TengFragmentList_t
+
+@example 
+
+class TengFragmentList_t : public vector<TengFragment_t*> @{
+public:
+    // Default constructor
+    TengFragmentList_t();
+
+    // Descturctor
+    ~TengFragmentList_t();
+
+    // Appends new (empty) fragment data at the end of this list
+    TengFragment_t& addFragment();
+@}
+
+@end example 
+
+@c ======================================================================
+@c TengFragmentList_t::TengFragmentList_t()
+@c ======================================================================
+@deftypeop Constructor TengFragmentList_t {} TengFragmentList_t ()
+@ccindex TengFragmentList_t (constructor)
+@noindent @code{TengFragmentList_t} creates new empty subfragment
+data list.
+
+@table @asis
+
+@item Parameters:
+
+None
+
+@item Return value:
+
+None
+
+@end table
+
+@end deftypeop
+
+@c ======================================================================
+@c TengFragmentList_t::~TengFragmentList_t()
+@c ======================================================================
+@deftypeop Destructor TengFragmentList_t {} ~TengFragmentList_t ()
+@ccindex ~TengFragmentList_t (destructor)
+@noindent @code{~TengFragmentList_t} destroys subfragment data list.
+Deletes all subfragment data.
+
+@table @asis
+
+@item Parameters:
+
+None
+
+@item Return value:
+
+None
+
+@end table
+
+@end deftypeop
+
+@c ======================================================================
+@c TengFragmentList_t::addFragment()
+@c ======================================================================
+@deftypemethod TengFragmentList_t TengFragment_t& addFragment ()
+@ccindex addFragment (method of TengFragmentList_t)
+@noindent @code{addFragment} adds new empty subfragment data and
+returns reference to it.
+
+@table @asis
+
+@item Parameters:
+
+None
+
+@item Return value:
+
+Reference to newly created fragment data.
+
+@end table
+
+@end deftypemethod
+
+@c ======================================================================
+@c Class TengFragmentValue_t heading
+@c ======================================================================
+@subsubheading Class TengFragmentValue_t
+@ccindex TengFragmentValue_t (class)
+
+Class @code{TengFragmentValue_t} represents one entry in fragment's
+data table (class @code{TengFragment_t}).
+
+If value of member variable @var{nestedFragments} is non-zero, this
+instance is considered to link to the list of data for nested
+fragments. Otherwise this instance is considered to be fragment
+variable with value stored in member variable @var{value}.
+
+@noindent Declaration of class TengFragmentValue_t
+
+@example 
+
+class TengFragmentValue_t @{
+public:
+    // Default constructor
+    TengFragmentValue_t();
+
+    // Destructor
+    ~TengFragmentValue_t();
+
+    // Constructs variable
+    TengFragmentValue_t(const string &value);
+
+    // Constructs variable
+    TengFragmentValue_t(long int value);
+
+    // Constructs variable
+    TengFragmentValue_t(double value);
+
+    // Adds subfragment data to @var{nestedFragments}
+    // Changes type to subfragment data!
+    TengFragment_t& addFragment();
+
+    // Value of variable (valid only when @var{nestedFragments}
+    // is non-zero
+    string value;
+
+    // List of subfragment data
+    TengFragmentList_t *nestedFragments;
+@}
+
+@end example 
+
+@c ======================================================================
+@c TengFragmentValue_t::TengFragmentValue_t()
+@c ======================================================================
+@deftypeop Constructor TengFragmentValue_t {} TengFragmentValue_t ()
+@ccindex TengFragmentValue_t (constructor)
+@noindent @code{TengFragmentValue_t} creates new empty fragment value.
+
+@table @asis
+
+@item Parameters:
+
+None
+
+@item Return value:
+
+None
+
+@end table
+
+@end deftypeop
+
+@c ======================================================================
+@c TengFragmentValue_t::TengFragmentValue_t()
+@c ======================================================================
+@deftypeop Constructor TengFragmentValue_t {} TengFragmentValue_t (@w{const string &@var{value}})
+@deftypeopx Constructor TengFragmentValue_t {} TengFragmentValue_t (@w{long int @var{value}})
+@deftypeopx Constructor TengFragmentValue_t {} TengFragmentValue_t (@w{double @var{value}})
+@ccindex TengFragmentValue_t (constructor)
+@noindent @code{TengFragmentValue_t} creates new variable with
+given @var{value} (converted to string ig needed).
+
+@table @asis
+
+@item Parameters:
+
+@table @var
+
+@item value
+Value of variable.
+@end table
+
+@item Return value:
+
+None
+
+@end table
+
+@end deftypeop
+
+@c ======================================================================
+@c TengFragmentValue_t::~TengFragmentValue_t()
+@c ======================================================================
+@deftypeop Destructor TengFragmentValue_t {} ~TengFragmentValue_t ()
+@ccindex ~TengFragmentValue_t (destructor)
+@noindent @code{~TengFragmentValue_t} destructs fragment value.
+If @var{nestedFragments} is non-zero pointer, it's deleted.
+
+@table @asis
+
+@item Parameters:
+
+None
+
+@item Return value:
+
+None
+
+@end table
+
+@end deftypeop
+
+@c ======================================================================
+@c TengFragmentValue_t::addFragment()
+@c ======================================================================
+@deftypemethod TengFragmentValue_t TengFragment_t addFragment ()
+@ccindex addFragment (method of TengFragmentValue_t)
+@noindent @code{addFragment} optionaly creates new
+@var{nestedFragments} @code{TengFragmentList_t} (if not already
+exists), appends new empty subfragment data and returns reference to
+it.
+
+@table @asis
+
+@item Parameters:
+
+None
+
+@item Return value:
+
+Reference to newly created fragment data.
+
+@end table
+
+@end deftypemethod
+
+@c ======================================================================
+@c TengFragmentValue_t::value
+@c ======================================================================
+@deftypeop {Member} TengFragmentValue_t string value
+@ccindex value (member of TengFragmentValue_t)
+@noindent Holds value of variable unless @var{nestedFragments} is non-zero.
+
+@end deftypeop
+
+@c ======================================================================
+@c TengFragmentValue_t::nestedFragments
+@c ======================================================================
+@deftypeop {Member} TengFragmentValue_t TengFragmentList_t *nestedFragments
+@ccindex nestedFragments (member of TengFragmentValue_t)
+@noindent If non-zero, it holds list of subfragment data.
+
+@end deftypeop
+
+@c ======================================================================
+@c Main Teng Engine
+@c ======================================================================
+@subsubheading Class Teng_t
+@ccindex Teng_t (class)
+
+@noindent The @code{Teng_t} class is the main Teng engine.  It can
+be found in the header @file{<teng.h>}.
+
+@noindent Declaration of class TengFragmentValue_t
+
+@example 
+
+class Teng_t @{
+public:
+    // constructor
+    Teng_t(const string &root, int logMode = 0,
+           bool validate = false);
+
+    // Destructor
+    ~Teng_t();
+
+    // Generate page from template
+    int generatePage(const string &templateFilename,
+                     const string &skin,
+                     const string &dataDefinition,
+                     const string &dictionary, const string &language,
+                     const string &configuration, const string &contentType,
+                     const string &encoding, const TengFragment_t &data,
+                     TengWriter_t &writer, TengError_t &err);
+
+    // Generate page from template
+    int generatePage(const string &templateString,
+                     const string &dataDefinition,
+                     const string &dictionary, const string &language,
+                     const string &param, const string &contentType,
+                     const string &encoding, const TengFragment_t &data,
+                     TengWriter_t &writer, TengError_t &err);
+
+    // Direct dictionary lookup
+    int dictionaryLookup(const string &dict, const string &lang,
+                         const string &key, string &value);
+
+    // List content types supported by this engine
+    static void listSupportedContentTypes(vector<pair<string, string> >
+                                          &supported);
+@}
+
+@end example
+
+@c ======================================================================
+@c Teng_t::Teng_t()
+@c ======================================================================
+@deftypeop Constructor Teng_t {} Teng_t (@w{const string &@var{root}}, @w{int @var{logMode}=0}, @w{bool @var{validate}=false})
+@ccindex Teng_t (constructor)
+@noindent @code{Teng_t} creates new Teng engine with its own template
+and dictionary cache.
+
+@table @asis
+
+@item Parameters:
+
+@table @var
+
+@item root
+Root for relative paths (ones not starting wich @code{/}).
+@item logMode
+Mode of logging errors. It's 0 or itwise-or'd zero or more of the
+following:
+
+@table @code
+@item Teng_t::LM_LOG_TO_OUTPUT
+If this bit is set, the error log will be appended at the end of
+generated page.
+
+@item Teng_t::LM_ERROR_FRAGMENT
+If this bit is set, the special fragment @samp{._error} will be
+accesible from the template.
+
+@end table
+
+@item validate
+When true, the template and program supplied data will be validated
+agaist data definition.
+
+@end table
+
+@end table
+
+@end deftypeop
+
+@c ======================================================================
+@c Teng_t::generatePage()
+@c ======================================================================
+@deftypemethod Teng_t int generatePage (@w{const string &@var{templateFilename}}, @w{const string &@var{skin}},  @w{const string &@var{dataDefinition}}, @w{const string &@var{dictionary}}, @w{const string &@var{language}}, @w{const string &@var{configuration}}, @w{const string &@var{contentType}}, @w{const string &@var{encoding}}, @w{const TengFragment_t &@var{data}}, @w{TengWriter_t &@var{writer}}, @w{TengError_t &@var{err}})
+@deftypemethodx Teng_t int generatePage (@w{const string &@var{templateString}}, @w{const string &@var{dataDefinition}}, @w{const string &@var{dictionary}}, @w{const string &@var{language}}, @w{const string &@var{configuration}}, @w{const string &@var{contentType}}, @w{const string &@var{encoding}}, @w{const TengFragment_t &@var{data}}, @w{TengWriter_t &@var{writer}}, @w{TengError_t &@var{err}})
+@ccindex generatePage (method of Teng_t)
+@noindent Main entry point to the engine. It reads and parses
+all dictionaries, reads and parses template, creates byte-code program
+for template and then executes it.
+
+The first variant reads template from file @var{templateFilename}.  If
+@var{skin} is non-empty string, it is prepended before first dot of
+basename of this file (e.g. @file{.../filename.ext} will become
+@file{.../filename.<skin>.ext}).  If basename doesn't contain any dot
+and @var{skin} is non-empty string, @var{skin} is appended as an
+extension at the end of basename (e.g. @file{.../filename} will become
+@file{.../filename.<skin>}).
+
+The second variant treats the @var{templateString} as template.  It
+can be used to supply program generated template or template read from
+nother source than local file.
+
+Language dictionary is read from file @var{dictionary}.  If
+@var{language} is non-empty string, it is prepended before first dot
+of basename of this file (e.g. @file{.../filename.ext} will become
+@file{.../filename.<language>.ext}).  If basename doesn't contain any
+dot and @var{language} is non-empty string, @var{language} is appended
+as an extension at the end of basename (e.g. @file{.../filename} will
+become @file{.../filename.<language>}).
+
+@table @asis
+
+@item Parameters:
+
+@enumerate
+@item
+@table @var
+
+@item templateFilename
+@var{templateFilename} is name (without skin) of file with template.
+
+@item skin
+@var{skin} is skin of template. Selects between variants of given
+template.
+
+@end table
+
+@item
+@table @var
+
+@item templateString
+@var{templateString} is template.
+
+@end table
+@end enumerate
+
+@table @var
+
+@item dataDefinition
+@var{dataDefinition} is name of file with data definition. It is used
+only when @var{validate} supplid to @code{Teng_t::Teng_t()} was
+true.
+
+@item dictionary
+@var{dictionary} is name of file with language dictionary without
+language.
+
+@item language
+@var{language} is language of dictionary. Selects between language
+variants of given dictionary.
+
+@item configFilename
+@var{configuration} is name of file with configuration (language
+independent dictionary).
+
+@item contentType
+Content type is used for data escaping and commenting out.
+
+@item encoding
+@var{encoding} is used for string manipulating functions
+(@code{length}, @code{substr} etc.).
+
+@item data
+@var{data} is data tree root.
+
+@item writer
+@var{writer} is output device. You can supply
+@code{TengStringWriter_t} for output to string or
+@code{TengFileWriter_t} for output to file (either open file stream or
+to file specified by filename). You can also inherit class from
+@code{TengWriter_t} for output to different destinatio.
+
+@item err
+@var{err} is error log with entry for every error encountered during
+template parsing and execution.
+
+@end table
+
+@item Return value:
+Maximal severity of encountered error. Value of 0 means no error.
+
+@end table
+@end deftypemethod
+
+@c ======================================================================
+@c Teng_t::generatePage()
+@c ======================================================================
+@deftypemethod Teng_t int dictionaryLookup (@w{const string &@var{dictionary}}, @w{const string &@var{language}},  @w{const string &@var{ket}}, @w{string &@var{value}})
+@ccindex dictionaryLookup (method of Teng_t)
+@noindent @code{dictionaryLookup} tries to find dictionary item
+in given dictionary.
+
+Language dictionary is read from file @var{dictionary}.  If
+@var{language} is non-empty string, it is prepended before first dot
+of basename of this file (e.g. @file{.../filename.ext} will become
+@file{.../filename.<language>.ext}).  If basename doesn't contain any
+dot and @var{language} is non-empty string, @var{language} is appended
+as an extension at the end of basename (e.g. @file{.../filename} will
+become @file{.../filename.<language>}).
+
+@table @asis
+
+@item Parameters:
+
+@table @var
+
+@item dictionary
+@var{dictionary} is name of file with language dictionary without
+language.
+
+@item language
+@var{language} is language of dictionary. Selects between language
+variants of given dictionary.
+
+@item key
+@var{key} Name of dictionary item you are looking for.
+
+@item value
+This string is filled with value of found dictionary item unless
+result is non-zero.
+
+@end table
+
+@item Return value:
+0 when item found !0 on error.
+
+@end table
+
+@end deftypemethod
+
+@c ======================================================================
+@c Teng_t::listSupportedContentTypes()
+@c ======================================================================
+@deftypemethod Teng_t {static void} listSupportedContentTypes (@w{vector<string, string> &@var{supported}})
+@ccindex listSupportedContentTypes (method of Teng_t)
+@noindent @code{listSupportedContentTypes} returns list of content types
+supported by this engine.  Each entry in the list is pair of content
+type name and comment on it.
+
+@table @asis
+
+@item Parameters:
+
+@table @var
+
+@item supported
+@var{supported} is filled with list of supported content types and
+comments on them.
+
+@end table
+
+@item Return value:
+None
+
+@end table
+
+@end deftypemethod
+
+@c ======================================================================
+@c Example subsection
+@c ======================================================================
+@node Example, , Classes and Methods, C++ API
+@section An Example
+
+@noindent There is only one way to produce the reference example output 
+(@ref{The Reference Example}) using Teng Library.
+
+@example
+
+#include <stdio.h>
+
+// include teng header file
+#include <teng.h>
+
+// include writer
+#include <tengwriter.h>
+
+// include errorlog
+#include <tengerror.h>
+
+int main(int argc, char *argv[]) @{
+    static string characters[2] = @{ "A", "B" @};
+
+    // create Teng engine
+    Teng_t teng("", Teng_t::LM_LOG_TO_OUTPUT | Teng_t::LM_ERROR_FRAGMENT);
+
+    // root fragment data
+    TengFragment_t rootFragment;
+
+    // create list for rows
+    TengFragmentList_t &rowList = rootFragment.addFragmentList("row");
+    // create two rows
+    for (int i = 0; i < 2; ++i) @{
+        // add varieble "rnum" ('A' or 'B')
+        row.addVariable("rnum", characters[i]);
+        // create two columns
+        for (int j = 0; j < 2; ++j) @{
+            // create sub fragment data for column
+            TengFragment_t &col = row.addFragment("col");
+            // add variable "cnum" (1 or 2)
+            rowcol.addVariable("cnum", j + 1);
+        @}
+    @}
+
+    // output will go to the standard output
+    TengFileWriter_t writer(stdout);
+
+    // error log
+    TengError_t err
+    teng.generatePage("palette.html", // templateFilename
+                       string(),      // skin (none)
+                       string(),      // dataDefinition (none)
+                       string(),      // dictionary (none)
+                       string(),      // language (none)
+                       string(),      // configuration (none)
+                       "text/html",   // contentType
+                       "iso-8859-2",  // encoding
+                       rootFragment,  // data
+                       writer,        // writer
+                       err);          // err
+
+    // OK
+    return 0;
+@}
+
+@end example

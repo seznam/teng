@@ -1,1 +1,552 @@
-@c $Id: api_python.texi,v 1.1 2004-09-09 13:46:30 franci_cz Exp $
+@c -*-texinfo-*-
+@c FILE              $Id: api_python.texi,v 1.2 2004-09-09 15:56:06 franci_cz Exp $
+@c
+@c DESCRIPTION       Teng manual -- chapter 'Python API'.
+@c
+@c AUTHOR            Vaclav Blazek <blazek@firma.seznam.cz>
+@c
+@c Copyright (c) 2003 Seznam.cz, a.s.
+@c All Rights Reserved.
+@c
+@c HISTORY
+@c       2003-10-08  (vasek)
+@c                   Created.
+@c
+
+@c Python API index
+@defindex py
+
+@iftex
+@c new page in printed manual
+@page
+@end iftex
+
+@c ======================================================================
+@c Python module chapter
+@c ======================================================================
+@node Python Module, PHP Extension, C++ API, Program Interface
+@chapter Documentation of the Python Module
+@cindex interface
+@cindex API
+@cindex Python
+@cindex module
+
+@noindent Python Teng module provides access to Teng functionality for
+Python programmers.
+
+@menu
+* Python Requirements::          Requirements to Build This Module.
+* Python Installation::          Installing This Module.
+* Python Data Tree::             Data Tree.
+* Python Types and Methods::     Types and Methods.
+* Python Example::               An Example.
+@end menu
+
+@c ======================================================================
+@c Requirements subsection
+@c =====================================================================
+@node Python Requirements, Python Installation, , Python Module
+@section Requirements
+
+@noindent To use Python Teng module, you need at least Python 1.5 with
+working distutils. Python 2.2 is strongly encouraged.
+
+@c ======================================================================
+@c Installation subsection
+@c ======================================================================
+@node Python Installation, Python Data Tree, Python Requirements, Python Module
+@section Installation
+
+@noindent Follow these steps to create and install Python Teng module(s)
+on your system.
+
+@enumerate
+
+@item
+Unpack Teng source into a build directory,
+e.g. @file{/usr/local/src/teng}.
+
+@item
+Enter build directory:
+@example
+$ cd @file{<source_tree>}
+@end example
+
+@item
+Configure teng with Python module enabled. Configure looks for all
+Python binaries in @file{/usr/bin/} (exactly, any file matching
+@file{/usr/bin/python?.?}). You may overide this behaviour by
+specifying other files as argument to @code{--enable-python}.
+Extension will be compiled for all found Python versions.
+
+Invoke just this:
+@example
+$ ./configure --enable-python
+@end example
+or if you wish to explicitly specify Python binaries invoke this:
+@example
+$ ./configure --enable-python=/usr/local/bin/python2.2
+@end example
+to configure Teng with Python module enabled.
+
+@item
+Compile teng library:
+@example
+$ make
+@end example
+
+@item
+Built Python Teng modules can be found now in
+
+@example
+@file{<source_tree>/src/python/lib/python?.?/}.
+@end example
+
+You may wish to install them to the installation directory. To do so
+you have probably to change your persona to the super user (root):
+
+@example
+su -
+@end example
+
+And then just invoke:
+
+@example
+make install
+@end example
+
+@item
+If you want to create Debian package with Python Teng modules, simply
+enter @file{debian} directory in the Teng source tree and invoke
+@code{make}:
+
+@example
+cd @file{<source_tree>/debian}
+make szn-py-teng
+@end example
+
+Debian package can be found in @file{<source_tree>/debian/tmp/}.
+
+You can change package's version in file
+@file{<source_tree>/debian/szn-py-teng.version}.
+
+@end enumerate
+
+@c ======================================================================
+@c Data tree subsection
+@c ======================================================================
+@node Python Data Tree, Python Types and Methods, Python Installation, Python Module
+@section Data Tree
+
+@noindent Data supplied to the engine can be Python data
+structures (dictionaries and lists/tuples) or Teng's native data
+structures encapsulated by Python object Fragment.
+
+@menu
+* Python Tree::                   Python Data Tree 
+* Native Teng Tree::              Native Teng Data Tree
+@end menu
+
+@c ======================================================================
+@c Python data tree subsection
+@c ======================================================================
+@node Python Tree, Native Teng Tree, , Python Data Tree
+@subsubheading Python Data Tree
+
+@noindent Python data tree is made up from dictionaries and
+lists/tuples.
+
+@table @asis
+@item Fragment data
+Fragment data are mapped as dictionary. Key (name of entry in fragment
+data) must be string (keys of other types are silently
+ignored). String, unicode, integral and float values are treated as
+variables. Lists and tuple are treated as nested fragment
+data. Dictionaries are treated as special case of nested fragment
+data--just one iteration. Other types are treated as variables with
+result of call to @code{str()} as its value.
+
+@item Nested fragment data.
+Nested fragment data are mapped as lists or tuples (doesn't matter
+which you use). In the case you know that there will be just one
+iteration you can supply only this fragment data (dictionary) instead
+of list/tuple with single entry.
+
+@end table
+
+@c ======================================================================
+@c Native Teng data tree subsection
+@c ======================================================================
+@node Native Teng Tree, , Python Tree, Python Data Tree
+@subsubheading Native Teng Data Tree
+
+@noindent Native data are mapped as type @code{Fragment} in Teng
+Python Module.
+
+@code{Fragment} Supports only one
+method--@code{Fragment.addFragment()}. It's used to add subfragment
+data into this fragment. Root fragment data are created with Teng's
+method @code{Teng.createDataRoot()}. Only root fragment data node can
+be supplied to @code{Teng.generatePage()}. Deletion of subfragment
+data doesn't invalidate other nodes. Deletion of root fragment data
+deletes internal data tree and invalidates all data subnodes pointing
+to this data tree. Such data subnodes cannot be used any more.
+
+@c ======================================================================
+@c Types and methods subsection
+@c ======================================================================
+@node Python Types and Methods, Python Example, Python Data Tree, Python Module
+@section Types and Methods
+
+@noindent Python module provides two data types, Teng and Fragment.
+
+@table @asis
+
+@item Teng
+Teng is pure encapsulation of Teng engine. It provides access to
+original C++ API: method @code{Teng.generatePage()} and method
+@code{Teng.dictionaryLookup()}.
+
+@item Fragment
+Fragment is encapsulation of C++ structure @code{TengFragment_t}. It
+cannot be instantiated explicitly; to created object of this type you
+have to call method @code{Teng.createDataRoot()} to create new data
+tree root. Then you can add subnodes by invoking method
+@code{Fragment.addFragment()} on Fragment.
+@end table
+
+@c ======================================================================
+@c teng.Teng()
+@c ======================================================================
+@deftypeop Constructor teng.Teng {} teng.Teng (@w{string @var{root}=""}, @w{string @var{encoding}="iso-8859-2"}, @w{string @var{contentType}=""}, @w{int @var{logToOutput}=0}, @w{int @var{errorFragment}=0}, @w{int @var{validate}=0})
+@pyindex teng.Teng
+@pyindex Teng (method on teng)
+@code{teng.Teng()} creates new Teng object encapsulating Teng engine.
+
+@table @asis
+
+@item Parameters:
+
+@table @var
+
+@item root
+Root for relative paths (ones not starting wich @code{/}).
+
+@item encoding
+Default encoding supplied to @code{Teng.generatePage} if none
+specified. @var{contentType} is used for conversion from Unicode to
+8-bit strings.  Engine uses this value for string manipulating
+functions.
+
+@item contentType
+Default content type supplied to @code{Teng.generatePage} if none
+specified. Content type is used for data escaping and commenting out.
+
+@item logToOutput
+If @var{logToOutput} is non-zero, error log will appear at the end of
+generated page in commented block (according to content type.
+
+@item errorFragment
+If @var{errorFragment} is non-zero, error fragment is accesible from
+template.
+
+@item validate
+If @var{validate} is non-zero, data and templates will be validate to
+the data definition supplied to @code{Teng.generatePage}.
+@end table
+
+@item Return value:
+Created object.
+@end table
+
+@end deftypeop
+
+@c ======================================================================
+@c teng.listSupportedContentTypes()
+@c ======================================================================
+@deftypeop {Module method} teng tuple teng.listSupportedContentTypes ()
+@pyindex teng.listSupportedContentTypes
+@pyindex listSupportedContentTypes (method on teng)
+Lists content types supported by this Teng engine.  Result is tuple of
+two item tuples--content type and commentary on it.
+
+@table @asis
+
+@item Parameters:
+None
+
+@item Return value:
+@verbatim
+( (string, string), ...)
+@end verbatim
+@end table
+
+@end deftypeop
+
+@c ======================================================================
+@c teng.generatePage()
+@c ======================================================================
+@deftypemethod teng.Teng dict Teng.generatePage (@w{string @var{templateFilename}}, @w{string @var{skin}}, @w{string @var{templateString}}, @w{string @var{dataDefinitionFilename}}, @w{string @var{dictionaryFilename}}, @w{string @var{language}}, @w{string @var{configFilename}}, @w{string @var{contentType}}, @w{Object @var{data}}, @w{string @var{outputFilename}}, @w{FileObject @var{outputFile}}, @w{string @var{encoding}})
+@pyindex Teng.generatePage
+@pyindex generatePage (methon on Teng)
+@noindent Main entry point to the engine. It reads and parses
+template and all dictionaries, creates byte-code program for template
+and then executes it.
+
+All parameters are keywords. Some cannot be supplied together with
+other parameters, some cannot be supplied without other parameters.
+
+@strong{Caution:} It's different case when you supply @code{None} as
+value of keyword argument and when you don't supply any value to
+keyword argument!
+
+@table @asis
+
+@item Parameters:
+@table @var
+
+@item templateFilename
+@var{templateFilename} is name (without skin) of file with template.
+It cannot be supplied together with @var{templateString}.
+
+@item skin
+@var{skin} is skin of template. Selects between variants of given
+template.  It cannot be supplied without supplying
+@var{templateFilename}.
+
+@item templateString
+@var{templateString} is string containing template.  It cannot be
+supplied together with @var{templateFilename}.
+
+@item dataDefinitionFilename
+@var{dataDefinitionFilename} is name of file with data definition. It
+is used only when @var{validate} supplied to @code{teng.Teng()} was
+non-zero.
+
+@item dictionaryFilename
+@var{dictionaryFilename} is name of language dictionary without
+language.
+
+@item language
+@var{language} is language of dictionary. Selects between language
+variants of given dictionary.  It cannot be supplied without supplying
+@var{dictionaryFilename}.
+
+@item configFilename
+@var{configFilename} is name of file with configuration (language
+independent dictionary).
+
+@item contentType
+Content type is used for data escaping and commenting out.
+
+@item data
+@var{data} is data tree. Either Python's native types or
+@code{Fragment} created by calling @code{Teng.createDataRoot} (other
+@code{Fragment} cannot be used).
+
+@item outputFilename
+@var{outputFilename} is name of file to which output will be written.
+Cannot be supplied together with @var{outputFile}.
+
+@item outputFile
+@var{outputFile} is file object to which output will written. Must be
+open for writing.  Cannot be supplied together with
+@var{outputFilename}.
+
+@item encoding
+@var{encoding} is used for conversion from Unicode to 8-bit strings.
+Engine uses this value for string manipulating functions.
+@end table
+
+If neither @var{templateFilename} nor @var{templateString} is
+supplied, exception is raised to inform programmer that no source is
+specified.
+
+If neither @var{outputFilename} nor @var{outputFile} is supplied,
+generated output can be found in result dictionary.
+
+@item Return value:
+Dictionary containing status code (0 == no error), output (filled only
+if no destination specified) and error log (tuple with entry for each
+line).
+
+@verbatim
+
+dict = {
+    int status,                # status code -- severity of
+                               # most severe error
+    string output,             # generated result
+    tuple errorLog = (         # error log
+        dict = {
+            int level,         # severity of error
+            string filename,   # file where error occured
+            int line,          # line in file
+            string column,     # column in line
+            string message,    # description
+        }
+    )
+}
+
+@end verbatim
+@end table
+@end deftypemethod
+
+@c ======================================================================
+@c Teng.dictionaryLookup()
+@c ======================================================================
+@deftypemethod teng.Teng string Teng.dictionaryLookup (@w{string @var{dictionaryFilename}}, @w{string @var{language}}, @w{string @var{key}})
+@pyindex Teng.dictionaryLookup
+@pyindex dictionaryLookup (method on Teng)
+Search given @var{key} in dictionary.
+@noindent Parameters:
+
+@table @asis
+
+@item Parameters:
+@table @var
+
+@item dictionaryFilename
+@var{dictionaryFilename} is filename of dictionary without language.
+
+@item language
+@var{language} is language of dictionary. Selects between language
+variants of given dictionary.
+
+@item key
+@var{key} is name of searche dictionary item.
+@end table
+
+@item Return value:
+Value of found item (string) or @code{None} if item for @var{key} not
+found.
+@end table
+
+@end deftypemethod
+
+@c ======================================================================
+@c Teng.createDataRoot()
+@c ======================================================================
+@deftypemethod teng.Teng Fragment Teng.createDataRoot (@w{Object @var{data}=@code{None}})
+@pyindex Teng.createDataRoot
+@pyindex createDataRoot (method on Teng)
+@noindent Creates native data root (type @var{Fragment}) and populates
+it with data.
+
+@table @asis
+
+@item Parameters:
+@table @var
+
+@item data
+@var{data} is data tree which populates data root.
+@end table
+
+@item Return value:
+Created root fragment (type @code{Fragment}).
+@end table
+
+@end deftypemethod
+
+@c ======================================================================
+@c Fragment.addFragment()
+@c ======================================================================
+@deftypemethod Fragment Fragment Fragment.addFragment (@w{string @var{name}}, @w{Fragment @var{data}})
+@pyindex Fragment.addFragment
+@pyindex addFragment (method on Fragment)
+@noindent Cretes new fragment, polulates it with data, adds to
+this fragment and finally returns it.
+
+@table @asis
+
+@item Parameters:
+@table @var
+
+@item name
+@var{name} is name of newly created fragment data.
+
+@item data
+@var{data} is data tree which populates newly created fragment data.
+@end table
+
+@item Return value:
+Created root fragment (type @code{Fragment}).
+@end table
+
+@end deftypemethod
+
+@c ======================================================================
+@c Example subsection
+@c ======================================================================
+@node Python Example, , Python Types and Methods, Python Module
+@section An Example
+
+@noindent There are numerous ways to produce the reference example output 
+(@ref{The Reference Example}) using Teng Python Module.  Two
+significantly different options exist.
+
+The first approach uses native Python data structures to pass a data
+tree from a Python script to Teng.
+
+@example
+
+#import Teng module
+import teng
+
+# initialize Teng engine with defaults
+t = teng.Teng();
+
+# build data tree from bottom up
+data = @{'row': []@}
+
+for i in range(ord('A'), ord('C')):
+    row = @{ 'rnum': chr(i), 'col': [] @};
+
+    for j in range(0, 2):
+        row['col'].append(@{ 'cnum': j@});
+
+    data['row'].append(row);
+
+#generate page
+print t.generatePage(templateFilename="palette.html", data=data,
+                     contentType="text/html",
+                     encoding="ISO-8859-2")['output']
+
+# delete teng engine
+del t
+
+@end example
+
+@noindent A different approach uses the Teng module API to build the
+data tree.
+
+@example
+
+#import Teng module
+import teng
+
+# initialize Teng engine with defaults
+t = teng.Teng();
+
+data = t.createDataRoot()
+
+for i in range(ord('A'), ord('C')):
+    # add nested row fragment
+    row = data.addFragment("row", @{ "rnum": chr(i) @})
+
+    for j in range(0, 2):
+        #add nested column fragment
+        row.addFragment("col", @{ "cnum": j @})
+
+
+#generate page
+print t.generatePage(templateFilename="palette.html", data=data,
+                     contentType="text/html",
+                     encoding="ISO-8859-2")['output']
+
+# delete data tree
+del data
+
+# delete teng engine
+del t
+
+@end example
