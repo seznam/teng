@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengdictionary.cc,v 1.2 2004-12-30 12:42:01 vasek Exp $
+ * $Id: tengdictionary.cc,v 1.3 2005-01-02 16:38:58 vasek Exp $
  *
  * DESCRIPTION
  * Teng dictionary -- implementation.
@@ -404,7 +404,6 @@ int Dictionary_t::processDirective(const string &directive,
                                    const string &param,
                                    Error_t::Position_t &pos)
 {
-    cerr << "*** directive: |" << directive << "|" << endl;
     if (directive == "include") {
         // include other source
         if (!level) {

@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengtemplate.cc,v 1.2 2004-12-30 12:42:02 vasek Exp $
+ * $Id: tengtemplate.cc,v 1.3 2005-01-02 16:38:58 vasek Exp $
  *
  * DESCRIPTION
  * Teng template and cache of templates -- implementation.
@@ -116,7 +116,6 @@ TemplateCache_t::createTemplate(const string &templateSource,
         
         // add program into cache
         cachedProgram = programCache->add(key, program, configSerial);
-        cerr << "Reloading program '" << templateSource << "'." << endl;
     }
     
     // create template with cached sources
@@ -145,7 +144,6 @@ TemplateCache_t::getConfigAndDict(const string &configFilename,
         if (!configFilename.empty()) config->parse(configFilename);
         // add configionary to cache and return it
         cachedConfig = configCache->add(key, config, 0, &configSerial);
-        cerr << "Reloading config '" << configFilename << "'." << endl;
     }
 
     // reuse key for dictionary
@@ -166,7 +164,6 @@ TemplateCache_t::getConfigAndDict(const string &configFilename,
         // add dictionary to cache and return it
         // (dict depends on config serial number)
         cachedDict = dictCache->add(key, dict, configSerial, &dictSerial);
-        cerr << "Reloading dict '" << dictFilename << "'." << endl;
     }
 
     // set config-dict serial number (it's dict's serial number)
