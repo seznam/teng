@@ -1,4 +1,4 @@
-@c $Id: template.texi,v 1.8 2004-10-19 09:26:22 franci_cz Exp $
+@c $Id: template.texi,v 1.9 2004-11-11 13:23:12 franci_cz Exp $
 @c Syntax index
 @defindex sy
 
@@ -104,8 +104,8 @@ Naming convetion
 <?teng expr @var{#item} ?>@*
 short: #@{item@}@*
 shorter: #item
-
-Include item from language dictionary into output.
+@*@*
+Include item from language dictionary into output. Item may be also result of expression.
 
 @section Expression
 @syindex expression

@@ -1,6 +1,6 @@
 \input texinfo
 @c -*-texinfo-*-
-@c $Id: manual.texi,v 1.6 2004-11-02 14:16:48 franci_cz Exp $
+@c $Id: manual.texi,v 1.7 2004-11-11 13:23:12 franci_cz Exp $
 @c %**start of header
 
 @c %**end of header
@@ -27,7 +27,8 @@ manual
 @section Description
 @acronym{Teng} (@strong{t}emplate @strong{eng}ine) is general purpose template tool. Primary C++ library but also available as Python module and PHP extension.
 It composes result (web page, mail message or any text file) by combining input template with data supplied by application and optional configuration and localization(language) dictionary.
-@image{teng1}
+@*@*
+@center @image{teng1}
 
 @section Characterictics
 @itemize @bullet
