@@ -22,7 +22,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengsyntax.yy,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengsyntax.yy,v 1.2 2004-12-20 11:25:08 solamyl Exp $
  *
  * DESCRIPTION
  * Teng syntax analyzer.
@@ -67,26 +67,26 @@ struct LeftValue_t {
 
     // element's left-value
     ParserValue_t val;
-    
+
     // define option list type
     typedef map<string, string> OptionList_t;
     // teng-directive options used for building code
     OptionList_t opt;
-    
+
     // define list of addresses info
     typedef vector<long> AddressList_t;
     // program address--tmp just for building code
     AddressList_t addr;
-    
+
     // define identifier type
     typedef vector<string> Identifier_t;
     // variable identifier
     Identifier_t id;
-    
+
     // position in input stream (just for lexical elements)
     // in other cases is pos-value irrelevant
     Error_t::Position_t pos;
-    
+
     // program size in the time when the element was read (and then shifted)
     // this value is used for discarding parts of program in case of error
     unsigned int prgsize;
@@ -143,12 +143,13 @@ string tengSyntax_lastErrorMessage;
 #define CONTEXT            (reinterpret_cast<ParserContext_t *> (context))
 
 // macro for appending error class in actual context
+// error levels are: DEBUG, WARNING, ERROR, FATAL
 #define ERR(level, pos, msg)    do { \
                         (reinterpret_cast<ParserContext_t *> \
                         (context))->program->getErrors().logError( \
                         (Error_t::LL_##level), (pos), (msg)); \
                         } while (0)
-                        
+
 // macros for byte-code generation
 #define CODE(code)        do { \
                         tengCode_generate( \
@@ -197,7 +198,7 @@ static inline void codeForVariable(void *context,
         if (result.id.back() == "_count") {
             // remove automatic variable name
             result.id.pop_back();
-            
+
             // rebuild identifier
             buildIdentifier(result);
 
@@ -264,7 +265,7 @@ static inline void codeForVariable(void *context,
                 // generate code for variable
                 result.val.integerValue = 1; //escape
                 CODE_VAL(VAR, result.val);
-                
+
                 // add identifier
                 CONTEXT->program->back().identifier = id;
             }
@@ -368,7 +369,7 @@ start:
         {
             CODE(HALT); //end of template
         }
-    
+
     // start error handling
     | error
         {
@@ -383,8 +384,8 @@ start:
             CODE(HALT); //end of program
         }
     ;
-    
-    
+
+
 template:
     LEX_TEXT
         {
@@ -395,8 +396,8 @@ template:
     | teng_directive template
     | //empty
     ;
-    
-    
+
+
 teng_directive:
     teng_unknown
     | teng_debug
@@ -408,7 +409,7 @@ teng_directive:
     | teng_expr
     | teng_dict
     ;
-    
+
 
 teng_unknown:
     LEX_TENG error LEX_END
@@ -417,16 +418,16 @@ teng_unknown:
                     + $1.val.stringValue + "?> directive");
         }
     ;
-    
-    
+
+
 teng_debug:
     LEX_DEBUG no_options_LEX_END
         {
             CODE(DEBUG); //print debug info
         }
     ;
-    
-    
+
+
 no_options_LEX_END:
     options LEX_END
         {
@@ -434,7 +435,7 @@ no_options_LEX_END:
                 ERR(ERROR, $1.pos, "Teng directive "
                         "does not accept any option(s)");
         }
-    
+
     // no_options_LEX_END error handling
     | error
         {
@@ -461,8 +462,8 @@ options:
             $$.opt.erase($$.opt.begin(), $$.opt.end()); //clear residuals
         }
     ;
-    
-    
+
+
 teng_include:
     LEX_INCLUDE options LEX_END
         {
@@ -493,7 +494,7 @@ teng_include:
                         CONTEXT->lex1.top()->getPosition()));
             }
         }
-    
+
     // teng_include error handling
     | LEX_INCLUDE error
         {
@@ -506,8 +507,8 @@ teng_include:
         }
     LEX_END
     ;
-    
-    
+
+
 teng_format:
     LEX_FORMAT options LEX_END
         {
@@ -547,10 +548,10 @@ teng_format:
             // if was not error no block start
             if ($4.val.integerValue >= 0)
                 CODE(ENDFORM); //generate code
-            // no print-values join below following address
+            // do not optimize (join) print-vals across current prog end-addr
             CONTEXT->lowestValPrintAddress = CONTEXT->program->size();
         }
-    
+
     // teng_format error handling
     | LEX_FORMAT error
         {
@@ -592,8 +593,8 @@ teng_format:
                     CONTEXT->program->end()); //discard program
         }
     ;
-    
-    
+
+
 teng_fragment:
     LEX_FRAGMENT variable_identifier LEX_END
         {
@@ -614,7 +615,7 @@ teng_fragment:
                             + $$.val.stringValue
                             + "' not defined in data definition");
                 }
-                
+
                 // add new context for variable list
                 CONTEXT->variableList.
                     push_back(ParserContext_t::VariableList_t());
@@ -638,7 +639,7 @@ teng_fragment:
                 CONTEXT->popFragment($4.prgsize);
             }
         }
-    
+
     // teng_fragment error handling
     | LEX_FRAGMENT error
         {
@@ -686,21 +687,22 @@ teng_fragment:
         }
     ;
 
-    
+
 teng_set:
-    LEX_SET variable_identifier LEX_ASSIGN expression LEX_END
+    LEX_SET voluntary_dollar_before_var variable_identifier
+    LEX_ASSIGN expression LEX_END
         {
             // clear val and copy variable identifier
             $$.val = ParserValue_t(); //clear
-            $$.id = $2.id;
-            $$.val.stringValue = $2.val.stringValue;
-            
+            $$.id = $3.id;
+            $$.val.stringValue = $3.val.stringValue;
+
             // error indicator
             bool found = false;
 
             if ($$.id.size() == 0) {
                 // bad variable identifier
-                ERR(ERROR, $2.pos, "Invalid variable identifier; "
+                ERR(ERROR, $3.pos, "Invalid variable identifier; "
                         "variable will not be set");
             } else {
                 Identifier_t id;
@@ -715,7 +717,7 @@ teng_set:
                     if (CONTEXT->dataDefinition
                         && CONTEXT->dataDefinition->
                         lookup($$.val.stringValue)) {
-                        ERR(WARNING, $2.pos, "Set variable '"
+                        ERR(WARNING, $3.pos, "Set variable '"
                             + $$.val.stringValue + "' directive for "
                             "variable already defined in data definition");
                     }
@@ -732,14 +734,15 @@ teng_set:
                                         CONTEXT->program->end());
             }
         }
-        
+
     // teng_set error handling
-    | LEX_SET variable_identifier LEX_ASSIGN error
+    | LEX_SET voluntary_dollar_before_var variable_identifier
+    LEX_ASSIGN error
         {
             if (tengSyntax_lastErrorMessage.length() > 0) {
                 printUnexpectedElement(CONTEXT, yychar, yylval);
                 ERR(ERROR, $1.pos, "Invalid expression in <?teng set ...?> "
-                        "directive; variable '" +$2.val.stringValue
+                        "directive; variable '" +$3.val.stringValue
                         + "' will not be set");
             }
             tengSyntax_lastErrorMessage.erase(); //clear error
@@ -753,9 +756,6 @@ teng_set:
         {
             if (tengSyntax_lastErrorMessage.length() > 0) {
                 printUnexpectedElement(CONTEXT, yychar, yylval);
-                if (yychar == LEX_VAR)
-                    ERR(ERROR, $1.pos, "Variable identifier must not "
-                            "start with '$' here");
                 ERR(ERROR, $1.pos, "Invalid variable identifier in "
                         "<?teng set ...?> directive");
             }
@@ -780,16 +780,18 @@ teng_set:
                     CONTEXT->program->end()); //discard program
         }
     ;
-    
-    
+
+
 teng_if:
     LEX_IF expression LEX_END
         {
+            // here is $4
             $$.prgsize = CONTEXT->program->size(); //save actual addr
             CODE(JMPIFNOT); //if not true, jump to next case
         }
     template
         {
+            // here is $6
             $$.prgsize = CONTEXT->program->size(); //save actual addr
         }
     teng_else LEX_ENDIF no_options_LEX_END
@@ -805,13 +807,14 @@ teng_if:
                 (*CONTEXT->program)[*i].value.integerValue =
                         CONTEXT->program->size() - *i - 1;
             }
-            // no print-values join below following address
+            // do not optimize (join) print-vals across current prog end-addr
             CONTEXT->lowestValPrintAddress = CONTEXT->program->size();
         }
-    
+
     // teng_if error handling
     | LEX_IF error
         {
+            // if expression error, behave like the expression is true
             if (tengSyntax_lastErrorMessage.length() > 0) {
                 printUnexpectedElement(CONTEXT, yychar, yylval);
                 ERR(ERROR, $1.pos, "Error in condition expression "
@@ -830,6 +833,7 @@ teng_if:
         }
     teng_else LEX_ENDIF no_options_LEX_END
         {
+        	// delete all else(if) code for the faily if expression
             CONTEXT->program->erase(CONTEXT->program->begin() + $7.prgsize,
                     CONTEXT->program->end()); //discard further else-parts
         }
@@ -844,6 +848,7 @@ teng_if:
         }
     LEX_ENDIF no_options_LEX_END
         {
+        	// drop whole if section code
             CONTEXT->program->erase(CONTEXT->program->begin() + $1.prgsize,
                     CONTEXT->program->end()); //discard else-parts of program
         }
@@ -897,11 +902,11 @@ teng_if:
         }
     ;
 
-    
+
 teng_else:
     LEX_ELSE no_options_LEX_END
         {
-            // insert end-jump
+            // insert previous program block end-jump
             $$.addr.erase($$.addr.begin(), $$.addr.end()); //clear
             $$.addr.push_back(CONTEXT->program->size()); //save end-jump addr
             CODE(JMP); //previous was true, skip else section
@@ -940,7 +945,7 @@ teng_else:
         {
             $$.addr.erase($$.addr.begin(), $$.addr.end()); //clear residuals
         }
-            
+
     // teng_if error handling
     | LEX_ELSEIF error
         {
@@ -966,8 +971,8 @@ teng_else:
                     CONTEXT->program->end()); //discard further else-parts
         }
     ;
-    
-    
+
+
 teng_expr:
     LEX_EXPR expression LEX_END
         {
@@ -984,7 +989,7 @@ teng_expr:
             // print value
             tengCode_generatePrint(CONTEXT);
         }
-        
+
     // teng_expr error handling
     | LEX_EXPR error
         {
@@ -1020,14 +1025,14 @@ teng_expr:
             tengCode_generatePrint(CONTEXT); //print expression 'undef' value
         }
     ;
-    
-    
+
+
 teng_dict:
     LEX_SHORT_DICT dictionary_item LEX_SHORT_END
         {
             tengCode_generatePrint(CONTEXT); //print dictionary item's value
         }
-        
+
     // teng_dict error handling
     | LEX_SHORT_DICT error
         {
@@ -1047,8 +1052,8 @@ teng_dict:
             tengCode_generatePrint(CONTEXT); //print 'undef' value
         }
     ;
-    
-    
+
+
 expression:
     LEX_L_PAREN expression LEX_R_PAREN
         {
@@ -1119,7 +1124,7 @@ expression:
             // try to optimalize
             $$.prgsize = $1.prgsize; //start of expr prog
             tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-            // no print-values join below following address
+            // do not optimize (join) print-vals across current prog end-addr
             CONTEXT->lowestValPrintAddress = CONTEXT->program->size();
         }
     | expression LEX_AND
@@ -1135,7 +1140,7 @@ expression:
             // try to optimalize
             $$.prgsize = $1.prgsize; //start of expr prog
             tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-            // no print-values join below following address
+            // do not optimize (join) print-vals across current prog end-addr
             CONTEXT->lowestValPrintAddress = CONTEXT->program->size();
         }
     | expression LEX_BITOR expression
@@ -1219,7 +1224,7 @@ expression:
             // try to optimalize
             $$.prgsize = $1.prgsize; //start of expr prog
             tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-            // no print-values join below following address
+            // do not optimize (join) print-vals across current prog end-addr
             CONTEXT->lowestValPrintAddress = CONTEXT->program->size();
         }
     | LEX_NOT expression
@@ -1294,7 +1299,7 @@ expression:
         {
             $$.prgsize = $1.prgsize; //start of expr prog
         }
-        
+
     // expression error handling
     | LEX_L_PAREN error
         {
@@ -1314,7 +1319,7 @@ expression:
             CODE_VAL(VAL, $$.val); //fake value
         }
     ;
-    
+
 
 dictionary_item:
     LEX_IDENT
@@ -1336,8 +1341,8 @@ dictionary_item:
             CODE_VAL(VAL, $$.val);
         }
     ;
-    
-    
+
+
 value_literal:
     string_literal
         {
@@ -1365,8 +1370,18 @@ string_literal:
             $$.val.stringValue += $2.val.stringValue;
         }
     ;
-    
-            
+
+
+voluntary_dollar_before_var:
+    LEX_VAR
+    | //empty
+        {
+            ERR(DEBUG, CONTEXT->position, "Variable identifier should "
+                    "start with '$'. Leaving it out is obsolete syntax.");
+		}
+	;
+
+
 variable_identifier:
     LEX_IDENT
         {
@@ -1374,7 +1389,7 @@ variable_identifier:
             $$.id = CONTEXT->fragContext.back(); //frag context
             $$.id.push_back($1.val.stringValue); //name
             $$.pos = $1.pos; //var position
-            
+
             // rebuild identifier
             buildIdentifier($$);
         }
@@ -1405,7 +1420,7 @@ variable_identifier:
                 } else {
                     // check all consequenting parts of the identifier
                     // beware! method forward iterator created using base()
-                    // from reverse iterator does not refer to the same 
+                    // from reverse iterator does not refer to the same
                     // element, but to the next element in forward order.
                     ParserContext_t::FragmentContext_t::const_iterator
                             i = ri.base() - 1;
@@ -1441,7 +1456,7 @@ variable_identifier:
             }
             // var position
             $$.pos = $1.pos;
-            
+
             // create fully-qualified identifier string
             // rebuild identifier
             buildIdentifier($$);
@@ -1451,13 +1466,13 @@ variable_identifier:
             // fully qualified variable name
             $$.id = $1.id;
             $$.pos = $1.pos; //variable position
-            
+
             // create fully-qualified identifier string
             // rebuild identifier
             buildIdentifier($$);
         }
     ;
-    
+
 
 dot_variable:
     LEX_SELECTOR LEX_IDENT
@@ -1479,8 +1494,8 @@ dot_variable:
             $$.pos = $1.pos;
         }
     ;
-    
-    
+
+
 case:
     LEX_CASE LEX_L_PAREN expression LEX_COMMA
         {
@@ -1499,10 +1514,10 @@ case:
             // try to optimize
             $$.prgsize = $1.prgsize; //start of expr prog
             tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-            // no print-values join below following address
+            // do not optimize (join) print-vals across current prog end-addr
             CONTEXT->lowestValPrintAddress = CONTEXT->program->size();
         }
-        
+
     // case-operator error handling
     | LEX_CASE LEX_L_PAREN error
         {
@@ -1538,8 +1553,8 @@ case:
             CODE_VAL(VAL, $$.val); //fake value
         }
     ;
-    
-    
+
+
 case_options:
     case_values LEX_COLON
         {
@@ -1640,7 +1655,7 @@ case_values:
         {
             // join two case values with OR
             $$.prgsize = CONTEXT->program->size(); //save actual prog size
-            CODE(OR); //generate infix code 
+            CODE(OR); //generate infix code
             // generate code
             $$.val = ParserValue_t();
             $$.val.integerValue = 0;
@@ -1706,7 +1721,7 @@ exist:
                 case ParserContext_t::ER_RUNTIME:
                     // object may be present in data => resolution postponed
                     // to runtime
-                    CODE_VAL(EXIST, $$.val);    
+                    CODE_VAL(EXIST, $$.val);
                     CONTEXT->program->back().identifier = id;
                     break;
                 case ParserContext_t::ER_NOT_FOUND:
@@ -1717,7 +1732,7 @@ exist:
                 }
             }
         }
-        
+
     // exist-operator error handling
     | LEX_EXIST LEX_L_PAREN error
         {
@@ -1742,13 +1757,13 @@ function:
     LEX_IDENT LEX_L_PAREN function_arguments LEX_R_PAREN
         {
             // call special code generation for functions
-            tengCode_generateFunctionCall(CONTEXT, 
+            tengCode_generateFunctionCall(CONTEXT,
                     $1.val.stringValue, //function name
                     $3.val.integerValue); //number of args
             $$.prgsize = $1.prgsize; //start of expr prog
             tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
         }
-    
+
     // function error handling
     | LEX_IDENT LEX_L_PAREN error
         {
@@ -1775,7 +1790,7 @@ function_arguments:
         {
             $$.val.integerValue = $3.val.integerValue + 1; //more than 1 args
         }
-    | expression 
+    | expression
         {
             $$.val.integerValue = 1; //single argument
         }
@@ -1802,19 +1817,19 @@ static int yylex(YYSTYPE *leftValue, void *context)
     // positions
     static Error_t::Position_t lex1Pos; //start pos of current lex1 element
     static Error_t::Position_t lex2Pos; //actual position in lex2 stream
-    
+
     // forever loop
     for ( ; ; ) {
-        
+
         // if lex2 is currently in use
         if (CONTEXT->lex2) {
-        
+
             // get next L2 token (>0=tok, 0=eof, -1=err)
             ParserValue_t val;
             Error_t::Position_t pos = lex2Pos;
             int tok = tengLex2_getElement(val, lex2Pos,
                     CONTEXT->program->getErrors());
-            
+
             if (tok > 0) {
                 leftValue->val = val;
                 leftValue->pos = pos; //elements position
@@ -1829,7 +1844,7 @@ static int yylex(YYSTYPE *leftValue, void *context)
             tengLex2_finish();
             CONTEXT->lex2 = 0;
         }
-    
+
         // test if lex1 stack is empty
         if (CONTEXT->lex1.empty()) {
             leftValue->pos = lex1Pos; //last known position
@@ -1844,34 +1859,34 @@ static int yylex(YYSTYPE *leftValue, void *context)
         if (tok.type == Lex1_t::TYPE_TENG
                 || tok.type == Lex1_t::TYPE_EXPR
                 || tok.type == Lex1_t::TYPE_DICT) {
-                
+
             // use lex2
             tengLex2_init(tok.value);
             lex2Pos = lex1Pos; //set starting lex2 pos
             CONTEXT->lex2 = 1;
             continue; //read first lex2-element
-            
+
         } else if (tok.type == Lex1_t::TYPE_TEXT) {
-        
+
             // plain text
             leftValue->val.setString(tok.value);
             leftValue->pos = lex1Pos; //element's position
             CONTEXT->position = lex1Pos; //actual position in input stream
             leftValue->prgsize = CONTEXT->program->size();
             return LEX_TEXT;
-            
+
         } else if (tok.type == Lex1_t::TYPE_ERROR) {
-        
+
             // error
             ERR(ERROR, lex1Pos, tok.value.c_str());
             continue; //ignore bad element
         }
-        
+
         // EOF from current lex, remove it from stack and try again
         delete CONTEXT->lex1.top();
         CONTEXT->lex1.pop();
         CONTEXT->sourceIndex.pop();
-        
+
     } //foreverloop
 }
 
@@ -1921,11 +1936,11 @@ static void printUnexpectedElement(ParserContext_t *context,
 {
     string msg;
     switch (element) {
-        
+
         // plain text
         case LEX_TEXT:
             msg = "template's plain text"; break;
-        
+
         // teng directives
         case LEX_DEBUG:
             msg = "directive '<?teng debug'"; break;
@@ -1991,13 +2006,13 @@ static void printUnexpectedElement(ParserContext_t *context,
             msg = "operator '>'"; break;
         case LEX_LT:
             msg = "operator '<'"; break;
-    
+
         // logic operators
         case LEX_OR:
             msg = "operator '||'"; break;
         case LEX_AND:
             msg = "operator '&&'"; break;
-        
+
         // bitwise operators
         case LEX_BITOR:
             msg = "operator '|'"; break;
@@ -2005,7 +2020,7 @@ static void printUnexpectedElement(ParserContext_t *context,
             msg = "operator '^'"; break;
         case LEX_BITAND:
             msg = "operator '&'"; break;
-        
+
         // expressions
         case LEX_ADD:
             msg = "operator '+'"; break;
@@ -2048,7 +2063,7 @@ static void printUnexpectedElement(ParserContext_t *context,
             msg = "character '#'"; break;
         case LEX_DICT_INDIRECT:
             msg = "character '@'"; break;
-            
+
         case LEX_SELECTOR:
             msg = "character '.'"; break;
         case LEX_IDENT:
@@ -2060,7 +2075,7 @@ static void printUnexpectedElement(ParserContext_t *context,
         case LEX_REAL:
             msg = "real number literal '"
                     + leftValue.val.stringValue + "'"; break;
-            
+
         // end of file
         case 0:
             msg = "end of input file"; break;
