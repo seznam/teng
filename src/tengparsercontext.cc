@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengparsercontext.cc,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengparsercontext.cc,v 1.2 2004-09-06 12:42:27 vasek Exp $
  *
  * DESCRIPTION
  * Teng parser context -- implementation.
@@ -355,7 +355,7 @@ ParserContext_t::FragmentResolution_t
 ParserContext_t::findFragment(const Error_t::Position_t *pos,
                               const IdentifierName_t &name,
                               const string &fullName,
-                              Identifier_t &id, bool parentIsOK = false)
+                              Identifier_t &id, bool parentIsOK)
     const
 {
     // handle root fragment
