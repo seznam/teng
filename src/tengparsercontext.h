@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengparsercontext.h,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengparsercontext.h,v 1.2 2004-12-30 12:42:02 vasek Exp $
  *
  * DESCRIPTION
  * Teng parser context.
@@ -34,14 +34,15 @@
  *             Created.
  */
 
-#ifndef _TENGPARSERCONTEXT_H
-#define _TENGPARSERCONTEXT_H
+#ifndef TENGPARSERCONTEXT_H
+#define TENGPARSERCONTEXT_H
 
 #include <string>
 #include <vector>
 #include <stack>
 
 #include "tengdictionary.h"
+#include "tengconfiguration.h"
 #include "tenglex1.h"
 #include "tengprogram.h"
 #include "tengprocessor.h"
@@ -65,11 +66,9 @@ struct ParserContext_t {
     /** Initialize.
      * @param langDictionary Language-dependent dictionary.
      * @param paramDictionary Language-independent dictionary (param.conf).
-     * @param dataDefinition Data definition..
      * @param root Application's root path for teng files. */
     ParserContext_t(const Dictionary_t *langDictionary,
-                    const Dictionary_t *paramDictionary,
-                    const Dictionary_t *dataDefinition,
+                    const Configuration_t *paramDictionary,
                     const string &root);
 
     /** Delete lexical analyzer objects left on the stack. */
@@ -126,14 +125,11 @@ struct ParserContext_t {
                              const string &fullName, Identifier_t &id,
                              bool mustBeOpen = false) const;
     
-    /** Data definition dictionary. */
-    const Dictionary_t *dataDefinition;
-    
     /** Language dictionary. */
     const Dictionary_t *langDictionary;
     
     /** Language-independent dictionary (param.conf). */
-    const Dictionary_t *paramDictionary;
+    const Configuration_t *paramDictionary;
     
     /** Application root path (templates and dictionaries) */
     string root;
@@ -171,4 +167,4 @@ struct ParserContext_t {
 
 } // namespace Teng
 
-#endif // _TENGPARSERCONTEXT_H
+#endif // TENGPARSERCONTEXT_H

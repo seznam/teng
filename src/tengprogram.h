@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengprogram.h,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengprogram.h,v 1.2 2004-12-30 12:42:02 vasek Exp $
  *
  * DESCRIPTION
  * Teng program. Program is sequence of instructions.
@@ -34,8 +34,8 @@
  *             Created.
  */
 
-#ifndef _TENGPROGRAM_H
-#define _TENGPROGRAM_H
+#ifndef TENGPROGRAM_H
+#define TENGPROGRAM_H
 
 #include <stdio.h>
 #include <vector>
@@ -65,7 +65,7 @@ public:
     /** @short Check source files for change.
       * @return 0=OK !0=changed. */
     inline int check() const {
-        return sources.check();
+        return sources.isChanged();
     }
 
     /** @short Return error log.
@@ -117,6 +117,8 @@ public:
 
     using vector<Instruction_t>::pop_back;
 
+    using vector<Instruction_t>::const_iterator;
+
 private:
     
     /** @short All source files for this program. */
@@ -128,4 +130,4 @@ private:
 
 } // namespace Teng
 
-#endif // _TENGPROGRAM_H
+#endif // TENGPROGRAM_H

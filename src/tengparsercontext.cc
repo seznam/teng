@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengparsercontext.cc,v 1.2 2004-09-06 12:42:27 vasek Exp $
+ * $Id: tengparsercontext.cc,v 1.3 2004-12-30 12:42:02 vasek Exp $
  *
  * DESCRIPTION
  * Teng parser context -- implementation.
@@ -53,11 +53,10 @@ namespace Teng {
 /** Initialize.
   * Also creates some dynamic objects (fragment stack and error-log). */
 ParserContext_t::ParserContext_t(const Dictionary_t *langDictionary,
-                                 const Dictionary_t *paramDictionary,
-                                 const Dictionary_t *dataDefinition,
+                                 const Configuration_t *paramDictionary,
                                  const string &root)
-    : dataDefinition(dataDefinition), langDictionary(langDictionary),
-      paramDictionary(paramDictionary), root(root), lex2(0),
+    : langDictionary(langDictionary), paramDictionary(paramDictionary),
+      root(root), lex2(0),
       variableList(1), // 1 because of root fragment (without <?teng frag ...)
       program(0),
       lowestValPrintAddress(0), evalProcessor(0)
@@ -111,15 +110,15 @@ Program_t* ParserContext_t::createProgramFromFile(
     }
     
     // create (empty) program
-    program = new Program_t;
+    program = new Program_t();
     
     // create old eval processor
     delete evalProcessor;
     // create new eval processor
-    evalProcessor = new Processor_t(program,
-            langDictionary, paramDictionary,
+    evalProcessor = new Processor_t(*program,
+            *langDictionary, *paramDictionary,
             "", //encoding (program is invariant to it)
-            *ContentType_t::findContentType("")); //content-type (invariant)
+            ContentType_t::getDefault()->contentType); //content-type (invariant)
     
     // prepend root if filename not absolute path
     string path;
@@ -185,10 +184,10 @@ Program_t* ParserContext_t::createProgramFromString(const string &str)
     // delete old eval processor
     delete evalProcessor;
     // create new eval processor
-    evalProcessor = new Processor_t(program,
-            langDictionary, paramDictionary,
+    evalProcessor = new Processor_t(*program,
+            *langDictionary, *paramDictionary,
             "", //encoding (program is invariant to it)
-            *ContentType_t::findContentType("")); //content-type (invariant)
+            ContentType_t::getDefault()->contentType); //content-type (invariant)
     
     // create first level-1 lexical analyzer (from file)
     sourceIndex.push(-1);

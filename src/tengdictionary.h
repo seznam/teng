@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengdictionary.h,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengdictionary.h,v 1.2 2004-12-30 12:42:01 vasek Exp $
  *
  * DESCRIPTION
  * Teng dictionary.
@@ -35,8 +35,8 @@
  */
 
 
-#ifndef _TENGDICTIONARY_H
-#define _TENGDICTIONARY_H
+#ifndef TENGDICTIONARY_H
+#define TENGDICTIONARY_H
 
 #include <string>
 #include <vector>
@@ -62,7 +62,7 @@ public:
      *
      * @param root path of root for locating files
      */
-    Dictionary_t(const string &root = string())
+    Dictionary_t(const string &root)
         : root(root), level(0), sources(), err()
     {}
 
@@ -103,7 +103,7 @@ public:
      * @return 0 OK !0 changed
      */
     inline int check() const {
-        return sources.check();
+        return sources.isChanged();
     }
 
     /**
@@ -140,7 +140,7 @@ protected:
      * @param pos position in current file
      * @return 0 OK !0 error
      */
-    virtual int _parseString(const string &data, Error_t::Position_t &pos);
+    virtual int parseString(const string &data, Error_t::Position_t &pos);
 
     /**
      * @short Parses value line.
@@ -151,7 +151,7 @@ protected:
      * @return 0 OK !0 error
      */
     int parseValueLine(const string &line, string &value,
-                          Error_t::Position_t &pos);
+                       Error_t::Position_t &pos);
     
     /**
      * @short Parses line beginning with identifier.
@@ -163,8 +163,20 @@ protected:
      * @return 0 OK !0 error
      */
     virtual int parseIdentLine(const string &line, string &name, string &value,
-                          Error_t::Position_t &pos);
+                               Error_t::Position_t &pos);
     
+    /**
+     * @short Parses and processes processing directive.
+     *
+     * @param directive whole directive string
+     * @param param parameter to directive
+     * @param pos position in current file
+     * @return 0 OK !0 error
+     */
+    virtual int processDirective(const string &directive,
+                                 const string &param,
+                                 Error_t::Position_t &pos);
+
     /**
      * @short Parses dicionary from given file. Worker function.
      *
@@ -172,21 +184,8 @@ protected:
      * @param pos position in current file
      * @return 0 OK !0 error
      */
-    int _parse(const string &filename, Error_t::Position_t &pos);
+    int parse(const string &filename, Error_t::Position_t &pos);
 
-    /**
-     * @short Extracts line from string.
-     *
-     * Removes terminating <LF> and (optional) preceding <CR>.
-     *
-     * @param str input string
-     * @param line found line
-     * @param begin start of line
-     * @return position of terminating <LF> in input string
-     */
-    static string::size_type getLine(const string &str, string &line,
-                                     string::size_type begin);
-    
     /**
      * @short Maximal number of dictionary file inclusion.
      */
@@ -232,17 +231,7 @@ private:
      * @param pos position in current file
      * @return 0 OK !0 error
      */
-    int _parse(FILE *file, Error_t::Position_t &pos);
-
-    /**
-     * @short Parses and processes processing directive.
-     *
-     * @param directive whole directive string
-     * @param pos position in current file
-     * @return 0 OK !0 error
-     */
-    int processDirective(const string &directive,
-                         Error_t::Position_t &pos);
+    int parse(FILE *file, Error_t::Position_t &pos);
 
     /**
      * @short The dictionary itself.
@@ -252,4 +241,4 @@ private:
 
 } // namespace Teng
 
-#endif // _TENGDICTIONARY_H
+#endif // TENGDICTIONARY_H

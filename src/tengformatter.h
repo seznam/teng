@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengformatter.h,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengformatter.h,v 1.2 2004-12-30 12:42:01 vasek Exp $
  *
  * DESCRIPTION
  * Teng formater (a writer adapter).
@@ -35,8 +35,8 @@
  */
 
 
-#ifndef _TENGFORMATTER_H
-#define _TENGFORMATTER_H
+#ifndef TENGFORMATTER_H
+#define TENGFORMATTER_H
 
 #include <string>
 #include <stack>
@@ -140,4 +140,4 @@ private:
 
 } // namespace Teng
 
-#endif // _TENGFORMATTER_H
+#endif // TENGFORMATTER_H

@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengcache.h,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengcache.h,v 1.2 2004-12-30 12:42:01 vasek Exp $
  *
  * DESCRIPTION
  * Teng cache of files.
@@ -35,8 +35,8 @@
  */
 
 
-#ifndef _TENGCACHE_H
-#define _TENGCACHE_H
+#ifndef TENGCACHE_H
+#define TENGCACHE_H
 
 #include <string>
 #include <map>
@@ -77,7 +77,8 @@ int tengCreateStringKey(const string &data, vector<string> &key);
 /**
  * @short Maps key from source list to cached value.
  */
-template <class DataType_t> class Cache_t {
+template <typename DataType_t>
+class Cache_t {
 public:
     /**
      * @short Entry in the cache.
@@ -89,10 +90,14 @@ public:
          * Pointer is stolen!
          * @param key key of this entry
          * @param data associated value with its key
+         * @param serial serial number of data
+         * @param dependSerial serial number of data this entry depends on.
          */
-        Entry_t(const Key_t &key, DataType_t *data)
-            : data(data), refCount(1), valid(true),
-              key(key)
+        Entry_t(const Key_t &key, DataType_t *data,
+                unsigned long int serial,
+                unsigned long int dependSerial)
+            : data(data), refCount(1), serial(serial), dependSerial(dependSerial),
+              valid(true), key(key)
         {}
         
         /**
@@ -110,6 +115,14 @@ public:
         /** @short Number of referrers owning reference to this entry.
          */
         int refCount;
+
+        /** @short Serial number of data.
+         */
+        unsigned long int serial;
+
+        /** @short Serial number of data this entry depends on.
+         */
+        unsigned long int dependSerial;
 
         /** @short Indicates data validity.
          *  Invalidated on insertion of other data under same key
@@ -177,18 +190,25 @@ public:
      * @short Finds entry in the cache.
      *
      * @param key searched key
-     * @param data found data (result)
-     * @return 0 OK !0 error
+     * @param dependSerial serial number of data this data depends on (output)
+     * @param serial serial number of cached data (output)
+     * @return found data or 0 when not found
      */
-    int find(const Key_t &key, const DataType_t *&data) const {
+    const DataType_t* find(const Key_t &key, unsigned long int &dependSerial,
+                           unsigned long int *serial = 0)
+        const
+    {
         // search for entry
         typename EntryCache_t::const_iterator fcache = cache.find(key);
         // if not found, report it
         if (fcache == cache.end())
-            return -1;
+            return 0;
 
         // assign result
-        data = fcache->second->data;
+        const DataType_t *data = fcache->second->data;
+        dependSerial = fcache->second->dependSerial;
+        if (serial) *serial = fcache->second->serial;
+
         // increment reference count to this data
         ++fcache->second->refCount;
 
@@ -214,7 +234,7 @@ public:
         }
 
         // OK
-        return 0;
+        return data;
     }
 
     /**
@@ -231,14 +251,18 @@ public:
      *
      * @param key key of data
      * @param data pointer to data
+     * @param dependSerial serial number of data this data depends on
+     * @param serial serial number of this data (output)
      * @return 0 OK !0 error
      */
-    const DataType_t* add(const Key_t &key, DataType_t *data)  {
+    const DataType_t* add(const Key_t &key, DataType_t *data,
+                          unsigned long int dependSerial = 0,
+                          unsigned long int *serial = 0)
+    {
         // NULL pointer is not allowed
         if (!data) return 0;
         // try to find data in cache
-        typename EntryBackCache_t::iterator fbackcache =
-            backcache.find(data);
+        typename EntryBackCache_t::iterator fbackcache = backcache.find(data);
         if (fbackcache != backcache.end()) {
             // data already present
             if (fbackcache->second->key != key) {
@@ -247,6 +271,9 @@ public:
             }
         }
 
+        // first serial number
+        int newSerial = 0;
+
         // search for entry
         typename EntryCache_t::iterator fcache = cache.find(key);
         if (fcache != cache.end()) {
@@ -254,12 +281,18 @@ public:
                 // attempt to insert same data
                 // increment reference
                 ++fcache->second->refCount;
+
+                // set serial if asked
+                if (serial) *serial = fcache->second->serial;
                 // return data
                 return data;
             }
             // invalidate entry
             fcache->second->valid = false;
             remove(fcache->second);
+
+            // increase serial number
+            newSerial = fcache->second->serial + 1;
         }
 
         // if size is greater than limit kill some entry
@@ -274,9 +307,12 @@ public:
                 }
             }
         }
-
+        
         // create new entry (defaults to have one reference)
-        Entry_t *entry = new Entry_t(key, data);
+        Entry_t *entry = new Entry_t(key, data, newSerial, dependSerial);
+
+        // set serial if asked
+        if (serial) *serial = newSerial;
 
         // insert new entry into the cache
         cache.insert(typename EntryCache_t::value_type(key, entry));
@@ -300,8 +336,7 @@ public:
      */
     int release(const DataType_t *data) {
         // try to find data in back mapping cache
-        typename EntryBackCache_t::iterator fbackcache =
-            backcache.find(data);
+        typename EntryBackCache_t::iterator fbackcache = backcache.find(data);
         if (fbackcache == backcache.end()) {
             // not found
             return -1;
@@ -396,4 +431,4 @@ private:
 
 } // namespace Teng
 
-#endif // _TENGCACHE_H
+#endif // TENGCACHE_H

@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengparservalue.h,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengparservalue.h,v 1.2 2004-12-30 12:42:02 vasek Exp $
  *
  * DESCRIPTION
  * Teng data types.
@@ -34,8 +34,8 @@
  *             Created.
  */
 
-#ifndef _TENGPARSERVALUE_H
-#define _TENGPARSERVALUE_H
+#ifndef TENGPARSERVALUE_H
+#define TENGPARSERVALUE_H
 
 #include <string>
 #include <iostream>
@@ -123,4 +123,4 @@ struct ParserValue_t {
 
 } // namespace Teng
 
-#endif // _TENGPARSERVALUE_H
+#endif // TENGPARSERVALUE_H

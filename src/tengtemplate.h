@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengtemplate.h,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengtemplate.h,v 1.2 2004-12-30 12:42:02 vasek Exp $
  *
  * DESCRIPTION
  * Teng template and cache of templates.
@@ -34,19 +34,27 @@
  *             Created.
  */
 
-#ifndef _TENGTEMPLATE_H_
-#define _TENGTEMPLATE_H_
+#ifndef TENGTEMPLATE_H
+#define TENGTEMPLATE_H
+
+#include <utility>
+#include <string>
 
 #include "tengcache.h"
 #include "tengdictionary.h"
 #include "tengprogram.h"
 #include "tengparsercontext.h"
+#include "tengconfiguration.h"
 
 namespace Teng {
 
 /** @short Cache of dictionaries.
  */
 typedef Cache_t<Dictionary_t> DictionaryCache_t;
+
+/** @short Cache of configurations.
+ */
+typedef Cache_t<Configuration_t> ConfigurationCache_t;
 
 /** @short Cache of dictionaries.
  */
@@ -66,17 +74,13 @@ public:
      *         dictionary
      *  @param paramDictionary cache entry pointing to config
      *         dictionary
-     *  @param dataDefinition cache entry pointing to data
-     *         definition
      *  @param owner owning cache
      */
     Template_t(const Program_t *program, const Dictionary_t *langDictionary,
-               const Dictionary_t *paramDictionary,
-               const Dictionary_t *dataDefinition,
+               const Configuration_t *paramDictionary,
                TemplateCache_t *owner)
         : program(program), langDictionary(langDictionary),
-          paramDictionary(paramDictionary),
-          dataDefinition(dataDefinition), owner(owner)
+          paramDictionary(paramDictionary), owner(owner)
     {}
     
     /** @short Destroy template.
@@ -93,11 +97,7 @@ public:
 
     /** @short Config.
      */
-    const Dictionary_t *paramDictionary;
-
-    /** @short Data definition.
-     */
-    const Dictionary_t *dataDefinition;
+    const Configuration_t *paramDictionary;
 
 private:
     Template_t(const Template_t&);
@@ -131,60 +131,49 @@ public:
      *  @param templateSource source of template
      *  @param langFilename file with language dictionary
      *  @param paramFilename file with config
-     *  @param dataDefFilename file with data definition
-     *  @param validate validate template if set
      *  @param sourceType type of template source
      *  @return created template (borrowed pointer!!!)
      */
     Template_t* createTemplate(const string &templateSource,
                                const string &langFilename,
                                const string &paramFilename,
-                               const string &dataDefFilename,
-                               bool validate,
                                SourceType_t sourceType);
     
-    /** @short Crate dictionary from given file.
-     *  DictionaryType_t is type of dictionary.
-     *  @param filename file with dictionary
-     *  @param reloaded will be set to true on reload if non zero
+    /** @short Create dictionary from given files.
+     *
+     *  @param configFilename file with configuration
+     *  @param dictFilename file with dictionary
      *  @return created dictionary (borrowed pointer!!!)
      */
-    template <class DictionaryType_t>
-    const Dictionary_t* dictFromFile(const string &filename,
-                                     bool *reloaded = 0)
+    inline const Dictionary_t* createDictionary(const string &configFilename,
+                                                const string &dictFilename)
     {
-        // create key
-        vector<string> key;
-        tengCreateKey(root, filename, key);
-        
-        // look for dictionary
-        const Dictionary_t *cachedDict = 0;
-        dictCache->find(key, cachedDict);
-        if (!cachedDict || cachedDict->check()) {
-            // not found or changed -> create new dictionary
-            Dictionary_t *dict = new DictionaryType_t(root);
-            // parse file
-            if (!filename.empty())
-                dict->parse(filename);
-            if (reloaded) *reloaded = true;
-            // add dictionary to cache and return it
-            return dictCache->add(key, dict);
-        }
-        // return cached dictionary
-        return cachedDict;
+        return getConfigAndDict(configFilename, dictFilename).second;
     }
-
+    
     /** @short Release program.
      *  @param program released program
      *  @return 0 OK, !0 error
      */
-    int release(const Program_t *program);
+    inline int release(const Program_t *program) {
+        return programCache->release(program);
+    }
 
     /** @short Release dictionary.
      *  @param dictionary released dictionary
      *  @return 0 OK, !0 error
      */
-    int release(const Dictionary_t *dictionary);
+    inline int release(const Dictionary_t *dictionary) {
+        return dictCache->release(dictionary);
+    }
+
+    /** @short Release configuration.
+     *  @param config released configuration
+     *  @return 0 OK, !0 error
+     */
+    inline int release(const Configuration_t *config) {
+        return configCache->release(config);
+    }
 
 private:
     /** @short Copy constructor intentionally private -- copying
@@ -197,6 +186,20 @@ private:
      */
     TemplateCache_t operator=(const TemplateCache_t&);
 
+    typedef pair<const Configuration_t*, const Dictionary_t*> ConfigAndDict_t;
+
+    /** @short Get configuration and dictionary from given files.
+     *
+     *  @param configFilename file with configuration
+     *  @param dictFilename file with dictionary
+     *  @param serial serial number of cached data (output)
+     *  @param dependSerial serial number of data this data depends on (output)
+     *  @return configuration and dictionary (borrowed pointers!!!)
+     */
+    ConfigAndDict_t getConfigAndDict(const string &configFilename,
+                                     const string &dictFilename,
+                                     unsigned long int *serial = 0);
+
     /** @short Root for relativa paths.
      */
     string root;
@@ -208,8 +211,12 @@ private:
     /** @short Cache of dictionaries.
      */
     DictionaryCache_t *dictCache;
+
+    /** @short Cache of dictionaries.
+     */
+    ConfigurationCache_t *configCache;
 };
 
 } // namespace Teng
 
-#endif // _TENGTEMPLATE_H_
+#endif // TENGTEMPLATE_H

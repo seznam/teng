@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tenginstruction.cc,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tenginstruction.cc,v 1.2 2004-12-30 12:42:02 vasek Exp $
  *
  * DESCRIPTION
  * Teng instruction and program types. Syntax analyzer
@@ -38,9 +38,12 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
+#include <iostream>
+#include <iomanip>
 
 #include "tenginstruction.h"
 #include "tengparservalue.h"
+#include "tengcontenttype.h"
 
 using namespace std;
 
@@ -229,5 +232,212 @@ void Instruction_t::dump(FILE *fp) const
             
         default:
             fprintf(fp, "??? (%d)\n", operation);
+    }
+}
+
+namespace {
+    class hexaddr {
+    public:
+        hexaddr(int addr, int ip)
+            : addr(addr), ip(ip)
+        {}
+
+        friend ostream& operator<<(ostream &os, const hexaddr &ha) {
+            os << std::dec << std::setiosflags(ios::showpos) << ha.addr;
+            if (ha.ip >= 0)
+                os << " [abs 0x" << std::hex << std::setw(8)
+                   << std::setfill('0') << (ha.addr + 1 + ha.ip) << ']';
+
+            return os;
+        }
+
+    private:
+        int addr;
+        int ip;
+    };
+}
+
+void Instruction_t::dump(ostream &os, int ip) const {
+    switch (operation) {
+    case VAL:
+        os << "VAL             '" << value.stringValue << '\'' << endl;
+        break;
+        
+    case VAR:
+        os << "VAR             <" << value.stringValue << ">";
+        if (value.integerValue) os << " [escaped]";
+        os << endl;
+        break;
+        
+    case DICT:
+        os << "DICT" << endl;
+        break;
+        
+    case PUSH:
+        os << "PUSH" << endl;
+        break;
+        
+    case POP:
+        os << "POP" << endl;
+        break;
+        
+    case STACK:
+        os << "STACK           " << value.integerValue << endl;
+        break;
+        
+    case ADD:
+        os << "ADD" << endl;
+        break;
+        
+    case SUB:
+        os << "SUB" << endl;
+        break;
+        
+    case MUL:
+        os << "MUL" << endl;
+        break;
+        
+    case DIV:
+        os << "DIV" << endl;
+        break;
+        
+    case MOD:
+        os << "MOD" << endl;
+        break;
+        
+    case CONCAT:
+        os << "CONCAT" << endl;
+        break;
+        
+    case REPEAT:
+        os << "REPEAT" << endl;
+        break;
+        
+    case AND:
+        os << "AND             " << hexaddr(value.integerValue, ip) << endl;
+        break;
+        
+    case OR:
+        os << "OR              " << hexaddr(value.integerValue, ip) << endl;
+        break;
+        
+    case BITAND:
+        os << "BITAND" << endl;
+        break;
+        
+    case BITXOR:
+        os << "BITXOR" << endl;
+        break;
+        
+    case BITOR:
+        os << "BITOR" << endl;
+        break;
+        
+    case BITNOT:
+        os << "BITNOT" << endl;
+        break;
+        
+    case NOT:
+        os << "NOT" << endl;
+        break;
+        
+    case NUMEQ:
+        os << "NUMEQ" << endl;
+        break;
+        
+    case NUMGE:
+        os << "NUMGE" << endl;
+        break;
+        
+    case NUMGT:
+        os << "NUMGT" << endl;
+        break;
+        
+    case STREQ:
+        os << "STREQ" << endl;
+        break;
+        
+    case FUNC:
+        os << "FUNC            " << value.stringValue << "() "
+           << value.integerValue << endl;
+        break;
+        
+    case JMPIFNOT:
+        os << "JMPIFNOT        '" << hexaddr(value.integerValue, ip) << endl;
+        break;
+        
+    case JMP:
+        os << "JMP             '" << hexaddr(value.integerValue, ip) << endl;
+        break;
+        
+    case FORM:
+        os << "FORM            '" << value.integerValue << endl;
+        break;
+        
+    case ENDFORM:
+        os << "ENDFORM" << endl;
+        break;
+        
+    case FRAG:
+        os << "FRAG            <" << value.stringValue << "> "
+           << hexaddr(value.integerValue, ip) << endl;
+        break;
+        
+    case ENDFRAG:
+        os << "ENDFRAG         " << hexaddr(value.integerValue, ip) << endl;
+        break;
+        
+    case FRAGCNT:
+        os << "FRAGCNT         <" << value.stringValue << '>' << endl;
+        break;
+        
+    case XFRAGCNT:
+        os << "XFRAGCNT        <" << value.stringValue << '>' << endl;
+        break;
+        
+    case FRAGITR:
+        os << "FRAGITR         <" << value.stringValue << '>' << endl;
+        break;
+        
+    case PRINT:
+        os << "PRINT" << endl;
+        break;
+        
+    case SET:
+        os << "SET             <" << value.stringValue << '>' << endl;
+        break;
+        
+    case HALT:
+        os << "HALT" << endl;
+        break;
+        
+    case DEBUG:
+        os << "DEBUG" << endl;
+        break;
+        
+    case BYTECODE:
+        os << "BYTECODE" << endl;
+        break;
+
+    case EXIST:
+        os << "EXIST           <" << value.stringValue << '>' << endl;
+        break;
+        
+    case CTYPE:
+        if (const ContentType_t::Descriptor_t *ct
+            = ContentType_t::getContentType(value.integerValue)) {
+            os << "CTYPE           <" << ct->name << '>' << endl;
+        } else {
+            os << "CTYPE           <unknown>" << endl;
+        }
+        break;
+
+    case ENDCTYPE:
+        os << "ENDCTYPE" << endl;
+        break;
+
+    default:
+        os << "<ILLEGAL>       opcode == " << operation << endl;
+        break;
     }
 }

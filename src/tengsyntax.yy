@@ -22,7 +22,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengsyntax.yy,v 1.2 2004-12-20 11:25:08 solamyl Exp $
+ * $Id: tengsyntax.yy,v 1.3 2004-12-30 12:42:02 vasek Exp $
  *
  * DESCRIPTION
  * Teng syntax analyzer.
@@ -245,17 +245,6 @@ static inline void codeForVariable(void *context,
                 CONTEXT->program->back().identifier = id;
             }
         } else {
-            if (CONTEXT->dataDefinition) {
-                // if variable not found in data definition dict
-                if (!CONTEXT->tmpVariableLookup(result.val.stringValue)
-                        && !CONTEXT->dataDefinition->lookup(
-                        result.val.stringValue)) {
-                    ERR(WARNING, val.pos, "Variable '"
-                        + result.val.stringValue
-                        + "' not defined in data definition");
-                }
-            }
-
             // find fragment for this variable
             if (CONTEXT->findFragmentForVariable(val.pos, result.id,
                     result.val.stringValue, id)) {
@@ -298,6 +287,7 @@ static inline void codeForVariable(void *context,
 
 // teng directives
 %token LEX_DEBUG
+%token LEX_BYTECODE
 %token LEX_INCLUDE
 %token LEX_FORMAT
 %token LEX_ENDFORMAT
@@ -314,6 +304,8 @@ static inline void codeForVariable(void *context,
 %token LEX_SHORT_EXPR
 %token LEX_SHORT_DICT
 %token LEX_SHORT_END
+%token LEX_CTYPE
+%token LEX_ENDCTYPE
 
 // assignment
 %token LEX_ASSIGN
@@ -401,6 +393,7 @@ template:
 teng_directive:
     teng_unknown
     | teng_debug
+    | teng_bytecode
     | teng_include
     | teng_format
     | teng_fragment
@@ -408,6 +401,7 @@ teng_directive:
     | teng_set
     | teng_expr
     | teng_dict
+    | teng_ctype
     ;
 
 
@@ -424,6 +418,14 @@ teng_debug:
     LEX_DEBUG no_options_LEX_END
         {
             CODE(DEBUG); //print debug info
+        }
+    ;
+
+    
+teng_bytecode:
+    LEX_BYTECODE no_options_LEX_END
+        {
+            CODE(BYTECODE); //print disassembled bytecode
         }
     ;
 
@@ -608,14 +610,6 @@ teng_fragment:
             Identifier_t id;
             if (CONTEXT->pushFragment($2.pos, $$.id, $$.val.stringValue,
                                       id)) {
-                if (CONTEXT->dataDefinition) {
-                    // if variable not found in data definition dict
-                    if (!CONTEXT->dataDefinition->lookup($$.val.stringValue))
-                        ERR(WARNING, $2.pos, "Fragment '"
-                            + $$.val.stringValue
-                            + "' not defined in data definition");
-                }
-
                 // add new context for variable list
                 CONTEXT->variableList.
                     push_back(ParserContext_t::VariableList_t());
@@ -714,13 +708,6 @@ teng_set:
                     // vars in this context
                     CONTEXT->variableList.back().push_back($$.val.stringValue);
                     // if variable not found in data definition dict
-                    if (CONTEXT->dataDefinition
-                        && CONTEXT->dataDefinition->
-                        lookup($$.val.stringValue)) {
-                        ERR(WARNING, $3.pos, "Set variable '"
-                            + $$.val.stringValue + "' directive for "
-                            "variable already defined in data definition");
-                    }
                     // generate code
                     CODE_VAL(SET, $$.val);
                     // set identifier
@@ -1050,6 +1037,77 @@ teng_dict:
             $$.val.setString("undefined");
             CODE_VAL(VAL, $$.val); //fake value
             tengCode_generatePrint(CONTEXT); //print 'undef' value
+        }
+    ;
+    
+    
+teng_ctype:
+    LEX_CTYPE LEX_STRING LEX_END
+        {
+            // reset val
+            $$.val = ParserValue_t();
+            $$.val.integerValue = -1;
+
+            // get content type descriptor for given type
+            const ContentType_t::Descriptor_t *ct
+                = ContentType_t::findContentType($2.val.stringValue,
+                                                 CONTEXT->program->getErrors(),
+                                                 $2.pos, true);
+
+            if (ct) {
+                $$.val.integerValue = ct->index;
+                CODE_VAL(CTYPE, $$.val);
+            }
+        }
+
+    template LEX_ENDCTYPE no_options_LEX_END
+        {
+            // if was not error no block start
+            if ($4.val.integerValue >= 0)
+                CODE(ENDCTYPE); //generate code
+            // no print-values join below following address
+            CONTEXT->lowestValPrintAddress = CONTEXT->program->size();
+        }
+    
+    // teng_ctype error handling
+    | LEX_CTYPE error
+        {
+            if (!tengSyntax_lastErrorMessage.empty()) {
+                printUnexpectedElement(CONTEXT, yychar, yylval);
+                ERR(ERROR, $1.pos, "Invalid <?teng ctype ...?> directive");
+            }
+            tengSyntax_lastErrorMessage.erase(); //clear error
+        }
+    LEX_END template LEX_ENDCTYPE no_options_LEX_END
+    | LEX_CTYPE error
+        {
+            if (!tengSyntax_lastErrorMessage.empty()) {
+                printUnexpectedElement(CONTEXT, yychar, yylval);
+                ERR(ERROR, $1.pos, "Syntax error in teng ctype block; "
+                        "discarding block content");
+            }
+            tengSyntax_lastErrorMessage.erase(); //clear error
+        }
+    LEX_ENDCTYPE no_options_LEX_END
+        {
+            CONTEXT->program->erase(CONTEXT->program->begin() + $1.prgsize,
+                    CONTEXT->program->end()); //discard program
+        }
+    | error
+        {
+            if (!tengSyntax_lastErrorMessage.empty()) {
+                printUnexpectedElement(CONTEXT, yychar, yylval);
+                ERR(ERROR, CONTEXT->position,
+                        "Misplaced <?teng endctyp?> directive");
+            }
+            tengSyntax_lastErrorMessage.erase(); //clear error
+        }
+    LEX_ENDCTYPE no_options_LEX_END
+        {
+            // discard program from point the LEX_ENDCTYP was read
+            // (destroy HALT instruction created by reduction start->template)
+            CONTEXT->program->erase(CONTEXT->program->begin() + $3.prgsize,
+                    CONTEXT->program->end()); //discard program
         }
     ;
 
@@ -1944,6 +2002,8 @@ static void printUnexpectedElement(ParserContext_t *context,
         // teng directives
         case LEX_DEBUG:
             msg = "directive '<?teng debug'"; break;
+        case LEX_BYTECODE:
+            msg = "directive '<?teng bytecode'"; break;
         case LEX_INCLUDE:
             msg = "directive '<?teng include'"; break;
         case LEX_FORMAT:
@@ -1976,6 +2036,8 @@ static void printUnexpectedElement(ParserContext_t *context,
             msg = "directive '#{'"; break;
         case LEX_SHORT_END:
             msg = "directive end '}'"; break;
+        case LEX_CTYPE:
+            msg = "directive '<?teng ctype'"; break;
 
         // assignment
         case LEX_ASSIGN:

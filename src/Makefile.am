@@ -21,7 +21,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: Makefile.am,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+# $Id: Makefile.am,v 1.2 2004-12-30 12:42:01 vasek Exp $
 #
 # DESCRIPTION
 # A makefile template for Teng.
@@ -44,12 +44,12 @@ AM_CPPFLAGS = -D_ISOC99_SOURCE
 # install these headers
 include_HEADERS = teng.h tengstructs.h tengwriter.h tengerror.h
 
-noinst_HEADERS = tengcache.h tengcode.h tengcontenttype.h tengdatadefinition.h \
+noinst_HEADERS = tengcache.h tengcode.h tengcontenttype.h \
                  tengdictionary.h tengformatter.h tengfragmentstack.h \
                  tengfunction.h tenginstruction.h tenglex1.h \
                  tengparsercontext.h tengparservalue.h tengprocessor.h \
                  tengprogram.h tengsourcelist.h tengtemplate.h \
-                 tengutil.h tengwriter.h tengsyntax.h
+                 tengutil.h tengwriter.h tengsyntax.h tengconfiguration.h
 
 # compile this library
 lib_LTLIBRARIES = libteng.la
@@ -62,7 +62,7 @@ libteng_la_SOURCES = teng.cc tengstructs.cc tengutil.cc tengcache.cc \
                      tengformatter.cc tengcontenttype.cc \
                      tengtemplate.cc tenglex1.cc tengsyntax.yy \
                      tenglex2.ll tengcode.cc tengdatadefinition.cc \
-                     tengmd5.cc
+                     tengmd5.cc tengconfiguration.cc
 
 # explicit rules for proper flex & bison sources compilation
 tenglex2.cc: tenglex2.ll tengsyntax.h tengsyntax.cc

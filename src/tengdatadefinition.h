@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengdatadefinition.h,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengdatadefinition.h,v 1.2 2004-12-30 12:42:01 vasek Exp $
  *
  * DESCRIPTION
  * Data definition dictionary.
@@ -34,8 +34,8 @@
  *             Created.
  */
 
-#ifndef _TENGDATADEFINITION_H
-#define _TENGDATADEFINITION_H
+#ifndef TENGDATADEFINITION_H
+#define TENGDATADEFINITION_H
 
 #include <string>
 #include <vector>
@@ -78,4 +78,4 @@ protected:
 
 } // namespace Teng
 
-#endif // _TENGDATADEFINITION_H
+#endif // TENGDATADEFINITION_H

@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengdictionary.cc,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengdictionary.cc,v 1.2 2004-12-30 12:42:01 vasek Exp $
  *
  * DESCRIPTION
  * Teng dictionary -- implementation.
@@ -51,35 +51,37 @@ using namespace Teng;
 int Dictionary_t::parse(const string &filename) {
     level = MAX_RECURSION_LEVEL;
     Error_t::Position_t pos(filename);
-    return _parse(filename, pos);
+    return parse(filename, pos);
 }
 
 Dictionary_t::~Dictionary_t() {
 }
 
-/**
- * @short Extracts line from string.
- *
- * Removes terminating <LF> and (optional) preceding <CR>.
- *
- * @param str input string
- * @param line found line
- * @param begin start of line
- * @param pos position in current file
- * @param err error logger
- * @return position of terminating <LF> in input string
- */
-string::size_type Dictionary_t::getLine(const string &str, string &line,
-                                        string::size_type begin)
-{
-    // find <LF>
-    string::size_type nl = str.find('\n', begin);
-    // remove (optional) preceding<CR>.
-    if ((nl > 0) && (nl != string::npos) && (str[nl - 1] == '\r'))
-        line = str.substr(begin, nl - begin - 1);
-    else line = str.substr(begin, nl - begin);
-    // return position of terminating <LF> in input string
-    return nl;
+namespace {
+    /**
+     * @short Extracts line from string.
+     *
+     * Removes terminating <LF> and (optional) preceding <CR>.
+     *
+     * @param str input string
+     * @param line found line
+     * @param begin start of line
+     * @param pos position in current file
+     * @param err error logger
+     * @return position of terminating <LF> in input string
+     */
+    string::size_type getLine(const string &str, string &line,
+                              string::size_type begin)
+    {
+        // find <LF>
+        string::size_type nl = str.find('\n', begin);
+        // remove (optional) preceding<CR>.
+        if ((nl > 0) && (nl != string::npos) && (str[nl - 1] == '\r'))
+            line = str.substr(begin, nl - begin - 1);
+        else line = str.substr(begin, nl - begin);
+        // return position of terminating <LF> in input string
+        return nl;
+    }
 }
 
 /**
@@ -250,8 +252,8 @@ const string* Dictionary_t::lookup(const string &key) const {
     return &f->second;
 }
 
-int Dictionary_t::_parseString(const string &data,
-                               Error_t::Position_t &pos)
+int Dictionary_t::parseString(const string &data,
+                              Error_t::Position_t &pos)
 {
     // position of newline
     string::size_type nl = 0;
@@ -277,12 +279,19 @@ int Dictionary_t::_parseString(const string &data,
             char first = line[0];
             if (first == '%') {
                 // process directive
-                // insert new identifier
                 if (currentValid) {
+                    // insert new identifier
                     add(currentName, currentValue);
                     currentValid = false;
                 }
-                processDirective(line, pos);
+                // split directive to name and value
+                string::size_type sep = line.find_first_of(" \t\v", 1);
+                if (processDirective(line.substr(1, ((sep == string::npos)
+                                                     ? sep : (sep - 1))),
+                                     ((sep == string::npos)
+                                      ? string()
+                                      : line.substr(sep + 1)), pos))
+                    ret = -1;
             } else if (isspace(first)) {
                 // append to previous line
                 if (currentValid) {
@@ -294,6 +303,7 @@ int Dictionary_t::_parseString(const string &data,
                     // no open line
                     err.logError(Error_t::LL_ERROR, pos,
                                  "No line to concatenate with");
+                    ret = -1;
                 }
             } else if (isalpha(first) || (first == '_')  || (first == '.')) {
                 // new identifier
@@ -339,11 +349,11 @@ int Dictionary_t::_parseString(const string &data,
     return ret;
 }
 
-int Dictionary_t::_parse(const string &_filename,
-                         Error_t::Position_t &pos)
+int Dictionary_t::parse(const string &infilename,
+                        Error_t::Position_t &pos)
 {
     // if relative path => prepend root
-    string filename = _filename;
+    string filename = infilename;
     if (!filename.empty() && (filename[0] != '/') && (!root.empty()))
         filename = root + '/' + filename;
 
@@ -360,16 +370,16 @@ int Dictionary_t::_parse(const string &_filename,
     }
 
     // create new positioner
-    Error_t::Position_t newPos(filename);
+    Error_t::Position_t newPos(filename, 1);
     // parse file
-    int status = _parse(file, newPos);
+    int status = parse(file, newPos);
     // close file
     fclose(file);
     // return status
     return status;
 }
 
-int Dictionary_t::_parse(FILE *file, Error_t::Position_t &pos) {
+int Dictionary_t::parse(FILE *file, Error_t::Position_t &pos) {
     // loaded string
     string str;
     // read whole file into memory
@@ -387,24 +397,25 @@ int Dictionary_t::_parse(FILE *file, Error_t::Position_t &pos) {
     }
 
     // parse loaded string
-    return _parseString(str, pos);
+    return parseString(str, pos);
 }
 
 int Dictionary_t::processDirective(const string &directive,
+                                   const string &param,
                                    Error_t::Position_t &pos)
 {
-    if (directive.find("%include") == 0) {
+    cerr << "*** directive: |" << directive << "|" << endl;
+    if (directive == "include") {
         // include other source
         if (!level) {
             err.logError(Error_t::LL_ERROR, pos, "Too many includes");
             return -1;
         }
         // cut filename
-        string filename = directive.substr(8);
+        string filename(param);
         pos.advanceColumn(8);
-        if (filename.empty() || !isspace(filename[0])) {
-            err.logError(Error_t::LL_ERROR, pos,
-                         "Invalid include directive");
+        if (filename.empty()) {
+            err.logError(Error_t::LL_ERROR, pos, "Missing file to include");
             return -1;
         }
         // strip filename
@@ -424,7 +435,7 @@ int Dictionary_t::processDirective(const string &directive,
         // decrement recursion level
         --level;
         // parse given file
-        int ret = _parse(filename, pos);
+        int ret = parse(filename, pos);
         // indecrement recursion level
         ++level;
         return ret;

@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengcode.h,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengcode.h,v 1.2 2004-12-30 12:42:01 vasek Exp $
  *
  * DESCRIPTION
  * Teng byte-code generation.
@@ -34,8 +34,8 @@
  *             Created.
  */
 
-#ifndef _TENGCODE_H
-#define _TENGCODE_H
+#ifndef TENGCODE_H
+#define TENGCODE_H
 
 #include "tengparsercontext.h"
 #include "tenginstruction.h"
@@ -74,4 +74,4 @@ void tengCode_optimizeExpression(ParserContext_t *context,
 
 } // namespace Teng
 
-#endif // _TENGCODE_H
+#endif // TENGCODE_H

@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfragmentstack.h,v 1.2 2004-08-25 16:43:36 vasek Exp $
+ * $Id: tengfragmentstack.h,v 1.3 2004-12-30 12:42:01 vasek Exp $
  *
  * DESCRIPTION
  * Teng stack fragment frame.
@@ -34,8 +34,8 @@
  *             Created.
  */
 
-#ifndef _TENGFRAGEMENTSTACK_H
-#define _TENGFRAGEMENTSTACK_H
+#ifndef TENGFRAGEMENTSTACK_H
+#define TENGFRAGEMENTSTACK_H
 
 #include <string>
 #include <vector>
@@ -651,4 +651,4 @@ private:
 
 } // namespace Teng
 
-#endif // _TENGFRAGEMENTSTACK_H
+#endif // TENGFRAGEMENTSTACK_H

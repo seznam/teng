@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfunction.cc,v 1.3 2004-09-09 15:32:16 solamyl Exp $
+ * $Id: tengfunction.cc,v 1.4 2004-12-30 12:42:01 vasek Exp $
  *
  * DESCRIPTION
  * Teng processor funcction (like len, substr, round or date)
@@ -1483,6 +1483,38 @@ static int tengFunctionSecToTime(const vector<ParserValue_t> &args,
     return 0;
 }
 
+/** Check whether given feature is enabled.
+ * @return Status: 0=ok, -1=wrong argument count, -2=other error.
+ * @param args Function arguments (list of values).
+ * @param setting Teng function setting.
+ * @param result Function's result value. */
+static int tengFunctionIsEnabled(const vector<ParserValue_t> &args,
+                                 const Processor_t::FunctionParam_t &setting,
+                                 ParserValue_t &result)
+{
+    // check params
+    result.setInteger(0);
+    if (args.size() != 1)
+        return -1; //bad args
+    
+    ParserValue_t feature(args[0]);
+    feature.validateThis();
+    if (feature.type != ParserValue_t::TYPE_STRING)
+        return -2; //not a string
+
+    bool enabled = false;
+    if (setting.configuration.isEnabled(feature.stringValue, enabled)) {
+        // error
+        setting.logger.logError(Error_t::LL_ERROR,
+                                "Unknown feature '" + feature.stringValue
+                                + "'");
+        return -2;
+    }
+    
+    // OK
+    result.setInteger(enabled);
+    return 0;
+}
 
 namespace {
     struct FunctionStub_t {
@@ -1512,6 +1544,7 @@ namespace {
         {"isnumber", true, tengFunctionIsNumber}, // checks whether argument is s number
         {"sectotime", true, tengFunctionSecToTime}, // convert seconds to HH:MM:SS
         {"sec_to_time", true, tengFunctionSecToTime}, // deprecated name
+        {"isenabled", true, tengFunctionIsEnabled}, // isenabled(feature)
         { 0, false, 0}                            // end of list
     };
 }

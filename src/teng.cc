@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: teng.cc,v 1.2 2004-09-24 12:23:53 vasek Exp $
+ * $Id: teng.cc,v 1.3 2004-12-30 12:42:01 vasek Exp $
  *
  * DESCRIPTION
  * Teng engine -- implementation.
@@ -38,6 +38,7 @@
 #include <unistd.h>
 
 #include <stdexcept>
+#include <memory>
 
 #include "teng.h"
 #include "tengstructs.h"
@@ -83,18 +84,9 @@ static int logErrors(const ContentType_t *contentType,
 }
 
 Teng_t::Teng_t(const string &root, const Teng_t::Settings_t &settings)
-    : root(root), logMode(settings.logMode), validate(settings.validate),
-      templateCache(0), err()
+    : root(root), templateCache(0), err()
 {
     init(settings);
-}
-
-Teng_t::Teng_t(const string &root, int logMode,
-               bool validate)
-    : root(root), logMode(logMode), validate(validate),
-      templateCache(0), err()
-{
-    init(Settings_t());
 }
 
 void Teng_t::init(const Settings_t &settings) {
@@ -110,82 +102,71 @@ void Teng_t::init(const Settings_t &settings) {
     }
     // create template cache
     templateCache = new TemplateCache_t(root, settings.programCacheSize,
-                                            settings.dictCacheSize);
+                                        settings.dictCacheSize);
 }
 
 Teng_t::~Teng_t() {
     delete templateCache;
 }
 
-static string prependBeforeExt(const string &str, const string &prep) {
-    // no prep or no str -> return str
-    if (prep.empty()) return str;
-    if (str.empty()) return str;
-    // find the last dot and the last slash
-    string::size_type dot = str.rfind('.');
-    string::size_type slash = str.rfind('/');
-    // if last slash exists and slash after dot or no dot
-    // append prep at the end
-    if (((slash != string::npos) && (slash > dot)) ||
-        (dot == string::npos)) {
-        return str + '.' + prep;
-    } else {
-        // else prepend prep before the last dot
-        return str.substr(0, dot) + '.' + prep + str.substr(dot);
+namespace {
+    string prependBeforeExt(const string &str, const string &prep) {
+        // no prep or no str -> return str
+        if (prep.empty() || str.empty()) return str;
+        // find the last dot and the last slash
+        string::size_type dot = str.rfind('.');
+        string::size_type slash = str.rfind('/');
+        // if last slash exists and slash after dot or no dot
+        // append prep at the end
+        if (((slash != string::npos) && (slash > dot)) ||
+            (dot == string::npos)) {
+            return str + '.' + prep;
+        } else {
+            // else prepend prep before the last dot
+            return str.substr(0, dot) + '.' + prep + str.substr(dot);
+        }
     }
 }
 
-int Teng_t::generatePage(const std::string &templateFilename,
-                         const std::string &skin,
-                         const std::string &dataDefinition,
-                         const std::string &_dict, const std::string &lang,
-                         const std::string &param, const std::string &_contentType,
-                         const std::string &encoding,
-                         const Fragment_t &data,
+int Teng_t::generatePage(const string &templateFilename, const string &skin,
+                         const string &_dict, const string &lang,
+                         const string &param, const string &scontentType,
+                         const string &encoding, const Fragment_t &data,
                          Writer_t &writer, Error_t &err)
 {
     // find contentType desciptor for given contentType
-    const ContentType_t *contentType =
-        ContentType_t::findContentType(_contentType);
+    const ContentType_t *contentType
+        = ContentType_t::findContentType(scontentType, err)->contentType;
 
     // make proper filename for language dictionary
     string langDictFilename = prependBeforeExt(_dict, lang);
     
-    Template_t *templ =
-        templateCache->
-        createTemplate(prependBeforeExt(templateFilename, skin),
-                       langDictFilename, param, dataDefinition,
-                       validate, TemplateCache_t::SRC_FILE);
+    auto_ptr<Template_t>
+        templ(templateCache->
+              createTemplate(prependBeforeExt(templateFilename, skin),
+                             langDictFilename, param,
+                             TemplateCache_t::SRC_FILE));
     
     // append error logs of dicts and program
     err.append(templ->langDictionary->getErrors());
     err.append(templ->paramDictionary->getErrors());
-    err.append(templ->dataDefinition->getErrors());
     err.append(templ->program->getErrors());
 
-    // check data validity
-    if (validate)
-        tengCheckData(data, *templ->dataDefinition, err);
-    
     // if program is valid (not empty) execute it
     if (!templ->program->empty()) {
         Formatter_t output(writer);
         
-        Processor_t(templ->program, templ->langDictionary,
-                    templ->paramDictionary, encoding,
-                    *contentType, logMode & LM_ERROR_FRAGMENT)
-            .run(&data, &output, &err);
+        Processor_t(*templ->program, *templ->langDictionary,
+                    *templ->paramDictionary, encoding,
+                    contentType).run(data, output, err);
     }
 
     // log error into log, if said
-    if (logMode & LM_LOG_TO_OUTPUT)
+    if (templ->paramDictionary->isLogToOutputEnabled())
         logErrors(contentType, writer, err);
 
     // flush writer to output
     writer.flush();
-
-    // destroy template => it will release resources
-    delete templ;
 
     // append writer errors
     err.append(writer.getErrors());
@@ -194,58 +175,45 @@ int Teng_t::generatePage(const std::string &templateFilename,
     return err.getLevel();
 }
 
-int Teng_t::generatePage(const std::string &templateString,
-                         const std::string &dataDefinition,
-                         const std::string &_dict, const std::string &lang,
-                         const std::string &param,
-                         const std::string &_contentType,
-                         const std::string &encoding,
-                         const Fragment_t &data,
+int Teng_t::generatePage(const string &templateString,
+                         const string &dict, const string &lang,
+                         const string &param, const string &scontentType,
+                         const string &encoding, const Fragment_t &data,
                          Writer_t &writer, Error_t &err)
 {
     // find contentType desciptor for given contentType
-    const ContentType_t *contentType =
-        ContentType_t::findContentType(_contentType);
+    const ContentType_t *contentType
+        = ContentType_t::findContentType(scontentType, err)->contentType;
 
     // make proper filename for language dictionary
-    string langDictFilename = prependBeforeExt(_dict, lang);
+    string langDictFilename = prependBeforeExt(dict, lang);
     
-    Template_t *templ =
-        templateCache->createTemplate(templateString, langDictFilename, param,
-                                      dataDefinition, validate,
-                                      TemplateCache_t::SRC_STRING);
+    auto_ptr<Template_t>templ(templateCache->createTemplate
+                              (templateString, langDictFilename,
+                               param, TemplateCache_t::SRC_STRING));
     
     // append error logs of dicts and program
     err.append(templ->langDictionary->getErrors());
     err.append(templ->paramDictionary->getErrors());
-    err.append(templ->dataDefinition->getErrors());
     err.append(templ->program->getErrors());
     
-    // check data validity
-    if (validate)
-        tengCheckData(data, *templ->dataDefinition, err);
-
     // if program is valid (not empty) execute it
     if (!templ->program->empty()) {
         // create formatter for writer
         Formatter_t output(writer);
 
         // execute byte code
-        Processor_t(templ->program, templ->langDictionary,
-                    templ->paramDictionary, encoding,
-                    *contentType, logMode & LM_ERROR_FRAGMENT)
-            .run(&data, &output, &err);
+        Processor_t(*templ->program, *templ->langDictionary,
+                    *templ->paramDictionary, encoding,
+                    contentType).run(data, output, err);
     }
 
     // log error into log, if said
-    if (logMode & LM_LOG_TO_OUTPUT)
+    if (templ->paramDictionary->isLogToOutputEnabled())
         logErrors(contentType, writer, err);
 
     // flush writer to output
     writer.flush();
-
-    // destroy template => it will release resources
-    delete templ;
 
     // append writer errors
     err.append(writer.getErrors());
@@ -254,17 +222,14 @@ int Teng_t::generatePage(const std::string &templateString,
     return err.getLevel();
 }
 
-int Teng_t::dictionaryLookup(const std::string &dict, const std::string &lang,
-                             const std::string &key, std::string &value)
+int Teng_t::dictionaryLookup(const string &config, const string &dict,
+                             const string &lang, const string &key,
+                             string &value)
 {
-    // make proper filename for language dictionary
-    string langDictFilename = prependBeforeExt(dict, lang);
-    const Dictionary_t *languageDict =
-        templateCache->dictFromFile<Dictionary_t>(langDictFilename);
-    // stop on invalid dictionary
-    if (!languageDict) return -1;
     // find value for key
-    const string *foundValue = languageDict->lookup(key);
+    const string *foundValue =
+        templateCache->createDictionary
+        (config, prependBeforeExt(dict, lang))-> lookup(key);
     if (!foundValue) {
         // not fount => error
         value.erase();
@@ -276,8 +241,7 @@ int Teng_t::dictionaryLookup(const std::string &dict, const std::string &lang,
     return 0;
 }
 
-void Teng_t::listSupportedContentTypes(std::vector<std::pair<std::string,
-                                       std::string> > &supported)
+void Teng_t::listSupportedContentTypes(vector<pair<string, string> > &supported)
 {
     // retrieve supported content types
     ContentType_t::listSupported(supported);

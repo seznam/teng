@@ -22,7 +22,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tenglex2.ll,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tenglex2.ll,v 1.2 2004-12-30 12:42:02 vasek Exp $
  *
  *
  * DESCRIPTION
@@ -128,6 +128,12 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     RETURN(LEX_DEBUG);
 }
 
+"<?teng"[[:space:]\0]+"bytecode" {
+    // match '<?teng debug'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_BYTECODE);
+}
+
 "<?teng"[[:space:]\0]+"include" {
     // match '<?teng include'
     bufferPos.advance(yytext, yyleng);
@@ -159,6 +165,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
 }
 
 "<?teng"[[:space:]\0]+"if" {
+    // match '<?teng if'
     bufferPos.advance(yytext, yyleng);
     RETURN(LEX_IF);
 }
@@ -191,6 +198,18 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     // match '<?teng expr'
     bufferPos.advance(yytext, yyleng);
     RETURN(LEX_EXPR);
+}
+
+"<?teng"[[:space:]\0]+"ctype" {
+    // match '<?teng ctype'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_CTYPE);
+}
+
+"<?teng"[[:space:]\0]+"endctype" {
+    // match '<?teng endctype'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_ENDCTYPE);
 }
 
 "<?teng"[[:space:]\0]*[[:alnum:]]* {

@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengwriter.h,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengwriter.h,v 1.2 2004-12-30 12:42:02 vasek Exp $
  *
  * DESCRIPTION
  * Teng writer.
@@ -35,8 +35,8 @@
  */
 
 
-#ifndef _TENGWRITER_H
-#define _TENGWRITER_H
+#ifndef TENGWRITER_H
+#define TENGWRITER_H
 
 #include <string>
 #include <stdio.h>
@@ -245,4 +245,4 @@ private:
 
 } // namespace Teng
 
-#endif // _TENGWRITER_H
+#endif // TENGWRITER_H

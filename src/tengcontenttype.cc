@@ -20,7 +20,7 @@
  * Naskove 1, Praha 5, 15000, Czech Republic
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
- * $Id: tengcontenttype.cc,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengcontenttype.cc,v 1.2 2004-12-30 12:42:01 vasek Exp $
  *
  * DESCRIPTION
  * Teng language descriptor -- implementation.
@@ -44,8 +44,12 @@ using namespace std;
 
 using namespace Teng;
 
-static map<string, ContentType_t*> *contentTypes = 0;
-static ContentType_t* unknown = 0;
+namespace {
+    map<string, ContentType_t::Descriptor_t*> *descriptors = 0;
+    vector<ContentType_t::Descriptor_t*> *descriptorIndex = 0;
+
+    ContentType_t::Descriptor_t *unknown = 0;
+}
 
 ContentType_t::ContentType_t()
     : lineComment(), blockComment(), escapes(),
@@ -278,8 +282,7 @@ struct CreatorEntry_t {
     const char *comment;
 };
 
-/**
- * @short Create descriptor of HTML/XHTML/XML content type.
+/** @short Create descriptor of HTML/XHTML/XML content type.
  * @return HTML descriptor
  */
 ContentType_t* htmlCreator() {
@@ -298,8 +301,7 @@ ContentType_t* htmlCreator() {
     return html;
 }
 
-/**
- * @short Create descriptor of shell.
+/** @short Create descriptor of shell.
  * @return shell descriptor
  */
 ContentType_t* shellCreator() {
@@ -311,8 +313,7 @@ ContentType_t* shellCreator() {
     return shell;
 }
 
-/**
- * @short Create descriptor of C language.
+/** @short Create descriptor of C language.
  * @return C descriptor
  */
 ContentType_t* cCreator() {
@@ -322,6 +323,28 @@ ContentType_t* cCreator() {
     c->blockComment = pair<string, string>("/*", "*/");
     // return descriptor
     return c;
+}
+
+/** @short Create descriptor of quoted string.
+ * @return quoted string descriptor
+ */
+ContentType_t* qstringCreator() {
+    // create C descriptor
+    ContentType_t *qs = new ContentType_t();
+
+    qs->addEscape('\n', "\\n");
+    qs->addEscape('\r', "\\r");
+    qs->addEscape('\a', "\\a");
+    qs->addEscape('\0', "\\0");
+    qs->addEscape('\v', "\\v");
+    qs->addEscape('\'', "\\'");
+    qs->addEscape('"', "\\\"");
+
+    // compile unescaping automaton
+    qs->compileUnescaper();
+
+    // return descriptor
+    return qs;
 }
 
 static CreatorEntry_t creators[] = {
@@ -338,48 +361,88 @@ static CreatorEntry_t creators[] = {
       "Common for all types of shell." },
     { "text/csrc", cCreator,
       "C/C++ source code" },
+    { "quoted-string", qstringCreator,
+      "Generic quoted string with escapes." },
     { 0, 0 }
 };
 
-const ContentType_t*
-ContentType_t::findContentType(const string &_name) {
-    // make name lower
-    string name = _name;
-    transform(name.begin(), name.end(), name.begin(),
-              tolower);
+const ContentType_t::Descriptor_t* ContentType_t::getDefault() {
+    if (!descriptors) {
+        descriptors = new map<string, Descriptor_t*>();
+        descriptorIndex = new vector<ContentType_t::Descriptor_t*>();
+    }
 
-    // if no cache create it
-    if (!contentTypes) contentTypes = new map<string, ContentType_t*>();
-    // if no unknown content type place holder create it
-    if (!unknown) unknown = new ContentType_t();
+    if (!unknown) {
+        string name("text/plain");
+        unknown = new Descriptor_t(new ContentType_t(), 0,
+                                   name, "Default (text/plain) type.");
+        descriptors->insert(pair<string, Descriptor_t*>(name, unknown));
+        descriptorIndex->push_back(unknown);
+    }
+
+    return unknown;
+}
+
+const ContentType_t::Descriptor_t*
+ContentType_t::findContentType(const string &sname, Error_t &err,
+                               const Error_t::Position_t &pos, bool failOnError)
+{
+    // make name lower
+    string name(sname);
+    transform(name.begin(), name.end(), name.begin(), tolower);
+
+    // create all static data
+    if (!unknown) getDefault();
+
+    if (name.empty()) return unknown;
+
     // try to find cached content type descriptor
-    map<string, ContentType_t*>::const_iterator
-        fcontentTypes = contentTypes->find(name);
+    map<string, ContentType_t::Descriptor_t*>::const_iterator
+        fdescriptors = descriptors->find(name);
     // if no content descriptor found
-    if (fcontentTypes == contentTypes->end()) {
+    if (fdescriptors == descriptors->end()) {
         // run through creator table and try to find appropriate
         // creator
-        for (CreatorEntry_t *icreators = creators;
-             icreators->name; ++icreators) {
+        for (CreatorEntry_t *icreators = creators; icreators->name;
+             ++icreators) {
             // if creator found
             if (icreators->name == name) {
                 // create content type descriptor
-                ContentType_t* contentType = icreators->creator();
-                // remember it in cache for future use
-                contentTypes->insert(pair<string, ContentType_t*>
-                                  (name, contentType));
-                // return it to the caller
-                return contentType;
+                Descriptor_t *descriptor =
+                    new Descriptor_t(icreators->creator(),
+                                     descriptorIndex->size(),
+                                     icreators->name, icreators->comment);
+                // remember descriptor in the descriptorIndex
+                descriptorIndex->push_back(descriptor);
+
+                // remmeber descriptor in the cache and return it to
+                // the caller
+                return descriptors->insert
+                    (pair<string, Descriptor_t*>(name, descriptor))
+                    .first->second;
             }
         }
-        // content type not known
-        // return global desriptor for unknown types
-        return unknown;
+
+        // log error
+        err.logError(Error_t::LL_ERROR, pos, "Content type '" + sname +
+                     "' not found.");
+
+        // content type not known; return global desriptor for unknown
+        // types or 0 when asked to faile
+        return failOnError ? 0 : unknown;
     }
 
     // return cached entry
-    return fcontentTypes->second;
+    return fdescriptors->second;
 };
+
+const ContentType_t::Descriptor_t*
+ContentType_t::getContentType(unsigned int index)
+{
+    // check bounds and return desctiptor (or 0 on error)
+    if (index >= descriptorIndex->size()) return 0;
+    return (*descriptorIndex)[index];
+}
 
 void ContentType_t::listSupported(vector<pair<string, string> > &supported) {
     for (CreatorEntry_t *icreators = creators;
@@ -388,3 +451,30 @@ void ContentType_t::listSupported(vector<pair<string, string> > &supported) {
                                       (icreators->comment ? icreators->comment
                                       : string())));
 };
+
+void Escaper_t::push(ContentType_t *ct) {
+    escapers.push(ct);
+}
+
+void Escaper_t::push(unsigned int index, Error_t &err,
+                     const Error_t::Position_t &pos)
+{
+    const ContentType_t::Descriptor_t *descriptor
+        = ContentType_t::getContentType(index);
+    if (!descriptor) {
+        err.logError(Error_t::LL_ERROR, pos,
+                     "Cannot pot invalid content type -- using top instead.");
+        escapers.push(escapers.top());
+    } else {
+        escapers.push(descriptor->contentType);
+    }
+}
+
+void Escaper_t::pop(Error_t &err, const Error_t::Position_t &pos) {
+    if (!escapers.empty()) {
+        escapers.pop();
+    } else {
+        err.logError(Error_t::LL_ERROR, pos,
+                     "Cannot pop content type -- only one remains.");
+    }
+}

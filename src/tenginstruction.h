@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tenginstruction.h,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tenginstruction.h,v 1.2 2004-12-30 12:42:02 vasek Exp $
  *
  * DESCRIPTION
  * Teng instruction for teng processor.
@@ -34,12 +34,13 @@
  *             Created.
  */
 
-#ifndef _TENGINSTRUCTION_H
-#define _TENGINSTRUCTION_H
+#ifndef TENGINSTRUCTION_H
+#define TENGINSTRUCTION_H
 
 #include <stdio.h>
 #include <string>
 #include <vector>
+#include <iosfwd>
 
 #include "tengparservalue.h"
 
@@ -116,6 +117,9 @@ struct Instruction_t {
         HALT, /**< End of program. Relax. */
         DEBUG, /**< Print data tree (vars & vals) to output. */
         EXIST, /**< Test if exists variable/fragment. */
+        BYTECODE, /**< Print bytecode -- disassembled program. */
+        CTYPE, /**< Change content type (push new). */
+        ENDCTYPE, /**< Change content type (pop). */
     };
     
     /** Create simple instruction without params.
@@ -141,7 +145,12 @@ struct Instruction_t {
       * @param fp File stream for output. */
     void dump(FILE *fp) const;
     
-    
+    /** Print instruction into stream.
+      * @param os stream for output
+      * @param ip current instruction pointer (<0 for not to use)
+      */
+    void dump(ostream &os, int ip = -1) const;
+
     /** Operation to perform. */
     OpCode_t operation;
     
@@ -166,4 +175,4 @@ struct Instruction_t {
 
 } // namespace Teng
 
-#endif //_TENGINSTRUCTION_H
+#endif // TENGINSTRUCTION_H

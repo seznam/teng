@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: teng.h,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: teng.h,v 1.2 2004-12-30 12:42:01 vasek Exp $
  *
  * DESCRIPTION
  * Teng engine.
@@ -35,8 +35,8 @@
  */
 
 
-#ifndef _TENG_H
-#define _TENG_H
+#ifndef TENG_H
+#define TENG_H
 
 #include <string>
 #include <vector>
@@ -57,19 +57,23 @@ public:
     /** @short Templating engine.
      */
     struct Settings_t {
-        inline Settings_t(int logMode = 0,
-                          bool validate = false,
+        inline Settings_t(unsigned int programCacheSize = 0,
+                          unsigned int dictCacheSize = 0)
+            : programCacheSize(programCacheSize),
+              dictCacheSize(dictCacheSize)
+        {
+            // no-op
+        }
+
+        inline Settings_t(int, bool,
                           unsigned int programCacheSize = 0,
                           unsigned int dictCacheSize = 0)
-            : logMode(logMode), validate(validate),
-              programCacheSize(programCacheSize),
+            : programCacheSize(programCacheSize),
               dictCacheSize(dictCacheSize)
         {
             // no-op
         }
            
-        int logMode;
-        bool validate;
         unsigned int programCacheSize;
         unsigned int dictCacheSize;
     };
@@ -80,14 +84,6 @@ public:
      */
     Teng_t(const std::string &root, const Settings_t &settings);
 
-    /** @short Create new engine -- *obsolete*: use Teng_t(string, Settings_t).
-     *  @param root root of relative paths
-     *  @param logMode log errors to output when set
-     *  @param validate validate data and templates when set
-     */
-    Teng_t(const std::string &root, int logMode = 0,
-           bool validate = false);
-			
     /** @short Destroy engine.
      */
     ~Teng_t();
@@ -95,7 +91,6 @@ public:
     /** @short Generate page from file template.
      *  @param templateFilename file with main template
      *  @param skin skin of template
-     *  @param dataDefinition dictionary with data definition
      *  @param dict language dictionary
      *  @param lang language
      *  @param param config (dictionary with non language data) 
@@ -108,7 +103,6 @@ public:
      */
     int generatePage(const std::string &templateFilename,
                      const std::string &skin,
-                     const std::string &dataDefinition,
                      const std::string &dict, const std::string &lang,
                      const std::string &param, const std::string &contentType,
                      const std::string &encoding, const Fragment_t &data,
@@ -116,7 +110,6 @@ public:
 
     /** @short Generate page from string template.
      *  @param templateString main template
-     *  @param dataDefinition dictionary with data definition
      *  @param dict language dictionary
      *  @param lang language
      *  @param param config (dictionary with non language data) 
@@ -128,21 +121,22 @@ public:
      *  @return 0 OK, !0 error
      */
     int generatePage(const std::string &templateString,
-                     const std::string &dataDefinition,
                      const std::string &dict, const std::string &lang,
                      const std::string &param, const std::string &contentType,
                      const std::string &encoding, const Fragment_t &data,
                      Writer_t &writer, Error_t &err);
 
     /** @short Find entry in dictionary.
-     *  @param dict language dictionary
+     *  @param config config dictionary path
+     *  @param dict language dictionary path
      *  @param lang language
      *  @param key name of entry
      *  @param value found entry
      *  @return 0 entry found, !0 entry not found
      */
-    int dictionaryLookup(const std::string &dict, const std::string &lang,
-                         const std::string &key, std::string &value);
+    int dictionaryLookup(const std::string &config, const std::string &dict,
+                         const std::string &lang, const std::string &key,
+                         std::string &value);
 
     /**
      * @short Lists supported content types.
@@ -151,14 +145,17 @@ public:
     static void listSupportedContentTypes(std::vector<std::pair<std::string,
                                           std::string> > &supported);
 
-    /** @short Appends error log in the output when set.
-     */
-    static const int LM_LOG_TO_OUTPUT         = 0x0001;
 
-    /** @short Enables acces to error fragment from templete.
-     *  When not set error fragment seems to have always no element.
-     */
-    static const int LM_ERROR_FRAGMENT = 0x0002;
+    enum {
+        /** @short Appends error log in the output when set.
+         */
+        LM_LOG_TO_OUTPUT         = 0x0001,
+
+        /** @short Enables acces to error fragment from templete.
+         *  When not set error fragment seems to have always no element.
+         */
+        LM_ERROR_FRAGMENT        = 0x0002,
+    };
 
 private:
     /** @short Copy constructor intentionaly private -- copying
@@ -177,14 +174,6 @@ private:
      */
     std::string root;
 
-    /** @short Enables/disables logging of errors to the end of output.
-     */
-    int logMode;
-
-    /** @short Enables/disables validation of data and templates.
-     */
-    bool validate;
-
     /** @short Cache of templates.
      */
     TemplateCache_t *templateCache;
@@ -196,4 +185,4 @@ private:
 
 } // namespace Teng
 
-#endif // _TENG_H
+#endif // TENG_H

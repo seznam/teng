@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengcontenttype.h,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengcontenttype.h,v 1.2 2004-12-30 12:42:01 vasek Exp $
  *
  * DESCRIPTION
  * Teng content type descriptor.
@@ -36,13 +36,16 @@
  *             We are using mime-types as content type name.
  */
 
-#ifndef _TENGCONTENTTYPE_H
-#define _TENGCONTENTTYPE_H
+#ifndef TENGCONTENTTYPE_H
+#define TENGCONTENTTYPE_H
 
 #include <string>
 #include <utility>
 #include <vector>
 #include <map>
+#include <stack>
+
+#include "tengerror.h"
 
 using namespace std;
 
@@ -56,23 +59,23 @@ namespace Teng {
  */
 class ContentType_t {
 public:
-    /**
-     * @short Create new empty descriptor.
+    /** @short Create new empty descriptor.
      */
     ContentType_t();
 
-    /**
-     * @short String used for commenting out line.
+    /** @short Destroy descriptor.
+     */
+    inline virtual ~ContentType_t() {}
+
+    /** @short String used for commenting out line.
      */
     string lineComment;
 
-    /**
-     * @short Start of commend and end of comment.
+    /** @short Start of commend and end of comment.
      */
     pair<string, string> blockComment;
 
-    /**
-     * @short Add escape mapping into escaping table.
+    /** @short Add escape mapping into escaping table.
      * @param c character
      * @param escape associated escape sequence
      * @return position in escape list or -1 when escape for given
@@ -80,31 +83,59 @@ public:
      */
     int addEscape(unsigned char c, const string &escape);
 
-    /**
-     * @short Compile unescaping automaton from escaping list.
+    /** @short Compile unescaping automaton from escaping list.
      */
     void compileUnescaper();
 
-    /**
-     * @short Escape given string.
+    /** @short Escape given string.
      * @param src string to escape
      * @return escaped string
      */
-    string escape(const string &src) const;
+    virtual string escape(const string &src) const;
 
-    /**
-     * @short Unescape given string.
+    /** @short Unescape given string.
      * @param src string to unescape
      * @return unescaped string
      */
-    string unescape(const string &src) const;
+    virtual string unescape(const string &src) const;
+
+    /** @short Descriptor of content type.
+     */
+    struct Descriptor_t {
+        Descriptor_t(ContentType_t *contentType, unsigned int index,
+                     const string &name, const string &description)
+            : contentType(contentType), index(index),
+              name(name), description(description)
+        {
+            // no-op
+        }
+
+        ContentType_t *contentType;
+        unsigned int index;
+        string name;
+        string description;
+    };
 
     /**
      * @short Find content type descriptor for given name.
      * @param name name of content type
-     * @return descriptor
+     * @param err error log
+     * @param failOnError when true return 0 on error;
+     *                    otherwise return default (no-op) desriptor
+     * @return descriptor od 0 on error
      */
-    static const ContentType_t* findContentType(const string &name);
+    static const Descriptor_t*
+    findContentType(const string &name, Error_t &err,
+                    const Error_t::Position_t &pos = Error_t::Position_t(),
+                    bool failOnError = false);
+
+    static const Descriptor_t* getContentType(unsigned int index);
+
+    /**
+     * @short Get default content type.
+     * @return default content type descriptor
+     */
+    static const Descriptor_t* getDefault();
 
     /**
      * @short Lists supported content types.
@@ -137,6 +168,78 @@ private:
     int nextState(unsigned char c, int state) const;
 };
 
+class Escaper_t {
+public:
+    /** @short Creates new escaper with given or default content type.
+     *
+     * @param ct first content type
+     */
+    inline Escaper_t(const ContentType_t *ct = 0)
+        : escapers()
+    {
+        topLevel = (ct ? ct : ContentType_t::getDefault()->contentType);
+        escapers.push(topLevel);
+    }
+    
+    /** @short Push new content type.
+     *
+     * @short ct content type
+     */
+    void push(ContentType_t *ct);
+
+    /** @short Push new content type.
+     *
+     * @short index index of content type descriptor
+     * @short index err error log
+     * @short index pos position in source file
+     */
+    void push(unsigned int index, Error_t &err,
+              const Error_t::Position_t &pos = Error_t::Position_t());
+
+    /** @short Pop content type from the top.
+     *
+     * @short index err error log
+     * @short index pos position in source file
+     */
+    void pop(Error_t &err,
+             const Error_t::Position_t &pos = Error_t::Position_t());
+    
+    /** @short Escape given string.
+     *
+     * Uses escaper on the top of the stack.
+     *
+     * @param src string to escape
+     * @return escaped string
+     */
+    inline string escape(const string &src) const {
+        return escapers.top()->escape(src);
+    }
+
+    /** @short Unescape given string.
+     *
+     * Uses escaper on the top of the stack.
+     *
+     * @param src string to unescape
+     * @return unescaped string
+     */
+    inline string unescape(const string &src) const {
+        return escapers.top()->unescape(src);
+    }
+
+    inline const ContentType_t* getTopLevel() const {
+        return topLevel;
+    }
+
+private:
+    /** @short Stack of un/escaperers.
+     */
+    stack<const ContentType_t*> escapers;
+
+    /** @short Toplevel escapert.
+     */
+    const ContentType_t *topLevel;
+};
+
 } // namespace Teng
 
-#endif // _TENGCONTENTTYPE_H
+#endif // TENGCONTENTTYPE_H

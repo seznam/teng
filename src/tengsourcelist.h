@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengsourcelist.h,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengsourcelist.h,v 1.2 2004-12-30 12:42:02 vasek Exp $
  *
  * DESCRIPTION
  * Teng list of sources.
@@ -35,8 +35,8 @@
  */
 
 
-#ifndef _TENGSOURCELIST_H
-#define _TENGSOURCELIST_H
+#ifndef TENGSOURCELIST_H
+#define TENGSOURCELIST_H
 
 #include <string>
 #include <vector>
@@ -145,15 +145,13 @@ struct FileStat_t {
  */
 class SourceList_t {
 public:
-    /**
-     * @short Crrates new (empty) source list.
+    /** @short Crrates new (empty) source list.
      */
     SourceList_t()
         : sources()
     {}
     
-    /**
-     * @short Adds new source into the list.
+    /**@short Adds new source into the list.
      *
      * @param source filename of source
      * @param pos position in current file
@@ -164,23 +162,19 @@ public:
                            const Error_t::Position_t &pos,
                            Error_t &err);
 
-    /**
-     * @short Check validity of all sources.
+    /** @short Check validity of all sources.
      *
-     * Stats files and compares currant data with cached.
+     * Stats files and compares current data with cached.
      *
-     * @return 0 OK, !0 changed or error during check
+     * @return true means modified; false not modified or error
      */
-    int check() const;
+    bool isChanged() const;
 
-    /**
-     * @short Appends another source list.
+    /** @short Get source by given index.
+     *
+     * @param position index in the source list
+     * @return filename or empty string on error
      */
-    void append(const SourceList_t &sourceList) {
-        sources.insert(sources.end(), sourceList.sources.begin(),
-                       sourceList.sources.end());
-    }
-    
     string getSource(unsigned int position) const;
 
     inline unsigned int size() const {
@@ -188,24 +182,21 @@ public:
     }
 
 private:
-    /**
-     * @short Copy constructor intentionally private -- copying
+    /** @short Copy constructor intentionally private -- copying
      *        disabled.
      */
     SourceList_t(const SourceList_t&);
 
-    /**
-     * @short Assignment operator intentionally private -- assignment
+    /** @short Assignment operator intentionally private -- assignment
      *        disabled.
      */
     SourceList_t operator=(const SourceList_t&);
 
-    /**
-     * @short List of source files.
+    /** @short List of source files.
      */
     vector<FileStat_t> sources;
 };
 
 } // namespace Teng
 
-#endif // _TENGSOURCELIST_H
+#endif // TENGSOURCELIST_H

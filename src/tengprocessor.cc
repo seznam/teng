@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengprocessor.cc,v 1.3 2004-09-06 13:10:27 vasek Exp $
+ * $Id: tengprocessor.cc,v 1.4 2004-12-30 12:42:02 vasek Exp $
  *
  * DESCRIPTION
  * Teng processor. Executes programs.
@@ -35,12 +35,16 @@
  *             Created.
  * 2004-05-30  (vasek)
  *             Revised processor source code.
+ * 2004-09-19  (vasek)
+ *             Some minor fixes.
  */
 
 #include <stack>
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <sstream>
+#include <iomanip>
 
 #include <fenv.h>
 #include <math.h>
@@ -74,22 +78,31 @@ struct ToLower_t {
 Processor_t::
 FunctionParam_t::FunctionParam_t(Processor_t &processor,
                                  const string &encoding,
-                                 const ContentType_t &escaper)
-    : encoding(encoding), escaper(escaper), logger(processor)
+                                 const ContentType_t *contentType,
+                                 const Configuration_t &configuration)
+    : encoding(encoding), escaper(contentType), logger(processor),
+      configuration(configuration)
 {
     transform(this->encoding.begin(), this->encoding.end(),
               this->encoding.begin(), ToLower_t());
 }
 
+namespace {
+    inline Error_t::Position_t position(const Instruction_t &instr,
+                                        const Program_t &program)
+    {
+        return Error_t::Position_t
+            (((instr.sourceIndex < 0) ? "" :
+              program.getSource(instr.sourceIndex)),
+             instr.line,
+             instr.column);
+    }
+}
+
 void Processor_t::logErr(const Instruction_t &instr, const string &s,
                          Error_t::Level_t level)
 {
-    error->logRuntimeError
-        (level,
-         Error_t::Position_t(((instr.sourceIndex < 0) ? "" :
-                              program->getSource(instr.sourceIndex)),
-                             instr.line,
-                             instr.column),s);
+    error->logRuntimeError(level, position(instr, program), s);
 }
 
 void Processor_t::logErrNoInstr(const string &s,
@@ -99,21 +112,15 @@ void Processor_t::logErrNoInstr(const string &s,
                            Error_t::Position_t("unknown", 1, 0), s);
 }
 
-Processor_t::Processor_t(const Program_t *program,
-                         const Dictionary_t *dict,
-                         const Dictionary_t *param,
+Processor_t::Processor_t(const Program_t &program,
+                         const Dictionary_t &dict,
+                         const Configuration_t &configuration,
                          const string &encoding,
-                         const ContentType_t &escaper,
-                         bool errorFragment)
-    : program(program), langDictionary(dict), paramDictionary(param),
-      fParam(*this, encoding, escaper), errorFragment(errorFragment)
+                         const ContentType_t *contentType)
+    : program(program), langDictionary(dict), configuration(configuration),
+      fParam(*this, encoding, contentType, configuration)
 {
     srand(time(0) ^ getpid()); // because of user function random
-    root.iteration = 0;
-    root.name = "";
-    root.number.setInteger(0);
-    root.count.setInteger(1);
-    oldFragmentStack.reserve(80);
 }
 
 int Processor_t::evalNumOp(const Instruction_t &instr) {
@@ -466,99 +473,135 @@ int Processor_t::binaryOp(const Instruction_t &instr) {
     return 0;
 }
 
-int Processor_t::dumpFragment(const Fragment_t *f,
-                              const string &padding) {
-    // dump all variables (no nestedFragments)
-    for (Fragment_t::const_iterator i = f->begin(); i != f->end(); i++) {
-        if (!i->second->nestedFragments) {
-            if (output->write(padding)) return -1;
-            if (output->write(i->first)) return -1;
-            if (output->write(": \"")) return -1;
-            if (i->second->value.size() > 40) {
-                if (output->write(i->second->value.substr(0, 37) + "...\"\n"))
-                    return -1;
-            } else if (output->write(i->second->value + "\"\n")) return -1;
-        }
-    }
-    
-    // dump all fragments (nestedFragments non-null)
-    for (Fragment_t::const_iterator i = f->begin(); i != f->end(); i++) {
-        if (i->second->nestedFragments) {
-            unsigned int k = 0;
-            for (FragmentList_t::const_iterator
-                     in = i->second->nestedFragments->begin();
-                 in != i->second->nestedFragments->end(); ++in, ++k) {
-                if (output->write(padding)) return -1;
-                
-                char s[20];
-                if (output->write(i->first)) return -1;
-                sprintf(s,"[%u]: \n", k);
-                
-                if (output->write(s)) return -1;
-                if (dumpFragment(*in, padding + "    ")) return -1;
-                if (output->write("\n")) return -1;
+namespace {
+    int dumpFragment(const Escaper_t &escaper,
+                     Formatter_t &output, const Fragment_t &fragment,
+                     const string &padding = string())
+    {
+        // dump all variables (no nestedFragments)
+        for (Fragment_t::const_iterator ifragment = fragment.begin();
+             ifragment != fragment.end(); ++ifragment) {
+            if (!ifragment->second->nestedFragments) {
+                if (output.write(padding)) return -1;
+                if (output.write(ifragment->first)) return -1;
+                if (output.write(escaper.escape(": \""))) return -1;
+                if (ifragment->second->value.size() > 40) {
+                    if (output.write(escaper.escape
+                                     (ifragment->second->value.substr(0, 37)
+                                      + "...\"\n")))
+                        return -1;
+                } else {
+                    if (output.write
+                        (escaper.escape(ifragment->second->value + "\"\n")))
+                        return -1;
+                }
             }
         }
+        
+        // dump all fragments (nestedFragments non-null)
+        for (Fragment_t::const_iterator ifragment = fragment.begin();
+             ifragment != fragment.end(); ++ifragment) {
+            if (ifragment->second->nestedFragments) {
+                unsigned int k = 0;
+                for (FragmentList_t::const_iterator
+                         inestedFragments = ifragment->second->nestedFragments->begin();
+                     inestedFragments != ifragment->second->nestedFragments->end();
+                     ++inestedFragments, ++k) {
+                    if (output.write(padding)) return -1;
+                    
+                    char s[20];
+                    if (output.write(ifragment->first)) return -1;
+                    sprintf(s, "[%u]: \n", k);
+                    
+                    if (output.write(escaper.escape(s))) return -1;
+                    if (dumpFragment(escaper, output, **inestedFragments,
+                                     padding + "    "))
+                        return -1;
+                    if (output.write(escaper.escape("\n"))) return -1;
+                }
+            }
+        }
+        
+        // OK
+        return 0;
     }
-    
-    // OK
-    return 0;
 }
 
-int Processor_t::instructionDebug() {
-    output->write("Template sources:\n");
-    const SourceList_t &pl = program->getSources();
+int Processor_t::instructionDebug(const Fragment_t &data, Formatter_t &output) {
+    const Escaper_t &escaper = fParam.escaper;
+
+    output.write(escaper.escape("Template sources:\n"));
+    const SourceList_t &pl = program.getSources();
     for (unsigned int i = 0; i != pl.size(); ++i) {
-        if (output->write("    " + pl.getSource(i) + "\n"))
+        if (output.write(escaper.escape("    " + pl.getSource(i) + "\n")))
 	    return -1;
     }
     
-    output->write("\nLanguage dictionary sources:\n");
-    const SourceList_t &l = langDictionary->getSources();
+    output.write(escaper.escape("\nLanguage dictionary sources:\n"));
+    const SourceList_t &l = langDictionary.getSources();
     for (unsigned int i = 0; i != pl.size(); ++i) {
-        if (output->write("    " + l.getSource(i) + "\n"))
+        if (output.write(escaper.escape("    " + l.getSource(i) + "\n")))
 	    return -1;
     }
     
-    if (output->write("\nConfiguration dictionary sources:\n")) return -1;
-    const SourceList_t &p = paramDictionary->getSources();
+    if (output.write(escaper.escape("\nConfiguration dictionary sources:\n")))
+        return -1;
+    const SourceList_t &p = configuration.getSources();
     for (unsigned int i = 0; i != pl.size(); ++i) {
-        if (output->write("    " + p.getSource(i) + "\n"))
+        if (output.write(escaper.escape("    " + p.getSource(i) + "\n")))
 	    return -1;
     }
     
-    if (output->write("\nApplication data:\n")) return -1;
-    return dumpFragment(data);
+    if (output.write(escaper.escape("\nApplication data:\n")))
+        return -1;
+    return dumpFragment(escaper, output, data);
 }
 
+namespace {
+    int dumpBytecode(const Escaper_t &escaper, const Program_t &program,
+                     Formatter_t &output)
+    {
+        // create bytecode dump
+        ostringstream os;
+        for (Program_t::const_iterator iprogram = program.begin();
+             iprogram != program.end(); ++iprogram) {
+            os << "0x" << std::hex << std::setw(8) << std::setfill('0')
+               << (iprogram - program.begin()) << " ";
+            iprogram->dump(os, iprogram - program.begin());
+        }
 
-void Processor_t::run(const Fragment_t *_data, Formatter_t *_output,
-                      Error_t *_error)
+        // write to output
+        return output.write(escaper.escape(os.str()));
+    }
+}
+
+void Processor_t::run(const Fragment_t &data, Formatter_t &output,
+                      Error_t &inError)
 {
     ParserValue_t a;
-    data = _data;
-    output = _output;
-    error = _error;
     
- //    oldFragmentStack.clear();
     vector<ParserValue_t> programStack;
     programStack.reserve(80);
     while (!valueStack.empty()) valueStack.pop();
     
     int ip = 0; // Never will be changed to unsigned !!
-    //data->dump(cout);
-    
-    FragmentStack_t fragmentStack(data, *error, errorFragment);
 
-    while (1) {
-        if (ip < 0 || ip >= (int)program->size()) {
+    // remember error
+    error = &inError;
+
+    // create fragment stack
+    FragmentStack_t fragmentStack
+        (&data, *error, configuration.isErrorFragmentEnabled());
+
+    for (;;) {
+        if (ip < 0 || ip >= (int)program.size()) {
             logErrNoInstr("Instruction pointer went "
                           "out of program address space",
                           Error_t::LL_FATAL);
             goto flushReturn;
         }
-        const Instruction_t &instr = (*program)[ip++];
-        //       instr.dump(stdout);
+        const Instruction_t &instr = program[ip++];
+
         switch (instr.operation) {
         case Instruction_t::EXIST:
             a.setInteger(!fragmentStack.exists(instr.identifier));
@@ -566,9 +609,15 @@ void Processor_t::run(const Fragment_t *_data, Formatter_t *_output,
             break;
             
         case Instruction_t::DEBUG:
-            instructionDebug();
+            if (configuration.isDebugEnabled())
+                instructionDebug(data, output);
             break;
             
+        case Instruction_t::BYTECODE:
+            if (configuration.isBytecodeEnabled())
+                dumpBytecode(fParam.escaper, program, output);
+            break;
+
         case Instruction_t::VAL:
             valueStack.push(instr.value);
             break;
@@ -583,9 +632,9 @@ void Processor_t::run(const Fragment_t *_data, Formatter_t *_output,
             valueStack.pop();
             {
                 const string *item;
-                item = langDictionary->lookup(a.stringValue);
+                item = langDictionary.lookup(a.stringValue);
                 if (item == 0)
-                    item = paramDictionary->lookup(a.stringValue);
+                    item = configuration.lookup(a.stringValue);
                 if (item == 0) {
                     logErr(instr, "Dictionary item '" + a.stringValue +
                            "' was not found",
@@ -722,8 +771,7 @@ void Processor_t::run(const Fragment_t *_data, Formatter_t *_output,
                     case 0:
                         break; // OK
                     case -1:
-                        logErr(instr, "Bad argument "
-                               "count for function '"
+                        logErr(instr, "Bad argument count for function '"
                                + instr.value.stringValue + "()'",
                                Error_t::LL_ERROR);
                         break;
@@ -779,7 +827,7 @@ void Processor_t::run(const Fragment_t *_data, Formatter_t *_output,
         case Instruction_t::JMP:
         jump:
             ip += instr.value.integerValue;
-            if (ip < 0 || ip >= (int)program->size()) {
+            if (ip < 0 || ip >= (int)program.size()) {
                 logErrNoInstr("Jump points out of program address space",
                               Error_t::LL_FATAL);
                 goto flushReturn;
@@ -787,11 +835,11 @@ void Processor_t::run(const Fragment_t *_data, Formatter_t *_output,
             break;
             
         case Instruction_t::FORM:
-            output->push((Formatter_t::Mode_t)instr.value.integerValue);
+            output.push((Formatter_t::Mode_t)instr.value.integerValue);
             break;
             
         case Instruction_t::ENDFORM:
-            if (output->pop() < 0) {
+            if (output.pop() < 0) {
                 logErr(instr, "Format-object stack error",
                        Error_t::LL_FATAL);
                 goto flushReturn;
@@ -802,7 +850,7 @@ void Processor_t::run(const Fragment_t *_data, Formatter_t *_output,
             if (fragmentStack.pushFrame(instr.identifier)) {
                 // fragment has no iterations => ok, jump over fragment
                 ip += instr.value.integerValue;
-                if (ip < 0 || ip >= (int)program->size()) {
+                if (ip < 0 || ip >= (int)program.size()) {
                     logErr(instr, "Fragment jump points out of "
                            "program address space",
                            Error_t::LL_FATAL);
@@ -815,7 +863,7 @@ void Processor_t::run(const Fragment_t *_data, Formatter_t *_output,
             if (fragmentStack.nextIteration()) {
                 // next iteration
                 ip += instr.value.integerValue;
-                if (ip < 0 || ip >= (int)program->size()) {
+                if (ip < 0 || ip >= (int)program.size()) {
                     logErr(instr, "End-fragment jump points out of "
                            "program address space",
                            Error_t::LL_FATAL);
@@ -880,7 +928,7 @@ void Processor_t::run(const Fragment_t *_data, Formatter_t *_output,
                        Error_t::LL_FATAL);
                 goto flushReturn;
             }
-            if (output->write(valueStack.top().stringValue)) {
+            if (output.write(valueStack.top().stringValue)) {
                 valueStack.pop();
                 return;
             }
@@ -918,6 +966,15 @@ void Processor_t::run(const Fragment_t *_data, Formatter_t *_output,
         case Instruction_t::HALT:
             goto flushReturn;
             
+        case Instruction_t::CTYPE:
+            fParam.escaper.push(instr.value.integerValue, *error,
+                                position(instr, program));
+            break;
+
+        case Instruction_t::ENDCTYPE:
+            fParam.escaper.pop(*error, position(instr, program));
+            break;
+
         default:
             logErr(instr, "Unknown instruction",
                    Error_t::LL_FATAL);
@@ -925,10 +982,6 @@ void Processor_t::run(const Fragment_t *_data, Formatter_t *_output,
         }
     }
  flushReturn:
-    if (!oldFragmentStack.empty()) {
-        logErrNoInstr("Fragment stack is not empty",
-                      Error_t::LL_WARNING);
-    }
     if (!programStack.empty()) {
         logErrNoInstr("Program stack is not empty",
                       Error_t::LL_WARNING);
@@ -937,7 +990,7 @@ void Processor_t::run(const Fragment_t *_data, Formatter_t *_output,
         logErrNoInstr("Value stack is not empty",
                       Error_t::LL_WARNING);
     }
-    output->flush();
+    output.flush();
 }
 
 int Processor_t::eval(ParserValue_t &result, int startAddress,
@@ -950,19 +1003,17 @@ int Processor_t::eval(ParserValue_t &result, int startAddress,
     Error_t fakeError;
     error = &fakeError;
     
-    oldFragmentStack.clear();
-
     vector<ParserValue_t> programStack;
     programStack.reserve(80);
 
     while (!valueStack.empty()) valueStack.pop();
-    if (endAddress > (int)program->size() || startAddress < 0) return -1;
+    if (endAddress > (int)program.size() || startAddress < 0) return -1;
     while (ip != endAddress) {
         if (ip < startAddress || ip > endAddress) {
             return -1;
         }
-        const Instruction_t &instr = (*program)[ip++];
-        //       instr.dump(stdout);
+        const Instruction_t &instr = program[ip++];
+
         switch (instr.operation) {
         case Instruction_t::REPEAT:
             if (b.type != ParserValue_t::TYPE_INT || b.integerValue < 0)

@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengutil.h,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengutil.h,v 1.2 2004-12-30 12:42:02 vasek Exp $
  *
  * DESCRIPTION
  * Teng utilities.
@@ -35,8 +35,8 @@
  */
 
 
-#ifndef _TENGUTIL_H
-#define _TENGUTIL_H
+#ifndef TENGUTIL_H
+#define TENGUTIL_H
 
 #include <string>
 #include <map>
@@ -79,5 +79,5 @@ void tengCheckData(const Fragment_t &root,
 
 } // namespace Teng
 
-#endif // _TENGUTIL_H
+#endif // TENGUTIL_H
 

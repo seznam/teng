@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfunction.h,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengfunction.h,v 1.2 2004-12-30 12:42:01 vasek Exp $
  *
  * DESCRIPTION
  * Teng processor funcction (like len, round or formatDate)
@@ -35,8 +35,8 @@
  *             Created.
  */
 
-#ifndef _TENGFUNCTION_H
-#define _TENGFUNCTION_H
+#ifndef TENGFUNCTION_H
+#define TENGFUNCTION_H
 
 #include <vector>
 
@@ -69,5 +69,5 @@ Function_t tengFindFunction(const string &name, bool normalRun = true);
 
 } // namespace Teng
 
-#endif // _TENGFUNCTION_H
+#endif // TENGFUNCTION_H
 

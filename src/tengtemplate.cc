@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengtemplate.cc,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengtemplate.cc,v 1.2 2004-12-30 12:42:02 vasek Exp $
  *
  * DESCRIPTION
  * Teng template and cache of templates -- implementation.
@@ -35,7 +35,6 @@
  */
 
 #include "tengtemplate.h"
-#include "tengdatadefinition.h"
 
 using namespace std;
 
@@ -46,7 +45,6 @@ Template_t::~Template_t() {
         owner->release(program);
         owner->release(langDictionary);
         owner->release(paramDictionary);
-        owner->release(dataDefinition);
     }
 }
 
@@ -61,86 +59,119 @@ TemplateCache_t::TemplateCache_t(const string &root,
       dictCache(new DictionaryCache_t
                 (dictCacheSize
                  ? dictCacheSize
-                 : ProgramCache_t::DEFAULT_MAXIMAL_SIZE))
+                 : DictionaryCache_t::DEFAULT_MAXIMAL_SIZE)),
+      configCache(new ConfigurationCache_t
+                (dictCacheSize
+                 ? dictCacheSize
+                 : ConfigurationCache_t::DEFAULT_MAXIMAL_SIZE))
 {}
 
 TemplateCache_t::~TemplateCache_t() {
     delete programCache;
     delete dictCache;
+    delete configCache;
 }
 
 Template_t*
 TemplateCache_t::createTemplate(const string &templateSource,
                                 const string &langFilename,
-                                const string &paramFilename,
-                                const string &dataDefFilename,
-                                bool validate,
+                                const string &configFilename,
                                 SourceType_t sourceType)
 {
+    unsigned long int configSerial;
+
+    // get configuration and dictionary from cache
+    ConfigAndDict_t configAndDict
+        = getConfigAndDict(configFilename, langFilename,
+                           &configSerial);
+
     // create key from source file names
     vector<string> key;
-    if (sourceType == SRC_STRING)
-        tengCreateStringKey(templateSource, key);
+    if (sourceType == SRC_STRING) tengCreateStringKey(templateSource, key);
     else tengCreateKey(root, templateSource, key);
     tengCreateKey(root, langFilename, key);
-    tengCreateKey(root, paramFilename, key);
-    
-    // indicates that some dictionary has been reloaded
-    bool dictionariesReloaded = false;
-    
-    // create lang dictionary
-    const Dictionary_t *langDictionary = dictFromFile<Dictionary_t>
-        (langFilename, &dictionariesReloaded);
-    if (!langDictionary) return 0;
-    
-    // create config dictionary
-    const Dictionary_t *paramDictionary = dictFromFile<Dictionary_t>
-        (paramFilename, &dictionariesReloaded);
-    if (!paramDictionary) return 0;
-    
-    // create data definition dictionary
-    const Dictionary_t *dataDefinition = dictFromFile<DataDefinition_t>
-        (dataDefFilename, &dictionariesReloaded);
-    if (!dataDefinition) return 0;
-    
+    tengCreateKey(root, configFilename, key);
+   
     // cached program
-    const Program_t *cachedProgram = 0;
-    // search for program in cache
-    programCache->find(key, cachedProgram);
-    // if priogram not found, sources changed or dictionaried reloaded
-    // create new program
-    if (dictionariesReloaded || (!cachedProgram || cachedProgram->check())) {
+    unsigned long int programSerial;
+    unsigned long int programDependSerial;
+    const Program_t *cachedProgram
+        = programCache->find(key, programDependSerial, &programSerial);
+
+    // determine whether we have to reload program
+    bool reload = (!cachedProgram
+                   || (configSerial != programDependSerial)
+                   || (configAndDict.first->isWatchFilesEnabled()
+                       && cachedProgram->check()));
+
+    if (reload) {
         // create new program
         Program_t *program = (sourceType == SRC_STRING)
             ?
-            ParserContext_t(langDictionary,
-                            paramDictionary,
-                            validate ? dataDefinition : 0, root)
+            ParserContext_t(configAndDict.second, configAndDict.first, root)
             .createProgramFromString(templateSource)
             :
-            ParserContext_t(langDictionary,
-                            paramDictionary,
-                            validate ? dataDefinition : 0, root)
+            ParserContext_t(configAndDict.second, configAndDict.first, root)
             .createProgramFromFile(templateSource);
         
         // add program into cache
-        cachedProgram = programCache->add(key, program);
+        cachedProgram = programCache->add(key, program, configSerial);
+        cerr << "Reloading program '" << templateSource << "'." << endl;
     }
-    if (!cachedProgram) return 0;
     
     // create template with cached sources
-    Template_t *templ =
-        new Template_t(cachedProgram, langDictionary,
-                       paramDictionary, dataDefinition, this);
-    // return template
-    return templ;
+    return new Template_t(cachedProgram, configAndDict.second,
+                          configAndDict.first, this);
 }
 
-int TemplateCache_t::release(const Program_t *program) {
-    return programCache->release(program);
-}
+TemplateCache_t::ConfigAndDict_t
+TemplateCache_t::getConfigAndDict(const string &configFilename,
+                                  const string &dictFilename,
+                                  unsigned long int *serial)
+{
+    // find or create configuration
+    vector<string> key;
+    tengCreateKey(root, configFilename, key);
 
-int TemplateCache_t::release(const Dictionary_t *dictionary) {
-    return dictCache->release(dictionary);
-}
+    unsigned long int configSerial = 0;
+    unsigned long int configDependSerial = 0;
+    const Configuration_t *cachedConfig
+        = configCache->find(key, configDependSerial, &configSerial);
+    if (!cachedConfig
+        || (cachedConfig->isWatchFilesEnabled() && cachedConfig->check())) {
+        // not found or changed -> create new configionary
+        Configuration_t *config = new Configuration_t(root);
+        // parse file
+        if (!configFilename.empty()) config->parse(configFilename);
+        // add configionary to cache and return it
+        cachedConfig = configCache->add(key, config, 0, &configSerial);
+        cerr << "Reloading config '" << configFilename << "'." << endl;
+    }
 
+    // reuse key for dictionary
+    tengCreateKey(root, dictFilename, key);
+    
+    // find or create dictionary
+    unsigned long int dictSerial = 0;
+    unsigned long int dictDependSerial = 0;
+    const Dictionary_t *cachedDict = dictCache->find(key, dictDependSerial,
+                                                     &dictSerial);
+
+    if (!cachedDict || (dictDependSerial != configSerial)
+        || (cachedConfig->isWatchFilesEnabled() && cachedDict->check())) {
+        // not found or changed -> create new dictionary
+        Dictionary_t *dict = new Dictionary_t(root);
+        // parse file
+        if (!dictFilename.empty()) dict->parse(dictFilename);
+        // add dictionary to cache and return it
+        // (dict depends on config serial number)
+        cachedDict = dictCache->add(key, dict, configSerial, &dictSerial);
+        cerr << "Reloading dict '" << dictFilename << "'." << endl;
+    }
+
+    // set config-dict serial number (it's dict's serial number)
+    if (serial) *serial = dictSerial;
+
+    // return data
+    return ConfigAndDict_t(cachedConfig, cachedDict);
+}

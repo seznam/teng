@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengprocessor.h,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengprocessor.h,v 1.2 2004-12-30 12:42:02 vasek Exp $
  *
  * DESCRIPTION
  * Teng processor. Executes programs.
@@ -35,18 +35,20 @@
  *             Created.
  * 2004-05-30  (vasek)
  *             Revised processor source code.
+ * 2004-09-19  (vasek)
+ *             Some minor fixes.
  */
 
-#ifndef _TENGPROCESSOR_H
-#define _TENGPROCESSOR_H
+#ifndef TENGPROCESSOR_H
+#define TENGPROCESSOR_H
 
 #include <string>
-#include <vector>
 #include <map>
 
 #include "tengerror.h"
 #include "tengprogram.h"
 #include "tengdictionary.h"
+#include "tengconfiguration.h"
 #include "tengstructs.h"
 #include "tengformatter.h"
 #include "tenginstruction.h"
@@ -56,39 +58,6 @@
 using namespace std;
 
 namespace Teng {
-
-/** item of fragment stack in Processor_t */
-struct FragmentStackFrame_t {
-    /** @short Current iteration.
-     */
-    int iteration;
-
-    /** @short Indicates start of block.
-     */
-    bool stackLine;
-
-    /** Where to jump on iteration end (after <?teng endfrag?>
-     */
-    int jmp;
-
-    /** @ short Name of associated fragment.
-     */
-    string name;
-
-    /** @short Number of iterations (varibale name._count).
-     */
-    ParserValue_t count;  // _count variable
-
-    /** @short Current of iterations (varibale name._number).
-     */
-    ParserValue_t number;
-
-    /** @short Local variables set from template.
-     */
-    map<string, ParserValue_t> vars;
-};
-
-typedef vector<FragmentStackFrame_t> OldFragmentStack_t;
 
 class Processor_t {
 public:
@@ -100,16 +69,16 @@ public:
      * @param encoding template encoding
      * @param escaper output string escaper
      * */
-    Processor_t(const Program_t *program, const Dictionary_t *dict,
-                const Dictionary_t *param, const string &encoding,
-                const ContentType_t &escaper, bool errorFragment = false);
+    Processor_t(const Program_t &program, const Dictionary_t &dict,
+                const Configuration_t &param, const string &encoding,
+                const ContentType_t *contentType);
     
     /** Execute program.
      * @param data Application data supplied bu user.
      * @param writer Output stream object.
      * @param error Error log object. */
-    void run(const Fragment_t *data, Formatter_t *writer,
-             Error_t *error);
+    void run(const Fragment_t &data, Formatter_t &writer,
+             Error_t &error);
     
     /** Try to evaluate an expression.
      * @return 0=ok (expression evaluated), -1=error (cannot evaluate).
@@ -139,12 +108,14 @@ public:
      *  used by string function. */
     struct FunctionParam_t {
         FunctionParam_t(Processor_t &processor, const string &encoding,
-                        const ContentType_t &escaper);
+                        const ContentType_t *contentType,
+                        const Configuration_t &configuration);
         
         string encoding;  /** < encoding of template
                               (other UTF-8 string functions) */
-        const ContentType_t &escaper; /** < string escaping */
+        Escaper_t escaper; /** < string escaping */
         mutable Logger_t logger;
+        const Configuration_t &configuration;
     };
 
     // we have to access logErr method, otherwise unaccesible
@@ -195,29 +166,17 @@ private:
      * */   
     int evalBinaryOp(const Instruction_t &instr);
    
-    /** print all subtrtee with spaces from left
-     *  @param f root
-     *  @param prefix prefix at line start
-     * */  
-    int dumpFragment(const Fragment_t *f, const string &prefix = string());
-    
     /** print all app data tree */ 
-    int instructionDebug();
+    int instructionDebug(const Fragment_t &data, Formatter_t &output);
     
     /** program (translated template) */
-    const Program_t *program;
+    const Program_t &program;
     
     /** language specific dictionary */
-    const Dictionary_t *langDictionary;
+    const Dictionary_t &langDictionary;
     
     /** param dictionary */
-    const Dictionary_t *paramDictionary;
-    
-    /** data from application */
-    const Fragment_t *data;
-    
-    /** std output object */
-    Formatter_t *output;
+    const Configuration_t &configuration;
     
     /** log error object */
     Error_t *error;
@@ -225,22 +184,13 @@ private:
     /** processor stack */
     stack<ParserValue_t> valueStack; 
     
-    /** fragment stack */
-    OldFragmentStack_t oldFragmentStack; 
-    
     /** fragment.name -> fragment.iteration */
     map<string,int> fragmentIter; 
     
-    /** root fragment (specific, not on fragment stack) */
-    FragmentStackFrame_t root;
-    
     /** variable, that are added to teng user function (as 1 ptr to struct)*/
     FunctionParam_t fParam;
-    
-    /** is ._error special fragment? */
-    bool errorFragment;
 };
     
 } // namespace Teng
 
-#endif // _TENGPROCESSOR_H
+#endif // TENGPROCESSOR_H

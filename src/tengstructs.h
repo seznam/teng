@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengstructs.h,v 1.2 2004-08-25 16:51:03 vasek Exp $
+ * $Id: tengstructs.h,v 1.3 2004-12-30 12:42:02 vasek Exp $
  *
  * DESCRIPTION
  * Teng data types.
@@ -34,8 +34,8 @@
  *             Created.
  */
 
-#ifndef _TENGSTRUCTS_H
-#define _TENGSTRUCTS_H
+#ifndef TENGSTRUCTS_H
+#define TENGSTRUCTS_H
 
 #include <string>
 #include <vector>
@@ -248,4 +248,4 @@ private:
 
 } // namespace Teng
 
-#endif // _TENGSTRUCTS_H
+#endif // TENGSTRUCTS_H

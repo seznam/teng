@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengerror.h,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengerror.h,v 1.2 2004-12-30 12:42:01 vasek Exp $
  *
  * DESCRIPTION
  * Teng error handling class.
@@ -34,8 +34,8 @@
  *             Created.
  */
 
-#ifndef _TENGERROR_H
-#define _TENGERROR_H
+#ifndef TENGERROR_H
+#define TENGERROR_H
 
 #include <string>
 #include <vector>
@@ -309,4 +309,4 @@ private:
 
 } // namespace Teng
 
-#endif // _TENGERROR_H
+#endif // TENGERROR_H

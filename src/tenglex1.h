@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tenglex1.h,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tenglex1.h,v 1.2 2004-12-30 12:42:02 vasek Exp $
  *
  * DESCRIPTION
  * Teng level #1 lexical analyzer.
@@ -34,8 +34,8 @@
  *             Created.
  */
 
-#ifndef _TENGLEX1_H
-#define _TENGLEX1_H
+#ifndef TENGLEX1_H
+#define TENGLEX1_H
 
 #include <string>
 
@@ -124,4 +124,4 @@ private:
 
 } // namespace Teng
 
-#endif //_TENGLEX1_H
+#endif // TENGLEX1_H
