@@ -1,5 +1,5 @@
 \input texinfo @c -*-texinfo-*-
-@c $Id: manual.texi,v 1.1 2004-07-09 12:16:24 franci_cz Exp $
+@c $Id: manual.texi,v 1.2 2004-07-12 07:14:18 franci_cz Exp $
 @c %**start of header
 
 @c %**end of header
@@ -13,7 +13,6 @@ manual
 @page
 @chapter Introduction
 @section Description
-@cindex Teng teng
 @acronym{Teng} (@strong{t}emplate @strong{eng}ine) is general purpose template tool. Primary C++ library but also available as Python module and PHP extension.
 It composes result (web page, mail message or any text file) by combining input template with data supplied by application and optional configuration and localization(language) dictionary.
 @section Characterictics
@@ -27,7 +26,6 @@ It composes result (web page, mail message or any text file) by combining input 
 @item much more :-)
 @end itemize
 
-@appendix Index
-@printindex cp
+@include template.texi
 
 @bye

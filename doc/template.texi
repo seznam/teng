@@ -1,0 +1,114 @@
+@c $Id: template.texi,v 1.1 2004-07-12 07:14:18 franci_cz Exp $
+@chapter Syntax
+
+Tags are enclosed by @strong{<?teng} and @strong{?>} marks.
+
+@section Comment
+
+<!-- comment -->
+
+Comment will not be in output file.
+
+@section Include
+
+<?teng include file="@emph{template.teng}" ?>
+
+Include other template file.
+
+@section Whitespace formating
+
+begin of block: <?teng format space="@emph{value}" ?>
+end of block: <?teng endformat ?>
+
+Set type of formating whitespace in output file. Value of @emph{space} is one of:
+@table @emph
+@item nowhite
+removes all whitespaces
+@item onespace
+collapse all whitespace characters into one space
+@item striplines
+removes all whitespaces at the begin and end of row except line break
+@item joinlines
+removes newline character and all whitespaces at begin of next row
+@item nowhitelines
+removes all empty rows
+@item noformat
+end parent space formating
+@end table
+
+@section Fragment
+
+begin of block: <?teng frag @emph{identifier} ?>
+end of block:	<?teng endfrag ?>
+
+Basic data block for reference by application
+
+Default variables:
+@table @emph
+@item @_count
+number of iterations of fragment. 
+@item @_number
+actual count of iteration. It begins with 0 and exists only in fragment.
+@item @_this
+actual fragment context
+@end table
+
+@section Condicional block
+
+begin: <?teng if @emph{expression} ?>@*
+next:  <?teng elseif @emph{expression} ?>@*
+next:  <?teng else ?>@*
+end:   <?teng endif ?>@*
+@*
+@emph{Expression} is envaluated as @emph{false} if is equal to empty string, string "0" or number 0. Type of data is ignored.
+
+@section Definition of variable
+
+<?teng set @emph{variable}=@emph{expression} ?>
+@*@*
+Variable is available only in current fragment. Redefinition of variable submited by application will raise error.
+
+@section Variable
+
+<?teng expr @emph{$variable} ?>@*
+short: $@{variable@}@*
+shorter: $variable
+@*@*
+Include variable (data from application or defined by @strong{set} tag).
+Must begin with letter or @_. Can be followed by number. Must start with $ character in expression.
+
+Naming convetion
+@table @asis
+@item name
+unqualified identifier. Only in local context of actual fragment
+@item recipient.name
+partialy qualified identifier
+@item .message.recipient.name
+fully qualified identifier
+@end table
+
+@section Dictionary item
+
+<?teng expr @emph{#item} ?>@*
+short: #@{item@}@*
+shorter: #item
+
+Include item from language dictionary into output.
+
+@section Expression
+
+<?teng expr @emph{expression} ?>@*
+short: $@{expression@}
+@*@*
+General expression. Can by combination of data literals, variables, dictionary items, functions, operators and parentheses. Parentheses sets priority.
+
+@section Literals
+
+@table @asis
+@item string
+"Lorem ipsum dolor sit amet"
+@item integer
+123
+@item real number (float)
+123.45
+
