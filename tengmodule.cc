@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengmodule.cc,v 1.3 2005-03-27 17:24:41 vasek Exp $
+ * $Id: tengmodule.cc,v 1.4 2005-04-04 13:41:22 vasek Exp $
  *
  * DESCRIPTION
  * Teng python module.
@@ -213,7 +213,7 @@ PyObject* Teng_Teng(TengObject *self, PyObject *args, PyObject *keywds) {
         new (&s->defaultContentType) std::string(contentType ? contentType
                                                  : DEFAULT_DEFAULT_CONTENT_TYPE);
         // OK
-    } catch (bad_alloc &e) {
+    } catch (std::bad_alloc &e) {
         PyErr_SetString(PyExc_MemoryError, "Out of memory");
         return 0;
     }
@@ -504,14 +504,14 @@ private:
  */
 static PyObject* createErrorLog(Error_t &err) {
     // get entries from error log
-    const vector<Error_t::Entry_t> &entries = err.getEntries();
+    const std::vector<Error_t::Entry_t> &entries = err.getEntries();
     // allocate appropriate tuple
     PyObject *log = PyTuple_New(entries.size());
     if (!log) return 0;
 
     // run through entries
     int pos = 0;
-    for (vector<Error_t::Entry_t>::const_iterator
+    for (std::vector<Error_t::Entry_t>::const_iterator
              ientries = entries.begin();
          ientries != entries.end(); ++ientries, ++pos) {
         // create new python entry from C++ entry
@@ -702,7 +702,7 @@ static PyObject* Teng_dictionaryLookup(TengObject *self, PyObject *args,
             return Py_None;
         }
         return Py_BuildValue("s#", s.data(), s.length());
-    } catch (bad_alloc &e) {
+    } catch (std::bad_alloc &e) {
         PyErr_SetString(PyExc_MemoryError, "Out of memory");
         return 0;
     }
@@ -795,7 +795,7 @@ static PyObject* listSupportedContentTypes(PyObject *self, PyObject *args) {
         
         // return created tuple
         return contentTypes;
-    } catch (bad_alloc &e) {
+    } catch (std::bad_alloc &e) {
         PyErr_SetString(PyExc_MemoryError, "Out of memory");
         return 0;
     }
@@ -1000,7 +1000,7 @@ PyObject* Teng_createDataRoot(TengObject *self, PyObject *args,
                                 : self->defaultEncoding);
         
         // create (empty) data tree
-        auto_ptr<TengTree_t> dataTree(new TengTree_t(encoding));
+        std::auto_ptr<TengTree_t> dataTree(new TengTree_t(encoding));
         
         // if any data given
         if (data) {
@@ -1029,7 +1029,7 @@ PyObject* Teng_createDataRoot(TengObject *self, PyObject *args,
         
         // OK
         return reinterpret_cast<PyObject*>(fragment);
-    } catch (bad_alloc &e) {
+    } catch (std::bad_alloc &e) {
         PyErr_SetString(PyExc_MemoryError, "Out of memory");
         return 0;
     }
@@ -1083,7 +1083,7 @@ static PyObject* Fragment_addFragment(FragmentObject *self,
         self->dataTree->addReferrer(child);
         
         return reinterpret_cast<PyObject*>(child);
-    } catch (bad_alloc &e) {
+    } catch (std::bad_alloc &e) {
         PyErr_SetString(PyExc_MemoryError, "Out of memory");
         return 0;
     }
@@ -1115,7 +1115,7 @@ static PyObject* Fragment_addVariable(FragmentObject *self,
         if (DataConverter_t(self->dataTree->getEncoding())
             .addVariable(name, value, *self->fragment))
             return 0;
-    } catch (bad_alloc &e) {
+    } catch (std::bad_alloc &e) {
         PyErr_SetString(PyExc_MemoryError, "Out of memory");
         return 0;
     }
@@ -1448,7 +1448,7 @@ PyObject* Teng_generatePage(TengObject *self,
 
     try {
         // output writer
-        auto_ptr<Writer_t> writer(0);
+        std::auto_ptr<Writer_t> writer(0);
         // indicates that writer is string writer
         bool stringOutput = false;
         // the output from string writer
@@ -1473,8 +1473,8 @@ PyObject* Teng_generatePage(TengObject *self,
             stringOutput = true;
         }
         
-        string encoding = (pencoding ? std::string(pencoding)
-                           : self->defaultEncoding);
+        std::string encoding = (pencoding ? std::string(pencoding)
+                                : self->defaultEncoding);
         
         // root fragment
         Fragment_t defaultRoot;
@@ -1484,7 +1484,7 @@ PyObject* Teng_generatePage(TengObject *self,
 
         // this smart-pointer will guard temporary root built from
         // python native data (if any)
-        auto_ptr<Fragment_t> rootGuard(0);
+        std::auto_ptr<Fragment_t> rootGuard(0);
 
         // if any data given, convert then to fragment
         if (data) {
