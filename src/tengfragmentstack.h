@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfragmentstack.h,v 1.3 2004-12-30 12:42:01 vasek Exp $
+ * $Id: tengfragmentstack.h,v 1.4 2005-01-30 19:31:32 vasek Exp $
  *
  * DESCRIPTION
  * Teng stack fragment frame.
@@ -415,7 +415,8 @@ public:
         if (name.depth > path.size()) return S_OUT_OF_CONTEXT;
         
         // find subfragment by name
-        const FragmentList_t *subFragment = findSubFragment(name.name);
+        const FragmentList_t *subFragment
+            = (*(frames.begin() + name.depth))->findSubFragment(name.name);
         if (subFragment) {
             // get size
             fragmentSize = subFragment->size();
