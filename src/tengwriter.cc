@@ -1,0 +1,135 @@
+/*
+ * Teng -- a general purpose templating engine.
+ * Copyright (C) 2004  Seznam.cz, a.s.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ * Seznam.cz, a.s.
+ * Naskove 1, Praha 5, 15000, Czech Republic
+ * http://www.seznam.cz, mailto:teng@firma.seznam.cz
+ *
+ *
+ * $Id: tengwriter.cc,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ *
+ * DESCRIPTION
+ * Teng writer -- implementation.
+ *
+ * AUTHORS
+ * Vaclav Blazek <blazek@firma.seznam.cz>
+ *
+ * HISTORY
+ * 2003-09-17  (vasek)
+ *             Created.
+ */
+
+
+#include "tengwriter.h"
+
+using namespace std;
+
+using namespace Teng;
+
+StringWriter_t::StringWriter_t(string &str)
+    : str(str)
+{}
+
+int StringWriter_t::write(const string &str)
+{
+    this->str.append(str);
+    return 0;
+}
+
+int StringWriter_t::write(const char *str)
+{
+    this->str.append(str);
+    return 0;
+}
+
+
+int StringWriter_t::
+write(const string &str,
+      pair<string::const_iterator, string::const_iterator> interval)
+{
+    this->str.append(interval.first, interval.second);
+    return 0;
+}
+
+
+FileWriter_t::FileWriter_t(const string &filename)
+    : Writer_t(), file(0), borrowed(false)
+{
+    file = fopen(filename.c_str(), "w");
+    if (!file)
+        err.logSyscallError(Error_t::LL_FATAL, Error_t::Position_t(),
+                            "Cannot open file '" + filename + "'");
+}
+
+FileWriter_t::FileWriter_t(FILE *file)
+    : Writer_t(), file(file), borrowed(true)
+{
+    if (!file)
+        err.logSyscallError(Error_t::LL_FATAL, Error_t::Position_t(),
+                            "Got invalid file");
+}
+
+FileWriter_t::~FileWriter_t() {
+    if (!borrowed)
+        fclose(file);
+}
+
+int FileWriter_t::write(const string &str)
+{
+    if (!file) return -1;
+    fwrite(str.data(), 1, str.length(), file);
+    if (feof(file) || ferror(file)) {
+        err.logSyscallError(Error_t::LL_FATAL, Error_t::Position_t(),
+                            "Error writing to output");
+        return -1;
+    }
+    return 0;
+}
+
+int FileWriter_t::write(const char *str)
+{
+    if (!file) return -1;
+    size_t len = strlen(str);
+    fwrite(str, 1, len, file);
+    if (feof(file) || ferror(file)) {
+        err.logSyscallError(Error_t::LL_FATAL, Error_t::Position_t(),
+                            "Error writing to output");
+        return -1;
+    }
+    return 0;
+}
+
+int FileWriter_t::
+write(const string &str,
+      pair<string::const_iterator, string::const_iterator> interval)
+{
+    const char *cstr = str.data() + distance(str.begin(), interval.first);
+    size_t len = distance(interval.first, interval.second);
+    fwrite(cstr, 1, len, file);
+    if (feof(file) || ferror(file)) {
+        err.logSyscallError(Error_t::LL_FATAL, Error_t::Position_t(),
+                            "Error writing to output");
+        return -1;
+    }
+    return 0;
+}
+
+int FileWriter_t::flush() {
+    if (!file) return -1;
+    return (fflush(file) ? -1 : 0);
+}
