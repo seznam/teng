@@ -1,0 +1,35 @@
+\input texinfo
+@c -*-texinfo-*-
+@c $Id: template.texi,v 1.1 2004-11-18 16:12:53 franci_cz Exp $
+
+@setfilename example.info
+@titlepage
+@title Teng (template engine)
+examples
+@author Pavel Franc@'{@dotless{i}}rek
+@end titlepage
+@contents
+@page
+@node Top
+
+
+@c Example index
+
+@node Template examples, , , Top
+@chapter Template examples
+
+This file is just collection of some template tricks I found during working with Teng
+
+@section Dictionary by expression
+
+template:@*
+${@@('state_'++$state)}@*
+@*
+dictionary:@*
+state_enabled	Status is enabled@*
+state_disabled	Status is disabled@*
+@*
+Takes sentence from dictionary according to value of state ('enabled', 'disabled').
+
+
+@bye
