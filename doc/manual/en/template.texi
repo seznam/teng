@@ -1,4 +1,4 @@
-@c $Id: template.texi,v 1.2 2004-07-29 12:18:19 solamyl Exp $
+@c $Id: template.texi,v 1.3 2004-08-10 20:33:39 franci_cz Exp $
 @chapter Syntax
 
 Tags are enclosed by @strong{<?teng} and @strong{?>} marks.
@@ -46,7 +46,7 @@ Basic data block for reference by application
 Default variables:
 @table @emph
 @item _count
-number of iterations of fragment. 
+number of iterations of fragment.
 @item _number
 actual count of iteration. It begins with 0 and exists only in fragment.
 @item _this
@@ -104,12 +104,59 @@ General expression. Can by combination of data literals, variables, dictionary i
 
 @section Literals
 
-@table @asis
+@table @strong
 @item string
 "Lorem ipsum dolor sit amet"
+@table @asis
+@item Escaped characters
+@item \"
+quote "
+@item \\
+backslash \
+@item \n
+new line
+@item \r
+carriage return
+@item \t
+tabelator
+@item \<char>
+<char>
+@end table
 @item integer
 123
 @item real number (float)
 123.45
 
 @end table
+
+@section Operators
+
+@multitable {mmmmm} {mmmmm} {mmmmmmmmmmmmmmmmmmmm}
+@item numeric @tab string @tab description
+@item ==, eq 	@tab =~ 	@tab equal
+@item !=, ne	@tab !~	@tab not equal
+@item >=, ge	@tab		@tab greater or equal
+@item <=, le	@tab		@tab lesser or equal
+@item >, gt	@tab		@tab greater
+@item <, lt	@tab		@tab lesser
+@item +		@tab ++	@tab addition, string concatenation
+@item -		@tab		@tab subtraction
+@item *		@tab **	@tab multiplication, string repetition
+@item /		@tab		@tab division
+@item %		@tab		@tab modulo
+@item !		@tab !	@tab logical negation (returns 0/1)
+@item &&		@tab &&	@tab log. AND
+@item ||		@tab ||	@tab log. OR
+@item ~		@tab		@tab bit negation (complement)
+@item &		@tab		@tab bit AND
+@item |		@tab		@tab bit OR
+@item ^		@tab		@tab bit XOR
+@end multitable
+
+Bit operator can be used only on integer numbers.
+
+@section Ternary operator
+
+@emph{expession} ? @emph{expression_true} :  @emph{expression_false}
+@*@*
+Returns expression_value if expression is @emph{true}.
