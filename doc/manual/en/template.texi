@@ -1,23 +1,30 @@
-@c $Id: template.texi,v 1.4 2004-09-09 15:56:06 franci_cz Exp $
+@c $Id: template.texi,v 1.5 2004-09-10 12:26:55 franci_cz Exp $
+@c Syntax index
+@defindex sy
+
+@node Syntax, C++ API, , Top
 @chapter Syntax
+
 
 Tags are enclosed by @strong{<?teng} and @strong{?>} marks.
 
 @section Comment
+@syindex comment
 
-<!-- comment -->
+<!--- comment --->
 
 Comment will not be in output file.
 
 @section Include
 
-<?teng include file="@emph{template.teng}" ?>
+<?teng include file="@var{template.teng}" ?>
 
 Include other template file.
 
 @section Whitespace formating
+@syindex whitespace, formating
 
-begin of block: <?teng format space="@emph{value}" ?>
+begin of block: <?teng format space="@var{value}" ?>
 end of block: <?teng endformat ?>
 
 Set type of formating whitespace in output file. Value of @emph{space} is one of:
@@ -37,8 +44,9 @@ end parent space formating
 @end table
 
 @section Fragment
+@syindex fragment
 
-begin of block: <?teng frag @emph{identifier} ?>
+begin of block: <?teng frag @var{identifier} ?>
 end of block:	<?teng endfrag ?>
 
 Basic data block for reference by application
@@ -54,55 +62,62 @@ actual fragment context
 @end table
 
 @section Condicional block
+@syindex condition
+@syindex if
+@syindex elseif
+@syindex else
 
-begin: <?teng if @emph{expression} ?>@*
-next:  <?teng elseif @emph{expression} ?>@*
+begin: <?teng if @var{expression} ?>@*
+next:  <?teng elseif @var{expression} ?>@*
 next:  <?teng else ?>@*
 end:   <?teng endif ?>@*
 @*
-@emph{Expression} is envaluated as @emph{false} if is equal to empty string, string "0" or number 0. Type of data is ignored.
+@var{Expression} is envaluated as @var{false} if is equal to empty string, string "0" or number 0. Type of data is ignored.
 
 @section Definition of variable
+@syindex variables, definition
 
-<?teng set @emph{variable}=@emph{expression} ?>
+<?teng set @var{variable}=@var{expression} ?>
 @*@*
 Variable is available only in current fragment. Redefinition of variable submited by application will raise error.
 
 @section Variable
+@syindex variables
 
-<?teng expr @emph{$variable} ?>@*
+<?teng expr @var{$variable} ?>@*
 short: $@{variable@}@*
 shorter: $variable
 @*@*
 Include variable (data from application or defined by @strong{set} tag).
-Must begin with letter or _. Can be followed by number. Must start with $ character in expression.
+Must begin with letter or _. Can be followed by number. Must start with $ character in expression.@*
 
 Naming convetion
-@table @asis
-@item name
-unqualified identifier. Only in local context of actual fragment
-@item recipient.name
-partialy qualified identifier
-@item .message.recipient.name
-fully qualified identifier
-@end table
+@syindex variables, naming
+@multitable {mmmmmmmmmmmmmmm} {mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm}
+@item name @tab unqualified identifier. Only in local context of actual fragment
+@item recipient.name @tab partialy qualified identifier
+@item .message.recipient.name @tab fully qualified identifier
+@end multitable
 
 @section Dictionary item
+@syindex dictionary
 
-<?teng expr @emph{#item} ?>@*
+<?teng expr @var{#item} ?>@*
 short: #@{item@}@*
 shorter: #item
 
 Include item from language dictionary into output.
 
 @section Expression
+@syindex expression
 
-<?teng expr @emph{expression} ?>@*
+<?teng expr @var{expression} ?>@*
 short: $@{expression@}
 @*@*
 General expression. Can by combination of data literals, variables, dictionary items, functions, operators and parentheses. Parentheses sets priority.
 
 @section Literals
+@syindex literals
 
 @table @strong
 @item string
@@ -126,10 +141,11 @@ tabelator
 123
 @item real number (float)
 123.45
-
 @end table
 
 @section Operators
+@syindex operator
+@syindex operator, bit
 
 @multitable {mmmmm} {mmmmm} {mmmmmmmmmmmmmmmmmmmm}
 @item numeric @tab string @tab description
@@ -156,18 +172,21 @@ tabelator
 Bit operator can be used only on integer numbers.
 
 @section Ternary operator
+@syindex operator, ternary
 
-@emph{expession} ? @emph{expression_true} :  @emph{expression_false}
+@var{expession} ? @var{expression_true} :  @var{expression_false}
 @*@*
 Returns expression_value if expression is @emph{true}.
 
 @section Case operator
+@syindex operator, case
 
-case(@emph{expession}, @emph{key1},@emph{key2}:@emph{expression1},@emph{key3}:@emph{expression2} ...)@*
+case(@var{expession}, @var{key1},@var{key2}:@var{expression1},@var{key3}:@var{expression2} ...)@*
 
 Returns corresponding expession to value of key.
 
 @section Exist operator
+@syindex operator, exist
 
 exist(@emph{identifier})
 
@@ -182,6 +201,17 @@ Returns:
 @end multitable
 
 @section Functions
+@syindex functions
+@syindex function, len
+@syindex len
+@syindex function, substr
+@syindex substr
+@syindex function, date
+@syindex date
+@syindex function, round
+@syindex round
+@syindex function, random
+@syindex random
 
 @multitable {mmmmmmmmmmmmmmm} {mmm} {mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm}
 @item function					@tab	type	@tab	description
@@ -191,3 +221,7 @@ Returns:
 @item round(@emph{n}, @emph{prec})		@tab	N	@tab	rounds number with @emph{prec} precision
 @item random(@emph{n})					@tab	N	@tab	random number in interval 0 .. @emph{n}
 @end multitable
+
+@page
+@section Index for chapter
+@printindex sy
