@@ -1,0 +1,8 @@
+Package: @PACKAGE@
+Version: @VERSION@
+Architecture: @ARCHITECTURE@
+Depends: libc6 (>= 2.2), libstdc++2.10-glibc2.2 (>= 2.95.4)
+Maintainer: @MAINTAINER@
+Installed-Size: @SIZE@
+Description: Teng -- general purpose templating system
+ Teng is a powerful and easy to use templating system.

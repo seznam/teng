@@ -21,17 +21,17 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: configure.in,v 1.1 2004-07-28 11:36:54 solamyl Exp $
+# $Id: configure.in,v 1.2 2004-07-28 13:13:18 solamyl Exp $
 #
 # DESCRIPTION
 # configure template for Teng.
 #
-# AUTHOR
+# AUTHORS
 # Vaclav Blazek <blazek@firma.seznam.cz>
 #
 # HISTORY
-#          2003-09-17
-#                  First draft.
+# 2003-09-17  (vasek)
+#             Created.
 #
 
 
