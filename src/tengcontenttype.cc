@@ -20,7 +20,7 @@
  * Naskove 1, Praha 5, 15000, Czech Republic
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
- * $Id: tengcontenttype.cc,v 1.2 2004-12-30 12:42:01 vasek Exp $
+ * $Id: tengcontenttype.cc,v 1.3 2005-01-02 16:32:16 vasek Exp $
  *
  * DESCRIPTION
  * Teng language descriptor -- implementation.
@@ -383,13 +383,21 @@ const ContentType_t::Descriptor_t* ContentType_t::getDefault() {
     return unknown;
 }
 
+namespace {
+    struct ToLower_t {
+        int operator () (int c) const {
+            return tolower(c);
+        }
+    };
+}
+
 const ContentType_t::Descriptor_t*
 ContentType_t::findContentType(const string &sname, Error_t &err,
                                const Error_t::Position_t &pos, bool failOnError)
 {
     // make name lower
     string name(sname);
-    transform(name.begin(), name.end(), name.begin(), tolower);
+    transform(name.begin(), name.end(), name.begin(), ToLower_t());
 
     // create all static data
     if (!unknown) getDefault();
