@@ -22,7 +22,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: make.sh,v 1.4 2004-07-29 08:37:40 solamyl Exp $
+# $Id: make.sh,v 1.5 2004-07-29 20:23:01 solamyl Exp $
 #
 # DESCRIPTION
 # Packager for Teng library.
@@ -176,8 +176,8 @@ if test "${MODE}" = "binary"; then
     cp -vd ${INSTALL_DIR}/usr/lib/*.so* ${DEBIAN_BASE}/usr/lib || exit 1
 
     # info files
-    #mkdir -p ${DEBIAN_BASE}/usr/share/info
-    #cp -vR ${INSTALL_DIR}/usr/share/info ${DEBIAN_BASE}/usr/share || exit 1
+    mkdir -p ${DEBIAN_BASE}/usr/share/info
+    cp -vR ${INSTALL_DIR}/usr/share/info ${DEBIAN_BASE}/usr/share || exit 1
 
     # Build the package
     build_package
