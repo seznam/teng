@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengprocessor.cc,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengprocessor.cc,v 1.2 2004-09-06 12:46:10 vasek Exp $
  *
  * DESCRIPTION
  * Teng processor. Executes programs.
@@ -65,6 +65,12 @@ void Processor_t::Logger_t::logError(Error_t::Level_t level,
     if (instr) processor.logErr(*instr, message, level);
 }
 
+struct ToLower_t {
+    int operator () (int c) const {
+        return tolower(c);
+    }
+};
+
 Processor_t::
 FunctionParam_t::FunctionParam_t(Processor_t &processor,
                                  const string &encoding,
@@ -72,7 +78,7 @@ FunctionParam_t::FunctionParam_t(Processor_t &processor,
     : encoding(encoding), escaper(escaper), logger(processor)
 {
     transform(this->encoding.begin(), this->encoding.end(),
-              this->encoding.begin(), tolower);
+              this->encoding.begin(), ToLower_t());
 }
 
 void Processor_t::logErr(const Instruction_t &instr, const string &s,
