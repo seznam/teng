@@ -21,41 +21,27 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: configure.in,v 1.3 2004-07-29 12:18:18 solamyl Exp $
+# $Id: Makefile.am,v 1.1 2004-07-29 12:18:19 solamyl Exp $
 #
 # DESCRIPTION
-# configure template for Teng.
+# A makefile template for Teng manual.
 #
 # AUTHORS
 # Vaclav Blazek <blazek@firma.seznam.cz>
 #
 # HISTORY
-# 2003-09-17  (vasek)
+# 2003-10-08  (vasek)
 #             Created.
 #
 
+# manual should name 'teng.texi' instead
+info_TEXINFOS = manual.texi
+manual_TEXINFOS = template.texi
+TEXINFO_TEX = texinfo.tex
 
-# initialize autoconf
-AC_INIT(teng, 1.0.0, teng@firma.seznam.cz)
-# initialize automake(use AC_INIT's arguments)
-AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
+ps: manual.ps
+pdf: manual.pdf
 
-# tell autoconf where to find sources
-AC_CONFIG_SRCDIR([src/teng.cc])
+%.pdf: %.texi
+	$(TEXI2DVI) --pdf -o $@ $<
 
-# check for C++ compiler
-AC_PROG_CXX
-
-# check for std C headers
-AC_HEADER_STDC
-
-# check for libtool
-AC_PROG_LIBTOOL
-
-# check for flex and bison
-AM_PROG_LEX
-AC_PROG_YACC
-
-# generate Makefile
-AC_OUTPUT(version Makefile src/Makefile
-          doc/Makefile doc/manual/Makefile doc/manual/en/Makefile)

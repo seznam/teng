@@ -1,4 +1,4 @@
-@c $Id: template.texi,v 1.1 2004-07-12 09:35:45 franci_cz Exp $
+@c $Id: template.texi,v 1.2 2004-07-29 12:18:19 solamyl Exp $
 @chapter Syntax
 
 Tags are enclosed by @strong{<?teng} and @strong{?>} marks.
@@ -45,11 +45,11 @@ Basic data block for reference by application
 
 Default variables:
 @table @emph
-@item @_count
+@item _count
 number of iterations of fragment. 
-@item @_number
+@item _number
 actual count of iteration. It begins with 0 and exists only in fragment.
-@item @_this
+@item _this
 actual fragment context
 @end table
 
@@ -75,7 +75,7 @@ short: $@{variable@}@*
 shorter: $variable
 @*@*
 Include variable (data from application or defined by @strong{set} tag).
-Must begin with letter or @_. Can be followed by number. Must start with $ character in expression.
+Must begin with letter or _. Can be followed by number. Must start with $ character in expression.
 
 Naming convetion
 @table @asis
@@ -112,3 +112,4 @@ General expression. Can by combination of data literals, variables, dictionary i
 @item real number (float)
 123.45
 
+@end table
