@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfunction.cc,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengfunction.cc,v 1.2 2004-08-25 16:47:18 vasek Exp $
  *
  * DESCRIPTION
  * Teng processor funcction (like len, substr, round or date)
@@ -707,7 +707,8 @@ static int tengFunctionRandom(const vector<ParserValue_t> &args,
         return -2;
     }
     // it is not good to use low bits of rand() see man 3 rand for detail
-    result.setInteger(((rand() * (a.integerValue + 0.0))/(RAND_MAX + 1.0)));
+    result.setInteger(static_cast<long>((rand() * (a.integerValue + 0.0))
+                                        /(RAND_MAX + 1.0)));
     return 0;
 }
 
@@ -1436,6 +1437,50 @@ static int tengFunctionNL2BR(const vector<ParserValue_t> &args,
     return 0;
 }
 
+/** Check whether argument is a number.
+ * @return Status: 0=ok, -1=wrong argument count, -2=other error.
+ * @param args Function arguments (list of values).
+ * @param setting Teng function setting.
+ * @param result Function's result value. */
+static int tengFunctionIsNumber(const vector<ParserValue_t> &args,
+                                const Processor_t::FunctionParam_t &setting,
+                                ParserValue_t &result)
+{
+    // check params
+    result.setString("undefined");
+    if (args.size() != 1)
+        return -1; //bad args
+
+    result.setInteger(args.front().type != ParserValue_t::TYPE_STRING);
+    return 0;
+}
+
+/** Check whether argument is a number.
+ * @return Status: 0=ok, -1=wrong argument count, -2=other error.
+ * @param args Function arguments (list of values).
+ * @param setting Teng function setting.
+ * @param result Function's result value. */
+static int tengFunctionSecToTime(const vector<ParserValue_t> &args,
+                                 const Processor_t::FunctionParam_t &setting,
+                                 ParserValue_t &result)
+{
+    // check params
+    result.setString("undefined");
+    if (args.size() != 1)
+        return -1; //bad args
+
+    if (args.front().type == ParserValue_t::TYPE_STRING)
+        return -2;
+
+    long sec = args.front().integerValue;
+
+    char buf[256];
+    snprintf(buf, sizeof(buf), "%ld:%02ld:%02ld", sec / 3600,
+             (sec % 3600) / 60, sec % 60);
+
+    result.setString(buf);
+    return 0;
+}
 
 namespace {
     struct FunctionStub_t {
@@ -1462,6 +1507,8 @@ namespace {
         {"int", true, tengFunctionInt},           // like (int) in C
         {"urlescape", true, tengFunctionUrlEscape}, // escape strange chars in urls
         {"nl2br", true, tengFunctionNL2BR},       // convert '\n' => <br />
+        {"isnumber", true, tengFunctionIsNumber}, // checks whether argument is s number
+        {"sec_to_time", true, tengFunctionSecToTime}, // convert seconds to HH:MM:SS
         { 0, false, 0}                            // end of list
     };
 }
