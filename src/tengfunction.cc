@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfunction.cc,v 1.2 2004-08-25 16:47:18 vasek Exp $
+ * $Id: tengfunction.cc,v 1.3 2004-09-09 15:32:16 solamyl Exp $
  *
  * DESCRIPTION
  * Teng processor funcction (like len, substr, round or date)
@@ -1365,9 +1365,8 @@ static int tengFunctionInt(const vector<ParserValue_t> &args,
     
     a.validateThis();
     if (a.type == ParserValue_t::TYPE_STRING) {
-        setting.logger.
-            logError(Error_t::LL_ERROR,
-                     "int(): Cannot convert string to int.");
+        setting.logger.logError(Error_t::LL_ERROR,
+                "int(): Cannot convert string to int.");
         return -2;
     }
     result.setInteger(a.integerValue);
@@ -1437,6 +1436,7 @@ static int tengFunctionNL2BR(const vector<ParserValue_t> &args,
     return 0;
 }
 
+
 /** Check whether argument is a number.
  * @return Status: 0=ok, -1=wrong argument count, -2=other error.
  * @param args Function arguments (list of values).
@@ -1455,6 +1455,7 @@ static int tengFunctionIsNumber(const vector<ParserValue_t> &args,
     return 0;
 }
 
+
 /** Check whether argument is a number.
  * @return Status: 0=ok, -1=wrong argument count, -2=other error.
  * @param args Function arguments (list of values).
@@ -1468,19 +1469,20 @@ static int tengFunctionSecToTime(const vector<ParserValue_t> &args,
     result.setString("undefined");
     if (args.size() != 1)
         return -1; //bad args
+    
+    ParserValue_t sec(args[0]);
+    sec.validateThis();
+    if (sec.type == ParserValue_t::TYPE_STRING)
+        return -2; //not a number
 
-    if (args.front().type == ParserValue_t::TYPE_STRING)
-        return -2;
-
-    long sec = args.front().integerValue;
-
-    char buf[256];
-    snprintf(buf, sizeof(buf), "%ld:%02ld:%02ld", sec / 3600,
-             (sec % 3600) / 60, sec % 60);
+    char buf[64];
+    snprintf(buf, sizeof(buf), "%ld:%02ld:%02ld", sec.integerValue / 3600,
+             (sec.integerValue % 3600) / 60, sec.integerValue % 60);
 
     result.setString(buf);
     return 0;
 }
+
 
 namespace {
     struct FunctionStub_t {
@@ -1497,9 +1499,9 @@ namespace {
         {"date", true, tengFunctionFormatDate},   // like strftime
         {"now", false, tengFunctionNow},          // like gettimeofday (returns real)
         {"substr", false, tengFunctionSubstr},    // like str[a:b] in Python
-        {"substr_word", false, tengFunctionWordSubstr}, // like str[a:b] in Python
+        {"wordsubstr", false, tengFunctionWordSubstr}, // like str[a:b] in Python
                                                         // but does not split words
-        {"wordsubstr", false, tengFunctionWordSubstr}, // prefered alias
+        {"substr_word", false, tengFunctionWordSubstr}, // deprecated name
         {"escape", false, tengFunctionEscape},    // for example "<" => "&lt;"
         {"unescape", false, tengFunctionUnescape},// for example "&lt;" => "<"
         {"reorder", true, tengFunctionReorder},   // like sprintf with %s changing
@@ -1508,7 +1510,8 @@ namespace {
         {"urlescape", true, tengFunctionUrlEscape}, // escape strange chars in urls
         {"nl2br", true, tengFunctionNL2BR},       // convert '\n' => <br />
         {"isnumber", true, tengFunctionIsNumber}, // checks whether argument is s number
-        {"sec_to_time", true, tengFunctionSecToTime}, // convert seconds to HH:MM:SS
+        {"sectotime", true, tengFunctionSecToTime}, // convert seconds to HH:MM:SS
+        {"sec_to_time", true, tengFunctionSecToTime}, // deprecated name
         { 0, false, 0}                            // end of list
     };
 }
