@@ -1,5 +1,5 @@
 @c -*-texinfo-*-
-@c FILE              $Id: api_python.texi,v 1.4 2004-09-10 12:48:30 franci_cz Exp $
+@c FILE              $Id: api_python.texi,v 1.5 2005-03-08 15:44:45 franci_cz Exp $
 @c
 @c DESCRIPTION       Teng manual -- chapter 'Python API'.
 @c
@@ -493,7 +493,7 @@ tree from a Python script to Teng.
 import teng
 
 # initialize Teng engine with defaults
-t = teng.Teng();
+t = teng.Teng()
 
 # build data tree from bottom up
 data = @{'row': []@}
@@ -525,7 +525,7 @@ data tree.
 import teng
 
 # initialize Teng engine with defaults
-t = teng.Teng();
+t = teng.Teng()
 
 data = t.createDataRoot()
 
