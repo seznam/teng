@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: teng.cc,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: teng.cc,v 1.2 2004-09-24 12:23:53 vasek Exp $
  *
  * DESCRIPTION
  * Teng engine -- implementation.
@@ -50,7 +50,7 @@ using namespace std;
 
 using namespace Teng;
 
-extern "C" int __teng() {
+extern "C" int teng_library_present() {
     return 0;
 }
 
