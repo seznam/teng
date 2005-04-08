@@ -21,7 +21,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: bootstrap.sh,v 1.1 2004-09-24 12:29:03 vasek Exp $
+# $Id: bootstrap.sh,v 1.2 2005-04-08 13:15:30 solamyl Exp $
 #
 # DESCRIPTION
 # Bootstrap for CVS checkout -- uses autotools to create all needed files.
@@ -34,18 +34,18 @@
 #             Created.
 #
 
-echo -n "Running libtoolize... "
-libtoolize --force
-echo  "done."
-
 echo -n "Running aclocal... "
 aclocal
-echo  "done."
+echo "done."
+
+echo -n "Running libtoolize... "
+libtoolize --force
+echo "done."
 
 echo -n "Running automake... "
 automake --add-missing --gnu
-echo  "done."
+echo "done."
 
 echo -n "Running autoconf... "
 autoconf
-echo  "done."
+echo "done."
