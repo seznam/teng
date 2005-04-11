@@ -21,7 +21,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: Makefile.am,v 1.6 2005-04-11 14:12:04 solamyl Exp $
+# $Id: Makefile.am,v 1.7 2005-04-11 17:14:01 solamyl Exp $
 #
 # DESCRIPTION
 # A makefile template for project Teng.
@@ -36,3 +36,8 @@
 
 SUBDIRS = src
 # directories temporarily out of order: 'test', 'doc'
+
+# debian packaging scripts
+EXTRA_DIST = debian/libteng.control debian/libteng.postinst \
+             debian/libteng-dev.control \
+             debian/make.sh

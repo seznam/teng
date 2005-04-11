@@ -21,7 +21,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: Makefile.am,v 1.4 2005-04-11 14:16:48 solamyl Exp $
+# $Id: Makefile.am,v 1.5 2005-04-11 17:14:01 solamyl Exp $
 #
 # DESCRIPTION
 # A makefile template for Teng.
@@ -61,7 +61,7 @@ libteng_la_SOURCES = teng.cc tengstructs.cc tengutil.cc tengcache.cc \
                      tengfunction.cc tengprocessor.cc tengwriter.cc \
                      tengformatter.cc tengcontenttype.cc \
                      tengtemplate.cc tenglex1.cc tengsyntax.yy \
-                     tenglex2.ll tengcode.cc tengdatadefinition.cc \
+                     tenglex2.ll tengcode.cc \
                      tengmd5.cc tengconfiguration.cc trunc.cc round.cc
 
 # with these flags (version info etc.)

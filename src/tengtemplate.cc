@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengtemplate.cc,v 1.3 2005-01-02 16:38:58 vasek Exp $
+ * $Id: tengtemplate.cc,v 1.4 2005-04-11 17:14:02 solamyl Exp $
  *
  * DESCRIPTION
  * Teng template and cache of templates -- implementation.
@@ -119,8 +119,10 @@ TemplateCache_t::createTemplate(const string &templateSource,
     }
     
     // create template with cached sources
-    return new Template_t(cachedProgram, configAndDict.second,
-                          configAndDict.first, this);
+    // cannot return value directly, because of g++ 2.95 warnings
+    Template_t *retval = new Template_t(cachedProgram,
+            configAndDict.second, configAndDict.first, this);
+    return retval;
 }
 
 TemplateCache_t::ConfigAndDict_t
