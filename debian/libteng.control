@@ -1,7 +1,7 @@
 Package: @PACKAGE@
 Version: @VERSION@
 Architecture: @ARCHITECTURE@
-Depends: libc6 (>= 2.2), libstdc++3 (>= 3.0)
+Depends: @STANDARD_DEPEND@
 Maintainer: @MAINTAINER@
 Installed-Size: @SIZE@
 Description: Teng -- general purpose templating system

@@ -22,7 +22,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: make.sh,v 1.6 2005-04-11 07:44:10 solamyl Exp $
+# $Id: make.sh,v 1.7 2005-04-11 19:08:26 solamyl Exp $
 #
 # DESCRIPTION
 # Packager for Teng library.
@@ -139,14 +139,29 @@ function build_package {
 
     # Remove any lost CVS entries in the package tree.
     find ${DEBIAN_BASE} -path "*CVS*" -exec rm -Rf '{}' \; || exit 1
-
+    
+    # Dependencies to the standard libraries (libc, libstdc++)
+    STANDARD_DEPEND=""
+    ldd_libs=$(ldd ${INSTALL_DIR}/usr/lib/*.so* \
+            | grep -e libc -e libstdc \
+            | cut -f2 -d'>' | cut -f1 -d'(' | sort | uniq)
+    for lib in ${ldd_libs}; do
+        # determine .deb package from library file
+        pkg=$(dpkg -S ${lib} | cut -f1 -d':')
+        if [ "${STANDARD_DEPEND}" = "" ]; then
+            STANDARD_DEPEND=${pkg}
+        else
+            STANDARD_DEPEND=${STANDARD_DEPEND}", "${pkg}
+        fi
+    done
+    
     # Compute package's size.
     SIZEDU=$(du -sk ${DEBIAN_BASE} | awk '{print $1}') || exit 1
     SIZEDIR=$(find ${DEBIAN_BASE} -type d | wc | awk '{print $1}') || exit 1
     SIZE=$[ $SIZEDU - $SIZEDIR ] || exit 1
     
     VERSION=$(< ../version)
-
+    
     # Process control file -- all <tags> will be replaced with
     # appropriate data.
     sed     -e "s/@VERSION@/${VERSION}/" \
@@ -154,6 +169,7 @@ function build_package {
             -e "s/@MAINTAINER@/${MAINTAINER}/" \
             -e "s/@ARCHITECTURE@/$(dpkg --print-architecture)/" \
             -e "s/@SIZE@/${SIZE}/" \
+            -e "s/@STANDARD_DEPEND@/${STANDARD_DEPEND}/" \
             -e "s/@EXTRA_DEPEND@/${EXTRA_DEPEND}/" \
             ${PROJECT_NAME}.control > ${CONTROL_DIR}/control || exit 1
 
