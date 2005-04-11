@@ -1,0 +1,8 @@
+Package: @PACKAGE@
+Version: @VERSION@
+Architecture: @ARCHITECTURE@
+Depends: libteng0 (>= 0.0.1), @PYTHON_PACKAGE@
+Maintainer: @MAINTAINER@
+Installed-Size: @SIZE@
+Description: Teng module for python
+ Teng is a powerful and easy to use templating system.
