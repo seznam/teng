@@ -22,7 +22,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: make.sh,v 1.1 2005-04-11 07:41:59 solamyl Exp $
+# $Id: make.sh,v 1.2 2005-04-11 19:08:26 solamyl Exp $
 #
 # DESCRIPTION
 # Packager for Teng library.
@@ -137,6 +137,21 @@ function build_package {
     # Remove any lost CVS entries in the package tree.
     find ${DEBIAN_BASE} -path "*CVS*" -exec rm -Rf '{}' \; || exit 1
 
+    # Dependencies to the system libraries (libc, libstdc++, ...)
+    STANDARD_DEPEND=""
+    ldd_libs=$(ldd $(find ${INSTALL_DIR}/usr/lib -name '*.so') \
+            | grep -e libc -e libstdc -e libteng \
+            | cut -f2 -d'>' | cut -f1 -d'(' | sort | uniq)
+    for lib in ${ldd_libs}; do
+        # determine .deb package from library file
+        pkg=$(dpkg -S ${lib} | cut -f1 -d':')
+        if [ "${STANDARD_DEPEND}" = "" ]; then
+            STANDARD_DEPEND=${pkg}
+        else
+            STANDARD_DEPEND=${STANDARD_DEPEND}", "${pkg}
+        fi
+    done
+    
     # Compute package's size.
     SIZEDU=$(du -sk ${DEBIAN_BASE} | awk '{print $1}') || exit 1
     SIZEDIR=$(find ${DEBIAN_BASE} -type d | wc | awk '{print $1}') || exit 1
@@ -151,7 +166,8 @@ function build_package {
             -e "s/@MAINTAINER@/${MAINTAINER}/" \
             -e "s/@ARCHITECTURE@/$(dpkg --print-architecture)/" \
             -e "s/@SIZE@/${SIZE}/" \
-            -e "s/@PYTHON_PACKAGE@/${PYTHON_PACKAGE}/" \
+            -e "s/@STANDARD_DEPEND@/${STANDARD_DEPEND}/" \
+            -e "s/@EXTRA_DEPEND@/${EXTRA_DEPEND}/" \
             ${PROJECT_NAME}.control > ${CONTROL_DIR}/control || exit 1
 
     # Create and rename the package.
@@ -229,9 +245,9 @@ EOF) || exit 1
         PYTENG_PACKAGE=${name}${PYTHON_VERSION}-${suff}
     fi
     # Dependece to the name of the python interpreter
-    PYTHON_PACKAGE="python (>= ${PYTHON_VERSION}), python (<< ${NEXT_PYTHON_VERSION})"
+    EXTRA_DEPEND="python (>= ${PYTHON_VERSION}), python (<< ${NEXT_PYTHON_VERSION})"
     # Add dependence to real 'python?.?-teng' package
-    PYTHON_PACKAGE="${PYTHON_PACKAGE}, ${PYTENG_PACKAGE}"
+    EXTRA_DEPEND="${EXTRA_DEPEND}, ${PYTENG_PACKAGE}"
 
     # Inform about package name.
     echo "Building empty package (${PACKAGE_NAME}) for default python. Python interpreter reset to python."
@@ -246,7 +262,7 @@ else
         PACKAGE_NAME=${name}${PYTHON_VERSION}-${suff}
     fi
     # Dependence to the name of the python interpreter
-    PYTHON_PACKAGE="python${PYTHON_VERSION}"
+    EXTRA_DEPEND="python${PYTHON_VERSION}"
 
     # Inform about package name.
     echo "Building package ${PACKAGE_NAME}."
@@ -285,7 +301,7 @@ export PROJECT_NAME
 export MAINTAINER
 export INSTALL_DIR
 export PACKAGE_NAME
-export PYTHON_PACKAGE
+export EXTRA_DEPEND
 export DEFAULT
 export DEBUG
 
