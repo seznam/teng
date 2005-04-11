@@ -1,7 +1,7 @@
 Package: @PACKAGE@
 Version: @VERSION@
 Architecture: @ARCHITECTURE@
-Depends: libteng0 (>= 0.0.1), @PYTHON_PACKAGE@
+Depends: libteng1, @PYTHON_PACKAGE@
 Maintainer: @MAINTAINER@
 Installed-Size: @SIZE@
 Description: Teng module for python
