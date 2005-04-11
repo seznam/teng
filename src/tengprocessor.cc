@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengprocessor.cc,v 1.6 2005-02-17 20:48:54 vasek Exp $
+ * $Id: tengprocessor.cc,v 1.7 2005-04-11 13:48:54 solamyl Exp $
  *
  * DESCRIPTION
  * Teng processor. Executes programs.
@@ -46,7 +46,6 @@
 #include <sstream>
 #include <iomanip>
 
-#include <fenv.h>
 #include <math.h>
 #include <time.h>
 #include <ctype.h>
@@ -58,6 +57,11 @@
 #include "tengfunction.h"
 #include "tengprocessor.h"
 #include "tengfragmentstack.h"
+
+#ifdef HAVE_FENV_H
+#include <fenv.h>
+#endif
+
 
 using namespace std;
 
@@ -143,7 +147,9 @@ int Processor_t::evalNumOp(const Instruction_t &instr) {
     
     if ((a.type == ParserValue_t::TYPE_REAL) ||
         (b.type == ParserValue_t::TYPE_REAL)) {
+#ifdef HAVE_FENV_H
         feclearexcept(FE_ALL_EXCEPT);
+#endif
         
         switch (instr.operation) {
         case Instruction_t::BITAND:
@@ -188,9 +194,11 @@ int Processor_t::evalNumOp(const Instruction_t &instr) {
             return -1;
         }
         
+#ifdef HAVE_FENV_H
         if (fetestexcept(FE_ALL_EXCEPT) & (~FE_INEXACT)) {
             return -1;
         }
+#endif
     } else {
         switch(instr.operation) { 
         case Instruction_t::BITAND:
@@ -269,8 +277,10 @@ int Processor_t::numOp(const Instruction_t &instr) {
         a.setString("undefined");
     } else if ((a.type == ParserValue_t::TYPE_REAL) ||
                (b.type == ParserValue_t::TYPE_REAL)) {
+#ifdef HAVE_FENV_H
         feclearexcept(FE_ALL_EXCEPT);
-        
+#endif
+                
         switch (instr.operation) { 
         case Instruction_t::BITAND:
         case Instruction_t::BITOR:
@@ -324,11 +334,13 @@ int Processor_t::numOp(const Instruction_t &instr) {
             return -1;
         }
         
+#ifdef HAVE_FENV_H
         if (fetestexcept(FE_ALL_EXCEPT) & (~FE_INEXACT) & (~FE_INVALID)) {
             logErr(instr, "Invalid floating point operation",
                    Error_t::LL_ERROR);
             a.setString("undefined");
         }
+#endif
     } else {
         switch (instr.operation) {
         case Instruction_t::BITAND:

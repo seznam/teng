@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfunction.cc,v 1.4 2004-12-30 12:42:01 vasek Exp $
+ * $Id: tengfunction.cc,v 1.5 2005-04-11 13:48:54 solamyl Exp $
  *
  * DESCRIPTION
  * Teng processor funcction (like len, substr, round or date)
@@ -54,6 +54,17 @@
 #include <sys/time.h>
 
 #include "tengfunction.h"
+
+#ifndef HAVE_TRUNC
+// emulated trunc() math function if not in libc
+double trunc(double x);
+#endif
+
+#ifndef HAVE_ROUND
+// emulated round() math function if not in libc
+double round(double x);
+#endif
+
 
 using namespace std;
 

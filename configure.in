@@ -21,7 +21,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: configure.in,v 1.4 2004-08-25 16:52:55 vasek Exp $
+# $Id: configure.in,v 1.5 2005-04-11 13:48:47 solamyl Exp $
 #
 # DESCRIPTION
 # configure template for Teng.
@@ -55,6 +55,14 @@ AC_PROG_LIBTOOL
 # check for flex and bison
 AM_PROG_LEX
 AC_PROG_YACC
+
+# check for special header files
+AC_CHECK_HEADERS(fenv.h)
+
+# check for functions that may miss on some platforms
+AC_CHECK_LIB(m, trunc)
+AC_REPLACE_FUNCS(trunc)
+AC_REPLACE_FUNCS(round)
 
 # generate Makefile
 AC_OUTPUT(version Makefile src/Makefile
