@@ -21,7 +21,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: configure.in,v 1.6 2005-04-11 14:02:21 vasek Exp $
+# $Id: configure.in,v 1.7 2005-04-11 14:12:05 solamyl Exp $
 #
 # DESCRIPTION
 # configure template for Teng.
@@ -54,8 +54,8 @@ AC_PROG_LIBTOOL
 
 # This version number needs to be changed in several different ways for each
 # release. Please read the libtool documentation (info libtool 'Updating
-# version info') before touching this.
-VERSION_INFO="-version-info 0:0:0"
+# version info') before touching this. (this is *.so version number).
+VERSION_INFO="-version-info 1:0:0"
 AC_SUBST(VERSION_INFO)
 
 # check for flex and bison
@@ -72,5 +72,4 @@ AC_REPLACE_FUNCS(round)
 
 # generate Makefile
 AC_OUTPUT(version Makefile src/Makefile)
-
 #          doc/Makefile doc/manual/Makefile doc/manual/en/Makefile)
