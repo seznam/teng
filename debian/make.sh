@@ -22,7 +22,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: make.sh,v 1.3 2005-04-11 19:43:00 solamyl Exp $
+# $Id: make.sh,v 1.4 2005-04-11 19:48:57 solamyl Exp $
 #
 # DESCRIPTION
 # Packager for Teng library.
@@ -41,7 +41,9 @@
 while [ "$#" != "0" ]; do
     case "$1" in
         --help)
+            echo ""
             echo "Usage: make.sh [--with-python=PYTHON] [--debug] [--help]"
+            echo ""
             echo "    --with-python PYTHON"
             echo "    --with-python=PYTHON sets python interpreter for which to build"
             echo "                         a package (defaults to 'python')"
@@ -62,6 +64,7 @@ while [ "$#" != "0" ]; do
             echo "    python-teng.conffiles, python-teng.prerm and python-teng.postrm"
             echo "    files that would be used as postinst, preinst, conffiles, prerm"
             echo "    and postrm files in the package."
+            echo ""
             exit 0
         ;;
 
