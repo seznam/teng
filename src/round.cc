@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: round.cc,v 1.1 2005-04-11 13:48:54 solamyl Exp $
+ * $Id: round.cc,v 1.2 2005-04-11 17:13:03 solamyl Exp $
  *
  * DESCRIPTION
  * Emulation of round() math function.
@@ -33,6 +33,8 @@
  * 2005-04-11  (stepan)
  *             Created.
  */
+
+#include <math.h>
 
 
 /**
