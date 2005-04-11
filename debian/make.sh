@@ -22,7 +22,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: make.sh,v 1.2 2005-04-11 19:08:26 solamyl Exp $
+# $Id: make.sh,v 1.3 2005-04-11 19:43:00 solamyl Exp $
 #
 # DESCRIPTION
 # Packager for Teng library.
@@ -139,7 +139,7 @@ function build_package {
 
     # Dependencies to the system libraries (libc, libstdc++, ...)
     STANDARD_DEPEND=""
-    ldd_libs=$(ldd $(find ${INSTALL_DIR}/usr/lib -name '*.so') \
+    ldd_libs=$(ldd $(find ${INSTALL_DIR}/usr/lib -name '*.so' 2>/dev/null) 2>/dev/null \
             | grep -e libc -e libstdc -e libteng \
             | cut -f2 -d'>' | cut -f1 -d'(' | sort | uniq)
     for lib in ${ldd_libs}; do
@@ -151,6 +151,11 @@ function build_package {
             STANDARD_DEPEND=${STANDARD_DEPEND}", "${pkg}
         fi
     done
+    
+    # Comma between standard depend and extra depend
+    if [ "${STANDARD_DEPEND}" != "" -a "${EXTRA_DEPEND}" != "" ]; then
+        STANDARD_DEPEND=${STANDARD_DEPEND}","
+    fi
     
     # Compute package's size.
     SIZEDU=$(du -sk ${DEBIAN_BASE} | awk '{print $1}') || exit 1
