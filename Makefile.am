@@ -21,7 +21,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: Makefile.am,v 1.3 2004-07-29 12:18:18 solamyl Exp $
+# $Id: Makefile.am,v 1.4 2005-04-11 07:44:10 solamyl Exp $
 #
 # DESCRIPTION
 # A makefile template for project Teng.
@@ -34,5 +34,5 @@
 #                   Created.
 #
 
-SUBDIRS = src doc
-# directories temporarily out of order: 'test'
+SUBDIRS = src
+# directories temporarily out of order: 'test', 'doc'
