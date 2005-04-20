@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfunction.cc,v 1.5 2005-04-11 13:48:54 solamyl Exp $
+ * $Id: tengfunction.cc,v 1.6 2005-04-20 16:56:02 vasek Exp $
  *
  * DESCRIPTION
  * Teng processor funcction (like len, substr, round or date)
@@ -809,10 +809,11 @@ static int parseDateTime(const string &str, struct tm &dateTime) {
     switch(*pos++) {
     case 0:
         goto endFunction;
+    case ' ':
     case 'T':
         break;
     default:
-        // expected 'T' as date/time separator
+        // expected 'T' or ' ' as date/time separator
         return -1;
     }
     
@@ -849,9 +850,13 @@ static int parseDateTime(const string &str, struct tm &dateTime) {
     pos += 2;
     
     if (*pos) {
-        //  expected EOS");
-        return -1;
+        if ((*pos != '-') && (*pos != '+')) {
+            //  expected EOS");
+            return -1;
+        }
+        // ignore timezone
     }
+
  endFunction:
     if (dateTime.tm_year<0) {
         dateTime.tm_wday=-1;
