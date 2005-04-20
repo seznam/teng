@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengmodule.cc,v 1.4 2005-04-04 13:41:22 vasek Exp $
+ * $Id: tengmodule.cc,v 1.5 2005-04-20 14:45:22 vasek Exp $
  *
  * DESCRIPTION
  * Teng python module.
@@ -1025,7 +1025,7 @@ PyObject* Teng_createDataRoot(TengObject *self, PyObject *args,
         fragment->dataTree = dataTree.release();
         fragment->fragment = fragment->dataTree->getRoot();
         // remember this fragment
-        dataTree->addReferrer(fragment);
+        fragment->dataTree->addReferrer(fragment);
         
         // OK
         return reinterpret_cast<PyObject*>(fragment);
