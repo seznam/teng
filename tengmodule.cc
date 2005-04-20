@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengmodule.cc,v 1.5 2005-04-20 14:45:22 vasek Exp $
+ * $Id: tengmodule.cc,v 1.6 2005-04-20 16:24:30 vasek Exp $
  *
  * DESCRIPTION
  * Teng python module.
@@ -1301,16 +1301,18 @@ namespace {
         if (exc_type) return -1;
 
         // check for buffer overflow
-        if (bufferUsed && ((BUFF_SIZE - bufferUsed) > length)) {
+        if ((BUFF_SIZE - bufferUsed) < length) {
             // flush buffer
             if (flush()) return -1;
 
             // check whether string fits to data buffer
             if (length > BUFF_SIZE) {
+                // write data without buffering and return
                 if (writeData(data, length)) return -1;
+                return 0;
             }
         }
-
+            
         // remember data
         std::memcpy(buffer + bufferUsed, data, length);
         bufferUsed += length;
