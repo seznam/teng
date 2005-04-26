@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengprocessor.cc,v 1.7 2005-04-11 13:48:54 solamyl Exp $
+ * $Id: tengprocessor.cc,v 1.8 2005-04-26 13:56:25 vasek Exp $
  *
  * DESCRIPTION
  * Teng processor. Executes programs.
@@ -85,9 +85,10 @@ Processor_t::
 FunctionParam_t::FunctionParam_t(Processor_t &processor,
                                  const string &encoding,
                                  const ContentType_t *contentType,
-                                 const Configuration_t &configuration)
+                                 const Configuration_t &configuration,
+                                 const Dictionary_t &langDictionary)
     : encoding(encoding), escaper(contentType), logger(processor),
-      configuration(configuration)
+      configuration(configuration), langDictionary(langDictionary)
 {
     transform(this->encoding.begin(), this->encoding.end(),
               this->encoding.begin(), ToLower_t());
@@ -124,7 +125,7 @@ Processor_t::Processor_t(const Program_t &program,
                          const string &encoding,
                          const ContentType_t *contentType)
     : program(program), langDictionary(dict), configuration(configuration),
-      fParam(*this, encoding, contentType, configuration)
+      fParam(*this, encoding, contentType, configuration, dict)
 {
     srand(time(0) ^ getpid()); // because of user function random
 }

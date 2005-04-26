@@ -22,7 +22,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengsyntax.yy,v 1.4 2005-02-17 20:48:54 vasek Exp $
+ * $Id: tengsyntax.yy,v 1.5 2005-04-26 13:56:25 vasek Exp $
  *
  * DESCRIPTION
  * Teng syntax analyzer.
@@ -1451,8 +1451,10 @@ voluntary_dollar_before_var:
     LEX_VAR
     | //empty
         {
+#if 0
             ERR(DEBUG, CONTEXT->position, "Variable identifier should "
                     "start with '$'. Leaving it out is obsolete syntax.");
+#endif
 		}
 	;
 

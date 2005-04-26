@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengprocessor.h,v 1.2 2004-12-30 12:42:02 vasek Exp $
+ * $Id: tengprocessor.h,v 1.3 2005-04-26 13:56:25 vasek Exp $
  *
  * DESCRIPTION
  * Teng processor. Executes programs.
@@ -109,13 +109,15 @@ public:
     struct FunctionParam_t {
         FunctionParam_t(Processor_t &processor, const string &encoding,
                         const ContentType_t *contentType,
-                        const Configuration_t &configuration);
+                        const Configuration_t &configuration,
+                        const Dictionary_t &langDictionary);
         
         string encoding;  /** < encoding of template
                               (other UTF-8 string functions) */
         Escaper_t escaper; /** < string escaping */
         mutable Logger_t logger;
         const Configuration_t &configuration;
+        const Dictionary_t &langDictionary;
     };
 
     // we have to access logErr method, otherwise unaccesible

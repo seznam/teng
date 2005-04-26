@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfunction.cc,v 1.6 2005-04-20 16:56:02 vasek Exp $
+ * $Id: tengfunction.cc,v 1.7 2005-04-26 13:56:24 vasek Exp $
  *
  * DESCRIPTION
  * Teng processor funcction (like len, substr, round or date)
@@ -1532,6 +1532,31 @@ static int tengFunctionIsEnabled(const vector<ParserValue_t> &args,
     return 0;
 }
 
+/** Check whether given key is present in dictionaries.
+ * @return Status: 0=ok, -1=wrong argument count, -2=other error.
+ * @param args Function arguments (list of values).
+ * @param setting Teng function setting.
+ * @param result Function's result value. */
+static int tengFunctionDictExist(const vector<ParserValue_t> &args,
+                                 const Processor_t::FunctionParam_t &setting,
+                                 ParserValue_t &result)
+{
+    // check params
+    result.setInteger(0);
+    if (args.size() != 1)
+        return -1; //bad args
+    
+    ParserValue_t key(args[0]);
+    key.validateThis();
+    if (key.type != ParserValue_t::TYPE_STRING)
+        return -2; //not a string
+
+    // set result value
+    result.setInteger(setting.langDictionary.lookup(key.stringValue)
+                      || setting.configuration.lookup(key.stringValue));
+    return 0;
+}
+
 namespace {
     struct FunctionStub_t {
         char *name;        // teng name
@@ -1561,6 +1586,7 @@ namespace {
         {"sectotime", true, tengFunctionSecToTime}, // convert seconds to HH:MM:SS
         {"sec_to_time", true, tengFunctionSecToTime}, // deprecated name
         {"isenabled", true, tengFunctionIsEnabled}, // isenabled(feature)
+        {"dictexist", true, tengFunctionDictExist}, // dictexist(key)
         { 0, false, 0}                            // end of list
     };
 }

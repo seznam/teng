@@ -22,7 +22,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: make.sh,v 1.7 2005-04-11 19:08:26 solamyl Exp $
+# $Id: make.sh,v 1.8 2005-04-26 13:56:24 vasek Exp $
 #
 # DESCRIPTION
 # Packager for Teng library.
@@ -193,7 +193,7 @@ if [ "${MODE}" = "binary" ]; then
 
     # lib files
     mkdir -p ${DEBIAN_BASE}/usr/lib
-    cp -vd ${INSTALL_DIR}/usr/lib/*.so* ${DEBIAN_BASE}/usr/lib || exit 1
+    cp -vd ${INSTALL_DIR}/usr/lib/*.so.* ${DEBIAN_BASE}/usr/lib || exit 1
 
     # info files (documentation)
     ################ temporarily disabled because its build is broken
@@ -224,6 +224,7 @@ elif [ "${MODE}" = "dev" ]; then
     mkdir -p ${DEBIAN_BASE}/usr/lib
     cp -v ${INSTALL_DIR}/usr/lib/*.a ${DEBIAN_BASE}/usr/lib || exit 1
     cp -v ${INSTALL_DIR}/usr/lib/*.la ${DEBIAN_BASE}/usr/lib || exit 1
+    cp -v ${INSTALL_DIR}/usr/lib/*.so ${DEBIAN_BASE}/usr/lib || exit 1
     
     # Compose extra dependencies: we must depend on teng library with
     # exactly same version.
