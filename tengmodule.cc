@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengmodule.cc,v 1.6 2005-04-20 16:24:30 vasek Exp $
+ * $Id: tengmodule.cc,v 1.7 2005-05-04 09:03:51 vasek Exp $
  *
  * DESCRIPTION
  * Teng python module.
@@ -1120,8 +1120,8 @@ static PyObject* Fragment_addVariable(FragmentObject *self,
         return 0;
     }
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_INCREF(self);
+    return reinterpret_cast<PyObject*>(self);
 }
 
 /**
