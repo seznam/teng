@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengmodule.cc,v 1.7 2005-05-04 09:03:51 vasek Exp $
+ * $Id: tengmodule.cc,v 1.8 2005-05-10 13:26:15 vasek Exp $
  *
  * DESCRIPTION
  * Teng python module.
@@ -679,8 +679,8 @@ static PyObject* Teng_dictionaryLookup(TengObject *self, PyObject *args,
                                        PyObject *keywds)
 {
     // allowed keywords
-    static char *kwlist[] = {"dictionaryFilename", "configFilename",
-                             "language", "key", 0};
+    static char *kwlist[] = {"dictionaryFilename", "language", "key",
+                             "configFilename", 0};
 
     // values of arguments
     const char *configFilename = "";
