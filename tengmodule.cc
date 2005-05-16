@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengmodule.cc,v 1.8 2005-05-10 13:26:15 vasek Exp $
+ * $Id: tengmodule.cc,v 1.9 2005-05-16 08:25:19 vasek Exp $
  *
  * DESCRIPTION
  * Teng python module.
@@ -1240,8 +1240,17 @@ namespace {
     inline bool hasMethod(PyObject *obj, const char *method_) {
         // grrrr :-(
         char *method(const_cast<char*>(method_));
-        return (PyObject_HasAttrString(obj, method) &&
-                PyCallable_Check(PyObject_GetAttrString(obj, method)));
+
+        // check whether we have such attribute
+        if (!PyObject_HasAttrString(obj, method)) return false;
+        PyObject *pymethod(PyObject_GetAttrString(obj, method));
+        if (!pymethod) throw PyException_t();
+
+        // check whether attributes is callable
+        bool res = PyCallable_Check(pymethod);
+        Py_DECREF(pymethod);
+
+        return res;
     }
 
     PyWriter_t::PyWriter_t(PyObject *obj)
