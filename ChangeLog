@@ -12,3 +12,9 @@ Released: 2005-04-11
   where missing.
 - Check for presence of fenv.h file; exception checks are disabled
   if header file does not exist.
+
+1.0.10:
+Released: 2005-05-25
+- Teng function date() now accepts ISO8601-formated dates.
+- Added new function dictexist() for checking dict item existence.
+
