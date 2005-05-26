@@ -14,7 +14,7 @@ Released: 2005-04-11
   if header file does not exist.
 
 1.0.10:
-Released: 2005-05-25
+Released: 2005-05-26
 - Teng function date() now accepts ISO8601-formated dates.
 - Added new function dictexist() for checking dict item existence.
 
