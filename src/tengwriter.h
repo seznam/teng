@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengwriter.h,v 1.2 2004-12-30 12:42:02 vasek Exp $
+ * $Id: tengwriter.h,v 1.3 2005-05-30 17:04:27 vasek Exp $
  *
  * DESCRIPTION
  * Teng writer.
@@ -113,7 +113,7 @@ private:
      * @short Assignment operator intentionally private -- assignment
      *        disabled.
      */
-    Writer_t operator=(const Writer_t&);
+    Writer_t& operator=(const Writer_t&);
 };
 
 /** @short Output writer. Writes to the associated string.
@@ -164,7 +164,7 @@ private:
      * @short Assignment operator intentionally private -- assignment
      *        disabled.
      */
-    StringWriter_t operator=(const StringWriter_t&);
+    StringWriter_t& operator=(const StringWriter_t&);
 
     /** @short Associated string.
      */
@@ -232,7 +232,7 @@ private:
      * @short Assignment operator intentionally private -- assignment
      *        disabled.
      */
-    FileWriter_t operator=(const StringWriter_t&);
+    FileWriter_t& operator=(const StringWriter_t&);
 
     /** @short Output file.
      */
