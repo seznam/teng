@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengparsercontext.cc,v 1.4 2005-02-17 20:48:54 vasek Exp $
+ * $Id: tengparsercontext.cc,v 1.5 2005-06-22 07:16:12 romanmarek Exp $
  *
  * DESCRIPTION
  * Teng parser context -- implementation.
@@ -32,6 +32,8 @@
  * HISTORY
  * 2003-09-17  (vasek)
  *             Created.
+ * 2005-06-21  (roman)
+ *             Win32 support.
  */
 
 #include <algorithm>
@@ -39,6 +41,7 @@
 #include "tengparsercontext.h"
 #include "tenglex1.h"
 #include "tengprogram.h"
+#include "tengplatform.h"
 
 using namespace std;
 
@@ -105,7 +108,7 @@ Program_t* ParserContext_t::createProgramFromFile(
     
     // prepend root if filename not absolute path
     string path;
-    if (!root.empty() && !filename.empty() && filename[0] != '/')
+    if (!root.empty() && !filename.empty() && !ISROOT(filename))
         path = root + "/" + filename;
     else
         path = filename;

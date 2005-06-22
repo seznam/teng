@@ -21,53 +21,29 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengcache.cc,v 1.2 2005-06-22 07:16:07 romanmarek Exp $
+ * $Id: unistd.h,v 1.1 2005-06-22 07:16:15 romanmarek Exp $
  *
  * DESCRIPTION
- * Teng cache of files -- implementation.
+ * Unix std fnc on WIN32 platform.
  *
  * AUTHORS
- * Vaclav Blazek <blazek@firma.seznam.cz>
+ * Roman Marek <roman.marek@firma.seznam.cz>
  *
  * HISTORY
- * 2003-09-23  (vasek)
+ * 2005-06-16  (roman)
  *             Created.
- * 2005-06-21  (roman)
- *             Win32 support.
  */
 
+#ifndef TENG_UNISTD_H
+#define TENG_UNISTD_H
 
-#include <sys/stat.h>
-#include <unistd.h>
+#include <stdio.h>
+#include <direct.h>
+#include <process.h>
 
-#include "tengcache.h"
-#include "tengutil.h"
-#include "tengplatform.h"
+#define getcwd _getcwd
+#define getpid _getpid
 
-namespace Teng {
+#define S_ISDIR(x) ((x) & _S_IFDIR)
 
-int tengCreateKey(const string &root, const string &_filename,
-                  vector<string> &key)
-{
-    string filename = _filename;
-    // if filename is relative prepend root
-    if (!filename.empty() && !ISROOT(filename))
-        filename = root + '/' + filename;
-
-    // normalize filename
-    tengNormalizeFilename(filename);
-    // add it to the key
-    key.push_back(filename);
-    return 0;
-}
-
-int tengCreateStringKey(const string &data, vector<string> &key) {
-    // compute md5 hexdigest from data
-    string hexdigest;
-    tengMD5Hexdigest(data, hexdigest);
-    // add it to the key
-    key.push_back(hexdigest);
-    return 0;
-}
-
-} // namespace Teng
+#endif //TENG_UNISTD_H

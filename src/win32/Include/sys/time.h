@@ -21,53 +21,40 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengcache.cc,v 1.2 2005-06-22 07:16:07 romanmarek Exp $
+ * $Id: time.h,v 1.1 2005-06-22 07:16:15 romanmarek Exp $
  *
  * DESCRIPTION
- * Teng cache of files -- implementation.
+ * Substitution for unix time functions.
  *
  * AUTHORS
- * Vaclav Blazek <blazek@firma.seznam.cz>
+ * Roman Marek <roman.marek@firma.seznam.cz>
  *
  * HISTORY
- * 2003-09-23  (vasek)
+ * 2005-06-16  (roman)
  *             Created.
- * 2005-06-21  (roman)
- *             Win32 support.
  */
 
+#ifndef TENG_TIME_H
+#define TENG_TIME_H
 
-#include <sys/stat.h>
-#include <unistd.h>
+#include <sys/timeb.h>
 
-#include "tengcache.h"
-#include "tengutil.h"
-#include "tengplatform.h"
+#ifdef timezone
+#undef timezone
+#endif //timezone
 
-namespace Teng {
+struct timeval {
+        long    tv_sec;         /* seconds */
+        long    tv_usec;        /* and microseconds */
+};
 
-int tengCreateKey(const string &root, const string &_filename,
-                  vector<string> &key)
-{
-    string filename = _filename;
-    // if filename is relative prepend root
-    if (!filename.empty() && !ISROOT(filename))
-        filename = root + '/' + filename;
+struct timezone {
+        int  tz_minuteswest; /* minutes W of Greenwich */
+        int  tz_dsttime;     /* type of dst correction */
+};
 
-    // normalize filename
-    tengNormalizeFilename(filename);
-    // add it to the key
-    key.push_back(filename);
-    return 0;
-}
+int gettimeofday(timeval *tv, struct timezone *tz);
 
-int tengCreateStringKey(const string &data, vector<string> &key) {
-    // compute md5 hexdigest from data
-    string hexdigest;
-    tengMD5Hexdigest(data, hexdigest);
-    // add it to the key
-    key.push_back(hexdigest);
-    return 0;
-}
+struct tm *localtime_r(const time_t *timep, struct tm *result);
 
-} // namespace Teng
+#endif //TENG_TIME_H

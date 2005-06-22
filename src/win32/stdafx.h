@@ -21,53 +21,22 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengcache.cc,v 1.2 2005-06-22 07:16:07 romanmarek Exp $
+ * $Id: stdafx.h,v 1.1 2005-06-22 07:16:15 romanmarek Exp $
  *
  * DESCRIPTION
- * Teng cache of files -- implementation.
+ * Standard project file.
  *
  * AUTHORS
- * Vaclav Blazek <blazek@firma.seznam.cz>
+ * Roman Marek <roman.marek@firma.seznam.cz>
  *
  * HISTORY
- * 2003-09-23  (vasek)
+ * 2005-06-16  (roman)
  *             Created.
- * 2005-06-21  (roman)
- *             Win32 support.
  */
 
 
-#include <sys/stat.h>
-#include <unistd.h>
+#pragma once
 
-#include "tengcache.h"
-#include "tengutil.h"
-#include "tengplatform.h"
 
-namespace Teng {
-
-int tengCreateKey(const string &root, const string &_filename,
-                  vector<string> &key)
-{
-    string filename = _filename;
-    // if filename is relative prepend root
-    if (!filename.empty() && !ISROOT(filename))
-        filename = root + '/' + filename;
-
-    // normalize filename
-    tengNormalizeFilename(filename);
-    // add it to the key
-    key.push_back(filename);
-    return 0;
-}
-
-int tengCreateStringKey(const string &data, vector<string> &key) {
-    // compute md5 hexdigest from data
-    string hexdigest;
-    tengMD5Hexdigest(data, hexdigest);
-    // add it to the key
-    key.push_back(hexdigest);
-    return 0;
-}
-
-} // namespace Teng
+#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
+#include <windows.h>

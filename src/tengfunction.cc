@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfunction.cc,v 1.7 2005-04-26 13:56:24 vasek Exp $
+ * $Id: tengfunction.cc,v 1.8 2005-06-22 07:16:11 romanmarek Exp $
  *
  * DESCRIPTION
  * Teng processor funcction (like len, substr, round or date)
@@ -45,6 +45,8 @@
  *                 (get rid of terrible C-style casts)
  *               - heavy use of error logging is appreciated!
  *               - in short: make it C++ :-)
+ * 2005-06-21  (roman)
+ *             Win32 support.
  */
 
 #include <stdio.h>
@@ -54,6 +56,7 @@
 #include <sys/time.h>
 
 #include "tengfunction.h"
+#include "tengplatform.h"
 
 #ifndef HAVE_TRUNC
 // emulated trunc() math function if not in libc
@@ -1409,7 +1412,7 @@ static int tengFunctionUrlEscape(const vector<ParserValue_t> &args,
     string res;
     string::const_iterator i;
     for (i = a.stringValue.begin(); i != a.stringValue.end(); ++i) {
-        if (isalnum(*i) || (*i == '_') || (*i == '-')
+        if (isalnum((unsigned char)*i) || (*i == '_') || (*i == '-')
             || (*i == '.') || *i == '/') {
             res += *i;
         } else {

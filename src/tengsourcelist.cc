@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengsourcelist.cc,v 1.2 2004-12-30 12:42:02 vasek Exp $
+ * $Id: tengsourcelist.cc,v 1.3 2005-06-22 07:16:12 romanmarek Exp $
  *
  * DESCRIPTION
  * Teng list of sources -- implementation.
@@ -96,7 +96,7 @@ unsigned int SourceList_t::addSource(const string &_source,
         std::find(sources.begin(), sources.end(), fs);
     if (fsources != sources.end()) {
         // entry already present => just return its position
-        return fsources - sources.begin();
+		return static_cast<unsigned int>(fsources - sources.begin());
     }
     
     // stat file

@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengstructs.cc,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengstructs.cc,v 1.2 2005-06-22 07:16:12 romanmarek Exp $
  *
  * DESCRIPTION
  * Teng data types -- implementation.
@@ -32,12 +32,15 @@
  * HISTORY
  * 2003-09-30  (vasek)
  *             Created.
- */
+ * 2005-06-21  (roman)
+ *             Win32 support.
+*/
 
 #include <stdio.h>
 #include <string.h>
 
 #include "tengstructs.h"
+#include "tengplatform.h"
 
 using namespace std;
 

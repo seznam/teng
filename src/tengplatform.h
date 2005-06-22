@@ -21,53 +21,51 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengcache.cc,v 1.2 2005-06-22 07:16:07 romanmarek Exp $
+ * $Id: tengplatform.h,v 1.1 2005-06-22 07:16:12 romanmarek Exp $
  *
  * DESCRIPTION
- * Teng cache of files -- implementation.
+ * Define platform specific symbols.
  *
  * AUTHORS
- * Vaclav Blazek <blazek@firma.seznam.cz>
+ * Roman Marek <roman.marek@firma.seznam.cz>
  *
  * HISTORY
- * 2003-09-23  (vasek)
+ * 2005-06-11  (roman)
  *             Created.
- * 2005-06-21  (roman)
- *             Win32 support.
  */
 
+#ifndef TENGPLATFORM_H
+#define TENGPLATFORM_H
 
-#include <sys/stat.h>
-#include <unistd.h>
+#ifdef WIN32
 
-#include "tengcache.h"
-#include "tengutil.h"
-#include "tengplatform.h"
+#ifndef snprintf
 
-namespace Teng {
+#ifndef _snprintf
+#include <stdio.h>
+#endif //_snprintf
 
-int tengCreateKey(const string &root, const string &_filename,
-                  vector<string> &key)
-{
-    string filename = _filename;
-    // if filename is relative prepend root
-    if (!filename.empty() && !ISROOT(filename))
-        filename = root + '/' + filename;
+#define snprintf _snprintf
+#endif //snprintf
 
-    // normalize filename
-    tengNormalizeFilename(filename);
-    // add it to the key
-    key.push_back(filename);
-    return 0;
-}
+#endif //WIN32
 
-int tengCreateStringKey(const string &data, vector<string> &key) {
-    // compute md5 hexdigest from data
-    string hexdigest;
-    tengMD5Hexdigest(data, hexdigest);
-    // add it to the key
-    key.push_back(hexdigest);
-    return 0;
-}
+#ifndef WIN32
+#define ISROOT(path) ((path)[0] == '/')
+#else
+#define ISROOT(path) ((((path)[0] == '\\') && ((path)[1] == '\\')) || ((path)[1] == ':'))
+#endif //WIN32
 
-} // namespace Teng
+#ifdef WIN32
+#define CONVERTNAMEBYPLATFORM(path)\
+	string::size_type CNBP_slash = 0; \
+	string::size_type CNBP_nextslash = 0; \
+	static const basic_string <char>::size_type CNBP_npos = -1; \
+		while((CNBP_nextslash = (path).find('\\', CNBP_slash)) != CNBP_npos) { \
+			(path).replace(CNBP_nextslash, 1, string("/")); CNBP_slash = CNBP_nextslash; \
+		}
+#else
+#define CONVERTNAMEBYPLATFORM(path)
+#endif //WIN32
+
+#endif //TENGPLATFORM_H

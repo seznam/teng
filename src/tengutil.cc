@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengutil.cc,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengutil.cc,v 1.2 2005-06-22 07:16:12 romanmarek Exp $
  *
  * DESCRIPTION
  * Teng utilities.
@@ -32,6 +32,9 @@
  * HISTORY
  * 2003-09-24  (vasek)
  *             Created.
+ * 2005-06-21  (roman)
+ *             Win32 support.
+ *
  */
 
 
@@ -41,7 +44,7 @@
 #include "tengerror.h"
 #include "tengdictionary.h"
 #include "tengutil.h"
-
+#include "tengplatform.h"
 
 using namespace std;
 
@@ -51,6 +54,8 @@ int Teng::tengNormalizeFilename(string &filename)
 {
     // check for empty filename
     if (filename.empty()) return -1;
+
+	CONVERTNAMEBYPLATFORM(filename)
 
     // cache of filename parts
     vector<string> parts;
@@ -84,6 +89,9 @@ int Teng::tengNormalizeFilename(string &filename)
     // run through part cache and glue them with '/' together
     for (vector<string>::const_iterator iparts = parts.begin();
          iparts != parts.end(); ++iparts) {
+#ifdef WIN32
+        if (iparts != parts.begin())
+#endif //WIN32
         filename.push_back('/');
         filename.append(*iparts);
     }

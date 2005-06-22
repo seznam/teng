@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengparsercontext.h,v 1.3 2005-02-17 20:48:54 vasek Exp $
+ * $Id: tengparsercontext.h,v 1.4 2005-06-22 07:16:12 romanmarek Exp $
  *
  * DESCRIPTION
  * Teng parser context.
@@ -115,7 +115,7 @@ struct ParserContext_t {
                              bool mustBeOpen = false) const;
     
     int getFragmentAddress(const Error_t::Position_t &pos,
-                           const IdentifierName_t &id,
+                           const IdentifierName_t &name,
                            const std::string &fullName,
                            Identifier_t &id) const;
 

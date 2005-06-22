@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengprocessor.cc,v 1.8 2005-04-26 13:56:25 vasek Exp $
+ * $Id: tengprocessor.cc,v 1.9 2005-06-22 07:16:12 romanmarek Exp $
  *
  * DESCRIPTION
  * Teng processor. Executes programs.
@@ -581,8 +581,8 @@ namespace {
         for (Program_t::const_iterator iprogram = program.begin();
              iprogram != program.end(); ++iprogram) {
             os << "0x" << std::hex << std::setw(8) << std::setfill('0')
-               << (iprogram - program.begin()) << " ";
-            iprogram->dump(os, iprogram - program.begin());
+               << static_cast<unsigned int>(iprogram - program.begin()) << " ";
+            iprogram->dump(os, static_cast<unsigned int>(iprogram - program.begin()));
         }
 
         // write to output

@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfragmentstack.h,v 1.5 2005-02-17 20:48:54 vasek Exp $
+ * $Id: tengfragmentstack.h,v 1.6 2005-06-22 07:16:11 romanmarek Exp $
  *
  * DESCRIPTION
  * Teng stack fragment frame.
@@ -157,21 +157,32 @@ public:
           fragment(fragmentList
                    ? (fragmentList->empty() ? 0 : *fragmentList->begin())
                    : 0),
+#ifndef WIN32
           data(fragmentList ? fragmentList->begin()
                : FragmentList_t::const_iterator()),
           dataEnd(fragmentList ? fragmentList->end()
                   : FragmentList_t::const_iterator()),
+#endif //WIN32
           dataSize(fragmentList ? fragmentList->size() : 0),
           index(0)
     {
-        // no-op
-    }
+#ifdef WIN32
+		if (fragmentList)
+		{
+			data = fragmentList->begin();
+			dataEnd = fragmentList->end();
+		}
+#endif //WIN32
+		// no-op
+    }	
     
     RegularFragmentFrame_t(const Fragment_t *fragment)
         : FragmentFrame_t(),
           fragment(fragment),
+#ifndef WIN32
           data(FragmentList_t::const_iterator()),
           dataEnd(FragmentList_t::const_iterator()),
+#endif //WIN32
           dataSize(1), index(0)
     {
         // no-op

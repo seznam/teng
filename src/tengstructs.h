@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengstructs.h,v 1.3 2004-12-30 12:42:02 vasek Exp $
+ * $Id: tengstructs.h,v 1.4 2005-06-22 07:16:12 romanmarek Exp $
  *
  * DESCRIPTION
  * Teng data types.
@@ -32,7 +32,7 @@
  * HISTORY
  * 2003-09-17  (vasek)
  *             Created.
- */
+*/
 
 #ifndef TENGSTRUCTS_H
 #define TENGSTRUCTS_H
@@ -44,7 +44,7 @@
 
 namespace Teng {
 
-struct FragmentValue_t;
+class FragmentValue_t;
 class FragmentList_t;
 
 /**

@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengdictionary.cc,v 1.3 2005-01-02 16:38:58 vasek Exp $
+ * $Id: tengdictionary.cc,v 1.4 2005-06-22 07:16:11 romanmarek Exp $
  *
  * DESCRIPTION
  * Teng dictionary -- implementation.
@@ -32,6 +32,8 @@
  * HISTORY
  * 2003-09-19  (vasek)
  *             Created.
+ * 2005-06-21  (roman)
+ *             Win32 support.
  */
 
 
@@ -43,6 +45,7 @@
 #include <stdio.h>
 
 #include "tengdictionary.h"
+#include "tengplatform.h"
 
 using namespace std;
 
@@ -354,7 +357,7 @@ int Dictionary_t::parse(const string &infilename,
 {
     // if relative path => prepend root
     string filename = infilename;
-    if (!filename.empty() && (filename[0] != '/') && (!root.empty()))
+    if (!filename.empty() && !ISROOT(filename) && (!root.empty()))
         filename = root + '/' + filename;
 
     // insert source into source list

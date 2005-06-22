@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: teng.cc,v 1.3 2004-12-30 12:42:01 vasek Exp $
+ * $Id: teng.cc,v 1.4 2005-06-22 07:16:07 romanmarek Exp $
  *
  * DESCRIPTION
  * Teng engine -- implementation.
@@ -32,6 +32,8 @@
  * HISTORY
  * 2003-09-17  (vasek)
  *             Created.
+ * 2005-06-21  (roman)
+ *             Win32 support.
  */
 
 
@@ -46,6 +48,7 @@
 #include "tengcontenttype.h"
 #include "tengtemplate.h"
 #include "tengformatter.h"
+#include "tengplatform.h"
 
 using namespace std;
 
@@ -91,7 +94,7 @@ Teng_t::Teng_t(const string &root, const Teng_t::Settings_t &settings)
 
 void Teng_t::init(const Settings_t &settings) {
     // if not absolute path, prepend current working directory
-    if (root.empty() || root[0] != '/') {
+	if (root.empty() || !ISROOT(root)) {
         char cwd[2048];
         if (!getcwd(cwd, sizeof(cwd))) {
             Error_t::Position_t pos;
@@ -100,6 +103,7 @@ void Teng_t::init(const Settings_t &settings) {
         }
         root = string(cwd) + '/' + root;
     }
+
     // create template cache
     templateCache = new TemplateCache_t(root, settings.programCacheSize,
                                         settings.dictCacheSize);
@@ -116,6 +120,11 @@ namespace {
         // find the last dot and the last slash
         string::size_type dot = str.rfind('.');
         string::size_type slash = str.rfind('/');
+#ifdef WIN32
+        string::size_type bslash = str.rfind('\\');
+		if (bslash > slash)
+			slash = bslash;
+#endif //WIN32
         // if last slash exists and slash after dot or no dot
         // append prep at the end
         if (((slash != string::npos) && (slash > dot)) ||
