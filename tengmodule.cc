@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengmodule.cc,v 1.9 2005-05-16 08:25:19 vasek Exp $
+ * $Id: tengmodule.cc,v 1.10 2005-08-16 18:15:27 vasek Exp $
  *
  * DESCRIPTION
  * Teng python module.
@@ -275,7 +275,7 @@ public:
                 PyObject *value = PySequence_GetItem(data, pos);
                 if (!value) return -1;
                 // if not dictionary, report as error
-                if (!PyMapping_Check(value)) {
+                if (!PyDict_Check(value)) {
                     PyErr_SetString(PyExc_TypeError,
                                     "Root list must contain only "
                                     "dictionaries.");
@@ -290,7 +290,7 @@ public:
                 // forget reference to value
                 Py_XDECREF(value);
             }
-        } else if (PyMapping_Check(data)) {
+        } else if (PyDict_Check(data)) {
             // dictionary -> make fragment from data
             if (makeFragment(data, root))
                 return -1;
@@ -441,7 +441,7 @@ private:
      * @return 0 OK, !0 exception
      */
     int makeFragment(PyObject *data, Fragment_t &fragment) {
-        if (!PyMapping_Check(data)) {
+        if (!PyDict_Check(data)) {
             PyErr_SetString(PyExc_AttributeError,
                             "Fragment must be dictionary");
             return -1;
@@ -468,7 +468,7 @@ private:
                 // sequence (not string!) -> fragment list
                 if (makeFragmentList(value, fragment.addFragmentList(name)))
                     return -1;
-            } else if (PyMapping_Check(value)) {
+            } else if (PyDict_Check(value)) {
                 // dictionary -> singe fragment
                 if (makeFragment(value, fragment.addFragment(name)))
                     return -1;

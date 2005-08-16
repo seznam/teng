@@ -4,5 +4,7 @@ Architecture: @ARCHITECTURE@
 Depends: @STANDARD_DEPEND@ @EXTRA_DEPEND@
 Maintainer: @MAINTAINER@
 Installed-Size: @SIZE@
+Replaces: szn-py-teng
+Provides: szn-py-teng
 Description: Teng module for python
  Teng is a powerful and easy to use templating system.
