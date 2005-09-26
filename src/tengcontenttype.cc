@@ -20,7 +20,7 @@
  * Naskove 1, Praha 5, 15000, Czech Republic
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
- * $Id: tengcontenttype.cc,v 1.3 2005-01-02 16:32:16 vasek Exp $
+ * $Id: tengcontenttype.cc,v 1.4 2005-09-26 10:08:21 vasek Exp $
  *
  * DESCRIPTION
  * Teng language descriptor -- implementation.
@@ -329,9 +329,10 @@ ContentType_t* cCreator() {
  * @return quoted string descriptor
  */
 ContentType_t* qstringCreator() {
-    // create C descriptor
+    // create quoted-string descriptor
     ContentType_t *qs = new ContentType_t();
 
+    qs->addEscape('\\', "\\\\");
     qs->addEscape('\n', "\\n");
     qs->addEscape('\r', "\\r");
     qs->addEscape('\a', "\\a");
