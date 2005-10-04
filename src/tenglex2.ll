@@ -22,7 +22,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tenglex2.ll,v 1.3 2005-02-17 20:48:54 vasek Exp $
+ * $Id: tenglex2.ll,v 1.4 2005-10-04 15:41:01 vasek Exp $
  *
  *
  * DESCRIPTION
@@ -49,6 +49,8 @@
 
 %x qstr
 %x badnumber
+%x comment
+%x one_line_comment
 
 %{
 
@@ -695,6 +697,64 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     bufferPos.advance(yytext, yyleng);
     value.type = ParserValue_t::TYPE_STRING;
     RETURN(-1); //ERROR
+}
+
+"/*" {
+    // comment start
+    bufferPos.advanceColumn(yyleng);
+
+    // change context to parse (ehm, ignore) comment's content
+    BEGIN(comment);
+}
+
+<comment>{
+    "*/" {
+        // end of comment
+        bufferPos.advanceColumn(yyleng);
+        BEGIN(INITIAL);
+    }
+
+    <<EOF>> {
+        // end of input => bad token
+        err.logError(Error_t::LL_ERROR, bufferPos, "Unterminated comment");
+        // leave this context
+        BEGIN(INITIAL);
+        RETURN(-1);
+    }
+
+    .|"\n" {
+        // ignore
+        bufferPos.advanceColumn(yyleng);
+    }
+}
+
+"//" {
+    // comment start
+    bufferPos.advanceColumn(yyleng);
+
+    // change context to parse (ehm, ignore) comment's content
+    BEGIN(one_line_comment);
+}
+
+<one_line_comment>{
+    "\n" {
+        // end of comment
+        bufferPos.advanceColumn(yyleng);
+        BEGIN(INITIAL);
+    }
+
+    <<EOF>> {
+        // end of input => bad token
+        err.logError(Error_t::LL_ERROR, bufferPos, "Unterminated comment");
+        // leave this context
+        BEGIN(INITIAL);
+        RETURN(-1);
+    }
+
+    . {
+        // ignore
+        bufferPos.advanceColumn(yyleng);
+    }
 }
 
 %%
