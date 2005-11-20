@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengdictionary.cc,v 1.4 2005-06-22 07:16:11 romanmarek Exp $
+ * $Id: tengdictionary.cc,v 1.5 2005-11-20 11:11:41 vasek Exp $
  *
  * DESCRIPTION
  * Teng dictionary -- implementation.
@@ -241,9 +241,63 @@ int Dictionary_t::parseIdentLine(const string &line, string &name, string &value
 }
 
 int Dictionary_t::add(const string &name, const string &value) {
-    // insert new record into table
     dict.insert(map<string, string>::value_type(make_pair(name, value)));
     return 0;
+}
+
+int Dictionary_t::add(const string &name, const string &value,
+                      Error_t::Position_t &pos)
+{
+    // insert new record into table
+    if (expandValue) {
+        // expand value
+        std::string expanded;
+        expanded.reserve(value.size());
+
+        for (std::string::size_type index = 0; index != std::string::npos; ) {
+            // find name openning
+            std::string::size_type open = value.find("#{", index);
+            if (open == std::string::npos) {
+                expanded.append(value, index);
+                break;
+            } else {
+                expanded.append(value, index, open - index);
+            }
+
+            // find name closing
+            std::string::size_type close = value.find("}", open);
+            if (close == std::string::npos) {
+                err.logError(Error_t::LL_ERROR, pos,
+                             "Unterminated #{} directive.");
+                expanded.append(value, open);
+                add(name, expanded);
+                return -1;
+            }
+
+            std::string ename(value, open + 2, close - open - 2);
+            index = close + 1;
+
+            // try to find ename in so far read entries
+            const string *evalue = lookup(ename);
+            if (!evalue) {
+                // not found
+                err.logError(Error_t::LL_ERROR, pos,
+                             "Dictionary item '" + ename + "' not found.");
+                expanded.append("#{");
+                expanded.append(ename);
+                expanded.push_back('}');
+            } else {
+                // found
+                expanded.append(*evalue);
+            }
+        }
+
+        // just add expanded value
+        return add(name, expanded);
+    }
+
+    // add value
+    return add(name, value);
 }
 
 const string* Dictionary_t::lookup(const string &key) const {
@@ -284,7 +338,7 @@ int Dictionary_t::parseString(const string &data,
                 // process directive
                 if (currentValid) {
                     // insert new identifier
-                    add(currentName, currentValue);
+                    add(currentName, currentValue, pos);
                     currentValid = false;
                 }
                 // split directive to name and value
@@ -312,7 +366,7 @@ int Dictionary_t::parseString(const string &data,
                 // new identifier
                 // insert new identifier
                 if (currentValid)
-                    add(currentName, currentValue);
+                    add(currentName, currentValue, pos);
                 // parse identifier line
                 currentValid = !parseIdentLine(line, currentName,
                                                currentValue, pos);
@@ -323,7 +377,7 @@ int Dictionary_t::parseString(const string &data,
         } else {
             // comment or empty line terminates entry
             if (currentValid)
-                add(currentName, currentValue);
+                add(currentName, currentValue, pos);
             currentValid = false;
         }
         // if not at end advance to next character (after newline)
@@ -346,7 +400,7 @@ int Dictionary_t::parseString(const string &data,
 
     // if current data are valid, we must insert appropriate record
     if (currentValid)
-        add(currentName, currentValue);
+        add(currentName, currentValue, pos);
 
     // return error indicator
     return ret;
@@ -441,6 +495,18 @@ int Dictionary_t::processDirective(const string &directive,
         // indecrement recursion level
         ++level;
         return ret;
+    } else if (directive == "expand") {
+        if (param == "yes") {
+            expandValue = true;
+            return 0;
+        } else if (param == "no") {
+            expandValue = false;
+            return 0;
+        } else {
+            err.logError(Error_t::LL_ERROR, pos, ("Invalid value of expand '"
+                                                  + param + "'."));
+            return -1;
+        }
     }
     // report unknown processing directive
     err.logError(Error_t::LL_ERROR, pos, "Unknown procesing directive");

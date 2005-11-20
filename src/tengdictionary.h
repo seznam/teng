@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengdictionary.h,v 1.2 2004-12-30 12:42:01 vasek Exp $
+ * $Id: tengdictionary.h,v 1.3 2005-11-20 11:11:41 vasek Exp $
  *
  * DESCRIPTION
  * Teng dictionary.
@@ -63,7 +63,7 @@ public:
      * @param root path of root for locating files
      */
     Dictionary_t(const string &root)
-        : root(root), level(0), sources(), err()
+        : root(root), level(0), sources(), err(), expandValue(false)
     {}
 
     /**
@@ -178,6 +178,18 @@ protected:
                                  Error_t::Position_t &pos);
 
     /**
+     * @short Adds new entry into dictionary. Doesn't replace
+     *        existing entry.
+     *
+     * @param name name of entry
+     * @param value value of entry
+     * @param pos position in current file
+     * @return 0 OK !0 error
+     */
+    virtual int add(const string &name, const string &value,
+                    Error_t::Position_t &pos);
+
+    /**
      * @short Parses dicionary from given file. Worker function.
      *
      * @param filename name of file to parse
@@ -237,6 +249,12 @@ private:
      * @short The dictionary itself.
      */
     map<string, string> dict;
+
+    /** @short Flags whether #{name} is expanded in values.
+     *
+     * Valid only during parse.
+     */
+    bool expandValue;
 };
 
 } // namespace Teng
