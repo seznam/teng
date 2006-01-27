@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengdictionary.cc,v 1.5 2005-11-20 11:11:41 vasek Exp $
+ * $Id: tengdictionary.cc,v 1.6 2006-01-27 14:04:41 vasek Exp $
  *
  * DESCRIPTION
  * Teng dictionary -- implementation.
@@ -258,7 +258,7 @@ int Dictionary_t::add(const string &name, const string &value,
             // find name openning
             std::string::size_type open = value.find("#{", index);
             if (open == std::string::npos) {
-                expanded.append(value, index);
+                expanded.append(value, index, std::string::npos);
                 break;
             } else {
                 expanded.append(value, index, open - index);
@@ -269,7 +269,7 @@ int Dictionary_t::add(const string &name, const string &value,
             if (close == std::string::npos) {
                 err.logError(Error_t::LL_ERROR, pos,
                              "Unterminated #{} directive.");
-                expanded.append(value, open);
+                expanded.append(value, open, std::string::npos);
                 add(name, expanded);
                 return -1;
             }

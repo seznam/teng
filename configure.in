@@ -21,7 +21,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: configure.in,v 1.12 2005-09-26 10:22:06 vasek Exp $
+# $Id: configure.in,v 1.13 2006-01-27 14:04:41 vasek Exp $
 #
 # DESCRIPTION
 # configure template for Teng.
@@ -36,7 +36,7 @@
 
 
 # initialize autoconf
-AC_INIT(teng, 1.0.11, teng@firma.seznam.cz)
+AC_INIT(teng, 1.0.12, teng@firma.seznam.cz)
 # initialize automake(use AC_INIT's arguments)
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 
