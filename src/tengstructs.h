@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengstructs.h,v 1.4 2005-06-22 07:16:12 romanmarek Exp $
+ * $Id: tengstructs.h,v 1.5 2006-01-27 14:03:01 vasek Exp $
  *
  * DESCRIPTION
  * Teng data types.
@@ -208,6 +208,12 @@ public:
      * @param value value of variable
      */
     FragmentValue_t(double value);
+
+    void setValue(const std::string &value);
+
+    void setValue(const long int value);
+
+    void setValue(const double value);
 
     /**
      * @short Adds new empty fragment to the frament list.

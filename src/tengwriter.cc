@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengwriter.cc,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengwriter.cc,v 1.2 2006-01-27 14:03:01 vasek Exp $
  *
  * DESCRIPTION
  * Teng writer -- implementation.
@@ -85,7 +85,7 @@ FileWriter_t::FileWriter_t(FILE *file)
 }
 
 FileWriter_t::~FileWriter_t() {
-    if (!borrowed)
+    if (!borrowed && file)
         fclose(file);
 }
 

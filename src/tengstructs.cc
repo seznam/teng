@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengstructs.cc,v 1.2 2005-06-22 07:16:12 romanmarek Exp $
+ * $Id: tengstructs.cc,v 1.3 2006-01-27 14:03:01 vasek Exp $
  *
  * DESCRIPTION
  * Teng data types -- implementation.
@@ -54,21 +54,51 @@ FragmentValue_t::FragmentValue_t(const string &value)
     : value(value), nestedFragments(0)
 {}
 
-FragmentValue_t::FragmentValue_t(long int value)
+FragmentValue_t::FragmentValue_t(long int value_)
     : nestedFragments(0)
 {
-    char buff[100];
-    snprintf(buff, sizeof(buff), "%ld", value);
-    this->value = string(buff);
+    setValue(value_);
 }
 
-FragmentValue_t::FragmentValue_t(double _value)
+FragmentValue_t::FragmentValue_t(double value_)
     : nestedFragments(0)
 {
+    setValue(value_);
+}
+
+void FragmentValue_t::setValue(const std::string &value_) {
+    // get rid of nested fragments if exist
+    if (nestedFragments) {
+        delete nestedFragments;
+        nestedFragments = 0;
+    }
+
+    value = value_;
+}
+
+void FragmentValue_t::setValue(const long int value_) {
+    // get rid of nested fragments if exist
+    if (nestedFragments) {
+        delete nestedFragments;
+        nestedFragments = 0;
+    }
+
+    char buff[100];
+    snprintf(buff, sizeof(buff), "%ld", value_);
+    value = string(buff);
+}
+
+void FragmentValue_t::setValue(const double value_) {
+    // get rid of nested fragments if exist
+    if (nestedFragments) {
+        delete nestedFragments;
+        nestedFragments = 0;
+    }
+
     char buff[64];
 
     // print value to the buffer
-    int len = snprintf(buff, sizeof(buff), "%f", _value);
+    int len = snprintf(buff, sizeof(buff), "%f", value_);
     // find dot in the buffer
     if (!strchr(buff, '.')) {
         // no dot => append ".0"
@@ -94,21 +124,54 @@ Fragment_t::~Fragment_t() {
 }
 
 void Fragment_t::addVariable(const string &name,
-                                 const string &value)
+                             const string &value)
 {
-    insert(value_type(name, new FragmentValue_t(value)));
+    // insert dummy zero
+    std::pair<iterator, bool> inserted(insert(value_type(name, 0)));
+
+    FragmentValue_t *&v = inserted.first->second;
+
+    if (inserted.second) {
+        // succeeded, replace by value
+        v = new FragmentValue_t(value);
+    } else {
+         // already present => destroy and create new
+        v->setValue(value);
+    }
 }
 
 void Fragment_t::addVariable(const string &name,
-                                 long int value)
+                             long int value)
 {
-    insert(value_type(name, new FragmentValue_t(value)));
+    // insert dummy zero
+    std::pair<iterator, bool> inserted(insert(value_type(name, 0)));
+
+    FragmentValue_t *&v = inserted.first->second;
+
+    if (inserted.second) {
+        // succeeded, replace by value
+        v = new FragmentValue_t(value);
+    } else {
+        // already present => destroy and create new
+        v->setValue(value);
+    }
 }
 
 void Fragment_t::addVariable(const string &name,
-                                 double value)
+                             double value)
 {
-    insert(value_type(name, new FragmentValue_t(value)));
+    // insert dummy zero
+    std::pair<iterator, bool> inserted(insert(value_type(name, 0)));
+
+    FragmentValue_t *&v = inserted.first->second;
+
+    if (inserted.second) {
+        // succeeded, replace by value
+        v = new FragmentValue_t(value);
+    } else {
+         // already present => destroy and create new
+        v->setValue(value);
+    }
 }
 
 Fragment_t& Fragment_t::addFragment(const string &name) {
@@ -117,16 +180,27 @@ Fragment_t& Fragment_t::addFragment(const string &name) {
 
 FragmentList_t&
 Fragment_t::addFragmentList(const string &name) {
-    // find fragment in the list
-    iterator i = find(name);
-    // if not found insert new value
-    if (i == end())
-        i = insert(value_type(name,
-                              new FragmentValue_t())).first;
-    // return nested fragment list
-    if (!i->second->nestedFragments)
-        i->second->nestedFragments = new FragmentList_t();
-    return *i->second->nestedFragments;
+    // insert dummy zero
+    std::pair<iterator, bool> inserted(insert(value_type(name, 0)));
+
+    FragmentValue_t *&v = inserted.first->second;
+
+    if (inserted.second) {
+        // succeeded, replace by new value with an empty fragment list
+        v = new FragmentValue_t();
+        v->nestedFragments = new FragmentList_t();
+    } else {
+        // already present
+
+        // get rid of scalar value and create an empty fragment list if scalar
+        if (!v->nestedFragments) {
+            v->value.erase();
+            v->nestedFragments = new FragmentList_t();
+        }
+    }
+
+    // return fragment list
+    return *v->nestedFragments;
 }
 
 Fragment_t& FragmentValue_t::addFragment() {
