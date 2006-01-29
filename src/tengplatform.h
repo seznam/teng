@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengplatform.h,v 1.1 2005-06-22 07:16:12 romanmarek Exp $
+ * $Id: tengplatform.h,v 1.2 2006-01-29 10:56:16 franci_cz Exp $
  *
  * DESCRIPTION
  * Define platform specific symbols.
