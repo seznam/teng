@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengmodule.cc,v 1.10 2005-08-16 18:15:27 vasek Exp $
+ * $Id: tengmodule.cc,v 1.11 2006-01-30 09:21:51 vasek Exp $
  *
  * DESCRIPTION
  * Teng python module.
@@ -147,6 +147,7 @@ static PyTypeObject Teng_Type = {
 };
 
 void Teng_dealloc(TengObject *self) {
+    using std::string;
     // call (inplace) destructor for engine
     self->teng.~Teng_t();
     // call (inplace) destructor for default encoding
