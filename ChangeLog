@@ -18,3 +18,9 @@ Released: 2005-05-26
 - Teng function date() now accepts ISO8601-formated dates.
 - Added new function dictexist() for checking dict item existence.
 
+1.0.14:
+Released: ???
+- Win32 port
+- Expansion support to dictionary
+- C++-like comments: block (/* */) and line (//)
+- fixed memory errors
