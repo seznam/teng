@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfragmentstack.h,v 1.6 2005-06-22 07:16:11 romanmarek Exp $
+ * $Id: tengfragmentstack.h,v 1.7 2006-06-13 10:04:16 vasek Exp $
  *
  * DESCRIPTION
  * Teng stack fragment frame.
@@ -441,14 +441,18 @@ public:
     }
 
     inline Status_t getFragmentIteration(const Identifier_t &name,
-                                         unsigned int &fragmentIteration)
+                                         unsigned int &fragmentIteration,
+                                         unsigned int *fragmentSize = 0)
         const 
     {
         // check for range
         if (name.depth > path.size()) return S_OUT_OF_CONTEXT;
 
-        // get iteration
-        fragmentIteration = (*(frames.begin() + name.depth))->iteration();
+        FragmentFrame_t &frame = *(*(frames.begin() + name.depth));
+
+        // get iteration and optional size
+        fragmentIteration = frame.iteration();
+        if (fragmentSize) *fragmentSize = frame.size();
         return S_OK;
     }
 
@@ -622,14 +626,15 @@ public:
     }
 
     inline Status_t getFragmentIteration(const Identifier_t &name,
-                                         unsigned int &fragmentIteration)
+                                         unsigned int &fragmentIteration,
+                                         unsigned int *fragmentSize = 0)
         const
     {
         // test whether we are in range
         if (chains.size() > name.context) {
             // get context's chain and try to find variable in it
             return (chains.begin() + name.context)->
-                getFragmentIteration(name, fragmentIteration);
+                getFragmentIteration(name, fragmentIteration, fragmentSize);
         }
         // not found (invalid context position) => probably badly composed
         // bytecode

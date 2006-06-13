@@ -20,7 +20,7 @@
  * Naskove 1, Praha 5, 15000, Czech Republic
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
- * $Id: tengcontenttype.cc,v 1.4 2005-09-26 10:08:21 vasek Exp $
+ * $Id: tengcontenttype.cc,v 1.5 2006-06-13 10:04:16 vasek Exp $
  *
  * DESCRIPTION
  * Teng language descriptor -- implementation.
@@ -472,7 +472,7 @@ void Escaper_t::push(unsigned int index, Error_t &err,
         = ContentType_t::getContentType(index);
     if (!descriptor) {
         err.logError(Error_t::LL_ERROR, pos,
-                     "Cannot pot invalid content type -- using top instead.");
+                     "Cannot push invalid content type -- using top instead.");
         escapers.push(escapers.top());
     } else {
         escapers.push(descriptor->contentType);

@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tenginstruction.h,v 1.3 2005-02-17 20:48:54 vasek Exp $
+ * $Id: tenginstruction.h,v 1.4 2006-06-13 10:04:16 vasek Exp $
  *
  * DESCRIPTION
  * Teng instruction for teng processor.
@@ -110,8 +110,11 @@ struct Instruction_t {
         FRAG, /**< Start fragment block. */
         ENDFRAG, /**< End of fragment block. */
         FRAGCNT, /**< Openned fragment size ($_count) -- fast access. */
-        XFRAGCNT, /**< Not openned fragment size ($_count) --  slow access. */
+        XFRAGCNT, /**< Not open fragment size ($_count) --  slow access. */
         FRAGITR, /**< Actual fragment iteration number ($_number). */
+        FRAGFIRST, /**< Is this the first iteration ($._first)? */
+        FRAGLAST, /**< Is this the last iteration ($._last)? */
+        FRAGINNER, /**< Is this inner iteration ($._inner)? */
         PRINT, /**< Print onto output. */
         SET, /**< Create new variable and assign value. */
         HALT, /**< End of program. Relax. */

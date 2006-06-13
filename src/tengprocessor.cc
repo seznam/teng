@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengprocessor.cc,v 1.9 2005-06-22 07:16:12 romanmarek Exp $
+ * $Id: tengprocessor.cc,v 1.10 2006-06-13 10:04:16 vasek Exp $
  *
  * DESCRIPTION
  * Teng processor. Executes programs.
@@ -566,7 +566,13 @@ int Processor_t::instructionDebug(const Fragment_t &data, Formatter_t &output) {
         if (output.write(escaper.escape("    " + p.getSource(i) + "\n")))
 	    return -1;
     }
-    
+
+    // configuration
+    std::ostringstream os;
+    os << configuration;
+    if (output.write(escaper.escape("\n" + os.str())))
+        return -1;
+
     if (output.write(escaper.escape("\nApplication data:\n")))
         return -1;
     return dumpFragment(escaper, output, data);
@@ -946,6 +952,56 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                            Error_t::LL_WARNING);
                 }
                 a.setInteger(fragmentIteration);
+                valueStack.push(a);
+            }
+            break;
+
+        case Instruction_t::FRAGFIRST:
+            {
+                unsigned int fragmentIteration = 0;
+                if (fragmentStack.getFragmentIteration(instr.identifier,
+                                                       fragmentIteration)) {
+                    logErr(instr, "Fragment '" + instr.value.stringValue
+                           + "' not open, cannot determine whether "
+                           "we are in first iteration.",
+                           Error_t::LL_WARNING);
+                }
+                a.setInteger(!fragmentIteration);
+                valueStack.push(a);
+            }
+            break;
+
+        case Instruction_t::FRAGLAST:
+            {
+                unsigned int fragmentIteration = 0;
+                unsigned int fragmentSize = 0;
+                if (fragmentStack.getFragmentIteration(instr.identifier,
+                                                       fragmentIteration,
+                                                       &fragmentSize)) {
+                    logErr(instr, "Fragment '" + instr.value.stringValue
+                           + "' not open, cannot determine whether "
+                           "we are in the last iteration.",
+                           Error_t::LL_WARNING);
+                }
+                a.setInteger(fragmentIteration == (fragmentSize - 1));
+                valueStack.push(a);
+            }
+            break;
+
+        case Instruction_t::FRAGINNER:
+            {
+                unsigned int fragmentIteration = 0;
+                unsigned int fragmentSize = 0;
+                if (fragmentStack.getFragmentIteration(instr.identifier,
+                                                       fragmentIteration,
+                                                       &fragmentSize)) {
+                    logErr(instr, "Fragment '" + instr.value.stringValue
+                           + "' not open, cannot determine whether "
+                           "we are in an inner iteration.",
+                           Error_t::LL_WARNING);
+                }
+                a.setInteger(fragmentIteration &&
+                             (fragmentIteration < (fragmentSize - 1)));
                 valueStack.push(a);
             }
             break;

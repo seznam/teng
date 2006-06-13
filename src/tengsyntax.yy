@@ -22,7 +22,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengsyntax.yy,v 1.5 2005-04-26 13:56:25 vasek Exp $
+ * $Id: tengsyntax.yy,v 1.6 2006-06-13 10:04:16 vasek Exp $
  *
  * DESCRIPTION
  * Teng syntax analyzer.
@@ -164,11 +164,76 @@ string tengSyntax_lastErrorMessage;
                         Instruction_t::code, val); \
                         } while (0)
 
+#define CODE_VAL_VAR(opcode, val) \
+                        do { \
+                        tengCode_generate( \
+                        (reinterpret_cast<ParserContext_t *> (context)), \
+                        opcode, val); \
+                        } while (0)
+
 static inline void buildIdentifier(LeftValue_t &v) {
     v.val = ParserValue_t(); //clear
     for (LeftValue_t::Identifier_t::const_iterator i
              = v.id.begin(); i != v.id.end(); ++i)
         v.val.stringValue += "." + *i;
+}
+
+namespace {
+    enum VariableName_t {
+        VN_REGULAR,
+        VN_COUNT,
+        VN_NUMBER,
+        VN_FIRST,
+        VN_INNER,
+        VN_LAST
+    };
+
+    struct VariableMapping_t {
+        const char *name;
+        VariableName_t variable;
+        Instruction_t::OpCode_t opcode;
+    };
+
+    VariableMapping_t variableMapping[] = {
+        {
+            "_count",
+            VN_COUNT,
+            Instruction_t::FRAGCNT
+        }, {
+            "_number",
+            VN_NUMBER,
+            Instruction_t::FRAGITR
+        }, {
+            "_first",
+            VN_FIRST,
+            Instruction_t::FRAGFIRST
+        }, {
+            "_inner",
+            VN_INNER,
+            Instruction_t::FRAGINNER
+        }, {
+            "_last",
+            VN_LAST,
+            Instruction_t::FRAGLAST
+        }, {
+            0,
+            VN_REGULAR,
+            Instruction_t::VAR
+        }
+    };
+
+    const VariableMapping_t& findVariableMapping(const std::string &name) {
+        // ignore names not starting with underscore
+        if (name.empty() || (name[0] != '_'))
+            return *(variableMapping + sizeof(variableMapping) - 1);
+
+        VariableMapping_t *sv = variableMapping;
+        for ( ; sv->name; ++sv)
+            if (!name.compare(sv->name)) return *sv;
+
+        // not found
+        return *sv;
+    }
 }
 
 /** @short Generate code for variable.
@@ -194,19 +259,23 @@ static inline void codeForVariable(void *context,
         // identifier of variable/fragment
         Identifier_t id;
 
-        // variable identifier is in result.val.stringValue
-        if (result.id.back() == "_count") {
-            // remove automatic variable name
-            result.id.pop_back();
+        const VariableMapping_t
+            &varMapping(findVariableMapping(result.id.back()));
 
-            // rebuild identifier
-            buildIdentifier(result);
+        switch (varMapping.variable) {
+        case VN_COUNT:
+            {
+                // remove automatic variable name
+                result.id.pop_back();
 
-            // try to find fragment
-            ParserContext_t::FragmentResolution_t fr =
+                // rebuild identifier
+                buildIdentifier(result);
+
+                // try to find fragment
+                ParserContext_t::FragmentResolution_t fr =
                     CONTEXT->findFragment(&val.pos, result.id,
-                    result.val.stringValue, id, true);
-            switch (fr) {
+                                          result.val.stringValue, id, true);
+                switch (fr) {
                 case ParserContext_t::FR_NOT_FOUND:
                     // no-op -- we have nothing found
                     break;
@@ -226,25 +295,35 @@ static inline void codeForVariable(void *context,
                     CODE_VAL(XFRAGCNT, result.val);
                     CONTEXT->program->back().identifier = id;
                     break;
+                }
             }
-        } else if (result.id.back() == "_number") {
-            // remove automatic variable name
-            result.id.pop_back();
+            break;
 
-            // rebuild identifier
-            buildIdentifier(result);
+        case VN_NUMBER:
+        case VN_FIRST:
+        case VN_INNER:
+        case VN_LAST:
+            {
+                // remove automatic variable name
+                result.id.pop_back();
 
-            // try to find fragment
-            if (CONTEXT->findFragment(&val.pos, result.id,
-                                      result.val.stringValue, id)) {
-                // we have found fragment
-                found = true;
+                // rebuild identifier
+                buildIdentifier(result);
 
-                // add FRAGITR instruction
-                CODE_VAL(FRAGITR, result.val);
-                CONTEXT->program->back().identifier = id;
+                // try to find fragment
+                if (CONTEXT->findFragment(&val.pos, result.id,
+                                          result.val.stringValue, id)) {
+                    // we have found fragment
+                    found = true;
+
+                    // add instruction
+                    CODE_VAL_VAR(varMapping.opcode, result.val);
+                    CONTEXT->program->back().identifier = id;
+                }
             }
-        } else {
+            break;
+
+        default:
             // find fragment for this variable
             if (CONTEXT->findFragmentForVariable(val.pos, result.id,
                     result.val.stringValue, id)) {
@@ -477,7 +556,8 @@ teng_include:
             if (i == $2.opt.end()) {
                 ERR(ERROR, $1.pos, "Cannot include a file; "
                         "option 'file' is not specified");
-            } else if (CONTEXT->lex1.size() >= MAX_INCLUDE_DEPTH) {
+            } else if (CONTEXT->lex1.size() >=
+                       CONTEXT->paramDictionary->getMaxIncludeDepth()) {
                 ERR(ERROR, $1.pos, "Cannot include a file; template "
                         "nesting level is too deep");
             } else {

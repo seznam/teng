@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengconfiguration.cc,v 1.1 2005-01-02 15:53:42 vasek Exp $
+ * $Id: tengconfiguration.cc,v 1.2 2006-06-13 10:04:16 vasek Exp $
  *
  * DESCRIPTION
  * Teng configuration dictionary.
@@ -35,6 +35,8 @@
  */
 
 
+#include <iostream>
+
 #include "tengconfiguration.h"
 
 using namespace std;
@@ -43,17 +45,55 @@ using namespace Teng;
 
 Configuration_t::Configuration_t(const string &root)
     : Dictionary_t(root), debug(false), errorFragment(false),
-      logToOutput(false), bytecode(false), watchFiles(true)
+      logToOutput(false), bytecode(false), watchFiles(true),
+      maxIncludeDepth(10)
 {}
 
 Configuration_t::~Configuration_t() {
     // no-op
 }
 
+namespace {
+    std::string strip(const string &str) {
+        std::string::size_type begin = 0;
+        std::string::size_type end = str.length();
+        while ((begin < end) && isspace(str[begin])) ++begin;
+        while ((begin < end) && isspace(str[end - 1])) --end;
+        return std::string(str, begin, end - begin);
+    }
+}
+
 int Configuration_t::processDirective(const string &directive,
                                       const string &param,
                                       Error_t::Position_t &pos)
 {
+    // strip argument
+    std::string argument(strip(param));
+
+    if (directive == "maxincludedepth") {
+        if (argument.empty()) {
+            err.logError(Error_t::LL_ERROR, pos,
+                         "Invalid value of max-include-depth '"
+                         + argument + "'");
+            return -1;
+        }
+
+        // convert to unsigned int
+        char *end;
+        unsigned long int depth = strtoul(argument.c_str(), &end, 10);
+        if (*end) {
+            err.logError(Error_t::LL_ERROR, pos,
+                         "Invalid value of max-include-depth '"
+                         + argument + "'");
+            return -1;
+        }
+
+        maxIncludeDepth = depth;
+        return 0;
+    }
+
+    // enable/disable
+
     bool value = false;
     if (directive == "enable") value = true;
     else if (directive == "disable") value = false;
@@ -62,14 +102,6 @@ int Configuration_t::processDirective(const string &directive,
         return Dictionary_t::processDirective(directive, param, pos);
     }
 
-    // strip argument
-    string::size_type begin = 0;
-    string::size_type end = param.length();
-    while ((begin < end) && isspace(param[begin]))
-        ++begin;
-    while ((begin < end) && isspace(param[end - 1]))
-        --end;
-    string argument(param, begin, end - begin);
     if (argument == "debug") debug = value;
     else if (argument == "errorfragment") errorFragment = value;
     else if (argument == "logtooutput") logToOutput = value;
@@ -95,4 +127,24 @@ int Configuration_t::isEnabled(const string &feature, bool &enabled) const {
 
     // OK
     return 0;
+}
+
+namespace {
+    const char* ENABLED(bool value) {
+        return value ? "enabled" : "disabled";
+    }
+}
+
+namespace Teng {
+    std::ostream& operator<<(std::ostream &o, const Configuration_t &c) {
+        o << "Configuration: " << std::endl
+          << "    debug: " << ENABLED(c.debug) << std::endl
+          << "    errorfragment: " << ENABLED(c.errorFragment) << std::endl
+          << "    logtooutput: " << ENABLED(c.logToOutput) << std::endl
+          << "    bytecode: " << ENABLED(c.bytecode) << std::endl
+          << "    watchfiles: " << ENABLED(c.watchFiles) << std::endl
+          << "    maxincludedepth: " << c.maxIncludeDepth << std::endl;
+
+        return o;
+    }
 }

@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tenginstruction.cc,v 1.4 2005-02-17 20:48:54 vasek Exp $
+ * $Id: tenginstruction.cc,v 1.5 2006-06-13 10:04:16 vasek Exp $
  *
  * DESCRIPTION
  * Teng instruction and program types. Syntax analyzer
@@ -212,6 +212,21 @@ void Instruction_t::dump(FILE *fp) const
             fprintf(fp, "PRINT\n");
             break;
             
+        case FRAGFIRST:
+            fprintf(fp, "FRAGFIRST\t'%s'\n",
+                    value.stringValue.c_str()); //fragment name
+            break;
+
+        case FRAGLAST:
+            fprintf(fp, "FRAGLAST\t'%s'\n",
+                    value.stringValue.c_str()); //fragment name
+            break;
+
+        case FRAGINNER:
+            fprintf(fp, "FRAGINNER\t'%s'\n",
+                    value.stringValue.c_str()); //fragment name
+            break;
+
         case SET:
             fprintf(fp, "SET\t%s\n",
                     value.stringValue.c_str()); //variable name
