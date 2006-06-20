@@ -189,7 +189,7 @@ unexpected = 0
 unduplicates = 0
 if status:
     if not page['output']:
-        print 'Generation terminated with status %d due to following errors:', page['status']
+        print 'Generation terminated with status %d due to following errors:' % page['status']
     else:
         print 'Generation finished with status %d with following errors:' % page['status']
     print
