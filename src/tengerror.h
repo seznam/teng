@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengerror.h,v 1.2 2004-12-30 12:42:01 vasek Exp $
+ * $Id: tengerror.h,v 1.3 2006-06-21 14:13:59 sten__ Exp $
  *
  * DESCRIPTION
  * Teng error handling class.
@@ -32,6 +32,8 @@
  * HISTORY
  * 2003-09-22  (vasek)
  *             Created.
+ * 2006-06-21  (sten__)
+ *             Removed error duplicities.
  */
 
 #ifndef TENGERROR_H
@@ -206,6 +208,11 @@ public:
       * @param message additional message */
     void logError(Level_t level, const Position_t &pos,
                   const std::string &message) {
+        for(unsigned int i = 0; i < entries.size(); i++) {
+            if(entries[i].level == level && entries[i].pos.filename == pos.filename && entries[i].pos.lineno == pos.lineno && entries[i].pos.col == pos.col && entries[i].message == message) {
+                return;
+            }
+        }
         entries.push_back(Entry_t(level, pos, message));
         if (level > this->level) this->level = level;
     }
@@ -213,17 +220,14 @@ public:
     /** @short Log syscall error, no file associated. */
     void logSyscallError(Level_t level) {
         std::string strerr(strerror(errno));
-        entries.push_back(Entry_t(level, "", -1, -1,
-                          "System call error: " + strerr));
-        if (level > this->level) this->level = level;
+        logError(level, Position_t("", -1, -1), "System call error: " + strerr);
     }
 
     /** @short Logs syscall error for given file/position.
       * @param pos position in file  */
     void logSyscallError(Level_t level, const Position_t &pos) {
         std::string strerr(strerror(errno));
-        entries.push_back(Entry_t(level, pos, "System call error: " + strerr));
-        if (level > this->level) this->level = level;
+        logError(level, pos, "System call error: " + strerr);
     }
 
     /** @short Logs syscall error for given file/position.
@@ -232,8 +236,7 @@ public:
     void logSyscallError(Level_t level, const Position_t &pos,
                          const std::string &message) {
         std::string strerr(strerror(errno));
-        entries.push_back(Entry_t(level, pos, message + " (" + strerr + ")"));
-        if (level > this->level) this->level = level;
+        logError(level, pos, message + " (" + strerr + ")");
     }
 
     /** @short Logs syscall error for given file/position.
@@ -241,8 +244,7 @@ public:
       * @param message additional message */
     void logRuntimeError(Level_t level, const Position_t &pos,
                          const std::string &message) {
-        entries.push_back(Entry_t(level, pos, "Runtime: " + message));
-        if (level > this->level) this->level = level;
+        logError(level, pos, "Runtime: " + message);
     }
     
     /** @short Returns number of errors in log.

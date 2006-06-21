@@ -22,7 +22,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengsyntax.yy,v 1.6 2006-06-13 10:04:16 vasek Exp $
+ * $Id: tengsyntax.yy,v 1.7 2006-06-21 14:13:59 sten__ Exp $
  *
  * DESCRIPTION
  * Teng syntax analyzer.
@@ -33,6 +33,8 @@
  * HISTORY
  * 2003-09-19  (stepan)
  *             Created.
+ * 2006-06-21  (sten__)
+ *             Better error reporting when unexpected EOF
  */
 
 // all external symbols will be prefixed with tengSyntax_
@@ -105,8 +107,7 @@ struct LeftValue_t {
 
 // define size of the parser stack
 // (default value 200 is too small for complex templates)
-#define YYINITDEPTH 10000
-
+#define YYINITDEPTH 200
 
 // external function prototypes
 extern int tengLex2_getElement(ParserValue_t &val,
@@ -414,6 +415,7 @@ static inline void codeForVariable(void *context,
 
 // other keywords/operators
 %token LEX_CASE
+%token LEX_DEFINED
 %token LEX_EXIST
 
 // parentheses
@@ -430,7 +432,6 @@ static inline void codeForVariable(void *context,
 
 // start symbol
 %start start
-
 
 // grammar rules
 %%
@@ -662,9 +663,10 @@ teng_format:
         }
     | error
         {
-            if (tengSyntax_lastErrorMessage.length() > 0) {
+            if (tengSyntax_lastErrorMessage.length() > 0) { // If EOF, do not print this message
                 printUnexpectedElement(CONTEXT, yychar, yylval);
-                ERR(ERROR, CONTEXT->position,
+                if(yychar) // I don't know why, but when unexpected EOF occurs, this error handler is called
+                    ERR(ERROR, CONTEXT->position,
                         "Misplaced <?teng endformat?> directive");
             }
             tengSyntax_lastErrorMessage.erase(); //clear error
@@ -1446,6 +1448,10 @@ expression:
         {
             $$.prgsize = $1.prgsize; //start of expr prog
         }
+    | defined
+        {
+            $$.prgsize = $1.prgsize; //start of expr prog
+        }
     | exist
         {
             $$.prgsize = $1.prgsize; //start of expr prog
@@ -1829,6 +1835,80 @@ case_values:
     ;
 
 
+defined:
+        LEX_DEFINED LEX_L_PAREN variable_identifier LEX_R_PAREN
+        {
+            // following code cannot be optimized
+            $$.prgsize = CONTEXT->program->size(); //start of expr prog
+            // clear val and copy variable identifier
+            $$.val = ParserValue_t(); //clear
+            $$.id = $3.id;
+            $$.val.stringValue = $3.val.stringValue;
+            if ($$.id.empty()) {
+                // bad identifier -- code fake value
+                ERR(ERROR, $3.pos, "Invalid identifier "
+                        "in 'defined()' operator");
+                $$.val.setString("undefined");
+                CODE_VAL(VAL, $$.val); //fake value
+            } else {
+                bool mustBeOpen = false;
+                // check for automatic variable
+                if ($$.id.back() == "_count") {
+                    // remove automatic variable name
+                    $$.id.pop_back();
+                    // rebuild identifier
+                    buildIdentifier($$);
+                } else if ($$.id.back() == "_number") {
+                    // remove automatic variable name
+                    $$.id.pop_back();
+                    // rebuild identifier
+                    buildIdentifier($$);
+
+                    // this fragment must be open!
+                    mustBeOpen = true;
+                }
+
+                // resolve existence
+                Identifier_t id;
+                ParserContext_t::ExistResolution_t er
+                    = CONTEXT->exists($3.pos, $$.id, $$.val.stringValue, id, mustBeOpen);
+
+                // generate code
+                switch (er) {
+                    case ParserContext_t::ER_FOUND:
+                    case ParserContext_t::ER_RUNTIME:
+                    // object may be defined
+                        CODE_VAL(DEFINED, $$.val);
+                        CONTEXT->program->back().identifier = id;
+                        break;
+
+                    case ParserContext_t::ER_NOT_FOUND:
+                    // object cannot be present => always false
+                        $$.val.setInteger(false);
+                        CODE_VAL(VAL, $$.val);
+                        break;
+                }
+            }
+        }
+
+    // defined-operator error handling
+    | LEX_DEFINED LEX_L_PAREN error
+        {
+            if (tengSyntax_lastErrorMessage.length() > 0) {
+                printUnexpectedElement(CONTEXT, yychar, yylval);
+                if (yychar == LEX_VAR)
+                    ERR(ERROR, $1.pos, "Variable identifier must not "
+                            "start with '$' here");
+                ERR(ERROR, $1.pos, "Invalid identifier "
+                        "in 'defined()' operator");
+            }
+            tengSyntax_lastErrorMessage.erase(); //clear error
+            $$.prgsize = CONTEXT->program->size(); //start of expr prog
+            $$.val.setString("undefined");
+            CODE_VAL(VAL, $$.val); //fake value
+        }
+        LEX_R_PAREN
+
 exist:
     LEX_EXIST LEX_L_PAREN variable_identifier LEX_R_PAREN
         {
@@ -2085,6 +2165,24 @@ static void yyprint(FILE *fp, int element, const YYSTYPE &leftValue)
 }
 #endif
 
+/** Translates token name into teng-syntax-like name
+  * @return teng-syntax-like name if token is known
+  * @param token Token name. */
+
+static string directive(string token) {
+    string directive;
+    if(token == "LEX_ENDFORMAT")
+        directive = "<?teng endformat?> directive";
+    else if(token == "LEX_ENDFRAGMENT")
+        directive = "<?teng endfrag?> directive";
+    else if(token == "LEX_ENDIF")
+        directive = "<?teng endif?> directive";
+    else if(token == "LEX_ENDCTYPE")
+        directive = "<?teng endctype?> directive";
+    else
+        directive = token + "token";
+    return directive;
+}
 
 /** Print info about unexpected element.
   * @param context Actual parser context.
@@ -2214,6 +2312,8 @@ static void printUnexpectedElement(ParserContext_t *context,
         // other keywords/operators
         case LEX_CASE:
             msg = "operator 'case'"; break;
+        case LEX_DEFINED:
+            msg = "operator 'defined'"; break;
         case LEX_EXIST:
             msg = "operator 'exist'"; break;
 
@@ -2245,7 +2345,7 @@ static void printUnexpectedElement(ParserContext_t *context,
 
         // end of file
         case 0:
-            msg = "end of input file"; break;
+            msg = "end of input file while looking for " + directive(tengSyntax_lastErrorMessage.substr(tengSyntax_lastErrorMessage.rfind(' ') + 1)); break;
         default:
             msg = "unknown lexical element. Huh?!?"; break;
     }

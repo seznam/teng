@@ -22,7 +22,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tenglex2.ll,v 1.4 2005-10-04 15:41:01 vasek Exp $
+ * $Id: tenglex2.ll,v 1.5 2006-06-21 14:13:59 sten__ Exp $
  *
  *
  * DESCRIPTION
@@ -483,6 +483,12 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     // match case operator
     bufferPos.advanceColumn(yyleng);
     RETURN(LEX_CASE);
+}
+
+"defined" {
+    // match defined operator
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_DEFINED);
 }
 
 "exist" {

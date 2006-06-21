@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tenginstruction.h,v 1.4 2006-06-13 10:04:16 vasek Exp $
+ * $Id: tenginstruction.h,v 1.5 2006-06-21 14:13:59 sten__ Exp $
  *
  * DESCRIPTION
  * Teng instruction for teng processor.
@@ -119,6 +119,7 @@ struct Instruction_t {
         SET, /**< Create new variable and assign value. */
         HALT, /**< End of program. Relax. */
         DEBUG, /**< Print data tree (vars & vals) to output. */
+        DEFINED, /**< Test if variable/fargment exists and has non-zero/non-empty value. */
         EXIST, /**< Test if exists variable/fragment. */
         BYTECODE, /**< Print bytecode -- disassembled program. */
         CTYPE, /**< Change content type (push new). */

@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfunction.cc,v 1.8 2005-06-22 07:16:11 romanmarek Exp $
+ * $Id: tengfunction.cc,v 1.9 2006-06-21 14:13:59 sten__ Exp $
  *
  * DESCRIPTION
  * Teng processor funcction (like len, substr, round or date)
@@ -1560,6 +1560,29 @@ static int tengFunctionDictExist(const vector<ParserValue_t> &args,
     return 0;
 }
 
+/** Replace - replace all occurences of a substring (args[1]) in a string (args[2]) with
+  *   another substring (args[0])
+  * @param args Teng function arguments
+  * @param setting Teng function setting
+  * @param result Teng function result
+  * @return 0 OK, -1 wrong argument count
+  * */
+static int tengFunctionReplace(const vector<ParserValue_t> &args,
+                               const Processor_t::FunctionParam_t &setting,
+                               ParserValue_t &result)
+{
+    if (args.size() != 3) return -1;
+    result.setString(args[2].stringValue);
+    unsigned int size = args[1].stringValue.size(), size2 = args[0].stringValue.size();
+    for(unsigned int i = 0; i < result.stringValue.size(); i++) {
+        if(result.stringValue.substr(i, size) == args[1].stringValue) {
+            result.stringValue.replace(i, size, args[0].stringValue);
+            i += size2 - 1;
+        }
+    }
+    return 0;
+}
+
 namespace {
     struct FunctionStub_t {
         char *name;        // teng name
@@ -1590,6 +1613,8 @@ namespace {
         {"sec_to_time", true, tengFunctionSecToTime}, // deprecated name
         {"isenabled", true, tengFunctionIsEnabled}, // isenabled(feature)
         {"dictexist", true, tengFunctionDictExist}, // dictexist(key)
+        {"replace", true, tengFunctionReplace},   // replace all occurences of a substring
+                                                  // with another one
         { 0, false, 0}                            // end of list
     };
 }

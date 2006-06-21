@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengparsercontext.cc,v 1.5 2005-06-22 07:16:12 romanmarek Exp $
+ * $Id: tengparsercontext.cc,v 1.6 2006-06-21 14:13:59 sten__ Exp $
  *
  * DESCRIPTION
  * Teng parser context -- implementation.
@@ -34,6 +34,8 @@
  *             Created.
  * 2005-06-21  (roman)
  *             Win32 support.
+ * 2006-06-21  (sten__)
+ *             Commented out error reporting of exist function.
  */
 
 #include <algorithm>
@@ -421,9 +423,9 @@ ParserContext_t::exists(const Error_t::Position_t &pos,
     }
         
     // log error
-    program->getErrors().
+    /*program->getErrors().
         logError(Error_t::LL_ERROR, pos,
-                 ("Object '" + fullName + "' not found in any context."));
+                 ("Object '" + fullName + "' not found in any context."));*/
 
     return ER_NOT_FOUND;
 }
