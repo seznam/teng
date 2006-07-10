@@ -1,1 +1,0 @@
-@c $Id: install_c.texi,v 1.1 2004-09-09 13:46:30 franci_cz Exp $
