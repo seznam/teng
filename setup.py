@@ -23,7 +23,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: setup.py,v 1.2 2005-03-27 17:24:41 vasek Exp $
+# $Id: setup.py,v 1.3 2006-07-11 14:46:20 sten__ Exp $
 #
 # DESCRIPTION
 # Build script for python teng module.
@@ -44,7 +44,7 @@
 
 
 # This version is used when packaging.
-VERSION          = "1.0.0"
+VERSION          = "1.0.13"
 
 # Maintainer of this module.
 MAINTAINER       = "Vaclav Blazek"
