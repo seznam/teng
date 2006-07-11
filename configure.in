@@ -21,7 +21,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: configure.in,v 1.13 2006-01-27 14:04:41 vasek Exp $
+# $Id: configure.in,v 1.14 2006-07-11 14:46:20 sten__ Exp $
 #
 # DESCRIPTION
 # configure template for Teng.
@@ -36,7 +36,7 @@
 
 
 # initialize autoconf
-AC_INIT(teng, 1.0.12, teng@firma.seznam.cz)
+AC_INIT(teng, 1.0.13, teng@firma.seznam.cz)
 # initialize automake(use AC_INIT's arguments)
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 
@@ -57,7 +57,7 @@ AC_PROG_LIBTOOL
 # This version number needs to be changed in several different ways for each
 # release. Please read the libtool documentation (info libtool 'Updating
 # version info') before touching this. (this is *.so version number).
-VERSION_INFO="-version-info 1:0:0"
+VERSION_INFO="-version-info 1:13:0"
 AC_SUBST(VERSION_INFO)
 
 # check for flex and bison
