@@ -23,7 +23,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: generate.py,v 1.1 2006-07-11 14:46:20 sten__ Exp $
+# $Id: generate.py,v 1.2 2006-07-12 17:03:59 sten__ Exp $
 #
 # DESCRIPTION
 # Python generatePage wrapper
@@ -126,7 +126,7 @@ for name in ('conf', 'templ', 'xml'):
     if name in source.keys() and source[name] is not None:
         if not os.path.isfile(source[name]):
             if verbose:
-                sys.stderr.write('%s: invalid file ’%s‘ specified for parameter ’%s‘' % (sys.argv[0], source[name], file))
+                sys.stderr.write('%s: invalid file ’%s‘ specified for parameter ’%s‘\n' % (sys.argv[0], source[name], file))
             error = True
 
 if error:
@@ -148,7 +148,9 @@ if 'xml' in source.keys():
             Exception.__init__(self, message, [])
     
         def __str__(self):
-            return self.args[0] % '/'.join(self.args[1])
+            args = self.args[1]
+            args.reverse()
+            return self.args[0] % '/'.join(args)
     
         def append(self, name):
             self.args[1].append(name)
@@ -251,7 +253,7 @@ if 'xml' in source.keys():
                 data = parseDict(node.childNodes, True)
             except Exception, e:
                 if verbose:
-                    sys.stderr.write('%s: %s' % (sys.argv[0], e))
+                    sys.stderr.write('%s: %s\n' % (sys.argv[0], e))
                     sys.stderr.flush()
                 sys.exit(4)
             break
@@ -397,7 +399,7 @@ for line in page:
         error = True
         output.write('Line mismatch at line %d:\n' % i)
         output.write('\t- %s\n' % eline)
-        outout.write('\t+ %s\n' % gline)
+        output.write('\t+ %s\n' % gline)
     del expected[0]
 
 if len(expected):
