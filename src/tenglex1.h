@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tenglex1.h,v 1.2 2004-12-30 12:42:02 vasek Exp $
+ * $Id: tenglex1.h,v 1.3 2006-10-18 08:31:09 vasek Exp $
  *
  * DESCRIPTION
  * Teng level #1 lexical analyzer.
@@ -89,7 +89,7 @@ public:
       * @param begin start position in string input.
       * @param end final position in string input + 1.
       * @return unescaped substring */   
-    string Lex1_t::unescapeInputSubstr(unsigned int begin, unsigned int end);
+    string unescapeInputSubstr(unsigned int begin, unsigned int end);
     
     /** Get next token.
       * @return Token struct of next token. */

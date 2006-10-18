@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengparsercontext.h,v 1.4 2005-06-22 07:16:12 romanmarek Exp $
+ * $Id: tengparsercontext.h,v 1.5 2006-10-18 08:31:09 vasek Exp $
  *
  * DESCRIPTION
  * Teng parser context.
@@ -82,9 +82,9 @@ struct ParserContext_t {
                       const IdentifierName_t &name, const string &fullName,
                       Identifier_t &id);
 
-    void ParserContext_t::popFragment(unsigned int fragmentProgramStart);
+    void popFragment(unsigned int fragmentProgramStart);
 
-    void ParserContext_t::cropCode(unsigned int size);
+    void cropCode(unsigned int size);
 
     bool findFragmentForVariable(const Error_t::Position_t &pos,
                                  const IdentifierName_t &name,
