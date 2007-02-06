@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfunction.cc,v 1.9 2006-06-21 14:13:59 sten__ Exp $
+ * $Id: tengfunction.cc,v 1.10 2007-02-06 14:37:29 vasek Exp $
  *
  * DESCRIPTION
  * Teng processor funcction (like len, substr, round or date)
@@ -1083,6 +1083,22 @@ static int formatBrokenDate(const string &format, const string &setup,
             case 'a': //abbreviated day name (Sun..Sat)
                 if (dateTime.tm_wday >= 0 && dateTime.tm_wday <= 6) {
                     addDateString(dateTime.tm_wday + 31, setup, output);
+                }
+                break;
+
+            case 'z':
+                {
+                    char buffer[32];
+                    strftime(buffer, sizeof(buffer), "%z", &dateTime);
+                    output.append(buffer);
+                }
+                break;
+
+            case 'Z':
+                {
+                    char buffer[32];
+                    strftime(buffer, sizeof(buffer), "%Z", &dateTime);
+                    output.append(buffer);
                 }
                 break;
 
