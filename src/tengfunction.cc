@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfunction.cc,v 1.11 2007-02-08 14:34:53 vasek Exp $
+ * $Id: tengfunction.cc,v 1.12 2007-02-08 14:59:54 vasek Exp $
  *
  * DESCRIPTION
  * Teng processor funcction (like len, substr, round or date)
@@ -1464,17 +1464,15 @@ static int tengFunctionQuoteEscape(const vector<ParserValue_t> &args,
     string::const_iterator i;
     for (i = a.stringValue.begin(); i != a.stringValue.end(); ++i) {
         switch (*i) {
-        case '\\': res.append("\\\\");
-        case '\n': res.append("\\n");
-        case '\r': res.append("\\r");
-        case '\a': res.append("\\a");
-        case '\0': res.append("\\0");
-        case '\v': res.append("\\v");
-        case '\'': res.append("\\'");
-        case '"': res.append("\\\"");
-        default:
-            res.push_back(*i);
-            break;
+        case '\\': res.append("\\\\"); break;
+        case '\n': res.append("\\n"); break;
+        case '\r': res.append("\\r"); break;
+        case '\a': res.append("\\a"); break;
+        case '\0': res.append("\\0"); break;
+        case '\v': res.append("\\v"); break;
+        case '\'': res.append("\\'"); break;
+        case '"': res.append("\\\""); break;
+        default: res.push_back(*i); break;
         }
     }
     // success
