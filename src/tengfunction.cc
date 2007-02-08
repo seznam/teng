@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfunction.cc,v 1.10 2007-02-06 14:37:29 vasek Exp $
+ * $Id: tengfunction.cc,v 1.11 2007-02-08 14:34:53 vasek Exp $
  *
  * DESCRIPTION
  * Teng processor funcction (like len, substr, round or date)
@@ -1444,6 +1444,44 @@ static int tengFunctionUrlEscape(const vector<ParserValue_t> &args,
 }
 
 
+/** Create quotable string.
+ * @return Status: 0=ok, -1=wrong argument count, -2=other error.
+ * @param args Function arguments (list of values).
+ * @param setting Teng function setting.
+ * @param result Function's result value. */
+static int tengFunctionQuoteEscape(const vector<ParserValue_t> &args,
+                                   const Processor_t::FunctionParam_t &setting,
+                                   ParserValue_t &result)
+{
+    // check params
+    result.setString("undefined");
+    if (args.size() != 1)
+        return -1; //bad args
+    ParserValue_t a(args[0]); //take 1st arg
+    
+    // quote
+    string res;
+    string::const_iterator i;
+    for (i = a.stringValue.begin(); i != a.stringValue.end(); ++i) {
+        switch (*i) {
+        case '\\': res.append("\\\\");
+        case '\n': res.append("\\n");
+        case '\r': res.append("\\r");
+        case '\a': res.append("\\a");
+        case '\0': res.append("\\0");
+        case '\v': res.append("\\v");
+        case '\'': res.append("\\'");
+        case '"': res.append("\\\"");
+        default:
+            res.push_back(*i);
+            break;
+        }
+    }
+    // success
+    result.setString(res);
+    return 0;
+}
+
 /** Format long number for better readability.
  * @return Status: 0=ok, -1=wrong argument count, -2=other error.
  * @param args Function arguments (list of values).
@@ -1631,6 +1669,8 @@ namespace {
         {"dictexist", true, tengFunctionDictExist}, // dictexist(key)
         {"replace", true, tengFunctionReplace},   // replace all occurences of a substring
                                                   // with another one
+        {"quoteescape", true, tengFunctionQuoteEscape}, // escape strange chars
+                                                        // in quoted string
         { 0, false, 0}                            // end of list
     };
 }
