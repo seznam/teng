@@ -22,7 +22,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengsyntax.yy,v 1.9 2006-07-12 17:03:59 sten__ Exp $
+ * $Id: tengsyntax.yy,v 1.10 2007-02-08 15:07:58 vasek Exp $
  *
  * DESCRIPTION
  * Teng syntax analyzer.
@@ -107,7 +107,8 @@ struct LeftValue_t {
 
 // define size of the parser stack
 // (default value 200 is too small for complex templates)
-#define YYINITDEPTH 200
+//#define YYINITDEPTH 200
+#define YYINITDEPTH 10000
 
 // external function prototypes
 extern int tengLex2_getElement(ParserValue_t &val,
