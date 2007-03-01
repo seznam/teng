@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengcache.h,v 1.2 2004-12-30 12:42:01 vasek Exp $
+ * $Id: tengcache.h,v 1.3 2007-03-01 09:40:12 vasek Exp $
  *
  * DESCRIPTION
  * Teng cache of files.
@@ -402,7 +402,7 @@ private:
             // try to find data in back mapping cache
             typename EntryBackCache_t::iterator fbackcache =
                 backcache.find(entry->data);
-            if (fbackcache == backcache.end())
+            if (fbackcache != backcache.end())
                 backcache.erase(fbackcache);
             delete entry;
         }
