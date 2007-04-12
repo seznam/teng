@@ -22,7 +22,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengsyntax.yy,v 1.10 2007-02-08 15:07:58 vasek Exp $
+ * $Id: tengsyntax.yy,v 1.11 2007-04-12 20:50:23 solamyl Exp $
  *
  * DESCRIPTION
  * Teng syntax analyzer.
@@ -106,8 +106,9 @@ struct LeftValue_t {
 #define YYERROR_VERBOSE
 
 // define size of the parser stack
-// (default value 200 is too small for complex templates)
+// (now, 200 is enough - grammar was fixed)
 //#define YYINITDEPTH 200
+// (default value 200 is too small for complex templates)
 #define YYINITDEPTH 10000
 
 // external function prototypes
@@ -504,7 +505,7 @@ teng_debug:
         }
     ;
 
-    
+
 teng_bytecode:
     LEX_BYTECODE no_options_LEX_END
         {
@@ -1116,8 +1117,8 @@ teng_dict:
             tengCode_generatePrint(CONTEXT); //print 'undef' value
         }
     ;
-    
-    
+
+
 teng_ctype:
     LEX_CTYPE LEX_STRING LEX_END
         {
@@ -1145,7 +1146,7 @@ teng_ctype:
             // no print-values join below following address
             CONTEXT->lowestValPrintAddress = CONTEXT->program->size();
         }
-    
+
     // teng_ctype error handling
     | LEX_CTYPE error
         {
@@ -1198,7 +1199,7 @@ teng_repeatfrag:
             if (address >= 0) {
                 // set offset
                 $2.val.integerValue = address - CONTEXT->program->size();
-                
+
                 // generate instruction
                 CODE_VAL(REPEATFRAG, $2.val);
 
