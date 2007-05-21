@@ -1,7 +1,7 @@
 Package: @PACKAGE@
 Version: @VERSION@
 Architecture: @ARCHITECTURE@
-Depends: @STANDARD_DEPEND@ @EXTRA_DEPEND@
+Depends: @SH_DEPEND@, @EXTRA_DEPEND@
 Maintainer: @MAINTAINER@
 Installed-Size: @SIZE@
 Replaces: szn-py-teng

@@ -22,7 +22,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: make.sh,v 1.4 2005-04-11 19:48:57 solamyl Exp $
+# $Id: make.sh,v 1.5 2007-05-21 15:43:28 vasek Exp $
 #
 # DESCRIPTION
 # Packager for Teng library.
@@ -140,26 +140,10 @@ function build_package {
     # Remove any lost CVS entries in the package tree.
     find ${DEBIAN_BASE} -path "*CVS*" -exec rm -Rf '{}' \; || exit 1
 
-    # Dependencies to the system libraries (libc, libstdc++, ...)
-    STANDARD_DEPEND=""
-    ldd_libs=$(ldd $(find ${INSTALL_DIR}/usr/lib -name '*.so' 2>/dev/null) 2>/dev/null \
-            | grep -e libc -e libstdc -e libteng \
-            | cut -f2 -d'>' | cut -f1 -d'(' | sort | uniq)
-    for lib in ${ldd_libs}; do
-        # determine .deb package from library file
-        pkg=$(dpkg -S ${lib} | cut -f1 -d':')
-        if [ "${STANDARD_DEPEND}" = "" ]; then
-            STANDARD_DEPEND=${pkg}
-        else
-            STANDARD_DEPEND=${STANDARD_DEPEND}", "${pkg}
-        fi
-    done
-    
-    # Comma between standard depend and extra depend
-    if [ "${STANDARD_DEPEND}" != "" -a "${EXTRA_DEPEND}" != "" ]; then
-        STANDARD_DEPEND=${STANDARD_DEPEND}","
-    fi
-    
+    # build extra depend
+    SH_DEPEND=$(dpkg-shlibdeps -O $(find ${INSTALL_DIR}/usr/lib -name '*.so' 2>/dev/null) | \
+        gawk '{match($0, /^.*Depends=(.*)$/, a); print a[1]}')
+
     # Compute package's size.
     SIZEDU=$(du -sk ${DEBIAN_BASE} | awk '{print $1}') || exit 1
     SIZEDIR=$(find ${DEBIAN_BASE} -type d | wc | awk '{print $1}') || exit 1
@@ -174,7 +158,7 @@ function build_package {
             -e "s/@MAINTAINER@/${MAINTAINER}/" \
             -e "s/@ARCHITECTURE@/$(dpkg --print-architecture)/" \
             -e "s/@SIZE@/${SIZE}/" \
-            -e "s/@STANDARD_DEPEND@/${STANDARD_DEPEND}/" \
+            -e "s/@SH_DEPEND@/${SH_DEPEND}/" \
             -e "s/@EXTRA_DEPEND@/${EXTRA_DEPEND}/" \
             ${PROJECT_NAME}.control > ${CONTROL_DIR}/control || exit 1
 

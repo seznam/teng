@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengmodule.cc,v 1.11 2006-01-30 09:21:51 vasek Exp $
+ * $Id: tengmodule.cc,v 1.12 2007-05-21 15:43:27 vasek Exp $
  *
  * DESCRIPTION
  * Teng python module.
@@ -365,7 +365,16 @@ public:
 #endif
         } else if (PyInt_Check(data)) {
             // int object -> get int, convert to string and assign
-            long i = PyInt_AsLong(data);
+            Teng::IntType_t i = PyInt_AsLong(data);
+            // check for error
+            if (PyErr_Occurred()) return -1;
+            // add variable
+            fragment.addVariable(name, i);
+        } else if (PyLong_Check(data)) {
+            // int object -> get int, convert to string and assign
+            Teng::IntType_t i = PyLong_AsLongLong(data);
+            // check for error
+            if (PyErr_Occurred()) return -1;
             // add variable
             fragment.addVariable(name, i);
         } else if (PyFloat_Check(data)) {
