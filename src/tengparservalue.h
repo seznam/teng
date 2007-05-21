@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengparservalue.h,v 1.2 2004-12-30 12:42:02 vasek Exp $
+ * $Id: tengparservalue.h,v 1.3 2007-05-21 15:43:28 vasek Exp $
  *
  * DESCRIPTION
  * Teng data types.
@@ -40,6 +40,8 @@
 #include <string>
 #include <iostream>
 
+#include <tengconfig.h>
+
 using namespace std;
 
 namespace Teng {
@@ -57,17 +59,19 @@ struct ParserValue_t {
         : type(TYPE_STRING), stringValue(),
           integerValue(0), realValue(0.0)
     {}
+
+    typedef IntType_t int_t;
     
     Type_t type;
     string stringValue;
-    long integerValue;
+    int_t integerValue;
     double realValue;
     
     /** Method sets type, stringValue, intValue and realValue.
       * If conversion to number fails, sets intValue and realValue to 0. */
     void setString(const string &val = string());
     /** Sets type, stringValue, intValue and realValue. */
-    void setInteger(long val);
+    void setInteger(int_t val);
     /** Sets type, stringValue, intValue and realValue. */
     void setReal(double val);
     /** Sets type, stringValue, intValue and realValue. */ 

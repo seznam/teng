@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengstructs.h,v 1.5 2006-01-27 14:03:01 vasek Exp $
+ * $Id: tengstructs.h,v 1.6 2007-05-21 15:43:28 vasek Exp $
  *
  * DESCRIPTION
  * Teng data types.
@@ -41,6 +41,10 @@
 #include <vector>
 #include <iostream>
 #include <map>
+
+#include <tengconfig.h>
+
+#include <stdint.h>
 
 namespace Teng {
 
@@ -71,7 +75,7 @@ public:
      * @param name variable name
      * @param value variable value
      */
-    void addVariable(const std::string &name, long int value);
+    void addVariable(const std::string &name, IntType_t value);
 
     /**
      * @short Add variable to fragment.
@@ -201,7 +205,7 @@ public:
      * @short Create new scalar value with given value.
      * @param value value of variable
      */
-    FragmentValue_t(long int value);
+    FragmentValue_t(IntType_t value);
 
     /**
      * @short Create new scalar value with given value.
@@ -211,7 +215,7 @@ public:
 
     void setValue(const std::string &value);
 
-    void setValue(const long int value);
+    void setValue(const IntType_t value);
 
     void setValue(const double value);
 

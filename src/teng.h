@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: teng.h,v 1.2 2004-12-30 12:42:01 vasek Exp $
+ * $Id: teng.h,v 1.3 2007-05-21 15:43:28 vasek Exp $
  *
  * DESCRIPTION
  * Teng engine.
@@ -45,6 +45,7 @@
 #include <tengstructs.h>
 #include <tengwriter.h>
 #include <tengerror.h>
+#include <tengconfig.h>
 
 namespace Teng {
 

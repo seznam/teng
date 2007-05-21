@@ -21,7 +21,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: configure.in,v 1.16 2007-05-21 09:07:05 vasek Exp $
+# $Id: configure.in,v 1.17 2007-05-21 15:43:28 vasek Exp $
 #
 # DESCRIPTION
 # configure template for Teng.
@@ -36,7 +36,7 @@
 
 
 # initialize autoconf
-AC_INIT(teng, 1.0.15, teng@firma.seznam.cz)
+AC_INIT(teng, 1.0.0, teng@firma.seznam.cz)
 # initialize automake(use AC_INIT's arguments)
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 
@@ -57,7 +57,11 @@ AC_PROG_LIBTOOL
 # This version number needs to be changed in several different ways for each
 # release. Please read the libtool documentation (info libtool 'Updating
 # version info') before touching this. (this is *.so version number).
-VERSION_INFO="-version-info 1:13:0"
+TENG_MAJOR=2
+TENG_MINOR=0
+VERSION_INFO="-version-info $TENG_MAJOR:$TENG_MINOR:0"
+AC_SUBST(TENG_MAJOR)
+AC_SUBST(TENG_MINOR)
 AC_SUBST(VERSION_INFO)
 
 # check for flex and bison
@@ -73,5 +77,5 @@ AC_REPLACE_FUNCS(trunc)
 AC_REPLACE_FUNCS(round)
 
 # generate Makefile
-AC_OUTPUT(version Makefile src/Makefile)
+AC_OUTPUT(version Makefile src/Makefile src/tengconfig.h)
 #          doc/Makefile doc/manual/Makefile doc/manual/en/Makefile)

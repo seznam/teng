@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengprocessor.cc,v 1.11 2006-06-21 14:13:59 sten__ Exp $
+ * $Id: tengprocessor.cc,v 1.12 2007-05-21 15:43:28 vasek Exp $
  *
  * DESCRIPTION
  * Teng processor. Executes programs.
@@ -467,7 +467,7 @@ int Processor_t::binaryOp(const Instruction_t &instr) {
             string s = a.stringValue;
             a.setString("");
             a.stringValue.reserve(s.size() * b.integerValue);
-            for (long i = 0; i < b.integerValue; i++) {
+            for (ParserValue_t::int_t i = 0; i < b.integerValue; i++) {
                 a.stringValue += s;
             }
         }
@@ -776,7 +776,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
             
         case Instruction_t::FUNC:
             {
-                long i = instr.value.integerValue;
+                ParserValue_t::int_t i = instr.value.integerValue;
                 int j;
                 if (i < 0) {
                     logErr(instr, "Negative function argument count",
@@ -1117,7 +1117,7 @@ int Processor_t::eval(ParserValue_t &result, int startAddress,
                 string s = a.stringValue;
                 a.setString("");
                 a.stringValue.reserve(s.size() * b.integerValue);
-                for (long i = 0; i < b.integerValue; i++)
+                for (ParserValue_t::int_t i = 0; i < b.integerValue; i++)
                     a.stringValue += s;
             }
             break;
@@ -1187,7 +1187,7 @@ int Processor_t::eval(ParserValue_t &result, int startAddress,
             
         case Instruction_t::FUNC:
             {
-                long i = instr.value.integerValue;
+                ParserValue_t::int_t i = instr.value.integerValue;
                 int j;
                 if (i < 0) return -1;
                 if ((int)valueStack.size() < i) return -1;

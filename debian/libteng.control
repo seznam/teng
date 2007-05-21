@@ -1,7 +1,7 @@
 Package: @PACKAGE@
 Version: @VERSION@
 Architecture: @ARCHITECTURE@
-Depends: @STANDARD_DEPEND@
+Depends: @SH_DEPEND@
 Maintainer: @MAINTAINER@
 Installed-Size: @SIZE@
 Description: Teng -- general purpose templating system

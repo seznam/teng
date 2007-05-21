@@ -1,4 +1,4 @@
-/*
+/* -*- C++ -*-
  * Teng -- a general purpose templating engine.
  * Copyright (C) 2004  Seznam.cz, a.s.
  *
@@ -21,34 +21,43 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengprogram.cc,v 1.2 2007-05-21 15:43:28 vasek Exp $
+ * $Id: tengconfig.h.in,v 1.1 2007-05-21 15:43:28 vasek Exp $
  *
  * DESCRIPTION
- * Teng program is sequence of teng instructions.
+ * Teng engine.
  *
  * AUTHORS
- * Stepan Skrob <stepan@firma.seznam.cz>
+ * Vaclav Blazek <blazek@firma.seznam.cz>
  *
  * HISTORY
- * 2003-09-24  (stepan)
+ * 2007-05-21  (vasek)
  *             Created.
  */
 
-#include <stdio.h>
 
-#include "tengprogram.h"
+#ifndef TENGVERSION_H
+#define TENGVERSION_H
 
-using namespace std;
+#include <stdint.h>
 
-using namespace Teng;
+namespace Teng {
 
-/** Print whole program into file stream.
-  * @param fp File stream for output. */
-void Program_t::dump(FILE *fp) const
-{
-    Program_t::const_iterator i;
-    for (i = begin(); i != end(); ++i) {
-        fprintf(fp, "%td\t", i - begin());
-        (*i).dump(fp);
-    }
-}
+/** Teng library major version (libtool's CURRENT version component).
+ */
+#define TENG_MAJOR @TENG_MAJOR@
+
+/** Teng library minor version (libtool's REVISION version component).
+ */
+#define TENG_MINOR @TENG_MINOR@
+
+/** Teng library version.
+ */
+#define TENG_VERSION "@TENG_MAJOR@.@TENG_MINOR@"
+
+/** Integral type used inside teng
+ */
+typedef intmax_t IntType_t;
+
+} // namespace Teng
+
+#endif // TENGVERSION_H

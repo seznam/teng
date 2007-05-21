@@ -22,7 +22,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: make.sh,v 1.8 2005-04-26 13:56:24 vasek Exp $
+# $Id: make.sh,v 1.9 2007-05-21 15:43:28 vasek Exp $
 #
 # DESCRIPTION
 # Packager for Teng library.
@@ -120,6 +120,19 @@ function make_dirs {
     chmod 0755 ${CONTROL_DIR}
 }
 
+function replace_vars {
+    sed -e "s/@VERSION@/${VERSION}/" \
+        -e "s/@PACKAGE@/${PACKAGE_NAME}/" \
+        -e "s/@MAINTAINER@/${MAINTAINER}/" \
+        -e "s/@ARCHITECTURE@/$(dpkg --print-architecture)/" \
+        -e "s/@SIZE@/${SIZE}/" \
+        -e "s/@STANDARD_DEPEND@/${STANDARD_DEPEND}/" \
+        -e "s/@EXTRA_DEPEND@/${EXTRA_DEPEND}/" \
+        -e "s/@SH_DEPEND@/${SH_DEPEND}/" \
+        -e "s/@SO_VERSION@/${LIBRARY_VERSION}/" \
+        $1 > $2
+}
+
 function build_package {
     ########################################################################
     # Package housekeeping                                                 #
@@ -140,21 +153,11 @@ function build_package {
     # Remove any lost CVS entries in the package tree.
     find ${DEBIAN_BASE} -path "*CVS*" -exec rm -Rf '{}' \; || exit 1
     
-    # Dependencies to the standard libraries (libc, libstdc++)
-    STANDARD_DEPEND=""
-    ldd_libs=$(ldd ${INSTALL_DIR}/usr/lib/*.so* \
-            | grep -e libc -e libstdc \
-            | cut -f2 -d'>' | cut -f1 -d'(' | sort | uniq)
-    for lib in ${ldd_libs}; do
-        # determine .deb package from library file
-        pkg=$(dpkg -S ${lib} | cut -f1 -d':')
-        if [ "${STANDARD_DEPEND}" = "" ]; then
-            STANDARD_DEPEND=${pkg}
-        else
-            STANDARD_DEPEND=${STANDARD_DEPEND}", "${pkg}
-        fi
-    done
-    
+    # build extra depend
+    SH_DEPEND=$(dpkg-shlibdeps -O ${INSTALL_DIR}/usr/lib/*.so | \
+        gawk '{match($0, /^.*Depends=(.*)$/, a); print a[1]}')
+
+
     # Compute package's size.
     SIZEDU=$(du -sk ${DEBIAN_BASE} | awk '{print $1}') || exit 1
     SIZEDIR=$(find ${DEBIAN_BASE} -type d | wc | awk '{print $1}') || exit 1
@@ -164,14 +167,11 @@ function build_package {
     
     # Process control file -- all <tags> will be replaced with
     # appropriate data.
-    sed     -e "s/@VERSION@/${VERSION}/" \
-            -e "s/@PACKAGE@/${PACKAGE_NAME}/" \
-            -e "s/@MAINTAINER@/${MAINTAINER}/" \
-            -e "s/@ARCHITECTURE@/$(dpkg --print-architecture)/" \
-            -e "s/@SIZE@/${SIZE}/" \
-            -e "s/@STANDARD_DEPEND@/${STANDARD_DEPEND}/" \
-            -e "s/@EXTRA_DEPEND@/${EXTRA_DEPEND}/" \
-            ${PROJECT_NAME}.control > ${CONTROL_DIR}/control || exit 1
+    replace_vars ${PROJECT_NAME}.control ${CONTROL_DIR}/control || exit 1
+
+    # Process shlibs file
+    test -f ${PROJECT_NAME}.shlibs && \
+        (replace_vars ${PROJECT_NAME}.shlibs ${CONTROL_DIR}/shlibs || exit 1)
 
     # Create and rename the package.
     dpkg --build ${DEBIAN_BASE} ${PACKAGE_DIR}/${PACKAGE_NAME}.deb || exit 1

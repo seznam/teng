@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengparservalue.cc,v 1.2 2005-06-22 07:16:12 romanmarek Exp $
+ * $Id: tengparservalue.cc,v 1.3 2007-05-21 15:43:28 vasek Exp $
  *
  * DESCRIPTION
  * Teng parser value data type.
@@ -38,6 +38,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <sstream>
 
 #include "tengparservalue.h"
 #include "tengplatform.h"
@@ -61,7 +63,7 @@ void ParserValue_t::setString(const string &val) {
         }
         realValue = strtod(str, &parseStr);
         if (!*parseStr) {
-            integerValue = (long)realValue;
+            integerValue = (int_t)realValue;
             type = TYPE_REAL;
             return;
         }
@@ -71,11 +73,10 @@ void ParserValue_t::setString(const string &val) {
     integerValue = 0;
 }
 
-void ParserValue_t::setInteger(long val) {
-    char str[64];
-    
-    snprintf(str, sizeof(str), "%ld", val);
-    stringValue = str;
+void ParserValue_t::setInteger(int_t val) {
+    std::ostringstream os;
+    os << val;
+    stringValue = os.str();
     integerValue = val;
     realValue = val;
     type = TYPE_INT;
@@ -96,7 +97,7 @@ void ParserValue_t::setReal(double val) {
         }
     }
     stringValue = str;
-    integerValue = (long)val;
+    integerValue = (int_t)val;
     realValue = val;
     type = TYPE_REAL;
 }
@@ -106,7 +107,7 @@ void ParserValue_t::setReal(double val, int prec) {
     
     snprintf(str, sizeof(str), "%.*f", prec, val);
     stringValue = str;
-    integerValue = (long)val;
+    integerValue = (int_t)val;
     realValue = val;
     type = TYPE_REAL;
 }
@@ -133,7 +134,7 @@ void ParserValue_t::validateThis() {
             }
             realValue = strtod(str, &parseStr);
             if (!*parseStr) {
-                integerValue = (long)realValue;
+                integerValue = (int_t)realValue;
                 type = TYPE_REAL;
                 return;
             }

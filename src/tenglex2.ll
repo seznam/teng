@@ -22,7 +22,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tenglex2.ll,v 1.5 2006-06-21 14:13:59 sten__ Exp $
+ * $Id: tenglex2.ll,v 1.6 2007-05-21 15:43:28 vasek Exp $
  *
  *
  * DESCRIPTION
@@ -67,9 +67,9 @@
 
 #ifdef DEBUG_LEX
 #define RETURN(token) \
-    printf("%s \'%s\', sval == \'%s\' nval == \'%ld\' rval == \'%f\'\n", \
-           #token, yytext, value.stringValue.c_str(), value.integerValue, \
-           value.realValue); \
+    cout << #token << " '" << yytext << "', sval == '" << value.stringValue \
+         << " nval == '" << value.integerValue << "' rval == '" \
+         << value.realValue << "'" << std::endl; \\
     return token;
 #else
 #define RETURN(token) \
@@ -627,7 +627,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
 {REAL} {
     // match real number
     bufferPos.advanceColumn(yyleng);
-    value.integerValue = long(value.realValue = atof(yytext));
+    value.integerValue = ParserValue_t::int_t(value.realValue = atof(yytext));
     value.stringValue = string(yytext, yyleng);
     value.type = ParserValue_t::TYPE_REAL;
     RETURN(LEX_REAL);

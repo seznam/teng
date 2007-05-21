@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfunction.cc,v 1.12 2007-02-08 14:59:54 vasek Exp $
+ * $Id: tengfunction.cc,v 1.13 2007-05-21 15:43:28 vasek Exp $
  *
  * DESCRIPTION
  * Teng processor funcction (like len, substr, round or date)
@@ -721,7 +721,7 @@ static int tengFunctionRandom(const vector<ParserValue_t> &args,
         return -2;
     }
     // it is not good to use low bits of rand() see man 3 rand for detail
-    result.setInteger(static_cast<long>((rand() * (a.integerValue + 0.0))
+    result.setInteger(static_cast<ParserValue_t::int_t>((rand() * (a.integerValue + 0.0))
                                         /(RAND_MAX + 1.0)));
     return 0;
 }
@@ -1270,7 +1270,7 @@ static int tengFunctionNumFormat(const vector<ParserValue_t> &args,
     // split number into integer and decimal parts and
     // print string using thousand and decimal separators
     double integer = trunc(num);
-    long long n = static_cast<long long>(integer);
+    ParserValue_t::int_t n = static_cast<ParserValue_t::int_t>(integer);
     string str;
     char buf[16];
     int m;
@@ -1298,7 +1298,7 @@ static int tengFunctionNumFormat(const vector<ParserValue_t> &args,
     }
     // if decimal part
     if (b.integerValue > 0) {
-        n = static_cast<long long>(powernum);
+        n = static_cast<ParserValue_t::int_t>(powernum);
         string str2;
         int i;
         for (i = 0; i < b.integerValue; ++i) {

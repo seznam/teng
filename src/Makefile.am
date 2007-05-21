@@ -21,7 +21,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: Makefile.am,v 1.5 2005-04-11 17:14:01 solamyl Exp $
+# $Id: Makefile.am,v 1.6 2007-05-21 15:43:28 vasek Exp $
 #
 # DESCRIPTION
 # A makefile template for Teng.
@@ -42,7 +42,7 @@ AM_CXXFLAGS = -Wall
 AM_CPPFLAGS = -D_ISOC99_SOURCE
 
 # install these headers
-include_HEADERS = teng.h tengstructs.h tengwriter.h tengerror.h
+include_HEADERS = teng.h tengstructs.h tengwriter.h tengerror.h tengconfig.h
 
 noinst_HEADERS = tengcache.h tengcode.h tengcontenttype.h \
                  tengdictionary.h tengformatter.h tengfragmentstack.h \

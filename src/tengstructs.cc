@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengstructs.cc,v 1.3 2006-01-27 14:03:01 vasek Exp $
+ * $Id: tengstructs.cc,v 1.4 2007-05-21 15:43:28 vasek Exp $
  *
  * DESCRIPTION
  * Teng data types -- implementation.
@@ -39,10 +39,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <sstream>
+
 #include "tengstructs.h"
 #include "tengplatform.h"
-
-using namespace std;
 
 using namespace Teng;
 
@@ -50,11 +50,11 @@ FragmentValue_t::FragmentValue_t()
     : value(), nestedFragments(0)
 {}
 
-FragmentValue_t::FragmentValue_t(const string &value)
+FragmentValue_t::FragmentValue_t(const std::string &value)
     : value(value), nestedFragments(0)
 {}
 
-FragmentValue_t::FragmentValue_t(long int value_)
+FragmentValue_t::FragmentValue_t(IntType_t value_)
     : nestedFragments(0)
 {
     setValue(value_);
@@ -76,16 +76,16 @@ void FragmentValue_t::setValue(const std::string &value_) {
     value = value_;
 }
 
-void FragmentValue_t::setValue(const long int value_) {
+void FragmentValue_t::setValue(const IntType_t value_) {
     // get rid of nested fragments if exist
     if (nestedFragments) {
         delete nestedFragments;
         nestedFragments = 0;
     }
 
-    char buff[100];
-    snprintf(buff, sizeof(buff), "%ld", value_);
-    value = string(buff);
+    std::ostringstream os;
+    os << value_;
+    value = os.str();
 }
 
 void FragmentValue_t::setValue(const double value_) {
@@ -102,7 +102,7 @@ void FragmentValue_t::setValue(const double value_) {
     // find dot in the buffer
     if (!strchr(buff, '.')) {
         // no dot => append ".0"
-        value = string(buff, len);
+        value = std::string(buff, len);
         value.append(".0");
     } else {
         // dot found => find first nonzero character from the right
@@ -110,7 +110,7 @@ void FragmentValue_t::setValue(const double value_) {
              ((*(c - 1) != '.') && (*c == '0'));
              --len, --c);
         // create string
-        value = string(buff, len);
+        value = std::string(buff, len);
     }
 }
 
@@ -123,9 +123,7 @@ Fragment_t::~Fragment_t() {
         delete i->second;
 }
 
-void Fragment_t::addVariable(const string &name,
-                             const string &value)
-{
+void Fragment_t::addVariable(const std::string &name, const std::string &value) {
     // insert dummy zero
     std::pair<iterator, bool> inserted(insert(value_type(name, 0)));
 
@@ -140,9 +138,7 @@ void Fragment_t::addVariable(const string &name,
     }
 }
 
-void Fragment_t::addVariable(const string &name,
-                             long int value)
-{
+void Fragment_t::addVariable(const std::string &name, IntType_t value) {
     // insert dummy zero
     std::pair<iterator, bool> inserted(insert(value_type(name, 0)));
 
@@ -157,9 +153,7 @@ void Fragment_t::addVariable(const string &name,
     }
 }
 
-void Fragment_t::addVariable(const string &name,
-                             double value)
-{
+void Fragment_t::addVariable(const std::string &name, double value) {
     // insert dummy zero
     std::pair<iterator, bool> inserted(insert(value_type(name, 0)));
 
@@ -174,12 +168,12 @@ void Fragment_t::addVariable(const string &name,
     }
 }
 
-Fragment_t& Fragment_t::addFragment(const string &name) {
+Fragment_t& Fragment_t::addFragment(const std::string &name) {
     return addFragmentList(name).addFragment();
 }
 
 FragmentList_t&
-Fragment_t::addFragmentList(const string &name) {
+Fragment_t::addFragmentList(const std::string &name) {
     // insert dummy zero
     std::pair<iterator, bool> inserted(insert(value_type(name, 0)));
 
@@ -221,13 +215,13 @@ Fragment_t& FragmentList_t::addFragment() {
     return *back();
 }
 
-void FragmentValue_t::dump(ostream &o) const {
+void FragmentValue_t::dump(std::ostream &o) const {
     // print value or dump fragment list
     if (nestedFragments) nestedFragments->dump(o);
     else o << '\'' << value << '\'';
 }
 
-void FragmentList_t::dump(ostream &o) const {
+void FragmentList_t::dump(std::ostream &o) const {
     o << '[';
     // dump all fragments
     for (const_iterator i = begin(); i != end(); ++i) {
@@ -237,7 +231,7 @@ void FragmentList_t::dump(ostream &o) const {
     o << ']';
 }
 
-void Fragment_t::dump(ostream &o) const {
+void Fragment_t::dump(std::ostream &o) const {
     o << '{';
     // dump all values or fragment list
     for (const_iterator i = begin(); i != end(); ++i) {
