@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengmodule.cc,v 1.12 2007-05-21 15:43:27 vasek Exp $
+ * $Id: tengmodule.cc,v 1.13 2007-05-25 07:47:16 vasek Exp $
  *
  * DESCRIPTION
  * Teng python module.
@@ -200,7 +200,8 @@ PyObject* Teng_Teng(TengObject *self, PyObject *args, PyObject *keywds) {
     if (!s) return 0;
 
     // create settings
-    Teng_t::Settings_t settings(templateCacheSize, dictionaryCacheSize);
+    Teng_t::Settings_t settings(0, false, templateCacheSize,
+                                dictionaryCacheSize);
 
     try {
         // create teng object
