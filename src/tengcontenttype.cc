@@ -20,7 +20,7 @@
  * Naskove 1, Praha 5, 15000, Czech Republic
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
- * $Id: tengcontenttype.cc,v 1.5 2006-06-13 10:04:16 vasek Exp $
+ * $Id: tengcontenttype.cc,v 1.6 2007-06-20 09:46:12 vasek Exp $
  *
  * DESCRIPTION
  * Teng language descriptor -- implementation.
@@ -348,6 +348,32 @@ ContentType_t* qstringCreator() {
     return qs;
 }
 
+/** @short Create descriptor of quoted string.
+ * @return quoted string descriptor
+ */
+ContentType_t* jshtmlCreator() {
+    // create quoted-string descriptor
+    ContentType_t *jshtml = new ContentType_t();
+
+    jshtml->addEscape('\\', "\\\\");
+    jshtml->addEscape('\n', "\\n");
+    jshtml->addEscape('\r', "\\r");
+    jshtml->addEscape('\a', "\\a");
+    jshtml->addEscape('\0', "\\0");
+    jshtml->addEscape('\v', "\\v");
+    jshtml->addEscape('\'', "\\'");
+    jshtml->addEscape('"', "\\&quot;");
+    jshtml->addEscape('&', "&amp;");
+    jshtml->addEscape('<', "&lt;");
+    jshtml->addEscape('>', "&gt;");
+
+    // compile unescaping automaton
+    jshtml->compileUnescaper();
+
+    // return descriptor
+    return jshtml;
+}
+
 static CreatorEntry_t creators[] = {
     { "text/html", htmlCreator,
       "Hypertext markup language. Same processor as for"
@@ -364,6 +390,8 @@ static CreatorEntry_t creators[] = {
       "C/C++ source code" },
     { "quoted-string", qstringCreator,
       "Generic quoted string with escapes." },
+    { "jshtml", jshtmlCreator,
+      "Quoted string embeddable into HTML pages." },
     { 0, 0 }
 };
 
