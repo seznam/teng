@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengprocessor.cc,v 1.12 2007-05-21 15:43:28 vasek Exp $
+ * $Id: tengprocessor.cc,v 1.13 2007-10-18 14:45:45 vasek Exp $
  *
  * DESCRIPTION
  * Teng processor. Executes programs.
@@ -626,10 +626,10 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
         switch (instr.operation) {
         case Instruction_t::DEFINED:
             a.setInteger(!fragmentStack.exists(instr.identifier));
-            if(a) {
-                if(fragmentStack.findVariable(instr.identifier, a)) {
+            if (a) {
+                if (fragmentStack.findVariable(instr.identifier, a)) {
                     // Returns false if fragment
-                    a.setInteger(bool(a));
+                    a.setInteger(static_cast<bool>(a));
                 }
             }
             valueStack.push(a);

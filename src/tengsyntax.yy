@@ -22,7 +22,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengsyntax.yy,v 1.11 2007-04-12 20:50:23 solamyl Exp $
+ * $Id: tengsyntax.yy,v 1.12 2007-10-18 14:45:45 vasek Exp $
  *
  * DESCRIPTION
  * Teng syntax analyzer.
@@ -136,7 +136,7 @@ static void yyprint(FILE *fp, int element, const YYSTYPE &leftValue);
 
 // last error message (syntax or parse error)
 // global variable -- ugly hack :-((
-string tengSyntax_lastErrorMessage;
+std::string tengSyntax_lastErrorMessage;
 
 
 // max depth for templates included templates (looping protection)
@@ -665,9 +665,11 @@ teng_format:
         }
     | error
         {
-            if (tengSyntax_lastErrorMessage.length() > 0) { // If EOF, do not print this message
+            if (tengSyntax_lastErrorMessage.length() > 0) {
+                // If EOF, do not print this message
                 printUnexpectedElement(CONTEXT, yychar, yylval);
-                if(yychar) // I don't know why, but when unexpected EOF occurs, this error handler is called
+                if (yychar) // I don't know why, but when unexpected EOF
+                            // occurs, this error handler is called
                     ERR(ERROR, CONTEXT->position,
                         "Misplaced <?teng endformat?> directive");
             }
@@ -1877,18 +1879,18 @@ defined:
 
                 // generate code
                 switch (er) {
-                    case ParserContext_t::ER_FOUND:
-                    case ParserContext_t::ER_RUNTIME:
+                case ParserContext_t::ER_FOUND:
+                case ParserContext_t::ER_RUNTIME:
                     // object may be defined
-                        CODE_VAL(DEFINED, $$.val);
-                        CONTEXT->program->back().identifier = id;
-                        break;
+                    CODE_VAL(DEFINED, $$.val);
+                    CONTEXT->program->back().identifier = id;
+                    break;
 
-                    case ParserContext_t::ER_NOT_FOUND:
+                case ParserContext_t::ER_NOT_FOUND:
                     // object cannot be present => always false
-                        $$.val.setInteger(false);
-                        CODE_VAL(VAL, $$.val);
-                        break;
+                    $$.val.setInteger(false);
+                    CODE_VAL(VAL, $$.val);
+                    break;
                 }
             }
         }
@@ -1905,11 +1907,14 @@ defined:
                         "in 'defined()' operator");
             }
             tengSyntax_lastErrorMessage.erase(); //clear error
+        }
+    LEX_R_PAREN
+        {
             $$.prgsize = CONTEXT->program->size(); //start of expr prog
-            $$.val.setString("undefined");
+            $$.val.setInteger(0);
             CODE_VAL(VAL, $$.val); //fake value
         }
-        LEX_R_PAREN
+    ;
 
 exist:
     LEX_EXIST LEX_L_PAREN variable_identifier LEX_R_PAREN
@@ -1986,11 +1991,13 @@ exist:
                         "in 'exist()' operator");
             }
             tengSyntax_lastErrorMessage.erase(); //clear error
-            $$.prgsize = CONTEXT->program->size(); //start of expr prog
-            $$.val.setString("undefined");
-            CODE_VAL(VAL, $$.val); //fake value
         }
     LEX_R_PAREN
+        {
+            $$.prgsize = CONTEXT->program->size(); //start of expr prog
+            $$.val.setInteger(0);
+            CODE_VAL(VAL, $$.val); //fake value
+        }
     ;
 
 
@@ -2001,7 +2008,7 @@ function:
             tengCode_generateFunctionCall(CONTEXT,
                     $1.val.stringValue, //function name
                     $3.val.integerValue); //number of args
-            $$.prgsize = $1.prgsize; //start of expr prog
+            $$.prgsize = $2.prgsize; //start of expr prog
             tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
         }
 
@@ -2171,18 +2178,19 @@ static void yyprint(FILE *fp, int element, const YYSTYPE &leftValue)
   * @return teng-syntax-like name if token is known
   * @param token Token name. */
 
-static string directive(string token) {
+static std::string directive(const std::string &token) {
     string directive;
-    if(token == "LEX_ENDFORMAT")
+    if (token == "LEX_ENDFORMAT") {
         directive = "<?teng endformat?> directive";
-    else if(token == "LEX_ENDFRAGMENT")
+    } else if (token == "LEX_ENDFRAGMENT") {
         directive = "<?teng endfrag?> directive";
-    else if(token == "LEX_ENDIF")
+    } else if (token == "LEX_ENDIF") {
         directive = "<?teng endif?> directive";
-    else if(token == "LEX_ENDCTYPE")
+    } else if (token == "LEX_ENDCTYPE") {
         directive = "<?teng endctype?> directive";
-    else
-        directive = token + "token";
+    } else {
+        directive = token + " token";
+    }
     return directive;
 }
 
@@ -2191,7 +2199,7 @@ static string directive(string token) {
   * @param elem Look-ahead lexical element.
   * @param val Look-ahead element's semantic value. */
 static void printUnexpectedElement(ParserContext_t *context,
-        int element, const YYSTYPE &leftValue)
+                                   int element, const YYSTYPE &leftValue)
 {
     string msg;
     switch (element) {
@@ -2347,7 +2355,11 @@ static void printUnexpectedElement(ParserContext_t *context,
 
         // end of file
         case 0:
-            msg = "end of input file while looking for " + directive(tengSyntax_lastErrorMessage.substr(tengSyntax_lastErrorMessage.rfind(' ') + 1)); break;
+            msg = "end of input file while looking for " +
+                directive(tengSyntax_lastErrorMessage.substr
+                          (tengSyntax_lastErrorMessage.rfind(' ') + 1));
+            break;
+
         default:
             msg = "unknown lexical element. Huh?!?"; break;
     }

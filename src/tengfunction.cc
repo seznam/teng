@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfunction.cc,v 1.13 2007-05-21 15:43:28 vasek Exp $
+ * $Id: tengfunction.cc,v 1.14 2007-10-18 14:45:45 vasek Exp $
  *
  * DESCRIPTION
  * Teng processor funcction (like len, substr, round or date)
@@ -1547,8 +1547,10 @@ static int tengFunctionSecToTime(const vector<ParserValue_t> &args,
         return -2; //not a number
 
     char buf[64];
-    snprintf(buf, sizeof(buf), "%ld:%02ld:%02ld", sec.integerValue / 3600,
-             (sec.integerValue % 3600) / 60, sec.integerValue % 60);
+    snprintf(buf, sizeof(buf), "%zd:%02zd:%02zd",
+             size_t(sec.integerValue / 3600),
+             size_t((sec.integerValue % 3600) / 60),
+             size_t(sec.integerValue % 60));
 
     result.setString(buf);
     return 0;

@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tenginstruction.cc,v 1.5 2006-06-13 10:04:16 vasek Exp $
+ * $Id: tenginstruction.cc,v 1.6 2007-10-18 14:45:45 vasek Exp $
  *
  * DESCRIPTION
  * Teng instruction and program types. Syntax analyzer
@@ -61,7 +61,7 @@ void Instruction_t::dump(FILE *fp) const
             break;
             
         case VAR:
-            fprintf(fp, "VAR\t%s\t%ld\n",
+            fprintf(fp, "VAR\t%s\t%zd\n",
                     value.stringValue.c_str(), //rendered 'identifier' vector
                     value.integerValue); //escape flag
             break;
@@ -79,7 +79,7 @@ void Instruction_t::dump(FILE *fp) const
             break;
             
         case STACK:
-            fprintf(fp, "STACK\t%ld\n",
+            fprintf(fp, "STACK\t%zd\n",
                     value.integerValue); //value offset from stack top
             break;
             
@@ -112,12 +112,12 @@ void Instruction_t::dump(FILE *fp) const
             break;
             
         case AND:
-            fprintf(fp, "AND\t%ld\n",
+            fprintf(fp, "AND\t%zd\n",
                     value.integerValue); //relative jump added to ip
             break;
             
         case OR:
-            fprintf(fp, "OR\t%ld\n",
+            fprintf(fp, "OR\t%zd\n",
                     value.integerValue); //relative jump added to ip
             break;
             
@@ -158,23 +158,23 @@ void Instruction_t::dump(FILE *fp) const
             break;
             
         case FUNC:
-            fprintf(fp, "FUNC\t%s\t%ld\n",
+            fprintf(fp, "FUNC\t%s\t%zd\n",
                     value.stringValue.c_str(), //function name
                     value.integerValue); //number of params on stack
             break;
             
         case JMPIFNOT:
-            fprintf(fp, "JMPIFNOT\t%ld\n",
+            fprintf(fp, "JMPIFNOT\t%zd\n",
                     value.integerValue); //relative jump added to ip
             break;
             
         case JMP:
-            fprintf(fp, "JMP\t%ld\n",
+            fprintf(fp, "JMP\t%zd\n",
                     value.integerValue); //relative jump added to ip
             break;
             
         case FORM:
-            fprintf(fp, "FORM\t%ld\n",
+            fprintf(fp, "FORM\t%zd\n",
                     value.integerValue); //print formatting mode
             break;
             
@@ -183,13 +183,13 @@ void Instruction_t::dump(FILE *fp) const
             break;
             
         case FRAG:
-            fprintf(fp, "FRAG\t'%s'\t%ld\n",
+            fprintf(fp, "FRAG\t'%s'\t%zd\n",
                     value.stringValue.c_str(), //fragment name
                     value.integerValue); //jump right after the end of frag
             break;
             
         case ENDFRAG:
-            fprintf(fp, "ENDFRAG\t%ld\n",
+            fprintf(fp, "ENDFRAG\t%zd\n",
                     value.integerValue); //jump right after the fragment start
             break;
 

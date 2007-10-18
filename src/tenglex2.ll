@@ -22,7 +22,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tenglex2.ll,v 1.6 2007-05-21 15:43:28 vasek Exp $
+ * $Id: tenglex2.ll,v 1.7 2007-10-18 14:45:45 vasek Exp $
  *
  *
  * DESCRIPTION
@@ -606,7 +606,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     value.integerValue = strtoul(yytext + 2, 0, 16);
     value.realValue = value.integerValue;
     char buff[100];
-    snprintf(buff, sizeof(buff), "%ld", value.integerValue);
+    snprintf(buff, sizeof(buff), "%zd", size_t(value.integerValue));
     value.stringValue = string(buff);
     value.type = ParserValue_t::TYPE_INT;
     RETURN(LEX_INT);
@@ -618,7 +618,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     value.integerValue = strtoul(yytext + 2, 0, 2);
     value.realValue = value.integerValue;
     char buff[100];
-    snprintf(buff, sizeof(buff), "%ld", value.integerValue);
+    snprintf(buff, sizeof(buff), "%zd", size_t(value.integerValue));
     value.stringValue = string(buff);
     value.type = ParserValue_t::TYPE_INT;
     RETURN(LEX_INT);
