@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengprocessor.cc,v 1.13 2007-10-18 14:45:45 vasek Exp $
+ * $Id: tengprocessor.cc,v 1.14 2007-10-26 11:44:24 vasek Exp $
  *
  * DESCRIPTION
  * Teng processor. Executes programs.
@@ -132,146 +132,146 @@ Processor_t::Processor_t(const Program_t &program,
 
 int Processor_t::evalNumOp(const Instruction_t &instr) {
     if (valueStack.size() < 2) return -1;
-    
+
     ParserValue_t b = valueStack.top();
     valueStack.pop();
     b.validateThis();
-    
+
     ParserValue_t a = valueStack.top();
     valueStack.pop();
     a.validateThis();
-    
+
     if ((a.type == ParserValue_t::TYPE_STRING) ||
         (b.type == ParserValue_t::TYPE_STRING)) {
-        return -1; 
+        return -1;
     }
-    
+
     if ((a.type == ParserValue_t::TYPE_REAL) ||
         (b.type == ParserValue_t::TYPE_REAL)) {
 #ifdef HAVE_FENV_H
         feclearexcept(FE_ALL_EXCEPT);
 #endif
-        
+
         switch (instr.operation) {
         case Instruction_t::BITAND:
         case Instruction_t::BITOR:
         case Instruction_t::BITXOR:
             return -1;
-            
+
         case Instruction_t::ADD:
             a.setReal(a.realValue + b.realValue);
             break;
-            
+
         case Instruction_t::SUB:
             a.setReal(a.realValue - b.realValue);
             break;
-            
+
         case Instruction_t::MUL:
             a.setReal(a.realValue * b.realValue);
             break;
-            
+
         case Instruction_t::DIV:
             a.setReal(a.realValue / b.realValue);
             break;
-            
+
         case Instruction_t::MOD:
             if (!b.integerValue) return -1;
             a.setInteger(a.integerValue % b.integerValue);
             break;
-            
+
         case Instruction_t::NUMEQ:
             a.setInteger(a.realValue == b.realValue);
             break;
-            
+
         case Instruction_t::NUMGE:
             a.setInteger(a.realValue >= b.realValue);
-            break; 
-            
+            break;
+
         case Instruction_t::NUMGT:
             a.setInteger(a.realValue > b.realValue);
             break;
-            
+
         default:
             return -1;
         }
-        
+
 #ifdef HAVE_FENV_H
         if (fetestexcept(FE_ALL_EXCEPT) & (~FE_INEXACT)) {
             return -1;
         }
 #endif
     } else {
-        switch(instr.operation) { 
+        switch(instr.operation) {
         case Instruction_t::BITAND:
             a.setInteger(a.integerValue & b.integerValue);
             break;
-            
+
         case Instruction_t::BITOR:
             a.setInteger(a.integerValue | b.integerValue);
             break;
-            
+
         case Instruction_t::BITXOR:
             a.setInteger(a.integerValue ^ b.integerValue);
             break;
-            
+
         case Instruction_t::ADD:
             a.setInteger(a.integerValue + b.integerValue);
             break;
-            
+
         case Instruction_t::SUB:
             a.setInteger(a.integerValue - b.integerValue);
             break;
-            
+
         case Instruction_t::MUL:
             a.setInteger(a.integerValue * b.integerValue);
             break;
-            
+
         case Instruction_t::DIV:
             if (!b.integerValue) return -1;
             a.setInteger(a.integerValue / b.integerValue);
             break;
-            
+
         case Instruction_t::MOD:
             if (!b.integerValue) return -1;
             a.setInteger(a.integerValue % b.integerValue);
             break;
-            
+
         case Instruction_t::NUMEQ:
             a.setInteger(a.integerValue == b.integerValue);
             break;
-            
+
         case Instruction_t::NUMGE:
             a.setInteger(a.integerValue >= b.integerValue);
             break;
-            
+
         case Instruction_t::NUMGT:
             a.setInteger(a.integerValue > b.integerValue);
             break;
-            
+
         default:
             return -1;
         }
     }
-    
+
     valueStack.push(a);
     return 0;
 }
 
 int Processor_t::numOp(const Instruction_t &instr) {
-    
+
     if (valueStack.size() < 2) {
         logErr(instr, "Value stack underflow", Error_t::LL_FATAL);
         return -1;
     }
-    
+
     ParserValue_t b = valueStack.top();
     valueStack.pop();
     b.validateThis();
-    
+
     ParserValue_t a = valueStack.top();
     valueStack.pop();
     a.validateThis();
-    
+
     if ((a.type == ParserValue_t::TYPE_STRING) ||
         (b.type == ParserValue_t::TYPE_STRING)) {
         logErr(instr, "Numeric operation on string", Error_t::LL_ERROR);
@@ -281,33 +281,33 @@ int Processor_t::numOp(const Instruction_t &instr) {
 #ifdef HAVE_FENV_H
         feclearexcept(FE_ALL_EXCEPT);
 #endif
-                
-        switch (instr.operation) { 
+
+        switch (instr.operation) {
         case Instruction_t::BITAND:
         case Instruction_t::BITOR:
         case Instruction_t::BITXOR:
-            
+
             logErr(instr, "Bit operation with real",
                    Error_t::LL_ERROR);
             a.setString("undefined");
             break;
-            
+
         case Instruction_t::ADD:
             a.setReal(a.realValue + b.realValue);
             break;
-            
+
         case Instruction_t::SUB:
             a.setReal(a.realValue - b.realValue);
             break;
-            
+
         case Instruction_t::MUL:
             a.setReal(a.realValue * b.realValue);
             break;
-            
+
         case Instruction_t::DIV:
             a.setReal(a.realValue / b.realValue);
             break;
-            
+
         case Instruction_t::MOD:
             if (!b.integerValue) {
                 logErr(instr, "Modulo by zero", Error_t::LL_ERROR);
@@ -316,25 +316,25 @@ int Processor_t::numOp(const Instruction_t &instr) {
             }
             a.setInteger(a.integerValue % b.integerValue);
             break;
-            
+
         case Instruction_t::NUMEQ:
             a.setInteger(a.realValue == b.realValue);
             break;
-            
+
         case Instruction_t::NUMGE:
             a.setInteger(a.realValue >= b.realValue);
-            break; 
-            
+            break;
+
         case Instruction_t::NUMGT:
             a.setInteger(a.realValue > b.realValue);
             break;
-            
+
         default:
             logErr(instr, "Internal error, unknown numeric operation",
                    Error_t::LL_FATAL);
             return -1;
         }
-        
+
 #ifdef HAVE_FENV_H
         if (fetestexcept(FE_ALL_EXCEPT) & (~FE_INEXACT) & (~FE_INVALID)) {
             logErr(instr, "Invalid floating point operation",
@@ -347,27 +347,27 @@ int Processor_t::numOp(const Instruction_t &instr) {
         case Instruction_t::BITAND:
             a.setInteger(a.integerValue & b.integerValue);
             break;
-            
+
         case Instruction_t::BITOR:
             a.setInteger(a.integerValue | b.integerValue);
             break;
-            
+
         case Instruction_t::BITXOR:
             a.setInteger(a.integerValue ^ b.integerValue);
             break;
-            
+
         case Instruction_t::ADD:
             a.setInteger(a.integerValue + b.integerValue);
             break;
-            
+
         case Instruction_t::SUB:
             a.setInteger(a.integerValue - b.integerValue);
             break;
-            
+
         case Instruction_t::MUL:
             a.setInteger(a.integerValue * b.integerValue);
             break;
-            
+
         case Instruction_t::DIV:
             if (!b.integerValue) {
                 logErr(instr, "Division by zero", Error_t::LL_ERROR);
@@ -376,7 +376,7 @@ int Processor_t::numOp(const Instruction_t &instr) {
             }
             a.setInteger(a.integerValue / b.integerValue);
             break;
-            
+
         case Instruction_t::MOD:
             if (!b.integerValue) {
                 logErr(instr, "Modulo by zero", Error_t::LL_ERROR);
@@ -385,53 +385,53 @@ int Processor_t::numOp(const Instruction_t &instr) {
             }
             a.setInteger(a.integerValue % b.integerValue);
             break;
-            
+
         case Instruction_t::NUMEQ:
             a.setInteger(a.integerValue == b.integerValue);
             break;
-            
+
         case Instruction_t::NUMGE:
             a.setInteger(a.integerValue >= b.integerValue);
             break;
-            
+
         case Instruction_t::NUMGT:
             a.setInteger(a.integerValue > b.integerValue);
             break;
-            
+
         default:
             logErr(instr, "Internal error, unknown numeric operation",
                    Error_t::LL_FATAL);
             return -1;
         }
     }
-    
+
     valueStack.push(a);
     return 0;
 }
 
 int Processor_t::evalBinaryOp(const Instruction_t &instr) {
-    
+
     if (valueStack.size() < 2) return -1;
     ParserValue_t b = valueStack.top();
     valueStack.pop();
-    
+
     ParserValue_t a = valueStack.top();
     valueStack.pop();
-    
+
     switch (instr.operation) {
     case Instruction_t::CONCAT:
         a.stringValue = a.stringValue + b.stringValue;
         break;
-        
+
     case Instruction_t::STREQ:
         if (a.stringValue == b.stringValue) a.setInteger(1);
         else a.setInteger(0);
         break;
-        
+
     default:
         return -1;
     }
-    
+
     valueStack.push(a);
     return 0;
 }
@@ -442,18 +442,18 @@ int Processor_t::binaryOp(const Instruction_t &instr) {
                Error_t::LL_FATAL);
         return -1;
     }
-    
+
     ParserValue_t b = valueStack.top();
     valueStack.pop();
-    
+
     ParserValue_t a = valueStack.top();
     valueStack.pop();
-    
+
     switch (instr.operation) {
     case Instruction_t::CONCAT:
         a.stringValue = a.stringValue + b.stringValue;
         break;
-        
+
     case Instruction_t::REPEAT:
         b.validateThis();
         if ((b.type != ParserValue_t::TYPE_INT) || (b.integerValue < 0)) {
@@ -462,7 +462,7 @@ int Processor_t::binaryOp(const Instruction_t &instr) {
             a.setString("undefined");
             break;
         }
-        
+
         {
             string s = a.stringValue;
             a.setString("");
@@ -472,16 +472,16 @@ int Processor_t::binaryOp(const Instruction_t &instr) {
             }
         }
         break;
-        
+
     case Instruction_t::STREQ:
         if (a.stringValue==b.stringValue)
             a.setInteger(1); else a.setInteger(0);
         break;
-        
+
     default:
         logErr(instr, "Internal error, unknown operation",
                Error_t::LL_FATAL);
-        
+
         return -1;
     }
     valueStack.push(a);
@@ -512,7 +512,7 @@ namespace {
                 }
             }
         }
-        
+
         // dump all fragments (nestedFragments non-null)
         for (Fragment_t::const_iterator ifragment = fragment.begin();
              ifragment != fragment.end(); ++ifragment) {
@@ -523,11 +523,11 @@ namespace {
                      inestedFragments != ifragment->second->nestedFragments->end();
                      ++inestedFragments, ++k) {
                     if (output.write(padding)) return -1;
-                    
+
                     char s[20];
                     if (output.write(ifragment->first)) return -1;
                     sprintf(s, "[%u]: \n", k);
-                    
+
                     if (output.write(escaper.escape(s))) return -1;
                     if (dumpFragment(escaper, output, **inestedFragments,
                                      padding + "    "))
@@ -536,7 +536,7 @@ namespace {
                 }
             }
         }
-        
+
         // OK
         return 0;
     }
@@ -551,14 +551,14 @@ int Processor_t::instructionDebug(const Fragment_t &data, Formatter_t &output) {
         if (output.write(escaper.escape("    " + pl.getSource(i) + "\n")))
 	    return -1;
     }
-    
+
     output.write(escaper.escape("\nLanguage dictionary sources:\n"));
     const SourceList_t &l = langDictionary.getSources();
     for (unsigned int i = 0; i != pl.size(); ++i) {
         if (output.write(escaper.escape("    " + l.getSource(i) + "\n")))
 	    return -1;
     }
-    
+
     if (output.write(escaper.escape("\nConfiguration dictionary sources:\n")))
         return -1;
     const SourceList_t &p = configuration.getSources();
@@ -600,11 +600,11 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                       Error_t &inError)
 {
     ParserValue_t a;
-    
+
     vector<ParserValue_t> programStack;
     programStack.reserve(80);
     while (!valueStack.empty()) valueStack.pop();
-    
+
     int ip = 0; // Never will be changed to unsigned !!
 
     // remember error
@@ -615,7 +615,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
         (&data, *error, configuration.isErrorFragmentEnabled());
 
     for (;;) {
-        if (ip < 0 || ip >= (int)program.size()) {
+        if ((ip < 0) || (ip >= (int)program.size())) {
             logErrNoInstr("Instruction pointer went "
                           "out of program address space",
                           Error_t::LL_FATAL);
@@ -634,17 +634,17 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
             }
             valueStack.push(a);
             break;
-            
+
         case Instruction_t::EXIST:
             a.setInteger(!fragmentStack.exists(instr.identifier));
             valueStack.push(a);
             break;
-            
+
         case Instruction_t::DEBUG:
             if (configuration.isDebugEnabled())
                 instructionDebug(data, output);
             break;
-            
+
         case Instruction_t::BYTECODE:
             if (configuration.isBytecodeEnabled())
                 dumpBytecode(fParam.escaper, program, output);
@@ -653,7 +653,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
         case Instruction_t::VAL:
             valueStack.push(instr.value);
             break;
-            
+
         case Instruction_t::DICT:
             if (valueStack.empty()) {
                 logErr(instr, "Value stack underflow",
@@ -677,7 +677,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
             }
             valueStack.push(a);
             break;
-            
+
         case Instruction_t::VAR:
             if (fragmentStack.findVariable(instr.identifier, a)) {
                 logErr(instr, "Variable '" + instr.value.stringValue
@@ -691,7 +691,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
             }
             valueStack.push(a);
             break;
-            
+
         case Instruction_t::PUSH:
             if (valueStack.empty()) {
                 logErr(instr, "Value stack underflow",
@@ -704,7 +704,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                 programStack.reserve(programStack.size() + 80);
             programStack.push_back(a);
             break;
-            
+
         case Instruction_t::POP:
             if (programStack.empty()) {
                 logErr(instr, "Program stack underflow",
@@ -713,7 +713,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
             }
             programStack.pop_back();
             break;
-            
+
         case Instruction_t::STACK:
             if (instr.value.integerValue > 0 ||
                 -instr.value.integerValue >= (int)programStack.size()) {
@@ -721,11 +721,11 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                        Error_t::LL_FATAL);
                 goto flushReturn;
             }
-            valueStack.push(programStack[programStack.size() - 1 + 
+            valueStack.push(programStack[programStack.size() - 1 +
                                          instr.value.integerValue]);
             break;
-            
-        case Instruction_t::BITOR:   
+
+        case Instruction_t::BITOR:
         case Instruction_t::BITXOR:
         case Instruction_t::BITAND:
         case Instruction_t::ADD:
@@ -738,13 +738,13 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
         case Instruction_t::NUMGT:
             if (numOp(instr) < 0) goto flushReturn;
             break;
-            
+
         case Instruction_t::CONCAT:
         case Instruction_t::STREQ:
         case Instruction_t::REPEAT:
             if (binaryOp(instr) < 0) goto flushReturn;
             break;
-            
+
         case Instruction_t::NOT:
             if (valueStack.empty()) {
                 logErr(instr, "Value stack underflow",
@@ -756,7 +756,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
             a.setInteger(!a);
             valueStack.push(a);
             break;
-            
+
         case Instruction_t::BITNOT:
             if (valueStack.empty()) {
                 logErr(instr, "Value stack underflow",
@@ -773,7 +773,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
             } else a.setInteger(~a.integerValue);
             valueStack.push(a);
             break;
-            
+
         case Instruction_t::FUNC:
             {
                 ParserValue_t::int_t i = instr.value.integerValue;
@@ -783,19 +783,19 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                            Error_t::LL_FATAL);
                     goto flushReturn;
                 }
-                
+
                 if ((int)valueStack.size() < i) {
                     logErr(instr, "Value stack underflow",
-                           Error_t::LL_FATAL); 
+                           Error_t::LL_FATAL);
                     goto flushReturn;
                 }
-                
+
                 vector <ParserValue_t> v(i);
                 for (j = 0; j < i; j++) {
                     v[j] = valueStack.top();
                     valueStack.pop();
                 }
-                
+
                 Function_t p = tengFindFunction(instr.value.stringValue);
                 if (p) {
                     fParam.logger.setInstruction(&instr);
@@ -823,7 +823,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                 }
             }
             break;
-            
+
         case Instruction_t::AND:
             if (valueStack.empty()) {
                 logErr(instr, "Value stack underflow",
@@ -834,7 +834,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
             if (!a) goto jump;
             valueStack.pop();
             break;
-            
+
         case Instruction_t::OR:
             if (valueStack.empty()) {
                 logErr(instr, "Value stack underflow",
@@ -845,7 +845,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
             if (a) goto jump;
             valueStack.pop();
             break;
-            
+
         case Instruction_t::JMPIFNOT:
             if (valueStack.empty()) {
                 logErr(instr, "Value stack underflow",
@@ -855,34 +855,37 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
             a = valueStack.top();
             valueStack.pop();
             if (a) break;
-            
+
         case Instruction_t::JMP:
         jump:
             ip += instr.value.integerValue;
-            if (ip < 0 || ip >= (int)program.size()) {
+            if ((ip < 0) || (ip >= (int)program.size())) {
                 logErrNoInstr("Jump points out of program address space",
                               Error_t::LL_FATAL);
                 goto flushReturn;
             }
             break;
-            
+
         case Instruction_t::FORM:
-            output.push((Formatter_t::Mode_t)instr.value.integerValue);
+            if (configuration.isFormatEnabled())
+                output.push((Formatter_t::Mode_t)instr.value.integerValue);
             break;
-            
+
         case Instruction_t::ENDFORM:
-            if (output.pop() < 0) {
-                logErr(instr, "Format-object stack error",
-                       Error_t::LL_FATAL);
-                goto flushReturn;
+            if (configuration.isFormatEnabled()) {
+                if (output.pop() < 0) {
+                    logErr(instr, "Format-object stack error",
+                           Error_t::LL_FATAL);
+                    goto flushReturn;
+                }
             }
             break;
-            
+
         case Instruction_t::FRAG:
             if (fragmentStack.pushFrame(instr.identifier)) {
                 // fragment has no iterations => ok, jump over fragment
                 ip += instr.value.integerValue;
-                if (ip < 0 || ip >= (int)program.size()) {
+                if ((ip < 0) || (ip >= (int)program.size())) {
                     logErr(instr, "Fragment jump points out of "
                            "program address space",
                            Error_t::LL_FATAL);
@@ -890,12 +893,12 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                 }
             }
             break;
-            
+
         case Instruction_t::ENDFRAG:
             if (fragmentStack.nextIteration()) {
                 // next iteration
                 ip += instr.value.integerValue;
-                if (ip < 0 || ip >= (int)program.size()) {
+                if ((ip < 0) || (ip >= (int)program.size())) {
                     logErr(instr, "End-fragment jump points out of "
                            "program address space",
                            Error_t::LL_FATAL);
@@ -910,7 +913,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                 }
             }
             break;
-            
+
         case Instruction_t::REPEATFRAG:
             if (!fragmentStack.repeatFragment(instr.identifier, ip)) {
                 // OK some iteratiion -> jump to the fragment
@@ -1029,11 +1032,11 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
             }
             valueStack.pop();
             break;
-            
+
         case Instruction_t::SET:
             if (valueStack.empty()) {
                 logErr(instr, "Value stack underflow",
-                       Error_t::LL_FATAL); 
+                       Error_t::LL_FATAL);
                 goto flushReturn;
             }
             a = valueStack.top();
@@ -1057,10 +1060,10 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                 break;
             }
             break;
-            
+
         case Instruction_t::HALT:
             goto flushReturn;
-            
+
         case Instruction_t::CTYPE:
             fParam.escaper.push(instr.value.integerValue, *error,
                                 position(instr, program));
@@ -1097,7 +1100,7 @@ int Processor_t::eval(ParserValue_t &result, int startAddress,
     // we must have fake error
     Error_t fakeError;
     error = &fakeError;
-    
+
     vector<ParserValue_t> programStack;
     programStack.reserve(80);
 
@@ -1121,11 +1124,11 @@ int Processor_t::eval(ParserValue_t &result, int startAddress,
                     a.stringValue += s;
             }
             break;
-            
+
         case Instruction_t::VAL:
             valueStack.push(instr.value);
             break;
-            
+
         case Instruction_t::PUSH:
             if (valueStack.empty()) return -1;
             a = valueStack.top();
@@ -1134,12 +1137,12 @@ int Processor_t::eval(ParserValue_t &result, int startAddress,
                 programStack.reserve(programStack.size() + 80);
             programStack.push_back(a);
             break;
-            
+
         case Instruction_t::POP:
             if (programStack.empty()) return -1;
             programStack.pop_back();
             break;
-            
+
         case Instruction_t::STACK:
             if (instr.value.integerValue > 0 ||
                 -instr.value.integerValue >= (int)programStack.size())
@@ -1147,8 +1150,8 @@ int Processor_t::eval(ParserValue_t &result, int startAddress,
             valueStack.push(programStack[programStack.size() - 1 +
                                          instr.value.integerValue]);
             break;
-            
-        case Instruction_t::BITOR:   
+
+        case Instruction_t::BITOR:
         case Instruction_t::BITXOR:
         case Instruction_t::BITAND:
         case Instruction_t::ADD:
@@ -1161,12 +1164,12 @@ int Processor_t::eval(ParserValue_t &result, int startAddress,
         case Instruction_t::NUMGT:
             if (evalNumOp(instr) < 0) return -1;
             break;
-            
+
         case Instruction_t::CONCAT:
         case Instruction_t::STREQ:
             if (evalBinaryOp(instr) < 0) return -1;
             break;
-            
+
         case Instruction_t::BITNOT:
             if (valueStack.empty()) return -1;
             a = valueStack.top();
@@ -1176,7 +1179,7 @@ int Processor_t::eval(ParserValue_t &result, int startAddress,
             a.setInteger(~a.integerValue);
             valueStack.push(a);
             break;
-            
+
         case Instruction_t::NOT:
             if (valueStack.empty()) return -1;
             a = valueStack.top();
@@ -1184,7 +1187,7 @@ int Processor_t::eval(ParserValue_t &result, int startAddress,
             a.setInteger(!a);
             valueStack.push(a);
             break;
-            
+
         case Instruction_t::FUNC:
             {
                 ParserValue_t::int_t i = instr.value.integerValue;
@@ -1212,32 +1215,32 @@ int Processor_t::eval(ParserValue_t &result, int startAddress,
                 else return -1;
             }
             break;
-            
+
         case Instruction_t::AND:
             if (valueStack.empty()) return -1;
             a = valueStack.top();
             if (!a) goto jump;
             valueStack.pop();
             break;
-            
+
         case Instruction_t::OR:
             if (valueStack.empty()) return -1;
             a = valueStack.top();
             if (a) goto jump;
             valueStack.pop();
             break;
-            
+
         case Instruction_t::JMPIFNOT:
             if (valueStack.empty()) return -1;
             a=valueStack.top();
             valueStack.pop();
             if (a) break;
-            
+
         case Instruction_t::JMP:
         jump:
             ip += instr.value.integerValue;
             break;
-            
+
         default:
             return -1;
         }

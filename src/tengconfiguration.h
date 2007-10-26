@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengconfiguration.h,v 1.2 2006-06-13 10:04:16 vasek Exp $
+ * $Id: tengconfiguration.h,v 1.3 2007-10-26 11:44:24 vasek Exp $
  *
  * DESCRIPTION
  * Teng configuration dictionary.
@@ -96,11 +96,15 @@ public:
         return watchFiles;
     }
 
-    int isEnabled(const string &feature, bool &enabled) const;
-
-    unsigned int getMaxIncludeDepth() const {
+    inline unsigned int getMaxIncludeDepth() const {
         return maxIncludeDepth;
     }
+
+    inline bool isFormatEnabled() const {
+        return format;
+    }
+
+    int isEnabled(const string &feature, bool &enabled) const;
 
     friend std::ostream& operator<<(std::ostream &o, const Configuration_t &c);
 
@@ -112,6 +116,8 @@ private:
     bool watchFiles;      //!< Cached templates are checked for change. (true)
 
     unsigned int maxIncludeDepth; //!< Maximal template include depth.
+
+    bool format;          //!< enabled <?tenf formag ...?> (true)
 };
 
 } // namespace Teng

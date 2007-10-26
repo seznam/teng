@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengconfiguration.cc,v 1.2 2006-06-13 10:04:16 vasek Exp $
+ * $Id: tengconfiguration.cc,v 1.3 2007-10-26 11:44:24 vasek Exp $
  *
  * DESCRIPTION
  * Teng configuration dictionary.
@@ -46,7 +46,7 @@ using namespace Teng;
 Configuration_t::Configuration_t(const string &root)
     : Dictionary_t(root), debug(false), errorFragment(false),
       logToOutput(false), bytecode(false), watchFiles(true),
-      maxIncludeDepth(10)
+      maxIncludeDepth(10), format(true)
 {}
 
 Configuration_t::~Configuration_t() {
@@ -107,12 +107,13 @@ int Configuration_t::processDirective(const string &directive,
     else if (argument == "logtooutput") logToOutput = value;
     else if (argument == "bytecode") bytecode = value;
     else if (argument == "watchfiles") watchFiles = value;
+    else if (argument == "format") format = value;
     else {
         err.logError(Error_t::LL_ERROR, pos,
                      "Invalid enable/disable argument '" + argument + "'");
         return -1;
     }
-    
+
     // OK
     return 0;
 }
@@ -123,6 +124,7 @@ int Configuration_t::isEnabled(const string &feature, bool &enabled) const {
     else if (feature == "logtooutput") enabled = logToOutput;
     else if (feature == "bytecode") enabled = bytecode;
     else if (feature == "watchfiles") enabled = watchFiles;
+    else if (feature == "format") enabled = format;
     else return -1;
 
     // OK
@@ -143,7 +145,8 @@ namespace Teng {
           << "    logtooutput: " << ENABLED(c.logToOutput) << std::endl
           << "    bytecode: " << ENABLED(c.bytecode) << std::endl
           << "    watchfiles: " << ENABLED(c.watchFiles) << std::endl
-          << "    maxincludedepth: " << c.maxIncludeDepth << std::endl;
+          << "    maxincludedepth: " << c.maxIncludeDepth << std::endl
+          << "    format: " << ENABLED(c.format) << std::endl;
 
         return o;
     }

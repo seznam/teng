@@ -22,7 +22,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengsyntax.yy,v 1.12 2007-10-18 14:45:45 vasek Exp $
+ * $Id: tengsyntax.yy,v 1.13 2007-10-26 11:44:24 vasek Exp $
  *
  * DESCRIPTION
  * Teng syntax analyzer.
@@ -227,8 +227,11 @@ namespace {
 
     const VariableMapping_t& findVariableMapping(const std::string &name) {
         // ignore names not starting with underscore
-        if (name.empty() || (name[0] != '_'))
-            return *(variableMapping + sizeof(variableMapping) - 1);
+        if (name.empty() || (name[0] != '_')) {
+            return *(variableMapping +
+                     (sizeof(variableMapping) / sizeof(VariableMapping_t))
+                     - 1);
+        }
 
         VariableMapping_t *sv = variableMapping;
         for ( ; sv->name; ++sv)
@@ -1545,8 +1548,8 @@ voluntary_dollar_before_var:
             ERR(DEBUG, CONTEXT->position, "Variable identifier should "
                     "start with '$'. Leaving it out is obsolete syntax.");
 #endif
-		}
-	;
+        }
+    ;
 
 
 variable_identifier:
@@ -1653,12 +1656,16 @@ dot_variable:
             $$.id = $3.id;
             // ignore special identifier '_this'
             // inside the variable qualification
-            if ($2.val.stringValue == "_this")
-                ERR(DEBUG, $2.pos, "Using the special identifier '_this' "
-                        "inside the identifier qualification is useless");
-            else //add ident
+            if (('_' == $2.val.stringValue[0])
+                && (($2.val.stringValue == "_this")
+                    || ($2.val.stringValue == "_parent"))) {
+                ERR(DEBUG, $2.pos, "Using the special identifier '"
+                    + $2.val.stringValue
+                    + "' inside the identifier qualification is useless");
+            } else {
                 $$.id.insert($$.id.begin(), $2.val.stringValue);
-            $$.pos = $1.pos;
+                $$.pos = $1.pos;
+            }
         }
     ;
 
