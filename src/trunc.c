@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: trunc.cc,v 1.2 2005-04-11 17:13:03 solamyl Exp $
+ * $Id: trunc.c,v 1.1 2007-11-26 17:33:24 vasek Exp $
  *
  * DESCRIPTION
  * Emulation of trunc() math function.

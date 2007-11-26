@@ -21,7 +21,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: configure.in,v 1.18 2007-10-26 12:10:38 vasek Exp $
+# $Id: configure.in,v 1.19 2007-11-26 17:33:21 vasek Exp $
 #
 # DESCRIPTION
 # configure template for Teng.
@@ -72,9 +72,8 @@ AC_PROG_YACC
 AC_CHECK_HEADERS(fenv.h)
 
 # check for functions that may miss on some platforms
-AC_CHECK_LIB(m, trunc)
-AC_REPLACE_FUNCS(trunc)
-AC_REPLACE_FUNCS(round)
+AC_CHECK_LIB(m, floor)
+AC_REPLACE_FUNCS([trunc round])
 
 # generate Makefile
 AC_OUTPUT(version Makefile src/Makefile src/tengconfig.h)

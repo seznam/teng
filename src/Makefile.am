@@ -21,7 +21,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: Makefile.am,v 1.6 2007-05-21 15:43:28 vasek Exp $
+# $Id: Makefile.am,v 1.7 2007-11-26 17:33:22 vasek Exp $
 #
 # DESCRIPTION
 # A makefile template for Teng.
@@ -62,10 +62,11 @@ libteng_la_SOURCES = teng.cc tengstructs.cc tengutil.cc tengcache.cc \
                      tengformatter.cc tengcontenttype.cc \
                      tengtemplate.cc tenglex1.cc tengsyntax.yy \
                      tenglex2.ll tengcode.cc \
-                     tengmd5.cc tengconfiguration.cc trunc.cc round.cc
+                     tengmd5.cc tengconfiguration.cc
 
 # with these flags (version info etc.)
 libteng_la_LDFLAGS = @VERSION_INFO@
+libteng_la_LIBADD = $(LTLIBOBJS)
 
 # explicit rules for proper flex & bison sources compilation
 tenglex2.cc: tenglex2.ll tengsyntax.h tengsyntax.cc
