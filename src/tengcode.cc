@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengcode.cc,v 1.1 2004-07-28 11:36:55 solamyl Exp $
+ * $Id: tengcode.cc,v 1.2 2007-12-14 08:54:16 vasek Exp $
  *
  * DESCRIPTION
  * Teng byte-code generation.
@@ -75,10 +75,11 @@ void tengCode_generateFunctionCall(ParserContext_t *context,
         const string &name, int nparams)
 {
     // be optimal for unescape($variable)
-    if (name == "unescape"
-            && nparams == 1
-            && context->program->back().operation //if last instr. is VAR
-            == Instruction_t::VAR) {
+    if ((name == "unescape")
+        && (nparams == 1)
+        && (context->program->back().operation // if last instr. is VAR
+            == Instruction_t::VAR)             // and should be escaped
+        && context->program->back().value.integerValue) {
         // unescaping a single variable -- 
         // change escaping status of that variable
         context->program->back().value.integerValue = 0; //noescape
