@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfunction.cc,v 1.15 2007-10-26 11:44:24 vasek Exp $
+ * $Id: tengfunction.cc,v 1.16 2007-12-19 14:19:01 vasek Exp $
  *
  * DESCRIPTION
  * Teng processor funcction (like len, substr, round or date)
@@ -1148,6 +1148,34 @@ static int formatTime_tDate(const string &format, const string &setup,
     return formatBrokenDate(format, setup, dateTime, output);
 }
 
+static int tengFunctionTimestamp(const vector<ParserValue_t> &args,
+                                 const Processor_t::FunctionParam_t &setting,
+                                 ParserValue_t &result)
+{
+    struct tm dateTime;
+
+    if (args.size() != 1) {
+        result.setString("undefined");
+        return 0;
+    }
+
+    ParserValue_t date = args[0];
+
+    if (parseDateTime(date.stringValue, dateTime)) {
+        result.setString("undefined");
+        return 0;
+    }
+
+    dateTime.tm_wday = 7;
+    time_t res = mktime(&dateTime);
+    if ((res == -1)&&(dateTime.tm_wday == 7)) {
+        result.setString("undefined");
+        return 0;
+    }
+    result.setInteger(res);
+    return 0;
+}
+
 /** strftime like Teng function. Uses user month / day names
  * @param args Teng function arguments
  * @param setting Teng function setting
@@ -1671,6 +1699,7 @@ namespace {
                                                   // with another one
         {"quoteescape", true, tengFunctionQuoteEscape}, // escape strange chars
                                                         // in quoted string
+        {"timestamp", true, tengFunctionTimestamp},
         { 0, false, 0}                            // end of list
     };
 }
