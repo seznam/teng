@@ -20,7 +20,7 @@
  * Naskove 1, Praha 5, 15000, Czech Republic
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
- * $Id: tengcontenttype.cc,v 1.6 2007-06-20 09:46:12 vasek Exp $
+ * $Id: tengcontenttype.cc,v 1.7 2008-02-22 07:15:51 burlog Exp $
  *
  * DESCRIPTION
  * Teng language descriptor -- implementation.
@@ -374,6 +374,29 @@ ContentType_t* jshtmlCreator() {
     return jshtml;
 }
 
+/** @short Create descriptor of quoted string.
+ * @return quoted string descriptor
+ */
+ContentType_t* jsCreator() {
+    // create quoted-string descriptor
+    ContentType_t *js = new ContentType_t();
+
+    js->addEscape('\\', "\\\\");
+    js->addEscape('\n', "\\n");
+    js->addEscape('\r', "\\r");
+    js->addEscape('\a', "\\a");
+    js->addEscape('\0', "\\0");
+    js->addEscape('\v', "\\v");
+    js->addEscape('\'', "\\'");
+    js->addEscape('"', "\\\"");
+
+    // compile unescaping automaton
+    js->compileUnescaper();
+
+    // return descriptor
+    return js;
+}
+
 static CreatorEntry_t creators[] = {
     { "text/html", htmlCreator,
       "Hypertext markup language. Same processor as for"
@@ -392,6 +415,8 @@ static CreatorEntry_t creators[] = {
       "Generic quoted string with escapes." },
     { "jshtml", jshtmlCreator,
       "Quoted string embeddable into HTML pages." },
+    { "application/x-javascript", jsCreator,
+      "Javascript language." },
     { 0, 0 }
 };
 
