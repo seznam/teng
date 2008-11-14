@@ -21,7 +21,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: Makefile.am,v 1.8 2008-11-14 11:00:04 burlog Exp $
+# $Id: Makefile.am,v 1.9 2008-11-14 11:14:48 burlog Exp $
 #
 # DESCRIPTION
 # A makefile template for Teng.
@@ -36,7 +36,7 @@
 
 
 # warn on all
-AM_CXXFLAGS = -Wall -Werror
+AM_CXXFLAGS = -Wall
 
 # extra compiler options
 AM_CPPFLAGS = -D_ISOC99_SOURCE
