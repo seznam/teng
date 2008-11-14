@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengconfiguration.cc,v 1.3 2007-10-26 11:44:24 vasek Exp $
+ * $Id: tengconfiguration.cc,v 1.4 2008-11-14 11:00:04 burlog Exp $
  *
  * DESCRIPTION
  * Teng configuration dictionary.
@@ -36,6 +36,8 @@
 
 
 #include <iostream>
+#include <cstring>
+#include <cstdlib>
 
 #include "tengconfiguration.h"
 

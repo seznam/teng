@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfunction.cc,v 1.16 2007-12-19 14:19:01 vasek Exp $
+ * $Id: tengfunction.cc,v 1.17 2008-11-14 11:00:04 burlog Exp $
  *
  * DESCRIPTION
  * Teng processor funcction (like len, substr, round or date)
@@ -1667,7 +1667,7 @@ static int tengFunctionReplace(const vector<ParserValue_t> &args,
 
 namespace {
     struct FunctionStub_t {
-        char *name;        // teng name
+        const char *name;  // teng name
         bool eval;         // use for preevaluation (false for rand(), time() etc)
         Function_t func;   // C++ function addr
     };

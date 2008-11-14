@@ -21,7 +21,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: Makefile.am,v 1.7 2005-04-11 17:14:01 solamyl Exp $
+# $Id: Makefile.am,v 1.8 2008-11-14 11:00:02 burlog Exp $
 #
 # DESCRIPTION
 # A makefile template for project Teng.
@@ -37,7 +37,19 @@
 SUBDIRS = src
 # directories temporarily out of order: 'test', 'doc'
 
+#
+# Removed due to this request:
+#
+# From: Andrew Betts [mailto:andrew.betts@jasp.com]
+#
+# Would it be possible for you to release a source tarball without the
+# debian/ directory?
+#
+# From: https://help.ubuntu.com/6.10/ubuntu/packagingguide/C/basic-mistakes.html
+# "Q: What do I do with an .orig.tar.gz that already includes a debian/ dir?
+#  A: Do not repackage it. You can ask the author(s) to delete the debian/ dir"
+#
 # debian packaging scripts
-EXTRA_DIST = debian/libteng.control debian/libteng.postinst \
-             debian/libteng-dev.control \
-             debian/make.sh
+#EXTRA_DIST = debian/libteng.control debian/libteng.postinst \
+#             debian/libteng-dev.control \
+#             debian/make.sh

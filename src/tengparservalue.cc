@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengparservalue.cc,v 1.3 2007-05-21 15:43:28 vasek Exp $
+ * $Id: tengparservalue.cc,v 1.4 2008-11-14 11:00:04 burlog Exp $
  *
  * DESCRIPTION
  * Teng parser value data type.
@@ -36,8 +36,9 @@
  *             Win32 support.
 */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include <sstream>
 

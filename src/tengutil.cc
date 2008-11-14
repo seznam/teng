@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengutil.cc,v 1.2 2005-06-22 07:16:12 romanmarek Exp $
+ * $Id: tengutil.cc,v 1.3 2008-11-14 11:00:04 burlog Exp $
  *
  * DESCRIPTION
  * Teng utilities.
@@ -109,10 +109,17 @@ namespace {
     {
         for (Fragment_t::const_iterator i = root->begin();
              i != root->end(); i++) {
+
             if (!i->second->nestedFragments){
-                if (i -> first.size() && i -> first[0] == '_' &&
-                    (inRoot && i -> first == "_error" || i -> first == "_count" ||
-                     i -> first == "_number" ||i -> first == "_this")) {
+
+                if (i -> first.size() &&
+                    i -> first[0] == '_' &&
+                    ((inRoot && i -> first == "_error") ||
+                         i -> first == "_count" ||
+                         i -> first == "_number" ||
+                         i -> first == "_this"))
+                {
+
                     error.logError(Error_t::LL_WARNING,
                                    Error_t::Position_t(),
                                    "Variable '" + path + "." + i->first +
