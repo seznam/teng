@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengmodule.cc,v 1.13 2007-05-25 07:47:16 vasek Exp $
+ * $Id: tengmodule.cc,v 1.14 2008-11-14 11:20:53 burlog Exp $
  *
  * DESCRIPTION
  * Teng python module.
@@ -44,6 +44,10 @@
 #include "teng.h"
 
 #include <iostream>
+
+#if PY_VERSION_HEX < 0x02050000
+typedef int Py_ssize_t;
+#endif
 
 using namespace Teng;
 
@@ -73,12 +77,12 @@ static const std::string DEFAULT_DEFAULT_CONTENT_TYPE = "";
  */
 struct TengObject {
     PyObject_HEAD
-    
+
     /**
      * @short Teng engine.
      */
     Teng_t teng;
-    
+
     /**
      * @short Default encoding for unicode objects.
      */
@@ -162,10 +166,10 @@ void Teng_dealloc(TengObject *self) {
 
 PyObject* Teng_Teng(TengObject *self, PyObject *args, PyObject *keywds) {
     // allowed keywords
-    static char *kwlist[] = {"root", "encoding", "contentType",
-                             "logToOutput", "errorFragment",
-                             "validate", "templateCacheSize",
-                             "dictionaryCacheSize", 0};
+    static const char *kwlist[] = {"root", "encoding", "contentType",
+                                   "logToOutput", "errorFragment",
+                                   "validate", "templateCacheSize",
+                                   "dictionaryCacheSize", 0};
 
     // argument values
     const char *root = 0;
@@ -178,7 +182,8 @@ PyObject* Teng_Teng(TengObject *self, PyObject *args, PyObject *keywds) {
     int dictionaryCacheSize = 0;
 
     // parse arguments
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "|zzziiiii:Teng", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "|zzziiiii:Teng",
+                                    (char **)kwlist,
                                      &root, &encoding, &contentType,
                                      &logToOutput, &errorFragment,
                                      &validate, &templateCacheSize,
@@ -206,14 +211,14 @@ PyObject* Teng_Teng(TengObject *self, PyObject *args, PyObject *keywds) {
     try {
         // create teng object
         new (&s->teng) Teng_t((root) ? root : std::string(), settings);
-        
+
         // set default encoding
         new (&s->defaultEncoding) std::string(encoding ? encoding
                                               : DEFAULT_DEFAULT_ENCODING);
-        
+
         // set default contentType
-        new (&s->defaultContentType) std::string(contentType ? contentType
-                                                 : DEFAULT_DEFAULT_CONTENT_TYPE);
+        new (&s->defaultContentType) std::string(
+                contentType ? contentType : DEFAULT_DEFAULT_CONTENT_TYPE);
         // OK
     } catch (std::bad_alloc &e) {
         PyErr_SetString(PyExc_MemoryError, "Out of memory");
@@ -234,7 +239,7 @@ static int stringFromPythonString(PyObject *pystr, std::string &str) {
 #else
     // get plain string
     char *value;
-    int valueLength;
+    Py_ssize_t valueLength;
     if (PyString_AsStringAndSize(pystr, &value, &valueLength))
         return -1;
     // append it to given string
@@ -303,7 +308,7 @@ public:
                             "list of dictionaries only.");
             return -1;
         }
-        
+
         // OK
         return 0;
     }
@@ -399,7 +404,7 @@ public:
             // destroy temporary string
             Py_XDECREF(str);
         }
-        
+
         // OK
         return 0;
     }
@@ -440,7 +445,7 @@ private:
         }
         // forget this object
         objects.erase(data);
-        
+
         // OK
         return 0;
     }
@@ -468,7 +473,7 @@ private:
         PyObject *key;
         PyObject *value;
         // run through dictionary and fill in fragment
-        for (int pos = 0; PyDict_Next(data, &pos, &key, &value); ) {
+        for (Py_ssize_t pos = 0; PyDict_Next(data, &pos, &key, &value); ) {
             // only string keys are allowed
             if (!PyString_Check(key)) continue;
             // get key value
@@ -495,7 +500,7 @@ private:
         // OK
         return 0;
     }
-    
+
     /**
      * @short Encoding for converting unicode -> string.
      */
@@ -690,7 +695,7 @@ static PyObject* Teng_dictionaryLookup(TengObject *self, PyObject *args,
                                        PyObject *keywds)
 {
     // allowed keywords
-    static char *kwlist[] = {"dictionaryFilename", "language", "key",
+    static const char *kwlist[] = {"dictionaryFilename", "language", "key",
                              "configFilename", 0};
 
     // values of arguments
@@ -701,7 +706,7 @@ static PyObject* Teng_dictionaryLookup(TengObject *self, PyObject *args,
 
     // parse arguments from input
     if (!PyArg_ParseTupleAndKeywords(args, keywds,
-                                     "sss|s:dictionaryLookup", kwlist,
+                                     "sss|s:dictionaryLookup", (char **)kwlist,
                                      &dictionaryFilename, &language, &key,
                                      &configFilename))
         return 0;
@@ -772,11 +777,11 @@ static PyObject* listSupportedContentTypes(PyObject *self, PyObject *args) {
     try {
         std::vector<std::pair<std::string, std::string> > vcontentTypes;
         Teng_t::listSupportedContentTypes(vcontentTypes);
-        
+
         // create output list
         PyObject *contentTypes = PyTuple_New(vcontentTypes.size());
         if (!contentTypes) return 0;
-        
+
         // run through entries
         int pos = 0;
         for (std::vector<std::pair<std::string, std::string> >::const_iterator
@@ -794,7 +799,7 @@ static PyObject* listSupportedContentTypes(PyObject *self, PyObject *args) {
                 Py_XDECREF(contentTypes);
                 return 0;
             }
-            
+
             // add entry into python error log
             if (PyTuple_SetItem(contentTypes, pos, contentType)) {
                 // on error destroy list and entry
@@ -803,7 +808,7 @@ static PyObject* listSupportedContentTypes(PyObject *self, PyObject *args) {
                 return 0;
             }
         }
-        
+
         // return created tuple
         return contentTypes;
     } catch (std::bad_alloc &e) {
@@ -826,16 +831,16 @@ class TengTree_t;
 struct FragmentObject {
     // python stuff
     PyObject_HEAD
-    
-    /** @short 
-     * @param 
-     * @return 
+
+    /** @short
+     * @param
+     * @return
      */
     TengTree_t *dataTree;
 
-    /** @short 
-     * @param 
-     * @return 
+    /** @short
+     * @param
+     * @return
      */
     Fragment_t *fragment;
 };
@@ -993,15 +998,15 @@ PyObject* Teng_createDataRoot(TengObject *self, PyObject *args,
                                   PyObject *keywds)
 {
     // allowed keywords
-    static char *kwlist[] = {"data", "encoding", 0};
+    static const char *kwlist[] = {"data", "encoding", 0};
 
     // values of arguments
     PyObject *data = 0;
     const char *pencoding = 0;
-    
+
     // parse arguments from input
     if (!PyArg_ParseTupleAndKeywords(args, keywds,
-                                     "O|z:createDataRoot", kwlist,
+                                     "O|z:createDataRoot", (char **)kwlist,
                                      &data, &pencoding))
         return 0;
 
@@ -1009,17 +1014,17 @@ PyObject* Teng_createDataRoot(TengObject *self, PyObject *args,
         // determine encoding
         std::string encoding = (pencoding ? std::string(pencoding)
                                 : self->defaultEncoding);
-        
+
         // create (empty) data tree
         std::auto_ptr<TengTree_t> dataTree(new TengTree_t(encoding));
-        
+
         // if any data given
         if (data) {
             // process them
             if (DataConverter_t(encoding)(data, *dataTree->getRoot()))
                 return 0;
         }
-        
+
 #if (MY_PYTHON_VER < 20)
         // create new memory for object
         FragmentObject *fragment =
@@ -1028,16 +1033,16 @@ PyObject* Teng_createDataRoot(TengObject *self, PyObject *args,
         // create new memory for object
         FragmentObject *fragment = PyObject_New(FragmentObject, &Fragment_Type);
 #endif
-        
+
         // check for error
         if (!fragment) return 0;
-        
+
         // fill fragment with data tree and fragment pointer
         fragment->dataTree = dataTree.release();
         fragment->fragment = fragment->dataTree->getRoot();
         // remember this fragment
         fragment->dataTree->addReferrer(fragment);
-        
+
         // OK
         return reinterpret_cast<PyObject*>(fragment);
     } catch (std::bad_alloc &e) {
@@ -1056,43 +1061,44 @@ static PyObject* Fragment_addFragment(FragmentObject *self,
                                       PyObject *args, PyObject *keywds)
 {
     // allowed keywords
-    static char *kwlist[] = {"name", "data", 0};
+    static const char *kwlist[] = {"name", "data", 0};
 
     // values of arguments
     const char *name = 0;
     PyObject *data = 0;
 
     // parse arguments from input
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, 
-                                     "sO:addFragment", kwlist, &name, &data))
+    if (!PyArg_ParseTupleAndKeywords(args, keywds,
+                                     "sO:addFragment", (char **)kwlist,
+                                     &name, &data))
         return 0;
 
 
     try {
         // create child fragment
-        Fragment_t *childFragment = 
+        Fragment_t *childFragment =
             DataConverter_t(self->dataTree->getEncoding())
             (data, std::string(name), *self->fragment);
-        
+
         if (!childFragment) return 0;
-        
+
 #if (MY_PYTHON_VER < 20)
         // create new memory for object
-        FragmentObject *child = (FragmentObject *) _PyObject_New(&Fragment_Type);
+        FragmentObject *child = (FragmentObject *)_PyObject_New(&Fragment_Type);
 #else
         // create new memory for object
         FragmentObject *child = PyObject_New(FragmentObject, &Fragment_Type);
 #endif
-        
+
         // check for error
         if (!child) return 0;
-        
+
         // fill fragment with data tree and fragment pointer
         child->dataTree = self->dataTree;
         child->fragment = childFragment;
         // remember this fragment
         self->dataTree->addReferrer(child);
-        
+
         return reinterpret_cast<PyObject*>(child);
     } catch (std::bad_alloc &e) {
         PyErr_SetString(PyExc_MemoryError, "Out of memory");
@@ -1111,7 +1117,7 @@ static PyObject* Fragment_addVariable(FragmentObject *self,
                                       PyObject *args, PyObject *keywds)
 {
     // allowed keywords
-    static char *kwlist[] = {"name", "value", 0};
+    static const char *kwlist[] = {"name", "value", 0};
 
     // values of arguments
     const char *name = 0;
@@ -1119,7 +1125,7 @@ static PyObject* Fragment_addVariable(FragmentObject *self,
 
     // parse arguments from input
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "sO:addVariable",
-                                     kwlist, &name, &value))
+                                     (char **)kwlist, &name, &value))
         return 0;
 
     try {
@@ -1181,19 +1187,19 @@ namespace {
         /** @short Destroy writer. If exception occured, hold it here.
          */
         virtual ~PyWriter_t();
-        
+
         /** @short Write given string to output.
          *  @param str string to be written
          *  @return 0 OK, !0 error
          */
         virtual int write(const std::string &str);
-        
+
         /** @short Write given string to output.
          *  @param str string to be written
          *  @return 0 OK, !0 error
          */
         virtual int write(const char *str);
-        
+
         /** @short Write given string to output.
          *  @param str string to be written
          *  @param interval iterators to given string, only this part
@@ -1203,16 +1209,16 @@ namespace {
         virtual int write(const std::string &str,
                           std::pair<std::string::const_iterator,
                           std::string::const_iterator> interval);
-        
+
         /** @short Flush buffered data to the output.
          *  No-op.
          *  @return 0 OK, !0 error
          */
         virtual int flush();
-        
+
     private:
         int bufferData(const char *data, int length);
-        
+
         int writeData(const char *data, int length);
 
         int fetchException();
@@ -1308,7 +1314,7 @@ namespace {
         // no-op if no flush method
         if (!hasFlush) return 0;
 
-        PyObject *res = PyObject_CallMethod(obj, "flush", 0);
+        PyObject *res = PyObject_CallMethod(obj, (char *)"flush", 0);
         if (!res) return fetchException();
 
         // ignore result
@@ -1332,11 +1338,11 @@ namespace {
                 return 0;
             }
         }
-            
+
         // remember data
-        std::memcpy(buffer + bufferUsed, data, length);
+        ::memcpy(buffer + bufferUsed, data, length);
         bufferUsed += length;
-        
+
         // OK
         return 0;
     }
@@ -1353,7 +1359,8 @@ namespace {
         if (!pydata) return fetchException();
 
         // call obj.write(pydata)
-        PyObject *res = PyObject_CallMethod(obj, "write", "O", pydata);
+        PyObject *res = PyObject_CallMethod(obj, (char *)"write",
+                                            (char *)"O", pydata);
         // get rid of py-data-buffer
         Py_DECREF(pydata);
         if (!res) return fetchException();
@@ -1381,7 +1388,7 @@ namespace {
 
     int PyWriter_t::write(const char *str) {
         // buffer string's content
-        return bufferData(str, std::strlen(str));
+        return bufferData(str, ::strlen(str));
     }
 
     int PyWriter_t::write(const std::string &str,
@@ -1400,12 +1407,12 @@ PyObject* Teng_generatePage(TengObject *self,
                             PyObject *args, PyObject *keywds)
 {
     // allowed keywords
-    static char *kwlist[] = {"templateFilename", "skin", "templateString",
-                             "dataDefinitionFilename",
-                             "dictionaryFilename", "language",
-                             "configFilename", "contentType", "data", 
-                             "outputFilename", "outputFile", "encoding",
-                             0};
+    static const char *kwlist[] = {"templateFilename", "skin", "templateString",
+                                   "dataDefinitionFilename",
+                                   "dictionaryFilename", "language",
+                                   "configFilename", "contentType", "data",
+                                   "outputFilename", "outputFile", "encoding",
+                                   0};
 
     // values of arguments
     const char *templateFilename = 0;
@@ -1424,7 +1431,8 @@ PyObject* Teng_generatePage(TengObject *self,
 
     // parse arguments from input
     if (!PyArg_ParseTupleAndKeywords(args, keywds,
-                                     "|zzz#zzzzzOzOz:generatePage", kwlist,
+                                     "|zzz#zzzzzOzOz:generatePage",
+                                     (char **)kwlist,
                                      &templateFilename, &skin,
                                      &templateString, &templateLength,
                                      &dataDefinitionFilename,
@@ -1451,7 +1459,7 @@ PyObject* Teng_generatePage(TengObject *self,
                         " or 'templateString'.");
         return 0;
     }
-    
+
     // check that language supplied only together with dictionary
     if (language && !dictionaryFilename) {
         PyErr_SetString(PyExc_AttributeError,
@@ -1475,7 +1483,7 @@ PyObject* Teng_generatePage(TengObject *self,
         bool stringOutput = false;
         // the output from string writer
         std::string output;
-        
+
         if (outputFilename) {
             // output to file -> create new file writer
             writer.reset(new FileWriter_t(outputFilename));
@@ -1494,10 +1502,10 @@ PyObject* Teng_generatePage(TengObject *self,
             // indicate string writer
             stringOutput = true;
         }
-        
+
         std::string encoding = (pencoding ? std::string(pencoding)
                                 : self->defaultEncoding);
-        
+
         // root fragment
         Fragment_t defaultRoot;
 
@@ -1511,7 +1519,8 @@ PyObject* Teng_generatePage(TengObject *self,
         // if any data given, convert then to fragment
         if (data) {
             if (data->ob_type == &Fragment_Type) {
-                FragmentObject *fragment = reinterpret_cast<FragmentObject*>(data);
+                FragmentObject *
+                    fragment = reinterpret_cast<FragmentObject*>(data);
                 if (!fragment->dataTree) {
                     PyErr_SetString(PyExc_AttributeError,
                                     "Fragment object points to deleted data.");
@@ -1535,7 +1544,7 @@ PyObject* Teng_generatePage(TengObject *self,
         }
         // error log
         Error_t err;
-        
+
         // this macro converts C string into C++ string
         // NULL pointer is converted as empty string
 #define S(str) (str ? std::string(str) : std::string())
@@ -1565,7 +1574,7 @@ PyObject* Teng_generatePage(TengObject *self,
 #undef SL
 #undef SD
 #undef S
-        
+
         // get rid of writer (we have to catch any exception it can
         // throw)
         delete writer.release();
@@ -1573,7 +1582,7 @@ PyObject* Teng_generatePage(TengObject *self,
         // process error log
         PyObject *errorLog = createErrorLog(err);
         if (!errorLog) return 0;
-        
+
         // create result object
         PyObject *result = Py_BuildValue("{s:i,s:s#,s:O}", "status", status,
                                          "output", output.data(),
