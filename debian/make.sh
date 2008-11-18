@@ -22,7 +22,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: make.sh,v 1.6 2008-11-14 11:20:53 burlog Exp $
+# $Id: make.sh,v 1.7 2008-11-18 13:24:01 burlog Exp $
 #
 # DESCRIPTION
 # Packager for Teng library.
@@ -190,7 +190,7 @@ function buildDepends() {
         (
             for a in `listPackages $*`; do
                 if [ -f "/var/lib/dpkg/info/$a.shlibs" ]; then
-                    cat "/var/lib/dpkg/info/$a.shlibs" | grep " $a " \
+                    cat "/var/lib/dpkg/info/$a.shlibs" | grep -v "^[^:]*: " | grep " $a " \
                         | cut -f 3- -d" " | sed "s/\(.*\)/\1, /g"
                 fi
             done

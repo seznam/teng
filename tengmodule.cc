@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengmodule.cc,v 1.14 2008-11-14 11:20:53 burlog Exp $
+ * $Id: tengmodule.cc,v 1.15 2008-11-18 13:24:01 burlog Exp $
  *
  * DESCRIPTION
  * Teng python module.
@@ -45,8 +45,10 @@
 
 #include <iostream>
 
-#if PY_VERSION_HEX < 0x02050000
+#if PY_VERSION_HEX < 0x02050000 && !defined(PY_SSIZE_T_MIN)
 typedef int Py_ssize_t;
+#define PY_SSIZE_T_MAX INT_MAX
+#define PY_SSIZE_T_MIN INT_MIN
 #endif
 
 using namespace Teng;
