@@ -22,7 +22,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: make.sh,v 1.11 2008-11-18 13:24:01 burlog Exp $
+# $Id: make.sh,v 1.12 2008-11-20 23:56:31 burlog Exp $
 #
 # DESCRIPTION
 # Packager for Teng library.
@@ -298,9 +298,9 @@ if test -z "${SKIP_BUILD}"; then
     
         # configure sources -- we want to instal under /usr
         # info goes to share dir
-        ./configure --prefix=/usr --infodir=/usr/share/info || exit 1
+        #./configure --prefix=/usr --infodir=/usr/share/info || exit 1
         # clean any previously created files
-        make clean  || exit 1
+        #make clean  || exit 1
         # make libteng
         make -j ${PROCESSORS} all  || exit 1
     )
@@ -324,8 +324,9 @@ fi
 
 # Determine library version -- we generate libteng<LIBRARY_VERSION>
 # and libteng<LIBRARY_VERSION>-dev packages.
-export LIBRARY_VERSION=$(sed -n -e 's/current=\(.*\)/\1/p' \
-        ${INSTALL_DIR}/usr/lib/libteng.la) || exit 1
+export LIBRARY_VERSION=$(( \
+        $(sed -n -e 's/current=\(.*\)/\1/p' ${INSTALL_DIR}/usr/lib/libteng.la)
+       -$(sed -n -e 's/age=\(.*\)/\1/p' ${INSTALL_DIR}/usr/lib/libteng.la))) || exit 1
 
 export PROJECT_NAME
 export MAINTAINER

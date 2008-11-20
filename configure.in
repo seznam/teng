@@ -21,7 +21,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: configure.in,v 1.22 2008-02-22 07:15:50 burlog Exp $
+# $Id: configure.in,v 1.23 2008-11-20 23:56:31 burlog Exp $
 #
 # DESCRIPTION
 # configure template for Teng.
@@ -36,7 +36,7 @@
 
 
 # initialize autoconf
-AC_INIT(teng, 2.0.4, teng@firma.seznam.cz)
+AC_INIT(teng, 2.1.0, teng@firma.seznam.cz)
 # initialize automake(use AC_INIT's arguments)
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 
@@ -57,9 +57,9 @@ AC_PROG_LIBTOOL
 # This version number needs to be changed in several different ways for each
 # release. Please read the libtool documentation (info libtool 'Updating
 # version info') before touching this. (this is *.so version number).
-TENG_MAJOR=2
+TENG_MAJOR=3
 TENG_MINOR=0
-VERSION_INFO="-version-info $TENG_MAJOR:$TENG_MINOR:0"
+VERSION_INFO="-version-info $TENG_MAJOR:$TENG_MINOR:1"
 AC_SUBST(TENG_MAJOR)
 AC_SUBST(TENG_MINOR)
 AC_SUBST(VERSION_INFO)

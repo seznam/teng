@@ -21,7 +21,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: Makefile.am,v 1.9 2008-11-14 11:14:48 burlog Exp $
+# $Id: Makefile.am,v 1.10 2008-11-20 23:56:31 burlog Exp $
 #
 # DESCRIPTION
 # A makefile template for Teng.
@@ -49,7 +49,8 @@ noinst_HEADERS = tengcache.h tengcode.h tengcontenttype.h \
                  tengfunction.h tenginstruction.h tenglex1.h \
                  tengparsercontext.h tengparservalue.h tengprocessor.h \
                  tengprogram.h tengsourcelist.h tengtemplate.h \
-                 tengutil.h tengwriter.h tengsyntax.h tengconfiguration.h
+                 tengutil.h tengwriter.h tengsyntax.h tengconfiguration.h \
+		 tengplatform.h
 
 # compile this library
 lib_LTLIBRARIES = libteng.la
