@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengfunction.cc,v 1.17 2008-11-14 11:00:04 burlog Exp $
+ * $Id: tengfunction.cc,v 1.18 2008-11-20 23:32:29 burlog Exp $
  *
  * DESCRIPTION
  * Teng processor funcction (like len, substr, round or date)
@@ -73,6 +73,8 @@ using namespace std;
 
 using namespace Teng;
 
+namespace {
+
 /** strlen for UTF-8 string.
  * @param str string
  * @return length of str
@@ -81,16 +83,16 @@ static int strlenUTF8(const string &_str) {
     string str = _str;
     int chars = 0;
     string::iterator end = str.end();
-    
+
     for (string::iterator istr = str.begin(); istr != end; ) {
         int bytes = 0;
         char tmp = *istr;
-        
+
         while (tmp & 0x80) {
             ++bytes;
             tmp <<= 1;
         }
-        
+
         if (!bytes) {
             istr++;
             chars++;
@@ -100,7 +102,7 @@ static int strlenUTF8(const string &_str) {
             istr++;
             chars++;
             continue;
-        } 
+        }
         --bytes;
         string::iterator bstr = istr + 1;
         for (; (bstr != end) && bytes; ++bstr, --bytes) {
@@ -152,12 +154,12 @@ static void substrUTF8(const string &str, string &result, int s, int e,
     for (string::const_iterator istr = str.begin(); istr != end; ) {
         int bytes = 0;
         char tmp = *istr;
-        
+
         while (tmp & 0x80) {
             ++bytes;
             tmp <<= 1;
         }
-        
+
         if (!bytes) {
             if (i >= s) result += *istr;
             istr++;
@@ -169,9 +171,9 @@ static void substrUTF8(const string &str, string &result, int s, int e,
             if (i >= s) result += *istr;
             istr++;
             i++;
-            if (i >= e) goto beginEnd; 
+            if (i >= e) goto beginEnd;
             continue;
-        } 
+        }
         --bytes;
         string::const_iterator bstr = istr + 1;
         for (; (bstr != end) && bytes; ++bstr, --bytes) {
@@ -196,6 +198,43 @@ static void substrUTF8(const string &str, string &result, int s, int e,
  beginEnd:
     result = p1 + result + p2;
 }
+
+/** Count unixtime from struct tm - respect timezone
+ * @param dateTime source time structure
+ * @param counted unixtime
+ * @return -1 if error occurred, 0 OK
+ */
+static int unixtime(struct tm dateTime, time_t &res) {
+    // set tzname, timezone and other system varibales
+    tzset();
+    // let maketime set dst flag
+    dateTime.tm_isdst = -1;
+    // maketime untouch this if some error occurred
+    dateTime.tm_wday = 7;
+    // save datetime timezone offset
+    long gmtoff = dateTime.tm_gmtoff;
+
+    // make time :)
+    res = mktime(&dateTime);
+    // substract localtime timezone (respect dst) - maketime should use
+    // timezone from datetime but don't do this; we must recover it
+#ifdef HAVE_ALTZONE
+    res -= (dateTime.tm_isdst > 0)? ::altzone: ::timezone;
+#else
+    res -= (dateTime.tm_isdst > 0)? ::timezone - 3600: ::timezone;
+#endif
+    // substract datetime gmt offset
+    res -= gmtoff;
+
+    // is there any error?
+    if ((res <= -1) || (dateTime.tm_wday == 7)) {
+        return -1;
+    }
+    return 0;
+}
+
+
+} // namespace
 
 /** Python-like substr
  * @param args Teng function arguments
@@ -231,7 +270,7 @@ static int tengFunctionSubstr(const vector<ParserValue_t> &args,
     ParserValue_t c(args[s++]);
     ParserValue_t b(args[s++]);
     ParserValue_t a(args[s++]);
-    
+
     b.validateThis();
     c.validateThis();
     if ((b.type != ParserValue_t::TYPE_INT) ||
@@ -255,7 +294,7 @@ static int tengFunctionSubstr(const vector<ParserValue_t> &args,
          e = a.stringValue.size();
          p2 = "";
      }
-     
+
      if (s >= ((int)a.stringValue.size()) || e <= 0 || e <= s)
          result.setString(p1 + p2);
      else {
@@ -321,7 +360,7 @@ static void substrIndexUTF8(const string &str, int &s, int &e) {
                 return;
             }
             continue;
-        } 
+        }
         --bytes;
         int bstr = index + 1;
         for (; (bstr < end) && bytes; ++bstr, --bytes) {
@@ -370,7 +409,7 @@ static int tengFunctionWordSubstr(const vector<ParserValue_t> &args,
     default:
         break;
     }
-    
+
     ParserValue_t c(args[s++]);
     ParserValue_t b(args[s++]);
     ParserValue_t a(args[s++]);
@@ -418,7 +457,7 @@ static int tengFunctionWordSubstr(const vector<ParserValue_t> &args,
             endWhite = 0;
             break;
         }
-    
+
     if (!startWhite)
         if (!endWhite)
             result.setString(p1 + a.stringValue.substr(s, e) + p2);
@@ -445,10 +484,10 @@ static int tengFunctionReorder(const vector<ParserValue_t> &args,
     result.setString("undefined");
     if (args.size() < 1) return -1;
     int ret = 0;
-    
+
     // format string
     const string &format = args[args.size() - 1].stringValue;
-    
+
     // result (formated string) -- reserve some space
     string res;
     res.reserve(2 * format.length());
@@ -462,10 +501,10 @@ static int tengFunctionReorder(const vector<ParserValue_t> &args,
 
     // indicates end-of-string
     const int EOS = ~0;
-    
+
     // parsed index in arguments
     unsigned int index = 0;
-    
+
     // indicates that we want to replace %index by argument
     bool replace = false;
 
@@ -525,7 +564,7 @@ static int tengFunctionReorder(const vector<ParserValue_t> &args,
                 break;
             }
             break;
-            
+
         case '{':
             switch (status) {
             case STATUS_FORMAT:
@@ -695,7 +734,7 @@ static int tengFunctionLen(const vector<ParserValue_t> &args,
     if (args.size() != 1) return -1;
     if (setting.encoding == "utf-8")
         result.setInteger(strlenUTF8(args[0].stringValue));
-    else      
+    else
         result.setInteger(args[0].stringValue.length());
     return 0;
 }
@@ -721,8 +760,8 @@ static int tengFunctionRandom(const vector<ParserValue_t> &args,
         return -2;
     }
     // it is not good to use low bits of rand() see man 3 rand for detail
-    result.setInteger(static_cast<ParserValue_t::int_t>((rand() * (a.integerValue + 0.0))
-                                        /(RAND_MAX + 1.0)));
+    result.setInteger(static_cast<ParserValue_t::int_t>
+            ((rand() * (a.integerValue + 0.0)) /(RAND_MAX + 1.0)));
     return 0;
 }
 
@@ -740,7 +779,7 @@ static int tengFunctionRandom(const vector<ParserValue_t> &args,
     TengParserValue_t b = args[0].validate();
     if (b.type != TengParserValue_t::TYPE_INT || b.integerValue < 0) return -2;
     TengParserValue_t a = args[1];
-   
+
     result.setString("");
     result.stringValue.reserve(a.stringValue.size() * b.integerValue);
     for (long i = 0; i < b.integerValue; i++) {
@@ -759,9 +798,9 @@ static int tengFunctionNow(const vector<ParserValue_t> &args,
                            const Processor_t::FunctionParam_t &setting,
                            ParserValue_t &result)
 {
+    // there is no need care about timezone - localtime and maketime work with
+    // actual timezone which is now :)
     struct timeval tv;
-    //    struct timezone tz;
-    
     result.setString("undefined");
     if (args.size()) return -1;
     gettimeofday(&tv, /*&tz*/ NULL);
@@ -777,12 +816,12 @@ static int tengFunctionNow(const vector<ParserValue_t> &args,
 static int parseDateTime(const string &str, struct tm &dateTime) {
     char buf4[5];
     char buf2[3];
-    char *end;
+    char *end; // is set by strtoul
     const char *pos = str.c_str();
     memset(&dateTime, 0, sizeof(dateTime));
-    
+
     buf4[4] = buf2[2] = 0;
-    
+
     strncpy(buf4, pos, 4);
     dateTime.tm_year = strtoul(buf4, &end, 10)-1900;
     if (end != (buf4 + 4)) {
@@ -791,7 +830,7 @@ static int parseDateTime(const string &str, struct tm &dateTime) {
     }
     pos += 4;
     if (*pos == '-') ++pos;
-    
+
     strncpy(buf2, pos, 2);
     dateTime.tm_mon = strtoul(buf2, &end, 10) - 1;
     if (end != (buf2 + 2)) {
@@ -800,7 +839,7 @@ static int parseDateTime(const string &str, struct tm &dateTime) {
     }
     pos += 2;
     if (*pos == '-') ++pos;
-    
+
     strncpy(buf2, pos, 2);
     dateTime.tm_mday = strtoul(buf2, &end, 10);
     if (end != (buf2 + 2)) {
@@ -808,7 +847,7 @@ static int parseDateTime(const string &str, struct tm &dateTime) {
         return -1;
     }
     pos += 2;
-    
+
     switch(*pos++) {
     case 0:
         goto endFunction;
@@ -819,7 +858,7 @@ static int parseDateTime(const string &str, struct tm &dateTime) {
         // expected 'T' or ' ' as date/time separator
         return -1;
     }
-    
+
     strncpy(buf2, pos, 2);
     dateTime.tm_hour = strtoul(buf2, &end, 10);
     if (end != (buf2 + 2)) {
@@ -831,7 +870,7 @@ static int parseDateTime(const string &str, struct tm &dateTime) {
         //   expected ':' as hour/minute separator
         return -1;
     }
-    
+
     strncpy(buf2, pos, 2);
     dateTime.tm_min = strtoul(buf2, &end, 10);
     if (end != (buf2 + 2)) {
@@ -843,7 +882,7 @@ static int parseDateTime(const string &str, struct tm &dateTime) {
         //    expected ':' as minute/second separator");
         return -1;
     }
-    
+
     strncpy(buf2, pos, 2);
     dateTime.tm_sec = strtoul(buf2, &end, 10);
     if (end != (buf2 + 2)) {
@@ -851,27 +890,50 @@ static int parseDateTime(const string &str, struct tm &dateTime) {
         return -1;
     }
     pos += 2;
-    
+
     if (*pos) {
         if ((*pos != '-') && (*pos != '+')) {
             //  expected EOS");
             return -1;
         }
-        // ignore timezone
+        char sign = *pos;
+        pos += 1;
+
+        // hours
+        strncpy(buf2, pos, 2);
+        dateTime.tm_gmtoff = strtoul(buf2, &end, 10);
+        if ((end != (buf2 + 2)) || (dateTime.tm_gmtoff < 0)
+                                || (dateTime.tm_gmtoff > 12)) {
+            // expected HH
+            return -1;
+        }
+        pos += 2;
+
+        // omit ':' if present
+        if (*pos == ':') pos += 1;
+
+        // minutes
+        strncpy(buf2, pos, 2);
+        int minutes = strtoul(buf2, &end, 10) * 60 * 60;
+        if ((end != (buf2 + 2)) || (minutes < 0) || (minutes > 60)) {
+            // expected MM
+            return -1;
+        }
+        dateTime.tm_gmtoff = ((dateTime.tm_gmtoff * 60 * 60) + minutes * 60)
+                             * (sign == '-'? -1: +1);
     }
 
  endFunction:
     if (dateTime.tm_year<0) {
         dateTime.tm_wday=-1;
         dateTime.tm_yday=-1;
-    } else{
-        struct tm tmpt;
-        tmpt=dateTime;
+
+    } else {
+        struct tm tmpt = dateTime;
         mktime(&tmpt);
-        dateTime.tm_wday=tmpt.tm_wday;
-        dateTime.tm_yday=tmpt.tm_yday;
+        dateTime.tm_wday = tmpt.tm_wday;
+        dateTime.tm_yday = tmpt.tm_yday;
     }
-    
     return 0;
 }
 
@@ -906,7 +968,7 @@ static int addDateString(unsigned int index, const string &setup,
     // find terminating delimiter
     while  ((esetup != setup.end()) && (*esetup != '|'))
         esetup++;
-    
+
     // check for valid string
     if ((esetup == setup.end()) || (*esetup != '|'))
         return -1;
@@ -978,77 +1040,77 @@ static int formatBrokenDate(const string &format, const string &setup,
             case 'Y': //year (1970)
                 formatValue(output, "%d", dateTime.tm_year + 1900);
                 break;
-                
+
             case 'y': //last two digits of the year (00..99)
                 formatValue(output, "%02d", (dateTime.tm_year + 1900) % 100);
                 break;
-                
+
             case 'u': //day of week 1=monday (1..7)
                 formatValue(output, "%d", (dateTime.tm_wday + 6) % 7 + 1);
                 break;
-                
+
             case 'w': //day of week 0=sunday (0..6)
                 formatValue(output, "%d", dateTime.tm_wday);
                 break;
-                
+
             case 'm': //month (01..12)
                 formatValue(output, "%02d", dateTime.tm_mon + 1);
                 break;
-                
+
             case 'n': //month (1..12)
                 formatValue(output, "%d", dateTime.tm_mon + 1);
                 break;
-                
+
             case 'd': //day (01..31)
                 formatValue(output, "%02d", dateTime.tm_mday);
                 break;
-                
+
             case 'e': //day (1..31)
                 formatValue(output, "%d", dateTime.tm_mday);
                 break;
-                
+
             case 'H': //hour (00..23)
                 formatValue(output, "%02d", dateTime.tm_hour);
                 break;
-                
+
             case 'k': //hour (0..23)
                 formatValue(output, "%d", dateTime.tm_hour);
                 break;
-                
+
             case 'j': //day of the year (000..366)
                 formatValue(output, "%03d", dateTime.tm_yday);
                 break;
-                
+
             case 'I': //hour (01..12)
                 formatValue(output, "%02d", (dateTime.tm_hour % 12) + 1);
                 break;
-                
+
             case 'r': //time 12hr AM/PM "%I:%M:%S %p"
                 formatValue(output, "%02d:%02d:%02d %s",
                             (dateTime.tm_hour % 12) + 1,
                             dateTime.tm_min, dateTime.tm_sec,
                             dateTime.tm_hour <= 11 ? "AM" : "PM");
                 break;
-                
+
             case 'T': //time 24hr "%H:%M:%S"
                 formatValue(output, "%02d:%02d:%02d",
                             dateTime.tm_hour, dateTime.tm_min,
                             dateTime.tm_sec);
                 break;
-                
+
             case 'R': //time 24hr "%H:%M"
                 formatValue(output, "%02d:%02d",
                             dateTime.tm_hour, dateTime.tm_min);
                 break;
-                
+
             case 'l': //hour (1..12)
                 formatValue(output, "%d", (dateTime.tm_hour % 12) + 1);
                 break;
-                
+
             case 'M': //minute (00..59)
                 formatValue(output, "%02d", dateTime.tm_min);
                 break;
-                
+
             case 'P': //am/pm
                 output.append(dateTime.tm_hour <= 11 ? "am" : "pm");
                 break;
@@ -1056,30 +1118,37 @@ static int formatBrokenDate(const string &format, const string &setup,
             case 'p': //AM/PM
                 output.append(dateTime.tm_hour <= 11 ? "AM" : "PM");
                 break;
-                
+
+            case 's': // unix time
+                {
+                    time_t ut;
+                    if (!unixtime(dateTime, ut)) formatValue(output, "%ld", ut);
+                }
+                break;
+
             case 'S': //second (00..59), but possibly up to 61
                 formatValue(output, "%02d", dateTime.tm_sec);
                 break;
-                
+
             case 'B': //full month name (January..December)
                 if (dateTime.tm_mon >= 0 && dateTime.tm_mon <= 11) {
                     addDateString(dateTime.tm_mon, setup, output);
                 }
                 break;
-                
+
             case 'h':
             case 'b': //abbreviated month name (Jan..Dec)
                 if (dateTime.tm_mon >= 0 && dateTime.tm_mon <= 11) {
                     addDateString(dateTime.tm_mon + 12, setup, output);
                 }
                 break;
-                
+
             case 'A': //full weekday name (Sunday..Saturday)
                 if (dateTime.tm_wday >= 0 && dateTime.tm_wday <= 6) {
                     addDateString(dateTime.tm_wday + 24, setup, output);
                 }
                 break;
-                
+
             case 'a': //abbreviated day name (Sun..Sat)
                 if (dateTime.tm_wday >= 0 && dateTime.tm_wday <= 6) {
                     addDateString(dateTime.tm_wday + 31, setup, output);
@@ -1096,9 +1165,10 @@ static int formatBrokenDate(const string &format, const string &setup,
 
             case 'Z':
                 {
-                    char buffer[32];
-                    strftime(buffer, sizeof(buffer), "%Z", &dateTime);
-                    output.append(buffer);
+                    struct tm tmpt = dateTime;
+                    tmpt.tm_isdst = -1;
+                    mktime(&tmpt);
+                    output.append(tmpt.tm_zone);
                 }
                 break;
 
@@ -1113,11 +1183,13 @@ static int formatBrokenDate(const string &format, const string &setup,
     }
 
     // success
-    return 0; 
+    return 0;
 }
 
 
-/** strftime for string input 
+
+
+/** strftime for string input
  * @param format format string (like C strftime)
  * @param setup string for month/day names
  * @param date date to format
@@ -1128,12 +1200,12 @@ static int formatStringDate(const string &format,const string &setup,
                             const string &date, string &output)
 {
     struct tm dateTime;
-    
+
     if (parseDateTime(date, dateTime)) return -1;
     return formatBrokenDate(format, setup, dateTime, output);
 }
 
-/** strftime for time_t since Epoch input 
+/** strftime for time_t since Epoch input
  * @param format format string (like C strftime)
  * @param setup string for month/day names
  * @param date date to format
@@ -1163,15 +1235,15 @@ static int tengFunctionTimestamp(const vector<ParserValue_t> &args,
 
     if (parseDateTime(date.stringValue, dateTime)) {
         result.setString("undefined");
-        return 0;
+        return -1;
     }
 
-    dateTime.tm_wday = 7;
-    time_t res = mktime(&dateTime);
-    if ((res == -1)&&(dateTime.tm_wday == 7)) {
+    time_t res = 0;
+    if (unixtime(dateTime, res) == -1) {
         result.setString("undefined");
-        return 0;
+        return -1;
     }
+
     result.setInteger(res);
     return 0;
 }
@@ -1247,12 +1319,12 @@ static int tengFunctionNumFormat(const vector<ParserValue_t> &args,
         1.0e+30, 1.0e+31, 1.0e+32, 1.0e+33, 1.0e+34,
         1.0e+35, 1.0e+36, 1.0e+37, 1.0e+38, 1.0e+39
     };
-    
+
     // prepare result
     result.setString("undefined");
     if ((args.size() < 2) || (args.size() > 4))
         return -1; //bad number of args
-    
+
     // get args -- number and precission
     ParserValue_t a(args[args.size() - 1]); //number
     ParserValue_t b(args[args.size() - 2]); //prec
@@ -1264,7 +1336,7 @@ static int tengFunctionNumFormat(const vector<ParserValue_t> &args,
     string thousandsep;
     if (args.size() >= 4)
         thousandsep = args[args.size() - 4].stringValue;
-    
+
     // convert params to numbers
     a.validateThis();
     b.validateThis();
@@ -1273,7 +1345,7 @@ static int tengFunctionNumFormat(const vector<ParserValue_t> &args,
         || (b.integerValue > 39)
         || (b.integerValue < -39))
         return -2; //error
-    
+
     // round the number
     double num = a.realValue;
     int sign = 1; // defaults to positive num
@@ -1281,7 +1353,7 @@ static int tengFunctionNumFormat(const vector<ParserValue_t> &args,
         sign = -1; // negative num
         num = -num;
     }
-    
+
     double powernum = 0.0; //temp value for showing decimal part
     if (b.integerValue <= 0) {
         num /= pow10[-b.integerValue];
@@ -1294,7 +1366,7 @@ static int tengFunctionNumFormat(const vector<ParserValue_t> &args,
         powernum = num;
         num /= pow10[b.integerValue];
     }
-    
+
     // split number into integer and decimal parts and
     // print string using thousand and decimal separators
     double integer = trunc(num);
@@ -1337,7 +1409,7 @@ static int tengFunctionNumFormat(const vector<ParserValue_t> &args,
         }
         str = str + decipoint + str2;
     }
-    
+
     // store result
     result.setString(str);
     return 0; //ok
@@ -1365,12 +1437,12 @@ static int tengFunctionRound(const vector<ParserValue_t> &args,
         1.0e+30, 1.0e+31, 1.0e+32, 1.0e+33, 1.0e+34,
         1.0e+35, 1.0e+36, 1.0e+37, 1.0e+38, 1.0e+39
     };
-    
+
     result.setString("undefined");
     if (args.size()!=2) return -1;
     ParserValue_t a(args[1]);
     ParserValue_t b(args[0]);
-    
+
     a.validateThis();
     b.validateThis();
     if ((a.type == ParserValue_t::TYPE_STRING)
@@ -1378,7 +1450,7 @@ static int tengFunctionRound(const vector<ParserValue_t> &args,
         || (b.integerValue > 39)
         || (b.integerValue < -39))
         return -2;
-    
+
     if (a.type == ParserValue_t::TYPE_INT) {
         if (b.integerValue >= 0) {
             result.setInteger(a.integerValue);
@@ -1394,7 +1466,7 @@ static int tengFunctionRound(const vector<ParserValue_t> &args,
         result.setInteger(k);
         return 0;
     }
-    
+
     double f = a.realValue;
     if (b.integerValue <= 0) {
         f /= pow10[-b.integerValue];
@@ -1404,11 +1476,11 @@ static int tengFunctionRound(const vector<ParserValue_t> &args,
     }
     else {
         f *= pow10[b.integerValue];
-        f = round(f);       
+        f = round(f);
         f /= pow10[b.integerValue];
         result.setReal(f, b.integerValue);
     }
-    
+
     return 0;
 }
 
@@ -1425,7 +1497,7 @@ static int tengFunctionInt(const vector<ParserValue_t> &args,
     result.setString("undefined");
     if (args.size() != 1) return -1;
     ParserValue_t a(args[0]);
-    
+
     a.validateThis();
     if (a.type == ParserValue_t::TYPE_STRING) {
         setting.logger.logError(Error_t::LL_ERROR,
@@ -1451,7 +1523,7 @@ static int tengFunctionUrlEscape(const vector<ParserValue_t> &args,
     if (args.size() != 1)
         return -1; //bad args
     ParserValue_t a(args[0]); //take 1st arg
-    
+
     // quote
     string res;
     string::const_iterator i;
@@ -1486,7 +1558,7 @@ static int tengFunctionQuoteEscape(const vector<ParserValue_t> &args,
     if (args.size() != 1)
         return -1; //bad args
     ParserValue_t a(args[0]); //take 1st arg
-    
+
     // quote
     string res;
     string::const_iterator i;
@@ -1522,7 +1594,7 @@ static int tengFunctionNL2BR(const vector<ParserValue_t> &args,
     if (args.size() != 1)
         return -1; //bad args
     ParserValue_t str(args[0]); //take 1st arg
-    
+
     // convert
     string res;
     for (string::const_iterator i = str.stringValue.begin();
@@ -1568,7 +1640,7 @@ static int tengFunctionSecToTime(const vector<ParserValue_t> &args,
     result.setString("undefined");
     if (args.size() != 1)
         return -1; //bad args
-    
+
     ParserValue_t sec(args[0]);
     sec.validateThis();
     if (sec.type == ParserValue_t::TYPE_STRING)
@@ -1597,7 +1669,7 @@ static int tengFunctionIsEnabled(const vector<ParserValue_t> &args,
     result.setInteger(0);
     if (args.size() != 1)
         return -1; //bad args
-    
+
     ParserValue_t feature(args[0]);
     feature.validateThis();
     if (feature.type != ParserValue_t::TYPE_STRING)
@@ -1611,7 +1683,7 @@ static int tengFunctionIsEnabled(const vector<ParserValue_t> &args,
                                 + "'");
         return -2;
     }
-    
+
     // OK
     result.setInteger(enabled);
     return 0;
@@ -1630,7 +1702,7 @@ static int tengFunctionDictExist(const vector<ParserValue_t> &args,
     result.setInteger(0);
     if (args.size() != 1)
         return -1; //bad args
-    
+
     ParserValue_t key(args[0]);
     key.validateThis();
     if (key.type != ParserValue_t::TYPE_STRING)
@@ -1655,7 +1727,8 @@ static int tengFunctionReplace(const vector<ParserValue_t> &args,
 {
     if (args.size() != 3) return -1;
     result.setString(args[2].stringValue);
-    unsigned int size = args[1].stringValue.size(), size2 = args[0].stringValue.size();
+    unsigned int size = args[1].stringValue.size(),
+                 size2 = args[0].stringValue.size();
     for(unsigned int i = 0; i < result.stringValue.size(); i++) {
         if(result.stringValue.substr(i, size) == args[1].stringValue) {
             result.stringValue.replace(i, size, args[0].stringValue);
@@ -1705,7 +1778,7 @@ namespace {
 }
 
 /** Find C++ function for Teng function.
- * @param name name of Teng function 
+ * @param name name of Teng function
  * @param normalRun true if in runtime, false in template compiling
  *  optimalization (optimalizing strlen("hello") OK, now() error)
  * @return function OK, 0 error
