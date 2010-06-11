@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengprocessor.cc,v 1.14 2007-10-26 11:44:24 vasek Exp $
+ * $Id: tengprocessor.cc,v 1.15 2010-06-11 07:46:26 burlog Exp $
  *
  * DESCRIPTION
  * Teng processor. Executes programs.
@@ -57,6 +57,7 @@
 #include "tengfunction.h"
 #include "tengprocessor.h"
 #include "tengfragmentstack.h"
+#include "tengutil.h"
 
 #ifdef HAVE_FENV_H
 #include <fenv.h>
@@ -489,7 +490,9 @@ int Processor_t::binaryOp(const Instruction_t &instr) {
 }
 
 namespace {
-    int dumpFragment(const Escaper_t &escaper,
+
+    int dumpFragment(const Configuration_t &configuration,
+                     const Escaper_t &escaper,
                      Formatter_t &output, const Fragment_t &fragment,
                      const string &padding = string())
     {
@@ -500,16 +503,17 @@ namespace {
                 if (output.write(padding)) return -1;
                 if (output.write(ifragment->first)) return -1;
                 if (output.write(escaper.escape(": \""))) return -1;
-                if (ifragment->second->value.size() > 40) {
-                    if (output.write(escaper.escape
-                                     (ifragment->second->value.substr(0, 37)
-                                      + "...\"\n")))
-                        return -1;
-                } else {
-                    if (output.write
-                        (escaper.escape(ifragment->second->value + "\"\n")))
-                        return -1;
-                }
+
+                // clip string to specified length
+                std::string strVal = ifragment->second->value;
+                int unsigned len = configuration.getMaxDebugValLength();
+                if (len > 0)
+                    Teng::clipString(strVal, len);
+
+                if (output.write
+                    (escaper.escape(strVal + "\"\n")))
+                    return -1;
+
             }
         }
 
@@ -529,7 +533,7 @@ namespace {
                     sprintf(s, "[%u]: \n", k);
 
                     if (output.write(escaper.escape(s))) return -1;
-                    if (dumpFragment(escaper, output, **inestedFragments,
+                    if (dumpFragment(configuration, escaper, output, **inestedFragments,
                                      padding + "    "))
                         return -1;
                     if (output.write(escaper.escape("\n"))) return -1;
@@ -575,7 +579,7 @@ int Processor_t::instructionDebug(const Fragment_t &data, Formatter_t &output) {
 
     if (output.write(escaper.escape("\nApplication data:\n")))
         return -1;
-    return dumpFragment(escaper, output, data);
+    return dumpFragment(configuration, escaper, output, data);
 }
 
 namespace {
@@ -640,7 +644,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
             valueStack.push(a);
             break;
 
-        case Instruction_t::DEBUG:
+        case Instruction_t::DEBUGING:
             if (configuration.isDebugEnabled())
                 instructionDebug(data, output);
             break;

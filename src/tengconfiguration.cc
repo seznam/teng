@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengconfiguration.cc,v 1.4 2008-11-14 11:00:04 burlog Exp $
+ * $Id: tengconfiguration.cc,v 1.5 2010-06-11 07:46:26 burlog Exp $
  *
  * DESCRIPTION
  * Teng configuration dictionary.
@@ -48,7 +48,7 @@ using namespace Teng;
 Configuration_t::Configuration_t(const string &root)
     : Dictionary_t(root), debug(false), errorFragment(false),
       logToOutput(false), bytecode(false), watchFiles(true),
-      maxIncludeDepth(10), format(true)
+      maxIncludeDepth(10), format(true), maxDebugValLength(40)
 {}
 
 Configuration_t::~Configuration_t() {
@@ -93,6 +93,29 @@ int Configuration_t::processDirective(const string &directive,
         maxIncludeDepth = depth;
         return 0;
     }
+
+    if (directive == "maxdebugvallength") {
+        if (argument.empty()) {
+            err.logError(Error_t::LL_ERROR, pos,
+                         "Invalid value of max-debug-val-length '"
+                         + argument + "'");
+            return -1;
+        }
+
+        // convert to unsigned int
+        char *end;
+        unsigned long int len = strtoul(argument.c_str(), &end, 10);
+        if (*end) {
+            err.logError(Error_t::LL_ERROR, pos,
+                         "Invalid value of max-debug-val-length '"
+                         + argument + "'");
+            return -1;
+        }
+
+        maxDebugValLength = len;
+        return 0;
+    }
+
 
     // enable/disable
 
@@ -148,6 +171,7 @@ namespace Teng {
           << "    bytecode: " << ENABLED(c.bytecode) << std::endl
           << "    watchfiles: " << ENABLED(c.watchFiles) << std::endl
           << "    maxincludedepth: " << c.maxIncludeDepth << std::endl
+          << "    maxdebugvallength: " << c.maxDebugValLength << std::endl
           << "    format: " << ENABLED(c.format) << std::endl;
 
         return o;

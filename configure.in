@@ -21,7 +21,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: configure.in,v 1.23 2008-11-20 23:56:31 burlog Exp $
+# $Id: configure.in,v 1.24 2010-06-11 07:46:26 burlog Exp $
 #
 # DESCRIPTION
 # configure template for Teng.
@@ -36,7 +36,7 @@
 
 
 # initialize autoconf
-AC_INIT(teng, 2.1.0, teng@firma.seznam.cz)
+AC_INIT(teng, 2.1.1, teng@firma.seznam.cz)
 # initialize automake(use AC_INIT's arguments)
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 
@@ -64,6 +64,30 @@ AC_SUBST(TENG_MAJOR)
 AC_SUBST(TENG_MINOR)
 AC_SUBST(VERSION_INFO)
 
+
+CPPFLAGS=""
+CXXFLAGS=""
+CFLAGS=""
+LDFLAGS=""
+
+AC_ARG_ENABLE(optimization,[  --enable-optimization compile optimized without debug logging],[
+    case "${enableval}" in
+        no)
+            AC_MSG_NOTICE([disabling optimization.])
+            CPPFLAGS="${CPPFLAGS} -DDEBUG=1 -O0 -g -ggdb"
+        ;;
+        yes)
+            AC_MSG_NOTICE([enabling optimization.])
+            CPPFLAGS="${CPPFLAGS} -O2 -g -ggdb"
+        ;;
+        *)
+            AC_MSG_ERROR([Say yes or no to --enable-optimization.])
+        ;;
+    esac
+], [
+   CPPFLAGS="${CPPFLAGS} -O2 -g -ggdb"
+])
+
 # check for flex and bison
 AM_PROG_LEX
 AC_PROG_YACC
@@ -78,3 +102,5 @@ AC_REPLACE_FUNCS([trunc round])
 # generate Makefile
 AC_OUTPUT(version Makefile src/Makefile src/tengconfig.h)
 #          doc/Makefile doc/manual/Makefile doc/manual/en/Makefile)
+
+

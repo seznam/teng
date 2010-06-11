@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengconfiguration.h,v 1.3 2007-10-26 11:44:24 vasek Exp $
+ * $Id: tengconfiguration.h,v 1.4 2010-06-11 07:46:26 burlog Exp $
  *
  * DESCRIPTION
  * Teng configuration dictionary.
@@ -100,6 +100,10 @@ public:
         return maxIncludeDepth;
     }
 
+    inline unsigned int getMaxDebugValLength() const {
+        return maxDebugValLength;
+    }
+
     inline bool isFormatEnabled() const {
         return format;
     }
@@ -118,6 +122,7 @@ private:
     unsigned int maxIncludeDepth; //!< Maximal template include depth.
 
     bool format;          //!< enabled <?tenf formag ...?> (true)
+    unsigned short int maxDebugValLength; //!< Maximal length of variable value length
 };
 
 } // namespace Teng

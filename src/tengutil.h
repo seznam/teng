@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengutil.h,v 1.2 2004-12-30 12:42:02 vasek Exp $
+ * $Id: tengutil.h,v 1.3 2010-06-11 07:46:26 burlog Exp $
  *
  * DESCRIPTION
  * Teng utilities.
@@ -76,6 +76,15 @@ int tengMD5Hexdigest(const string &data, string &hexdigest);
 void tengCheckData(const Fragment_t &root,
                    const Dictionary_t &dataDefinition,
                    Error_t &error);
+
+
+/** @short Clip string to specified length and append "..." string
+ *         to end of clipped string (utf-8 safe)
+ *  @param str string to clip
+ *  @param len maximal length of str after clipping
+ *  @param error log
+ */
+void clipString(std::string &str, unsigned int len);
 
 } // namespace Teng
 

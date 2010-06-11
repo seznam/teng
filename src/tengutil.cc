@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengutil.cc,v 1.3 2008-11-14 11:00:04 burlog Exp $
+ * $Id: tengutil.cc,v 1.4 2010-06-11 07:46:26 burlog Exp $
  *
  * DESCRIPTION
  * Teng utilities.
@@ -49,6 +49,13 @@
 using namespace std;
 
 using namespace Teng;
+
+namespace {
+
+// count of "." characters, which are appended to clipped string
+const unsigned int CLIP_DOTS_COUNT = 3;
+
+} // namespace
 
 int Teng::tengNormalizeFilename(string &filename)
 {
@@ -165,4 +172,23 @@ void Teng::tengCheckData(const Fragment_t &root, const Dictionary_t &data,
                          Error_t &error)
 {
     checkDataRecursion(&root, data, error, "", 1);
+}
+
+void Teng::clipString(std::string &str, unsigned int len)
+{
+    if (str.size() + CLIP_DOTS_COUNT > len) {
+        str = str.substr(0, std::max((int)len - CLIP_DOTS_COUNT, 0));
+        // find previous correct utf8 character
+        while (str.length() &&
+                (str[str.length() - 1] & 0x80) == 0x80) {
+            char ch = str[str.length() - 1];
+            str.erase(str.length() - 1, 1);
+            // char 11xxxxxx is begin of utf8 char, we can break
+            if ((ch & 0xc0) == 0xc0)
+                break;
+        }
+        // add ... string to end of value
+        for (int i = 0; i < CLIP_DOTS_COUNT && str.length() < len; i++)
+            str += ".";
+    }
 }

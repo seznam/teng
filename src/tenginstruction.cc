@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tenginstruction.cc,v 1.6 2007-10-18 14:45:45 vasek Exp $
+ * $Id: tenginstruction.cc,v 1.7 2010-06-11 07:46:26 burlog Exp $
  *
  * DESCRIPTION
  * Teng instruction and program types. Syntax analyzer
@@ -236,7 +236,7 @@ void Instruction_t::dump(FILE *fp) const
             fprintf(fp, "HALT\n");
             break;
             
-        case DEBUG:
+        case DEBUGING:
             fprintf(fp, "DEBUG\n");
             break;
 
@@ -431,7 +431,7 @@ void Instruction_t::dump(ostream &os, int ip) const {
         os << "HALT" << endl;
         break;
         
-    case DEBUG:
+    case DEBUGING:
         os << "DEBUG" << endl;
         break;
         

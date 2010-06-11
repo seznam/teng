@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengerror.h,v 1.4 2008-11-14 11:00:04 burlog Exp $
+ * $Id: tengerror.h,v 1.5 2010-06-11 07:46:26 burlog Exp $
  *
  * DESCRIPTION
  * Teng error handling class.
@@ -55,7 +55,7 @@ class Error_t {
 public:
     /** @short Level of message */
     enum Level_t {
-        LL_DEBUG =   0, /** < Level for debug messages. */
+        LL_DEBUGING = 0, /** < Level for debug messages. */
         LL_WARNING = 1, /** < Level for warnings. */
         LL_ERROR =   2, /** < Level for error messages. */
         LL_FATAL =   3  /** < Level for fatal messages. */
@@ -63,7 +63,7 @@ public:
 
     /** @short Creates new error logger. */
     Error_t()
-        : level(LL_DEBUG), entries()
+        : level(LL_DEBUGING), entries()
     {};
 
     /** @short Holds position in file. */
@@ -150,7 +150,7 @@ public:
         int col;
     };
     
-   /** Max level of messages (or LL_DEBUG if no message) */
+   /** Max level of messages (or LL_DEBUGING if no message) */
     Level_t level;
 
     /** @short Entry in error log. */
