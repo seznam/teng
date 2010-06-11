@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengutil.cc,v 1.4 2010-06-11 07:46:26 burlog Exp $
+ * $Id: tengutil.cc,v 1.5 2010-06-11 08:25:35 burlog Exp $
  *
  * DESCRIPTION
  * Teng utilities.
@@ -62,7 +62,7 @@ int Teng::tengNormalizeFilename(string &filename)
     // check for empty filename
     if (filename.empty()) return -1;
 
-	CONVERTNAMEBYPLATFORM(filename)
+        CONVERTNAMEBYPLATFORM(filename)
 
     // cache of filename parts
     vector<string> parts;
@@ -146,20 +146,21 @@ namespace {
                     error.logError(Error_t::LL_WARNING, Error_t::Position_t(),
                                    "Fragment '" + path + "." + i->first +
                                    "' has wrong name");
-                    
+
                 } else {
                     if (!dataDefinition.lookup(path + "." + i->first)) {
-                        error.logError(Error_t::LL_WARNING, Error_t::Position_t(),
+                        error.logError(Error_t::LL_WARNING,
+                                       Error_t::Position_t(),
                                        "Fragment '" +  path + "." + i->first +
                                        "' is not present in data definition");
                     }
                 }
-                
+
                 for (FragmentList_t::const_iterator
                          inf = i->second->nestedFragments->begin();
                      inf != i->second->nestedFragments->end();
                      ++inf) {
-                    checkDataRecursion(*inf, dataDefinition, error, 
+                    checkDataRecursion(*inf, dataDefinition, error,
                                        path + "." + i->first,
                                        0);
                 }
@@ -177,7 +178,7 @@ void Teng::tengCheckData(const Fragment_t &root, const Dictionary_t &data,
 void Teng::clipString(std::string &str, unsigned int len)
 {
     if (str.size() + CLIP_DOTS_COUNT > len) {
-        str = str.substr(0, std::max((int)len - CLIP_DOTS_COUNT, 0));
+        str = str.substr(0, std::max((int)len - (int)CLIP_DOTS_COUNT, 0));
         // find previous correct utf8 character
         while (str.length() &&
                 (str[str.length() - 1] & 0x80) == 0x80) {
@@ -188,7 +189,8 @@ void Teng::clipString(std::string &str, unsigned int len)
                 break;
         }
         // add ... string to end of value
-        for (int i = 0; i < CLIP_DOTS_COUNT && str.length() < len; i++)
+        for (unsigned int i = 0; i < CLIP_DOTS_COUNT && str.length() < len; i++)
             str += ".";
     }
 }
+

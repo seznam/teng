@@ -22,7 +22,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengsyntax.yy,v 1.13 2007-10-26 11:44:24 vasek Exp $
+ * $Id: tengsyntax.yy,v 1.14 2010-06-11 08:25:35 burlog Exp $
  *
  * DESCRIPTION
  * Teng syntax analyzer.
@@ -504,7 +504,7 @@ teng_unknown:
 teng_debug:
     LEX_DEBUG no_options_LEX_END
         {
-            CODE(DEBUG); //print debug info
+            CODE(DEBUGING); //print debug info
         }
     ;
 
@@ -1659,7 +1659,7 @@ dot_variable:
             if (('_' == $2.val.stringValue[0])
                 && (($2.val.stringValue == "_this")
                     || ($2.val.stringValue == "_parent"))) {
-                ERR(DEBUG, $2.pos, "Using the special identifier '"
+                ERR(DEBUGING, $2.pos, "Using the special identifier '"
                     + $2.val.stringValue
                     + "' inside the identifier qualification is useless");
             } else {
