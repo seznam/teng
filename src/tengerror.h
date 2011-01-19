@@ -21,7 +21,7 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
- * $Id: tengerror.h,v 1.5 2010-06-11 07:46:26 burlog Exp $
+ * $Id: tengerror.h,v 1.6 2011-01-19 06:39:45 burlog Exp $
  *
  * DESCRIPTION
  * Teng error handling class.
@@ -41,11 +41,10 @@
 
 #include <string>
 #include <vector>
-#include <iostream>
+#include <cerrno>
+#include <cstring>
 #include <sstream>
-#include <string.h>
-
-#include <errno.h>
+#include <iostream>
 
 namespace Teng {
 
