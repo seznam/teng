@@ -22,7 +22,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: make.sh,v 1.7 2008-11-18 13:24:01 burlog Exp $
+# $Id: make.sh,v 1.8 2011-03-08 08:33:53 volca Exp $
 #
 # DESCRIPTION
 # Packager for Teng library.
@@ -34,6 +34,23 @@
 # 2004-05-03  (vasek)
 #             Created.
 #
+
+# Stop on errors
+set -e
+
+# Only lenny and older are supported
+DEB_MAJOR="`cat /etc/debian_version | cut -d . -f 1`"
+
+# igored if debian_version's not numeric
+echo $DEB_MAJOR | grep "[^0-9]" > /dev/null 2>&1 && DEB_MAJOR=0
+
+if [ "$DEB_MAJOR" -ge "6" ]; then
+    # On squeeze we're on different package name scheme (and we're also packing
+    # multiple versions of the module - for each python version we have)
+    echo "Can't proceed: make.sh is intended for Debian Lenny and older"
+    echo "Please use dpkg-buildpackage on Debian Squeeze and newer"
+    exit 1
+fi
 
 ########################################################################
 # Command line options.                                                #
@@ -153,7 +170,7 @@ function build_package {
     SIZEDIR=$(find ${DEBIAN_BASE} -type d | wc | awk '{print $1}') || exit 1
     SIZE=$[ $SIZEDU - $SIZEDIR ] || exit 1
     
-    VERSION=$(< ${PROJECT_NAME}'.version')
+    VERSION="`dpkg-parsechangelog -lchangelog | sed -rne 's,^Version: ([^-]+).*,\1,p'`"
     
     # Process control file -- all <tags> will be replaced with
     # appropriate data.

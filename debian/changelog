@@ -1,0 +1,5 @@
+python-teng (2.0.1) unstable; urgency=low
+
+  * Added debhelper packaging for squeeze.
+
+ -- Filip Volejnik <filip.volejnik@firma.seznam.cz>  Mon, 21 Feb 2011 14:11:41 +0100
