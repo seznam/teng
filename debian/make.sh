@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Teng -- a general purpose templating engine.
 # Copyright (C) 2004  Seznam.cz, a.s.
@@ -22,7 +22,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 #
-# $Id: make.sh,v 1.12 2008-11-20 23:56:31 burlog Exp $
+# $Id: make.sh,v 1.13 2011-03-08 08:30:53 volca Exp $
 #
 # DESCRIPTION
 # Packager for Teng library.
