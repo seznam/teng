@@ -40,6 +40,8 @@
 // all external symbols will be prefixed with tengSyntax_
 %name-prefix="tengSyntax_"
 
+%lex-param {void * scanner}
+
 // we want to have y.tab.h
 %defines
 
@@ -50,13 +52,14 @@
 #include <string>
 #include <map>
 
+#include "tengyystype.h"
 #include "tengerror.h"
 #include "tenginstruction.h"
 #include "tengparsercontext.h"
 #include "tengparservalue.h"
 #include "tengformatter.h"
 #include "tengcode.h"
-
+#include "tenglex2.h"
 
 using namespace std;
 
@@ -64,38 +67,6 @@ using namespace Teng;
 
 namespace Teng {
 
-// define left-value type
-struct LeftValue_t {
-
-    // element's left-value
-    ParserValue_t val;
-
-    // define option list type
-    typedef map<string, string> OptionList_t;
-    // teng-directive options used for building code
-    OptionList_t opt;
-
-    // define list of addresses info
-    typedef vector<long> AddressList_t;
-    // program address--tmp just for building code
-    AddressList_t addr;
-
-    // define identifier type
-    typedef vector<string> Identifier_t;
-    // variable identifier
-    Identifier_t id;
-
-    // position in input stream (just for lexical elements)
-    // in other cases is pos-value irrelevant
-    Error_t::Position_t pos;
-
-    // program size in the time when the element was read (and then shifted)
-    // this value is used for discarding parts of program in case of error
-    unsigned int prgsize;
-};
-
-// left value type
-#define YYSTYPE LeftValue_t
 #define YYPARSE_PARAM context
 #define YYLEX_PARAM context
 
@@ -110,12 +81,6 @@ struct LeftValue_t {
 //#define YYINITDEPTH 200
 // (default value 200 is too small for complex templates)
 #define YYINITDEPTH 10000
-
-// external function prototypes
-extern int tengLex2_getElement(ParserValue_t &val,
-        Error_t::Position_t &pos, Error_t &err);
-extern int tengLex2_init(const string &str);
-extern int tengLex2_finish();
 
 // local function prototypes
 static int yylex(YYSTYPE *leftValue, void *context);
@@ -576,7 +541,7 @@ teng_include:
                         CONTEXT->lex1.top()->getPosition(),
                         CONTEXT->program->getErrors())); //new lex1
                 // lex2 state should be 0 now (or after a while)
-                tengLex2_finish();
+                CONTEXT->tengLex2.finish();
                 CONTEXT->lex2 = 0; //for sure
                 // append source list
                 CONTEXT->sourceIndex.push( //remember source index
@@ -2069,20 +2034,17 @@ function_arguments:
   * @param context Pointer to the parser's control structure. */
 static int yylex(YYSTYPE *leftValue, void *context)
 {
-    // positions
-    static Error_t::Position_t lex1Pos; //start pos of current lex1 element
-    static Error_t::Position_t lex2Pos; //actual position in lex2 stream
-
     // forever loop
     for ( ; ; ) {
-
         // if lex2 is currently in use
         if (CONTEXT->lex2) {
 
             // get next L2 token (>0=tok, 0=eof, -1=err)
             ParserValue_t val;
-            Error_t::Position_t pos = lex2Pos;
-            int tok = tengLex2_getElement(val, lex2Pos,
+            Error_t::Position_t pos = CONTEXT->lex2Pos;
+            int tok = CONTEXT->tengLex2.getElement(
+                    leftValue, val,
+                    CONTEXT->lex2Pos,
                     CONTEXT->program->getErrors());
 
             if (tok > 0) {
@@ -2096,19 +2058,20 @@ static int yylex(YYSTYPE *leftValue, void *context)
                 continue; //ignore bad element
             }
             // that was last token
-            tengLex2_finish();
+            CONTEXT->tengLex2.finish();
             CONTEXT->lex2 = 0;
         }
 
         // test if lex1 stack is empty
         if (CONTEXT->lex1.empty()) {
-            leftValue->pos = lex1Pos; //last known position
-            CONTEXT->position = lex1Pos; //last known position in input stream
+            leftValue->pos = CONTEXT->lex1Pos; //last known position
+            //last known position in input stream
+            CONTEXT->position = CONTEXT->lex1Pos;
             leftValue->prgsize = CONTEXT->program->size();
             return 0; //EOF
         }
         // remember lex1 position
-        lex1Pos = CONTEXT->lex1.top()->getPosition();
+        CONTEXT->lex1Pos = CONTEXT->lex1.top()->getPosition();
         // get next L1 token
         Lex1_t::Token_t tok = CONTEXT->lex1.top()->getElement();
         if (tok.type == Lex1_t::TYPE_TENG
@@ -2116,8 +2079,8 @@ static int yylex(YYSTYPE *leftValue, void *context)
                 || tok.type == Lex1_t::TYPE_DICT) {
 
             // use lex2
-            tengLex2_init(tok.value);
-            lex2Pos = lex1Pos; //set starting lex2 pos
+            CONTEXT->tengLex2.init(tok.value);
+            CONTEXT->lex2Pos = CONTEXT->lex1Pos; //set starting lex2 pos
             CONTEXT->lex2 = 1;
             continue; //read first lex2-element
 
@@ -2125,15 +2088,16 @@ static int yylex(YYSTYPE *leftValue, void *context)
 
             // plain text
             leftValue->val.setString(tok.value);
-            leftValue->pos = lex1Pos; //element's position
-            CONTEXT->position = lex1Pos; //actual position in input stream
+            leftValue->pos = CONTEXT->lex1Pos; //element's position
+            //actual position in input stream
+            CONTEXT->position = CONTEXT->lex1Pos;
             leftValue->prgsize = CONTEXT->program->size();
             return LEX_TEXT;
 
         } else if (tok.type == Lex1_t::TYPE_ERROR) {
 
             // error
-            ERR(ERROR, lex1Pos, tok.value.c_str());
+            ERR(ERROR, CONTEXT->lex1Pos, tok.value.c_str());
             continue; //ignore bad element
         }
 

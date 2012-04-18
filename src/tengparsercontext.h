@@ -44,6 +44,7 @@
 #include "tengdictionary.h"
 #include "tengconfiguration.h"
 #include "tenglex1.h"
+#include "tenglex2.h"
 #include "tengprogram.h"
 #include "tengprocessor.h"
 
@@ -56,7 +57,7 @@ struct ParserContext_t {
 
     /** Var/frag identifier. */
     typedef vector<string> IdentifierName_t;
-    
+
     /** Initialize.
      * @param langDictionary Language-dependent dictionary.
      * @param paramDictionary Language-independent dictionary (param.conf).
@@ -67,12 +68,12 @@ struct ParserContext_t {
 
     /** Delete lexical analyzer objects left on the stack. */
     ~ParserContext_t();
-    
+
     /** Compile file template into a program.
       * @return Pointer to program compiled within this context.
       * @param filename Template filename. */
     Program_t* createProgramFromFile(const string &filename);
-    
+
     /** Compile string template into a program.
       * @return Pointer to program compiled within this context.
       * @param str Whole template is stored in this string. */
@@ -102,7 +103,7 @@ struct ParserContext_t {
                                       const string &fullName,
                                       Identifier_t &id,
                                       bool parentIsOK = false) const;
-    
+
     enum ExistResolution_t {
         ER_NOT_FOUND,
         ER_FOUND,
@@ -113,7 +114,7 @@ struct ParserContext_t {
                              const IdentifierName_t &name,
                              const string &fullName, Identifier_t &id,
                              bool mustBeOpen = false) const;
-    
+
     int getFragmentAddress(const Error_t::Position_t &pos,
                            const IdentifierName_t &name,
                            const std::string &fullName,
@@ -121,21 +122,21 @@ struct ParserContext_t {
 
     /** Language dictionary. */
     const Dictionary_t *langDictionary;
-    
+
     /** Language-independent dictionary (param.conf). */
     const Configuration_t *paramDictionary;
-    
+
     /** Application root path (templates and dictionaries) */
     string root;
-    
+
     /** Lexical analyzer (level 1) object. */
     stack<Lex1_t *> lex1;
     /** Source index relevant to the currently processed source by lex1. */
     stack<int> sourceIndex;
-    
+
     /** Flag of using lexical analyzer (level2). */
     int lex2;
-    
+
     /** Actual position in input stream.
      * Value is periodicaly updated by yylex(). */
     Error_t::Position_t position;
@@ -183,21 +184,28 @@ struct ParserContext_t {
         IdentifierName_t name;
         std::vector<int> addresses;
     };
-    
+
     /** Actual fragment context when parsing a template. */
     std::vector<FragmentContext_t> fragContext;
-    
+
     /** Program created by parser.
      * Temporary value used when parsing. */
     Program_t *program;
-    
+
     /** Lowest possible address, at which the sequence of
       * VAL, PRINT, VAL, PRINT, ... instructions can be joined
       * into the single VAL, PRINT pair. */
     unsigned int lowestValPrintAddress;
-    
+
     /** Processor unit used for evaluation of constant expressions. */
     Processor_t *evalProcessor;
+
+    /** lex2 scanner instance */
+    Lex2_t tengLex2;
+
+    // for error handling positions
+    Error_t::Position_t lex1Pos; //start pos of current lex1 element
+    Error_t::Position_t lex2Pos; //actual position in lex2 stream
 };
 
 } // namespace Teng

@@ -42,13 +42,104 @@
 
 using namespace std;
 
-using namespace Teng;
+namespace Teng {
+
+// forward decls of all creators
+ContentType_t* htmlCreator();
+ContentType_t* shellCreator();
+ContentType_t* cCreator();
+ContentType_t* qstringCreator();
+ContentType_t* jshtmlCreator();
+ContentType_t* jsCreator();
 
 namespace {
-    map<string, ContentType_t::Descriptor_t*> *descriptors = 0;
-    vector<ContentType_t::Descriptor_t*> *descriptorIndex = 0;
+/**
+ * @short Function which creates content type descriptor
+ * @return content type descriptor
+ */
+typedef ContentType_t* (*Creator_t)();
 
-    ContentType_t::Descriptor_t *unknown = 0;
+/**
+ * @short Entry in table of content type descriptor creating
+ * functions.
+ */
+struct CreatorEntry_t {
+    /**
+     * @short name of content type
+     */
+    const char *name;
+
+    /**
+     * @short content type descriptor creating function
+     */
+    Creator_t creator;
+
+    /**
+     * @short comment for this content type
+     */
+    const char *comment;
+};
+
+// creator array
+static CreatorEntry_t creators[] = {
+    { "text/html", htmlCreator,
+      "Hypertext markup language. Same processor as for"
+      " 'text/xhtml' and 'text/xml'" },
+    { "text/xhtml", htmlCreator,
+      "X hypertext markup language. Same processor as for"
+      " 'text/xhtml' and 'text/xml'" },
+    { "text/xml", htmlCreator,
+      "Extensible markup language. Same processor as for"
+      " 'text/xhtml' and 'text/xml'" },
+    { "application/x-sh", shellCreator,
+      "Common for all types of shell." },
+    { "text/csrc", cCreator,
+      "C/C++ source code" },
+    { "quoted-string", qstringCreator,
+      "Generic quoted string with escapes." },
+    { "jshtml", jshtmlCreator,
+      "Quoted string embeddable into HTML pages." },
+    { "application/x-javascript", jsCreator,
+      "Javascript language." },
+    { 0, 0 }
+};
+
+map<string, ContentType_t::Descriptor_t*> descriptors;
+vector<ContentType_t::Descriptor_t*> descriptorIndex;
+
+ContentType_t::Descriptor_t *init_descriptors() {
+    string name("text/plain");
+    ContentType_t::Descriptor_t *unknown = new ContentType_t::Descriptor_t(
+            new ContentType_t(), 0,
+            name, "Default (text/plain) type.");
+
+    descriptors.insert(pair<string, ContentType_t::Descriptor_t*>
+                       (name, unknown));
+    descriptorIndex.push_back(unknown);
+
+    // all the descriptors are pre-created...
+    for (CreatorEntry_t *icreators = creators; icreators->name;
+         ++icreators) {
+        // create content type descriptor
+        ContentType_t::Descriptor_t *descriptor =
+            new ContentType_t::Descriptor_t(icreators->creator(),
+                                            descriptorIndex.size(),
+                                            icreators->name,
+                                            icreators->comment);
+        // remember descriptor in the descriptorIndex
+        descriptorIndex.push_back(descriptor);
+
+        // remember descriptor in the cache and return it to
+        // the caller
+        descriptors.insert
+            (pair<string, ContentType_t::Descriptor_t*>(name, descriptor))
+            .first->second;
+    }
+
+    return unknown;
+}
+
+ContentType_t::Descriptor_t *unknown = init_descriptors();
 }
 
 ContentType_t::ContentType_t()
@@ -127,7 +218,7 @@ string ContentType_t::unescape(const string &src) const {
 }
 
 int ContentType_t::nextState(unsigned char c, int state) const {
-    // stop when state outside automaton 
+    // stop when state outside automaton
     if ((static_cast<unsigned int>(state) >= unescaper.size()) ||
         (state < 0)) return 0;
 
@@ -158,7 +249,7 @@ struct UnescaperState_t {
     UnescaperState_t(int rule = 0)
         : rule(rule), nextState(0)
     {}
-    
+
     /**
      * @short Matched character.
      */
@@ -169,12 +260,12 @@ struct UnescaperState_t {
      *        character (negative) or stop state (zero).
      */
     int nextState;
-    
+
     /**
      * @short Next states.
      */
     UnescaperStateVector_t nextStates;
-   
+
     /**
      * @short Add new next state.
      * @param o rule for new state
@@ -254,33 +345,6 @@ void ContentType_t::compileUnescaper() {
     // linearize automaton into vector
     root.linearize(unescaper);
 }
-
-/**
- * @short Function which creates content type descriptor
- * @return content type descriptor
- */
-typedef ContentType_t* (*Creator_t)();
-
-/**
- * @short Entry in table of content type descriptor creating
- * functions.
- */
-struct CreatorEntry_t {
-    /**
-     * @short name of content type
-     */
-    const char *name;
-
-    /**
-     * @short content type descriptor creating function
-     */
-    Creator_t creator;
-
-    /**
-     * @short comment for this content type
-     */
-    const char *comment;
-};
 
 /** @short Create descriptor of HTML/XHTML/XML content type.
  * @return HTML descriptor
@@ -397,43 +461,7 @@ ContentType_t* jsCreator() {
     return js;
 }
 
-static CreatorEntry_t creators[] = {
-    { "text/html", htmlCreator,
-      "Hypertext markup language. Same processor as for"
-      " 'text/xhtml' and 'text/xml'" },
-    { "text/xhtml", htmlCreator,
-      "X hypertext markup language. Same processor as for"
-      " 'text/xhtml' and 'text/xml'" },
-    { "text/xml", htmlCreator,
-      "Extensible markup language. Same processor as for"
-      " 'text/xhtml' and 'text/xml'" },
-    { "application/x-sh", shellCreator,
-      "Common for all types of shell." },
-    { "text/csrc", cCreator,
-      "C/C++ source code" },
-    { "quoted-string", qstringCreator,
-      "Generic quoted string with escapes." },
-    { "jshtml", jshtmlCreator,
-      "Quoted string embeddable into HTML pages." },
-    { "application/x-javascript", jsCreator,
-      "Javascript language." },
-    { 0, 0 }
-};
-
 const ContentType_t::Descriptor_t* ContentType_t::getDefault() {
-    if (!descriptors) {
-        descriptors = new map<string, Descriptor_t*>();
-        descriptorIndex = new vector<ContentType_t::Descriptor_t*>();
-    }
-
-    if (!unknown) {
-        string name("text/plain");
-        unknown = new Descriptor_t(new ContentType_t(), 0,
-                                   name, "Default (text/plain) type.");
-        descriptors->insert(pair<string, Descriptor_t*>(name, unknown));
-        descriptorIndex->push_back(unknown);
-    }
-
     return unknown;
 }
 
@@ -460,31 +488,9 @@ ContentType_t::findContentType(const string &sname, Error_t &err,
 
     // try to find cached content type descriptor
     map<string, ContentType_t::Descriptor_t*>::const_iterator
-        fdescriptors = descriptors->find(name);
+        fdescriptors = descriptors.find(name);
     // if no content descriptor found
-    if (fdescriptors == descriptors->end()) {
-        // run through creator table and try to find appropriate
-        // creator
-        for (CreatorEntry_t *icreators = creators; icreators->name;
-             ++icreators) {
-            // if creator found
-            if (icreators->name == name) {
-                // create content type descriptor
-                Descriptor_t *descriptor =
-                    new Descriptor_t(icreators->creator(),
-                                     descriptorIndex->size(),
-                                     icreators->name, icreators->comment);
-                // remember descriptor in the descriptorIndex
-                descriptorIndex->push_back(descriptor);
-
-                // remmeber descriptor in the cache and return it to
-                // the caller
-                return descriptors->insert
-                    (pair<string, Descriptor_t*>(name, descriptor))
-                    .first->second;
-            }
-        }
-
+    if (fdescriptors == descriptors.end()) {
         // log error
         err.logError(Error_t::LL_ERROR, pos, "Content type '" + sname +
                      "' not found.");
@@ -502,8 +508,8 @@ const ContentType_t::Descriptor_t*
 ContentType_t::getContentType(unsigned int index)
 {
     // check bounds and return desctiptor (or 0 on error)
-    if (index >= descriptorIndex->size()) return 0;
-    return (*descriptorIndex)[index];
+    if (index >= descriptorIndex.size()) return 0;
+    return descriptorIndex[index];
 }
 
 void ContentType_t::listSupported(vector<pair<string, string> > &supported) {
@@ -540,3 +546,5 @@ void Escaper_t::pop(Error_t &err, const Error_t::Position_t &pos) {
                      "Cannot pop content type -- only one remains.");
     }
 }
+
+} // namespace Teng

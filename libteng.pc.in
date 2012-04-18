@@ -1,0 +1,14 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libteng
+Description: Teng -- general purpose templating system
+Version: @VERSION@
+Requires:
+URL: [not yet]
+Libs: -L${libdir} -lteng
+Libs.private:
+Cflags: -I${includedir}
+

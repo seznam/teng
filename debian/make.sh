@@ -251,10 +251,11 @@ elif [ "${MODE}" = "dev" ]; then
     cp -v ${INSTALL_DIR}/usr/include/*.h ${DEBIAN_BASE}/usr/include || exit 1
 
     # lib files
-    mkdir -p ${DEBIAN_BASE}/usr/lib
+    mkdir -p ${DEBIAN_BASE}/usr/lib/pkgconfig
     cp -v ${INSTALL_DIR}/usr/lib/*.a ${DEBIAN_BASE}/usr/lib || exit 1
     cp -v ${INSTALL_DIR}/usr/lib/*.la ${DEBIAN_BASE}/usr/lib || exit 1
     cp -v ${INSTALL_DIR}/usr/lib/*.so ${DEBIAN_BASE}/usr/lib || exit 1
+    cp -v ${INSTALL_DIR}/usr/lib/pkgconfig/libteng.pc ${DEBIAN_BASE}/usr/lib/pkgconfig || exit 1
     
     # Compose extra dependencies: we must depend on teng library with
     # exactly same version.

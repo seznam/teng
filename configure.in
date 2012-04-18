@@ -36,7 +36,7 @@
 
 
 # initialize autoconf
-AC_INIT(teng, 2.1.1, teng@firma.seznam.cz)
+AC_INIT(teng, 2.2.1, teng@firma.seznam.cz)
 # initialize automake(use AC_INIT's arguments)
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 
@@ -100,7 +100,6 @@ AC_CHECK_LIB(m, floor)
 AC_REPLACE_FUNCS([trunc round])
 
 # generate Makefile
-AC_OUTPUT(version Makefile src/Makefile src/tengconfig.h)
+AC_OUTPUT(version Makefile src/Makefile src/tengconfig.h libteng.pc)
 #          doc/Makefile doc/manual/Makefile doc/manual/en/Makefile)
-
 

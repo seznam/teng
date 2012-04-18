@@ -44,6 +44,8 @@
 %option 8bit
 %option nodefault
 %option full
+%option reentrant
+%option bison-bridge
 %option prefix="teng_"
 %option outfile="lex.yy.c"
 
@@ -57,6 +59,7 @@
 #include <string>
 #include <stdio.h>
 
+#include "tengyystype.h"
 #include "tengsyntax.h"
 #include "tengparsercontext.h"
 #include "tengerror.h"
@@ -76,33 +79,12 @@
     return token;
 #endif
 
-#define YY_DECL int Teng::tengLex2_getElement(ParserValue_t &value, \
-                                              Error_t::Position_t &bufferPos, \
-                                              Error_t &err)
-
-namespace Teng {
-    
-    /** @short 
-     *  @param 
-     *  @param 
-     *  @param 
-     *  @return 
-     */
-    int tengLex2_getElement(ParserValue_t &value,
-                            Error_t::Position_t &bufferPos,
-                            Error_t &err);
-
-    /** @short Destroy buffer at the top of lex stack.
-     *  @return 0 OK, !0 error
-     */
-    int tengLex2_finish();
-
-    /** @short Create new lex buffer for given string and push it onto the
-     *         lex stack.
-     * @return 0 OK, !0 error
-     */
-    int tengLex2_init(const string &src);
-}
+#define YY_DECL int Teng::Lex2_t::getElement(   \
+            YYSTYPE *yylval_param,              \
+            ParserValue_t &value,               \
+            Error_t::Position_t                 \
+            &bufferPos,                         \
+            Error_t &err)
 
 %}
 
@@ -581,7 +563,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
         tmpSval.append(yytext, yyleng);
     }
     "\\" {
-        // escape itself => 
+        // escape itself =>
         err.logError(Error_t::LL_ERROR, bufferPos, "Invalid escape at end of input");
         bufferPos.advanceColumn();
         // leave this context
@@ -765,33 +747,36 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
 
 %%
 
-/** @short Maximal depth of lex stack.
- */
-static const unsigned int MAX_LEX_STACK_DEPTH = 50;
+namespace Teng {
 
-/** @short Stack of lex buffers.
- */
-static YY_BUFFER_STATE bufferStack[MAX_LEX_STACK_DEPTH] = { 0, };
-
-/** @short Top element in the lex stack
- */
-static unsigned int stackTop = 0;
-
-int Teng::tengLex2_finish() {
-    // destroy top buffer
-    if (stackTop > 0)
-        yy_delete_buffer(bufferStack[--stackTop]);
-    // OK
-    return 0;
+Lex2_t::Lex2_t() : stackTop(0), yyscanner(0) {
+    yylex_init((yyscan_t*)&yyscanner);
 }
 
-int Teng::tengLex2_init(const string &src) {
+Lex2_t::~Lex2_t() {
+    yylex_destroy((yyscan_t)yyscanner);
+}
+
+int Lex2_t::init(const string &src) {
     // test for stack overflow
     if (stackTop >= MAX_LEX_STACK_DEPTH)
         return -1;
     // create new flex buffer and push onto the stack
-    bufferStack[stackTop++] = yy_scan_bytes(src.data(), src.length());
+    bufferStack[stackTop++] = yy_scan_bytes(src.data(),
+                                            src.length(),
+                                            (yyscan_t*)yyscanner);
 
     // OK
     return 0;
 }
+
+int  Lex2_t::finish() {
+    // destroy top buffer
+    if (stackTop > 0)
+        yy_delete_buffer((YY_BUFFER_STATE)bufferStack[--stackTop], yyscanner);
+    // OK
+    return 0;
+}
+
+} // namespace Teng
+

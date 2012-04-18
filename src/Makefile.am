@@ -41,6 +41,9 @@ AM_CXXFLAGS = -Wall
 # extra compiler options
 AM_CPPFLAGS = -D_ISOC99_SOURCE
 
+# these are generated and thus ought to be prepared before anything else
+BUILT_SOURCES = tenglex2.cc tengsyntax.cc
+
 # install these headers
 include_HEADERS = teng.h tengstructs.h tengwriter.h tengerror.h tengconfig.h
 

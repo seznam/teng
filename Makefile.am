@@ -53,3 +53,6 @@ SUBDIRS = src
 #EXTRA_DIST = debian/libteng.control debian/libteng.postinst \
 #             debian/libteng-dev.control \
 #             debian/make.sh
+
+pkgconfigdir=@libdir@/pkgconfig
+pkgconfig_DATA=libteng.pc
