@@ -108,13 +108,13 @@ map<string, ContentType_t::Descriptor_t*> descriptors;
 vector<ContentType_t::Descriptor_t*> descriptorIndex;
 
 ContentType_t::Descriptor_t *init_descriptors() {
-    string name("text/plain");
+    string pname("text/plain");
     ContentType_t::Descriptor_t *unknown = new ContentType_t::Descriptor_t(
             new ContentType_t(), 0,
-            name, "Default (text/plain) type.");
+            pname, "Default (text/plain) type.");
 
     descriptors.insert(pair<string, ContentType_t::Descriptor_t*>
-                       (name, unknown));
+                       (pname, unknown));
     descriptorIndex.push_back(unknown);
 
     // all the descriptors are pre-created...
@@ -132,8 +132,8 @@ ContentType_t::Descriptor_t *init_descriptors() {
         // remember descriptor in the cache and return it to
         // the caller
         descriptors.insert
-            (pair<string, ContentType_t::Descriptor_t*>(name, descriptor))
-            .first->second;
+            (pair<string, ContentType_t::Descriptor_t*>(
+        	icreators->name, descriptor));
     }
 
     return unknown;
