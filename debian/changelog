@@ -1,0 +1,5 @@
+libteng (2.2.3) Seznam; urgency=low
+
+  * Debhelper
+
+ -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Thu, 31 May 2012 15:05:31 +0200

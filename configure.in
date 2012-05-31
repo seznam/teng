@@ -36,7 +36,7 @@
 
 
 # initialize autoconf
-AC_INIT(teng, 2.2.2, teng@firma.seznam.cz)
+AC_INIT(teng, m4_esyscmd([head -n1 debian/changelog | tr -d '()' | cut -d' ' -f2 | tr -d '\n']), teng@firma.seznam.cz)
 # initialize automake(use AC_INIT's arguments)
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 

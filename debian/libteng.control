@@ -1,8 +1,0 @@
-Package: @PACKAGE@
-Version: @VERSION@
-Architecture: @ARCHITECTURE@
-Depends: @SH_DEPEND@
-Maintainer: @MAINTAINER@
-Installed-Size: @SIZE@
-Description: Teng -- general purpose templating system
- Teng is a powerful and easy to use templating system.

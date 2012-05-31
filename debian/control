@@ -1,0 +1,21 @@
+Source: libteng
+Section: Seznam
+Priority: optional
+Maintainer: Lukas Lobotka <lukas.lobotka@firma.seznam.cz>
+Build-Depends: debhelper, autoconf, libtool, automake, bison, flex
+Standards-Version: 3.7.2.2
+
+Package: libteng
+Architecture: any
+Section: Seznam
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Teng -- general purpose templating system
+ Teng is a powerful and easy to use templating system.
+
+Package: libteng-dev
+Architecture: any
+Section: Seznam
+Depends: libteng (= ${binary:Version})
+Description: Development files for teng library
+ Here are files necessary for developing new applications
+ that use teng library and its C/C++ interface.
