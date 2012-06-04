@@ -108,6 +108,10 @@ public:
         return format;
     }
 
+    inline bool isAlwaysEscapeEnabled() const {
+        return alwaysEscape;
+    }
+
     int isEnabled(const string &feature, bool &enabled) const;
 
     friend std::ostream& operator<<(std::ostream &o, const Configuration_t &c);
@@ -118,6 +122,7 @@ private:
     bool logToOutput;     //!< Log error goes to ouput. (false)
     bool bytecode;        //!< <?teng bytecode?> works. (false)
     bool watchFiles;      //!< Cached templates are checked for change. (true)
+    bool alwaysEscape;    //!< Escapne always (true)
 
     unsigned int maxIncludeDepth; //!< Maximal template include depth.
 

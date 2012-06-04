@@ -1,5 +1,6 @@
 libteng (2.2.3) Seznam; urgency=low
 
   * Debhelper
+  * Added 'alwaysescape' directive
 
- -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Thu, 31 May 2012 15:05:31 +0200
+ -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Mon, 04 Jun 2012 14:57:06 +0200

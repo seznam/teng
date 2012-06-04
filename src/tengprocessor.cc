@@ -689,9 +689,20 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                        Error_t::LL_WARNING);
                 a = ParserValue_t();
             } else {
-                // check whether we have to escape variable
-                if (instr.value.integerValue)
-                    a.setString(fParam.escaper.escape(a.stringValue));
+                if ( configuration.isAlwaysEscapeEnabled() ) {
+                    // check whether we have to escape variable
+                    // FIXME: This is bug, type should be used
+                    if (instr.value.integerValue)
+                        a.setString(fParam.escaper.escape(a.stringValue));
+                } else {
+                    // Peek next inst and escape only if PRINT follows
+                    if ( (ip < (int)program.size()) &&
+                        program[ip].operation == Instruction_t::PRINT &&
+                        instr.value.type == ParserValue_t::TYPE_STRING
+                        ) {
+                        a.setString(fParam.escaper.escape(a.stringValue));
+                    }
+                }
             }
             valueStack.push(a);
             break;
