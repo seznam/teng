@@ -1,3 +1,9 @@
+libteng (2.2.4) Seznam; urgency=low
+
+  * Fixed packaging
+
+ -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Tue, 05 Jun 2012 10:58:38 +0200
+
 libteng (2.2.3) Seznam; urgency=low
 
   * Debhelper
