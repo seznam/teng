@@ -1,4 +1,5 @@
 usr/include/*.h
 usr/lib/pkgconfig/libteng.pc
 usr/lib/libteng.a
+usr/lib/libteng.la
 usr/lib/libteng.so
