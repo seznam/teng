@@ -215,10 +215,27 @@ Fragment_t& FragmentList_t::addFragment() {
     return *back();
 }
 
+void FragmentValue_t::json(std::ostream &o) const {
+    // print value or dump fragment list
+    if (nestedFragments) nestedFragments->json(o);
+    else o << '"' << value << '"';
+}
+
+
 void FragmentValue_t::dump(std::ostream &o) const {
     // print value or dump fragment list
     if (nestedFragments) nestedFragments->dump(o);
     else o << '\'' << value << '\'';
+}
+
+void FragmentList_t::json(std::ostream &o) const {
+    o << '[';
+    // dump all fragments
+    for (const_iterator i = begin(); i != end(); ++i) {
+        if (i != begin()) o << ", ";
+        (*i)->json(o);
+    }
+    o << ']';
 }
 
 void FragmentList_t::dump(std::ostream &o) const {
@@ -229,6 +246,18 @@ void FragmentList_t::dump(std::ostream &o) const {
         (*i)->dump(o);
     }
     o << ']';
+}
+
+
+void Fragment_t::json(std::ostream &o) const {
+    o << '{';
+    // dump all values or fragment list
+    for (const_iterator i = begin(); i != end(); ++i) {
+        if (i != begin()) o << ", ";
+        o << "\"" << i->first << "\" : ";
+        i->second->json(o);
+    }
+    o << '}';
 }
 
 void Fragment_t::dump(std::ostream &o) const {

@@ -351,6 +351,49 @@ Lex1_t::Token_t Lex1_t::getElement()
             
         }
         else if (position + 1 < input.length()
+                && input[position] == '<'
+                && input[position + 1] == '?') {
+            // "<?teng" directive
+            // test for end of text token
+            if (position > start_pos)
+                return Token_t(TYPE_TEXT,
+                        unescapeInputSubstr(start_pos, position),
+                        start_line, start_column);
+            // skip "<?teng"
+            incrementPosition(2);
+
+            // skip input until "?>"
+            int escape = 0, inString = 0;
+            while (position < input.length()) {
+                if (inString) {
+                    if (input[position] == '"')
+                       if (!escape) inString = 0;
+                    if (input[position] == '\\') escape = !escape;
+                    else escape = 0;
+                }
+                else {
+                    if (position + 1 < input.length()
+                        && input[position] == '?'
+                        && input[position + 1] == '>') break;
+                    if (input[position] == '"') inString = 1;
+                }
+                incrementPosition(1); //next char
+            }
+            // if directive end not found
+            if (position >= input.length()) {
+                return Token_t(TYPE_ERROR,
+                        "Unterminated <? ...?> directive",
+                        start_line, start_column);
+            }
+            // skip "?>"
+            incrementPosition(2);
+            // return teng token
+            return Token_t(TYPE_TENG,
+                    input.substr(start_pos, position - start_pos),
+                    start_line, start_column);
+
+        }
+        else if (position + 1 < input.length()
                 && input[position] == '$'
                 && input[position + 1] == '{') {
             // shorted expression form

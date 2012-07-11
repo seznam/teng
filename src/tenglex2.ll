@@ -72,7 +72,7 @@
 #define RETURN(token) \
     cout << #token << " '" << yytext << "', sval == '" << value.stringValue \
          << " nval == '" << value.integerValue << "' rval == '" \
-         << value.realValue << "'" << std::endl; \\
+         << value.realValue << "'" << std::endl; \
     return token;
 #else
 #define RETURN(token) \
@@ -209,6 +209,109 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     RETURN(LEX_TENG);
 }
 
+"<?"[[:space:]\0]*"debug" {
+    // match '<?teng debug'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_DEBUG);
+}
+
+"<?"[[:space:]\0]*"bytecode" {
+    // match '<?teng debug'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_BYTECODE);
+}
+
+"<?"[[:space:]\0]*"include" {
+    // match '<?teng include'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_INCLUDE);
+}
+
+"<?"[[:space:]\0]*"format" {
+    // match '<?teng format'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_FORMAT);
+}
+
+"<?"[[:space:]\0]*"endformat" {
+    // match '<?teng endformat'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_ENDFORMAT);
+}
+
+"<?"[[:space:]\0]*"frag" {
+    // match '<?teng frag'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_FRAGMENT);
+}
+
+"<?"[[:space:]\0]*"endfrag" {
+    // match '<?teng endfrag'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_ENDFRAGMENT);
+}
+
+"<?"[[:space:]\0]*"if" {
+    // match '<?teng if'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_IF);
+}
+
+"<?"[[:space:]\0]*"endif" {
+    // match '<?teng endif'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_ENDIF);
+}
+
+"<?"[[:space:]\0]*"elseif" {
+    // match '<?teng elseif'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_ELSEIF);
+}
+
+"<?"[[:space:]\0]*"else" {
+    // match '<?teng else'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_ELSE);
+}
+
+"<?"[[:space:]\0]*"set" {
+    // match '<?teng set'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_SET);
+}
+
+"<?"[[:space:]\0]*"expr" {
+    // match '<?teng expr'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_EXPR);
+}
+
+"<?"[[:space:]\0]*"ctype" {
+    // match '<?teng ctype'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_CTYPE);
+}
+
+"<?"[[:space:]\0]*"endctype" {
+    // match '<?teng endctype'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_ENDCTYPE);
+}
+
+"<?"[[:space:]\0]*"repeatfrag" {
+    // match '<?teng repeat'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_REPEATFRAG);
+}
+
+"<?"[[:space:]\0]*[[:alnum:]]* {
+    // match '<?teng???'
+    value.stringValue = string(yytext + 6, yyleng - 6);
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_TENG);
+}
+
 "?>" {
     // match '?>'
     bufferPos.advanceColumn(yyleng);
@@ -227,6 +330,12 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     RETURN(LEX_SHORT_DICT);
 }
 
+"@(" {
+    // match '@(' -- fragment selector
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_FRAG_SEL);
+}
+
 "}" {
     // match '}'
     bufferPos.advanceColumn(yyleng);
@@ -243,6 +352,18 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     // match right parenthesis
     bufferPos.advanceColumn(yyleng);
     RETURN(LEX_R_PAREN);
+}
+
+"[" {
+    // match left bracket
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_L_BRACKET);
+}
+
+"]" {
+    // match right bracket
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_R_BRACKET);
 }
 
 "." {
@@ -473,10 +594,42 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     RETURN(LEX_DEFINED);
 }
 
+"exists" {
+    // match exist operator
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_EXIST);
+}
+
 "exist" {
     // match exist operator
     bufferPos.advanceColumn(yyleng);
     RETURN(LEX_EXIST);
+}
+
+"@jsonify" {
+    // match @jsonify operator
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_JSONIFY);
+}
+
+"@type" {
+    // match @type operator
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_TYPE);
+}
+
+"@count" {
+    // match @count operator
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_COUNT);
+}
+
+"udf."{IDENT}(\.{IDENT})* {
+    // match exist operator
+    bufferPos.advanceColumn(yyleng);
+    value.stringValue = string(yytext, yyleng);
+    value.type = ParserValue_t::TYPE_STRING;
+    RETURN(LEX_UDF_IDENT);
 }
 
 [\"\'] {

@@ -45,7 +45,7 @@ AM_CPPFLAGS = -D_ISOC99_SOURCE
 BUILT_SOURCES = tenglex2.cc tengsyntax.cc
 
 # install these headers
-include_HEADERS = teng.h tengstructs.h tengwriter.h tengerror.h tengconfig.h
+include_HEADERS = teng.h tengstructs.h tengwriter.h tengerror.h tengconfig.h tengudf.h
 
 noinst_HEADERS = tengcache.h tengcode.h tengcontenttype.h \
                  tengdictionary.h tengformatter.h tengfragmentstack.h \
@@ -65,7 +65,7 @@ libteng_la_SOURCES = teng.cc tengstructs.cc tengutil.cc tengcache.cc \
                      tengfunction.cc tengprocessor.cc tengwriter.cc \
                      tengformatter.cc tengcontenttype.cc \
                      tengtemplate.cc tenglex1.cc tengsyntax.yy \
-                     tenglex2.ll tengcode.cc \
+                     tenglex2.ll tengcode.cc tengudf.cc \
                      tengmd5.cc tengconfiguration.cc
 
 # with these flags (version info etc.)

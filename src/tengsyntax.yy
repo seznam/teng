@@ -387,18 +387,25 @@ static inline void codeForVariable(void *context,
 %token LEX_CASE
 %token LEX_DEFINED
 %token LEX_EXIST
+%token LEX_JSONIFY
+%token LEX_TYPE
+%token LEX_COUNT
 
 // parentheses
 %token LEX_L_PAREN LEX_R_PAREN
+%token LEX_L_BRACKET LEX_R_BRACKET
 
 // identifiers and literals
 %right LEX_VAR LEX_DICT LEX_DICT_INDIRECT
 %token LEX_SELECTOR
+%token LEX_UDF_IDENT
 %token LEX_IDENT
 %token LEX_STRING
 %token LEX_INT
 %token LEX_REAL
 
+// selector
+%token LEX_FRAG_SEL
 
 // start symbol
 %start start
@@ -1451,6 +1458,100 @@ expression:
             $$.val.setString("undefined");
             CODE_VAL(VAL, $$.val); //fake value
         }
+    | frag_expression
+        {
+            $$.prgsize = $1.prgsize; //start of expr prog
+        }
+    ;
+
+
+
+frag_expression
+    : frag_sel frag_expr_chain LEX_R_PAREN {
+            ParserValue_t v;
+            v.setString(""); // to native value
+            CODE_VAL(REPR, v);
+            $$.prgsize = $1.prgsize; //start of expr prog
+    }
+    | jsonify LEX_L_PAREN frag_expr_chain LEX_R_PAREN {
+            ParserValue_t v;
+            v.setString("json"); // to json
+            CODE_VAL(REPR, v);
+            $$.prgsize = $1.prgsize; //start of expr prog
+    }
+    | type_op LEX_L_PAREN frag_expr_chain LEX_R_PAREN {
+            ParserValue_t v;
+            v.setString("type"); // return type
+            CODE_VAL(REPR, v);
+            $$.prgsize = $1.prgsize; //start of expr prog
+    }
+    | count_op LEX_L_PAREN frag_expr_chain LEX_R_PAREN {
+            ParserValue_t v;
+            v.setString("count"); // return count
+            CODE_VAL(REPR, v);
+            $$.prgsize = $1.prgsize; //start of expr prog
+    }
+    ;
+
+jsonify
+    : LEX_JSONIFY {
+        ParserValue_t v;
+        v.setString("@(root)"); // magic value
+        CODE_VAL(GETATTR, v);
+    }
+    ;
+
+frag_sel
+    : LEX_FRAG_SEL {
+        ParserValue_t v;
+        v.setString("@(root)"); // magic value
+        CODE_VAL(GETATTR, v);
+        $$.prgsize = $1.prgsize; //start of expr prog
+    }
+    ;
+
+type_op
+    : LEX_TYPE {
+        ParserValue_t v;
+        v.setString("@(root)"); // magic value
+        CODE_VAL(GETATTR, v);
+        $$.prgsize = $1.prgsize; //start of expr prog
+    }
+    ;
+
+count_op
+    : LEX_COUNT {
+        ParserValue_t v;
+        v.setString("@(root)"); // magic value
+        CODE_VAL(GETATTR, v);
+        $$.prgsize = $1.prgsize; //start of expr prog
+    }
+    ;
+
+frag_expr_chain
+    : frag_expr {
+        $$.prgsize = $1.prgsize; //start of expr prog
+    }
+    | frag_expr_chain LEX_SELECTOR frag_expr {
+        $$.prgsize = $1.prgsize; //start of expr prog
+    }
+    ;
+
+frag_expr
+    : frag_id {
+        $$.prgsize = $1.prgsize; //start of expr prog
+    }
+    | frag_id LEX_L_BRACKET expression LEX_R_BRACKET {
+        CODE(AT);
+        $$.prgsize = $1.prgsize; //start of expr prog
+    }
+    ;
+
+frag_id
+    : LEX_IDENT {
+        CODE_VAL(GETATTR, $1.val);
+        $$.prgsize = $1.prgsize; //start of expr prog
+    }
     ;
 
 
@@ -1972,9 +2073,17 @@ exist:
         }
     ;
 
+function_id
+    : LEX_IDENT {
+        $$ = $1;
+    }
+    | LEX_UDF_IDENT {
+        $$ = $1;
+    }
+    ;
 
 function:
-    LEX_IDENT LEX_L_PAREN function_arguments LEX_R_PAREN
+    function_id LEX_L_PAREN function_arguments LEX_R_PAREN
         {
             // call special code generation for functions
             tengCode_generateFunctionCall(CONTEXT,
@@ -1985,7 +2094,7 @@ function:
         }
 
     // function error handling
-    | LEX_IDENT LEX_L_PAREN error
+    | function_id LEX_L_PAREN error
         {
             if (tengSyntax_lastErrorMessage.length() > 0) {
                 printUnexpectedElement(CONTEXT, yychar, yylval);
@@ -2289,6 +2398,8 @@ static void printUnexpectedElement(ParserContext_t *context,
         case LEX_UNARY: //LEX_UNARY is fake terminal
             msg = "fake lexical element used just for modifying "
                     "precedence of the unary operators. Huh?!?"; break;
+        case LEX_FRAG_SEL:
+            msg = "operator '@('"; break;
 
         // other keywords/operators
         case LEX_CASE:
@@ -2297,6 +2408,12 @@ static void printUnexpectedElement(ParserContext_t *context,
             msg = "operator 'defined'"; break;
         case LEX_EXIST:
             msg = "operator 'exist'"; break;
+        case LEX_JSONIFY:
+            msg = "operator '@jsonify'"; break;
+        case LEX_TYPE:
+            msg = "operator '@type'"; break;
+        case LEX_COUNT:
+            msg = "operator '@count'"; break;
 
         // parentheses
         case LEX_L_PAREN:
@@ -2314,6 +2431,8 @@ static void printUnexpectedElement(ParserContext_t *context,
 
         case LEX_SELECTOR:
             msg = "character '.'"; break;
+        case LEX_UDF_IDENT:
+            msg = "udf identifier '" + leftValue.val.stringValue + "'"; break;
         case LEX_IDENT:
             msg = "identifier '" + leftValue.val.stringValue + "'"; break;
         case LEX_STRING:

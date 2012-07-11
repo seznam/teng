@@ -59,11 +59,10 @@ typedef int (*Function_t)(const vector<ParserValue_t> &,
                           const Processor_t::FunctionParam_t&,
                           ParserValue_t &);
 
-
 /**
  * @short finds function in global list, returns pointer or 0
  * @param name name of the function
- * @param normalRun true for normal run, false for preevaluation constat expr
+ * @param normalRun true for normal run, false for preevaluation constant expr
  */
 Function_t tengFindFunction(const string &name, bool normalRun = true);
 

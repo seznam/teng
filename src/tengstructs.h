@@ -104,6 +104,12 @@ public:
      */
     void dump(std::ostream &o) const;
 
+    /**
+     * @short Dump fragment to stream in json format
+     * @param o output stream
+     */
+    void json(std::ostream &o) const;
+
     using std::map<std::string, FragmentValue_t*>::begin;
 
     using std::map<std::string, FragmentValue_t*>::end;
@@ -151,6 +157,12 @@ public:
      * @param o output stream
      */
     void dump(std::ostream &o) const;
+
+    /**
+     * @short Dump fragment to stream in json format
+     * @param o output stream
+     */
+    void json(std::ostream &o) const;
 
     using std::vector<Fragment_t*>::begin;
 
@@ -230,6 +242,12 @@ public:
      * @param o output stream
      */
     void dump(std::ostream &o) const;
+    
+    /**
+     * @short Dump fragment to stream in json format
+     * @param o output stream
+     */
+    void json(std::ostream &o) const;
 
     /**
      * @short String (scalar) value.

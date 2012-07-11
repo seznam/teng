@@ -58,6 +58,7 @@
 #include "tengprocessor.h"
 #include "tengfragmentstack.h"
 #include "tengutil.h"
+#include "tengudf.h"
 
 #ifdef HAVE_FENV_H
 #include <fenv.h>
@@ -80,6 +81,72 @@ namespace {
             return tolower(c);
         }
     };
+}
+
+// wraps teng fragments, lists and values
+class FragVal_t {
+    public:
+        enum FragValueType {
+            FRAGMENT_NULL,
+            FRAGMENT,
+            FRAGMENT_LIST,
+            FRAGMENT_VALUE,
+        };
+
+        FragValueType type;
+        union {
+            const Fragment_t *frag;
+            const FragmentList_t *list;
+            const FragmentValue_t *value;
+        };
+
+        FragVal_t()
+        : type(FRAGMENT_NULL) {}
+
+        FragVal_t(const Fragment_t *frag)
+        : type(FRAGMENT), frag(frag) {}
+
+        FragVal_t(const FragmentList_t *list)
+        : type(FRAGMENT_LIST), list(list) {}
+
+        FragVal_t(const FragmentValue_t *value)
+        : type(FRAGMENT_VALUE), value(value) {}
+};
+
+// performs UDF calls
+int callUdf(const vector<ParserValue_t> &args, ParserValue_t &result, UDF_t *udf, string &err) {
+    vector<UDFValue_t> udfArgs;
+    UDFValue_t udfRes((IntType_t)0);
+    udfArgs.reserve(args.size());
+    for (vector<ParserValue_t>::const_reverse_iterator it = args.rbegin();
+            it != args.rend(); it++ ) {
+        switch (it->type) {
+            case ParserValue_t::TYPE_INT:
+                udfArgs.push_back(UDFValue_t(it->integerValue));
+                break;
+            case ParserValue_t::TYPE_REAL:
+                udfArgs.push_back(UDFValue_t(it->realValue));
+                break;
+            case ParserValue_t::TYPE_STRING:
+                udfArgs.push_back(UDFValue_t(it->stringValue));
+                break;
+        }
+    }
+    int res = udf->call(udfArgs, udfRes, err);
+    if ( res == 0 ) {
+        switch (udfRes.getType()) {
+            case UDFValue_t::Integer:
+                result.setInteger(udfRes.getInt());
+                break;
+            case UDFValue_t::Real:
+                result.setReal(udfRes.getReal());
+                break;
+            case UDFValue_t::String:
+                result.setString(udfRes.getString());
+                break;
+        }
+    }
+    return res;
 }
 
 Processor_t::
@@ -604,9 +671,12 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                       Error_t &inError)
 {
     ParserValue_t a;
-
+    FragVal_t cVal;
     vector<ParserValue_t> programStack;
+    stack<FragVal_t> fragmentValueStack;
+
     programStack.reserve(80);
+
     while (!valueStack.empty()) valueStack.pop();
 
     int ip = 0; // Never will be changed to unsigned !!
@@ -812,21 +882,35 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                 }
 
                 Function_t p = tengFindFunction(instr.value.stringValue);
-                if (p) {
+                UDF_t *udf = p == 0 ? tengFindUDF(instr.value.stringValue) : 0;
+
+                if (p || udf) {
+                    string errmsg;
                     fParam.logger.setInstruction(&instr);
-                    switch (p(v, fParam, a)) {
+                    int res = p == 0 ? callUdf(v, a, udf, errmsg) : p(v, fParam, a);
+                    switch (res) {
                     case 0:
                         break; // OK
                     case -1:
-                        logErr(instr, "Bad argument count for function '"
-                               + instr.value.stringValue + "()'",
-                               Error_t::LL_ERROR);
+                        if ( p != 0 ) {
+                            logErr(instr, "Bad argument count for function '"
+                                + instr.value.stringValue + "()'",
+                                Error_t::LL_ERROR);
+                        } else {
+                            logErr(instr, errmsg,
+                                Error_t::LL_ERROR);
+                        }
                         break;
                     default:
-                        logErr(instr, "Function '"
-                               + instr.value.stringValue
-                               + "()' call failed",
-                               Error_t::LL_ERROR);
+                        if ( p != 0 ) {
+                            logErr(instr, "Function '"
+                                + instr.value.stringValue
+                                + "()' call failed",
+                                Error_t::LL_ERROR);
+                        } else {
+                            logErr(instr, errmsg,
+                                Error_t::LL_ERROR);
+                        }
                     }
                     valueStack.push(a);
                 } else {
@@ -1088,6 +1172,233 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
             fParam.escaper.pop(*error, position(instr, program));
             break;
 
+        case Instruction_t::AT:
+            if (valueStack.empty()) {
+                logErr(instr, "Value stack underflow",
+                       Error_t::LL_FATAL);
+                goto flushReturn;
+            } else if (fragmentValueStack.empty()) {
+                logErr(instr, "Fragment value stack underflow",
+                        Error_t::LL_FATAL);
+                goto flushReturn;
+            }
+            a = valueStack.top();
+            cVal = fragmentValueStack.top();
+            fragmentValueStack.pop();
+            if ( a.type == ParserValue_t::TYPE_STRING ) {
+                const std::string &member = a.stringValue;
+                if ( cVal.type == FragVal_t::FRAGMENT ) {
+                    Fragment_t::const_iterator it = cVal.frag->find(member);
+                    if ( it == cVal.frag->end() ) {
+                        logErr(instr, "Unable to locate member '" + member + "'",
+                            Error_t::LL_WARNING);
+                        cVal = FragVal_t();
+                    } else {
+                        cVal = FragVal_t(it->second);
+                    }
+                } else if ( cVal.type == FragVal_t::FRAGMENT_VALUE && cVal.value->nestedFragments != 0 ) {
+                    const FragmentList_t *nested = cVal.value->nestedFragments;
+                    if ( nested->size() == 1 ) {
+                        Fragment_t *frag = (*nested)[0];
+                        Fragment_t::const_iterator it = frag->find(member);
+                        if ( it == frag->end() ) {
+                            logErr(instr, "Unable to locate member '" + member + "'",
+                                Error_t::LL_WARNING);
+                            cVal = FragVal_t();
+                        } else {
+                            cVal = FragVal_t(it->second);
+                        }
+                    } else {
+                        logErr(instr, "String indices can be used only for fragments",
+                            Error_t::LL_WARNING);
+                    }
+                } else {
+                    logErr(instr, "String indices can be used only for fragments",
+                        Error_t::LL_WARNING);
+                }
+            } else if ( a.type == ParserValue_t::TYPE_INT ) {
+                if ( cVal.type == FragVal_t::FRAGMENT_LIST ) {
+                    if ( a.integerValue < 0 || static_cast<size_t>(a.integerValue) >= cVal.list->size() ) {
+                        logErr(instr, "Index " + FragmentValue_t(a.integerValue).value +
+                               " is out of range", Error_t::LL_WARNING);
+                        cVal = FragVal_t();
+                    } else {
+                        cVal = FragVal_t((*cVal.list)[a.integerValue]);
+                    }
+                } else if ( cVal.type == FragVal_t::FRAGMENT_VALUE && cVal.value->nestedFragments != 0 ) {
+                    const FragmentList_t *nested = cVal.value->nestedFragments;
+                    if ( a.integerValue < 0 || static_cast<size_t>(a.integerValue) >= nested->size() ) {
+                        logErr(instr, "Index " + FragmentValue_t(a.integerValue).value +
+                               " is out of range", Error_t::LL_WARNING);
+                        cVal = FragVal_t();
+                    } else {
+                        cVal = FragVal_t((*nested)[a.integerValue]);
+                    }
+                } else {
+                    logErr(instr, "Only fragment lists can be indexed",
+                        Error_t::LL_WARNING);
+                    cVal = FragVal_t();
+                }
+            } else {
+                logErr(instr, "Invalid combination of index and entity type",
+                    Error_t::LL_WARNING);
+                cVal = FragVal_t();
+            }
+            valueStack.pop();
+            fragmentValueStack.push(cVal);
+            break;
+
+        case Instruction_t::GETATTR:
+            if ( instr.value.stringValue == "@(root)" ) {
+                fragmentValueStack.push(FragVal_t(&data));
+            } else {
+                if (fragmentValueStack.empty()) {
+                    logErr(instr, "Fragment value stack underflow",
+                            Error_t::LL_FATAL);
+                    goto flushReturn;
+                }
+
+                const std::string &member = instr.value.stringValue;
+                cVal = fragmentValueStack.top();
+                fragmentValueStack.pop();
+
+                if ( cVal.type == FragVal_t::FRAGMENT ) {
+                    Fragment_t::const_iterator it = cVal.frag->find(member);
+                    if ( it == cVal.frag->end() ) {
+                        logErr(instr, "Unable to locate member '" + member + "'",
+                            Error_t::LL_WARNING);
+                        cVal = FragVal_t();
+                    } else {
+                        cVal = FragVal_t(it->second);
+                    }
+                } else if ( cVal.type == FragVal_t::FRAGMENT_VALUE ) {
+                    if ( cVal.value->nestedFragments == 0 ) {
+                        logErr(instr, "Unable to locate member '" + member + "'"
+                            " in value",
+                            Error_t::LL_WARNING);
+                        cVal = FragVal_t();
+                    } else {
+                        if ( cVal.value->nestedFragments->size() == 1 ) {
+                            const Fragment_t *frag = (*cVal.value->nestedFragments)[0];
+                            Fragment_t::const_iterator it = frag->find(member);
+                            if ( it == frag->end() ) {
+                                logErr(instr, "Unable to locate member '" + member + "'",
+                                    Error_t::LL_WARNING);
+                                cVal = FragVal_t();
+                            } else {
+                                cVal = FragVal_t(it->second);
+                            }
+                        } else {
+                            cVal = FragVal_t(cVal.value->nestedFragments);
+                        }
+                    }
+                } else if ( cVal.type != FragVal_t::FRAGMENT_NULL ) {
+                    logErr(instr, "Unable to locate member '" + member + "'"
+                        " in fragment list",
+                        Error_t::LL_WARNING);
+                    cVal = FragVal_t();
+                }
+                fragmentValueStack.push(cVal);
+            }
+            break;
+
+        case Instruction_t::REPR:
+            if (fragmentValueStack.empty()) {
+                logErr(instr, "Fragment value stack underflow",
+                        Error_t::LL_FATAL);
+                goto flushReturn;
+            }
+
+            cVal = fragmentValueStack.top();
+            fragmentValueStack.pop();
+
+            if ( instr.value.stringValue == "json" ) {
+                stringstream os;
+                switch ( cVal.type ) {
+                    case FragVal_t::FRAGMENT:
+                        cVal.frag->json(os);
+                        break;
+                    case FragVal_t::FRAGMENT_LIST:
+                        cVal.list->json(os);
+                        break;
+                    case FragVal_t::FRAGMENT_VALUE:
+                        cVal.value->json(os);
+                        break;
+                    default:
+                        break;
+                }
+                a.setString(os.str());
+            } else if ( instr.value.stringValue == "type" ) {
+                switch ( cVal.type ) {
+                    case FragVal_t::FRAGMENT:
+                        a.setString("frag");
+                        break;
+
+                    case FragVal_t::FRAGMENT_LIST:
+                        a.setString("list");
+                        break;
+
+                    case FragVal_t::FRAGMENT_VALUE:
+                        if ( cVal.value->nestedFragments != 0 )
+                            a.setString("valuelist");
+                        else
+                            a.setString("value");
+                        break;
+
+                    default:
+                        a.setString("null");
+                        break;
+                }
+            } else if ( instr.value.stringValue == "count" ) {
+                switch ( cVal.type ) {
+                    case FragVal_t::FRAGMENT:
+                        a.setInteger(1);
+                        break;
+
+                    case FragVal_t::FRAGMENT_LIST:
+                        a.setInteger(cVal.list->size());
+                        break;
+
+                    case FragVal_t::FRAGMENT_VALUE:
+                        if ( cVal.value->nestedFragments != 0 )
+                            a.setInteger(cVal.value->nestedFragments->size());
+                        else
+                            a.setInteger(1);
+                        break;
+
+                    default:
+                        a.setString("null");
+                        break;
+                }
+            } else {
+                switch ( cVal.type ) {
+                    case FragVal_t::FRAGMENT_NULL:
+                        a.setString("$null$");
+                        break;
+
+                    case FragVal_t::FRAGMENT:
+                        a.setString("$frag$");
+                        break;
+
+                    case FragVal_t::FRAGMENT_LIST:
+                        a.setString("$fraglist$");
+                        break;
+
+                    case FragVal_t::FRAGMENT_VALUE:
+                        if ( cVal.value->nestedFragments != 0 )
+                            a.setString("$fraglist$");
+                        else
+                            a.setString(cVal.value->value);
+                        break;
+
+                    default:
+                        a.setString("$fraglist$");
+                        break;
+                }
+            }
+            valueStack.push(a);
+            break;
+
         default:
             logErr(instr, "Unknown instruction",
                    Error_t::LL_FATAL);
@@ -1101,6 +1412,10 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
     }
     if (!valueStack.empty()) {
         logErrNoInstr("Value stack is not empty",
+                      Error_t::LL_WARNING);
+    }
+    if (!fragmentValueStack.empty()) {
+        logErrNoInstr("Fragment value stack is not empty",
                       Error_t::LL_WARNING);
     }
     output.flush();
@@ -1215,9 +1530,14 @@ int Processor_t::eval(ParserValue_t &result, int startAddress,
                     valueStack.pop();
                 }
                 Function_t p = tengFindFunction(instr.value.stringValue, false);
-                if (p) {
+                ///TODO: UDF const optimizations
+                //UDF_t *udf = p == 0 ? tengFindUDF(instr.value.stringValue) : 0;
+                if ( p /*|| udf*/ ) {
+                    string errmsg;
                     fParam.logger.setInstruction(&instr);
-                    switch (p(v, fParam, a)) {
+                    //int res = p == 0 ? callUdf(v, a, udf, errmsg) : p(v, fParam, a);
+                    int res = p(v, fParam, a);
+                    switch (res) {
                     case 0:
                         break; // OK
                     case -1:

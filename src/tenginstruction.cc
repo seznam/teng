@@ -244,7 +244,19 @@ void Instruction_t::dump(FILE *fp) const
             fprintf(fp, "EXIST\t%s\n",
                     value.stringValue.c_str()); //rendered 'identifier' vector
             break;
-            
+
+        case GETATTR:
+            fprintf(fp, "GETATTR\t%s\n", value.stringValue.c_str());
+            break;
+
+        case AT:
+            fprintf(fp, "AT\n");
+            break;
+
+        case REPR:
+            fprintf(fp, "REPR\t%s\n",  value.stringValue.c_str());
+            break;
+
         default:
             fprintf(fp, "??? (%d)\n", operation);
     }
@@ -459,6 +471,18 @@ void Instruction_t::dump(ostream &os, int ip) const {
     case REPEATFRAG:
         os << "REPEATFRAG      <" << value.stringValue << "> "
            << hexaddr(value.integerValue, ip) << endl;
+        break;
+
+    case GETATTR:
+        os << "GETATTR         <" << value.stringValue << '>' << endl;
+        break;
+
+    case AT:
+        os << "AT" << endl;
+        break;
+
+    case REPR:
+        os << "REPR         " << value.stringValue << endl;
         break;
 
     default:

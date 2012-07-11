@@ -125,6 +125,9 @@ struct Instruction_t {
         CTYPE, /**< Change content type (push new). */
         ENDCTYPE, /**< Change content type (pop). */
         REPEATFRAG, /**< Recursively repeat fragment tree. */
+        GETATTR, /**< Get attribute. */
+        AT, /**< Get value at given index */
+        REPR, /**< Convert frag value into value */
     };
     
     /** Create simple instruction without params.

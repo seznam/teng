@@ -47,7 +47,7 @@ using namespace std;
 namespace Teng {
 
 struct ParserValue_t {
-    
+
     /** Value types for string/numeric operations. */
     enum Type_t {
         TYPE_STRING, /**< Value in 'stringValue'. */
@@ -61,12 +61,12 @@ struct ParserValue_t {
     {}
 
     typedef IntType_t int_t;
-    
+
     Type_t type;
     string stringValue;
     int_t integerValue;
     double realValue;
-    
+
     /** Method sets type, stringValue, intValue and realValue.
       * If conversion to number fails, sets intValue and realValue to 0. */
     void setString(const string &val = string());
