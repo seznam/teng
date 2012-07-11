@@ -1,3 +1,11 @@
+python-teng (2.2.0) unstable; urgency=low
+
+  * Added teng.registerUDF
+  * Compiled against teng 2.3.0
+  * Maintainer changed
+
+ -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Wed, 11 Jul 2012 10:00:44 +0200
+
 python-teng (2.0.1) unstable; urgency=low
 
   * Added debhelper packaging for squeeze.

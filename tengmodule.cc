@@ -42,6 +42,7 @@
 #include <cstdlib>
 
 #include "teng.h"
+#include "tengudf.h"
 
 #include <iostream>
 
@@ -685,6 +686,19 @@ static char Fragment_addVariable__doc__[] =
 "    None.\n"
 "\n"
 ;
+
+static char Teng_registerUdf__doc__[] =
+"Registers user-defined function.\n"
+"\n"
+"arguments:\n"
+"    string functionName        Name of the function in udf. namespace.\n"
+"    callable handler           Callable object.\n"
+"\n"
+"result:\n"
+"    True or False \n"
+"\n"
+;
+
 
 /**
  * @short finds item in dictionary
@@ -1605,6 +1619,162 @@ PyObject* Teng_generatePage(TengObject *self,
     }
 }
 
+class PythonUdf_t : public UDF_t {
+    protected:
+        std::string m_name;
+        PyObject *m_callback;
+
+        void setErrorMessage(std::string &errMsg) {
+        PyObject *pyErrType = 0, *pyErrValue = 0, *pyErrTB = 0;
+        PyObject *pyStr;
+            PyErr_Fetch(&pyErrType, &pyErrValue, &pyErrTB);
+            if ( (pyErrType != 0) && ((pyStr = PyObject_Repr(pyErrType)) != 0) ) {
+                errMsg = std::string(PyString_AsString(pyStr));
+                Py_DECREF(pyStr);
+                if ( (pyErrValue != 0) && ((pyStr = PyObject_Repr(pyErrValue)) != 0) ) {
+                    errMsg += " : " + std::string(PyString_AsString(pyStr));
+                    Py_DECREF(pyStr);
+                }
+            }
+            Py_XDECREF(pyErrType);
+            Py_XDECREF(pyErrValue);
+            Py_XDECREF(pyErrTB);
+        }
+
+    public:
+        PythonUdf_t(const std::string &name, PyObject *callback)
+            : m_name (name), m_callback(callback) {
+            Py_INCREF(m_callback);
+        }
+
+        int call(const std::vector<UDFValue_t> &args, UDFValue_t &result, std::string &errMsg) {
+            PyObject *pyArgs = PyTuple_New(args.size()), *obj;
+            PyObject *pyRes = 0;
+            Py_ssize_t pos = 0;
+            if ( pyArgs == 0 ) {
+                errMsg = "Unable to allocate arg tuple";
+                return UDF_t::E_OTHER;
+            }
+
+            for (std::vector<UDFValue_t>::const_iterator it = args.begin(); it != args.end(); it++) {
+
+                switch ( it->getType() ) {
+                    case UDFValue_t::Integer:
+                        obj = PyLong_FromLongLong(it->getInt());
+                        break;
+                    case UDFValue_t::Real:
+                        obj = PyFloat_FromDouble(it->getReal());
+                        break;
+                    case UDFValue_t::String:
+                        obj = PyString_FromString(it->getString().c_str());
+                        break;
+                    default:
+                        obj = 0;
+                        break;
+                }
+
+                if ( obj == 0 ) {
+                    Py_DECREF(pyArgs);
+                    errMsg = "Unable to pass argument";
+                    return UDF_t::E_OTHER;
+                }
+                PyTuple_SetItem(pyArgs, pos++, obj);
+            }
+
+            try {
+                PyObject *pyCode, *pyValue;
+                long code;
+
+                pyRes = PyObject_Call(m_callback, pyArgs, 0);
+                Py_DECREF(pyArgs);
+
+                if ( pyRes == 0 ) {
+                    this->setErrorMessage(errMsg);
+                    return UDF_t::E_OTHER;
+                }
+
+                if ( !PyTuple_Check(pyRes) || PyTuple_Size(pyRes) != 2 ) {
+                    Py_DECREF(pyRes);
+                    errMsg = "UDF must return tuple (statuCode, returnValue)";
+                    return UDF_t::E_OTHER;
+                }
+
+                pyCode = PyTuple_GetItem(pyRes, 0);
+                pyValue = PyTuple_GetItem(pyRes, 1);
+
+                if ( !PyInt_Check(pyCode) ) {
+                    Py_DECREF(pyRes);
+                    errMsg = "UDF must return tuple (statuCode, returnValue)";
+                    return UDF_t::E_OTHER;
+                }
+
+                code = PyInt_AsLong(pyCode);
+
+                if ( code != 0 ) {
+                    Py_DECREF(pyRes);
+                    if ( code == -1 ) {
+                        errMsg = std::string(PyString_AsString(pyValue));
+                        return UDF_t::E_ARGS;
+                    } else {
+                        errMsg = std::string(PyString_AsString(pyValue));
+                        return UDF_t::E_OTHER;
+                    }
+                }
+
+                if ( PyLong_Check(pyValue) ) {
+                    result.setInt(PyLong_AsLong(pyValue));
+                } else if ( PyFloat_Check(pyValue) ) {
+                    result.setReal(PyFloat_AsDouble(pyValue));
+                } else if ( PyString_Check(pyValue) ) {
+                    result.setString(std::string(PyString_AsString(pyValue)));
+                } else {
+                    Py_DECREF(pyRes);
+                    errMsg = "Return value can be int, float or string";
+                    return UDF_t::E_OTHER;
+                }
+            } catch (...) {
+                Py_XDECREF(pyRes);
+                Py_DECREF(pyArgs);
+                this->setErrorMessage(errMsg);
+                return UDF_t::E_OTHER;
+            }
+
+            Py_DECREF(pyArgs);
+            Py_DECREF(pyRes);
+
+            return UDF_t::E_OK;
+        }
+
+        ~PythonUdf_t() {
+            Py_DECREF(m_callback);
+        }
+};
+
+
+static PyObject* registerUdf(PyObject *self, PyObject *args) {
+    const char *name;
+    PyObject *callback = 0;
+
+    if (!PyArg_ParseTuple(args, "sO:registerUdf", &name, &callback))
+        return 0;
+
+    if ( !PyCallable_Check(callback) ) {
+        PyErr_SetString(PyExc_ValueError, "Invalid callback");
+        return 0;
+    }
+
+    if ( tengFindUDF("udf." + std::string(name)) != 0 ) {
+        //PyErr_SetString(PyExc_ValueError, "Duplicated callback name");
+        Py_INCREF(Py_False);
+        return Py_False;
+    }
+
+    tengRegisterUDF(name, new PythonUdf_t(name, callback));
+
+    Py_INCREF(Py_True);
+    return Py_True;
+}
+
 // ===================================================================
 // module methods
 // ===================================================================
@@ -1623,6 +1793,11 @@ static PyMethodDef teng_methods[] = {
         (PyCFunction) listSupportedContentTypes,
         METH_VARARGS,
         Teng_listSupportedContentTypes__doc__,
+    }, {
+        "registerUdf",
+        (PyCFunction) registerUdf,
+        METH_VARARGS,
+        Teng_registerUdf__doc__,
     },
     { 0, 0 } // end of map
 };
@@ -1632,5 +1807,9 @@ static PyMethodDef teng_methods[] = {
  */
 extern "C" DL_EXPORT(void) initteng(void) {
     /* Create the module and add the functions */
-    Py_InitModule("teng", teng_methods);
+    PyObject *pyMod = Py_InitModule("teng", teng_methods);
+    
+    PyModule_AddIntConstant(pyMod, "UDF_OK", 0);
+    PyModule_AddIntConstant(pyMod, "UDF_ARGS", -1);
+    PyModule_AddIntConstant(pyMod, "UDF_RUNTIME", -2);
 }
