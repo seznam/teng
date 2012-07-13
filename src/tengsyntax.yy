@@ -1548,8 +1548,8 @@ frag_expr
     ;
 
 frag_id
-    : LEX_IDENT {
-        CODE_VAL(GETATTR, $1.val);
+    : LEX_VAR LEX_IDENT {
+        CODE_VAL(GETATTR, $2.val);
         $$.prgsize = $1.prgsize; //start of expr prog
     }
     ;
