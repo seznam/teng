@@ -1467,25 +1467,25 @@ expression:
 
 
 frag_expression
-    : frag_sel frag_expr_chain LEX_R_PAREN {
+    : LEX_FRAG_SEL LEX_L_PAREN LEX_VAR frag_expr_chain_start LEX_R_PAREN {
             ParserValue_t v;
             v.setString(""); // to native value
             CODE_VAL(REPR, v);
             $$.prgsize = $1.prgsize; //start of expr prog
     }
-    | jsonify LEX_L_PAREN frag_expr_chain LEX_R_PAREN {
+    | LEX_JSONIFY LEX_L_PAREN LEX_VAR frag_expr_chain_start LEX_R_PAREN {
             ParserValue_t v;
             v.setString("json"); // to json
             CODE_VAL(REPR, v);
             $$.prgsize = $1.prgsize; //start of expr prog
     }
-    | type_op LEX_L_PAREN frag_expr_chain LEX_R_PAREN {
+    | LEX_TYPE LEX_L_PAREN LEX_VAR frag_expr_chain_start LEX_R_PAREN {
             ParserValue_t v;
             v.setString("type"); // return type
             CODE_VAL(REPR, v);
             $$.prgsize = $1.prgsize; //start of expr prog
     }
-    | count_op LEX_L_PAREN frag_expr_chain LEX_R_PAREN {
+    | LEX_COUNT LEX_L_PAREN LEX_VAR frag_expr_chain_start LEX_R_PAREN {
             ParserValue_t v;
             v.setString("count"); // return count
             CODE_VAL(REPR, v);
@@ -1493,38 +1493,19 @@ frag_expression
     }
     ;
 
-jsonify
-    : LEX_JSONIFY {
-        ParserValue_t v;
-        v.setString("@(root)"); // magic value
-        CODE_VAL(GETATTR, v);
+frag_expr_chain_start
+    : LEX_SELECTOR {
+            ParserValue_t v;
+            v.setString("@(root)"); // magic value
+            CODE_VAL(GETATTR, v);
+        } frag_expr_chain {
     }
-    ;
-
-frag_sel
-    : LEX_FRAG_SEL {
-        ParserValue_t v;
-        v.setString("@(root)"); // magic value
-        CODE_VAL(GETATTR, v);
-        $$.prgsize = $1.prgsize; //start of expr prog
-    }
-    ;
-
-type_op
-    : LEX_TYPE {
-        ParserValue_t v;
-        v.setString("@(root)"); // magic value
-        CODE_VAL(GETATTR, v);
-        $$.prgsize = $1.prgsize; //start of expr prog
-    }
-    ;
-
-count_op
-    : LEX_COUNT {
-        ParserValue_t v;
-        v.setString("@(root)"); // magic value
-        CODE_VAL(GETATTR, v);
-        $$.prgsize = $1.prgsize; //start of expr prog
+    | {
+            ParserValue_t v;
+            v.setString("@(this)"); // magic value
+            CODE_VAL(GETATTR, v);
+        }
+    frag_expr_chain {
     }
     ;
 
@@ -1541,15 +1522,24 @@ frag_expr
     : frag_id {
         $$.prgsize = $1.prgsize; //start of expr prog
     }
-    | frag_id LEX_L_BRACKET expression LEX_R_BRACKET {
-        CODE(AT);
+    | frag_id frag_index_chain {
         $$.prgsize = $1.prgsize; //start of expr prog
     }
     ;
 
+frag_index_chain
+    : LEX_L_BRACKET expression LEX_R_BRACKET {
+        CODE(AT);
+    }
+    | frag_index_chain LEX_L_BRACKET expression LEX_R_BRACKET {
+        CODE(AT);
+    }
+    ;
+
+
 frag_id
-    : LEX_VAR LEX_IDENT {
-        CODE_VAL(GETATTR, $2.val);
+    : LEX_IDENT {
+        CODE_VAL(GETATTR, $1.val);
         $$.prgsize = $1.prgsize; //start of expr prog
     }
     ;
@@ -2399,7 +2389,7 @@ static void printUnexpectedElement(ParserContext_t *context,
             msg = "fake lexical element used just for modifying "
                     "precedence of the unary operators. Huh?!?"; break;
         case LEX_FRAG_SEL:
-            msg = "operator '@('"; break;
+            msg = "operator 'select'"; break;
 
         // other keywords/operators
         case LEX_CASE:
@@ -2409,11 +2399,11 @@ static void printUnexpectedElement(ParserContext_t *context,
         case LEX_EXIST:
             msg = "operator 'exist'"; break;
         case LEX_JSONIFY:
-            msg = "operator '@jsonify'"; break;
+            msg = "operator 'jsonify'"; break;
         case LEX_TYPE:
-            msg = "operator '@type'"; break;
+            msg = "operator 'type'"; break;
         case LEX_COUNT:
-            msg = "operator '@count'"; break;
+            msg = "operator 'count'"; break;
 
         // parentheses
         case LEX_L_PAREN:

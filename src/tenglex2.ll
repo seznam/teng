@@ -330,12 +330,6 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     RETURN(LEX_SHORT_DICT);
 }
 
-"@(" {
-    // match '@(' -- fragment selector
-    bufferPos.advanceColumn(yyleng);
-    RETURN(LEX_FRAG_SEL);
-}
-
 "}" {
     // match '}'
     bufferPos.advanceColumn(yyleng);
@@ -606,22 +600,28 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     RETURN(LEX_EXIST);
 }
 
-"@jsonify" {
-    // match @jsonify operator
+"jsonify" {
+    // match jsonify operator
     bufferPos.advanceColumn(yyleng);
     RETURN(LEX_JSONIFY);
 }
 
-"@type" {
-    // match @type operator
+"type" {
+    // match type operator
     bufferPos.advanceColumn(yyleng);
     RETURN(LEX_TYPE);
 }
 
-"@count" {
-    // match @count operator
+"count" {
+    // match count operator
     bufferPos.advanceColumn(yyleng);
     RETURN(LEX_COUNT);
+}
+
+"select" {
+    // match sel operator
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_FRAG_SEL);
 }
 
 "udf."{IDENT}(\.{IDENT})* {

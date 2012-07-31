@@ -100,6 +100,8 @@ public:
 
     virtual bool exists(const string &name, bool onlyData = false) const = 0;
 
+    virtual const Fragment_t *getCurrentFragment() const = 0;
+
     bool localExists(const string &name) const {
         return (locals.find(name) != locals.end());
     }
@@ -264,6 +266,10 @@ public:
         return index;
     }
 
+    virtual const Fragment_t *getCurrentFragment() const {
+        return fragment;
+    }
+
 private:
     const Fragment_t *fragment;
     FragmentList_t::const_iterator data;
@@ -343,6 +349,10 @@ public:
 
     virtual unsigned int iteration() const {
         return index;
+    }
+
+    virtual const Fragment_t *getCurrentFragment() const {
+        return 0;
     }
 
 private:
@@ -482,6 +492,11 @@ public:
         return frames.back()->overflown();
     }
 
+    virtual const Fragment_t *getCurrentFragment() const {
+        return frames.back()->getCurrentFragment();
+    }
+
+
 private:
     vector<string> path;
 
@@ -541,6 +556,10 @@ public:
         // ok we have at least one iteration
         chain.pushFrame(name.name, frame);
         return S_OK;
+    }
+    
+    virtual const Fragment_t *getCurrentFragment() const {
+        return chains.back().getCurrentFragment();
     }
 
     inline bool nextIteration() {
@@ -674,7 +693,7 @@ private:
     const Fragment_t *data;
     Error_t &error;
     bool enableErrorFragment;
-    
+
     RegularFragmentFrame_t root;
     vector<FragmentChain_t> chains;
 };
