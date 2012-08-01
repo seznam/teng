@@ -53,6 +53,7 @@
 %x badnumber
 %x comment
 %x one_line_comment
+%x xml_tag
 
 %{
 
@@ -305,12 +306,40 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     RETURN(LEX_REPEATFRAG);
 }
 
-"<?"[[:space:]\0]*[[:alnum:]]* {
-    // match '<?teng???'
-    value.stringValue = string(yytext + 6, yyleng - 6);
-    bufferPos.advance(yytext, yyleng);
-    RETURN(LEX_TENG);
+"<?" {
+    // xml tag start
+    bufferPos.advanceColumn(yyleng);
+
+    // change context to parse (ehm, ignore) xml tag's content
+    BEGIN(xml_tag);
+
+    tmpSval = "<?";
 }
+
+<xml_tag>{
+    "?>" {
+        // end of xml tag
+        bufferPos.advanceColumn(yyleng);
+        BEGIN(INITIAL);
+        value.stringValue = tmpSval + "?>";
+        RETURN(LEX_TEXT);
+    }
+
+    <<EOF>> {
+        // end of input => bad token
+        err.logError(Error_t::LL_ERROR, bufferPos, "Unterminated xml tag");
+        // leave this context
+        BEGIN(INITIAL);
+        RETURN(-1);
+    }
+
+    .|"\n" {
+        // ignore
+        bufferPos.advanceColumn(yyleng);
+        tmpSval.push_back(*yytext);
+    }
+}
+
 
 "?>" {
     // match '?>'
