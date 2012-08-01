@@ -1625,8 +1625,9 @@ class PythonUdf_t : public UDF_t {
         PyObject *m_callback;
 
         void setErrorMessage(std::string &errMsg) {
-        PyObject *pyErrType = 0, *pyErrValue = 0, *pyErrTB = 0;
-        PyObject *pyStr;
+            PyObject *pyErrType = 0, *pyErrValue = 0, *pyErrTB = 0;
+            PyObject *pyStr;
+
             PyErr_Fetch(&pyErrType, &pyErrValue, &pyErrTB);
             if ( (pyErrType != 0) && ((pyStr = PyObject_Repr(pyErrType)) != 0) ) {
                 errMsg = std::string(PyString_AsString(pyStr));
@@ -1651,6 +1652,9 @@ class PythonUdf_t : public UDF_t {
             PyObject *pyArgs = PyTuple_New(args.size()), *obj;
             PyObject *pyRes = 0;
             Py_ssize_t pos = 0;
+
+            result.setString("undefined");
+
             if ( pyArgs == 0 ) {
                 errMsg = "Unable to allocate arg tuple";
                 return UDF_t::E_OTHER;
@@ -1721,7 +1725,9 @@ class PythonUdf_t : public UDF_t {
                     }
                 }
 
-                if ( PyLong_Check(pyValue) ) {
+                if ( PyInt_Check(pyValue) ) {
+                    result.setInt(PyInt_AsLong(pyValue));
+                } else if ( PyLong_Check(pyValue) ) {
                     result.setInt(PyLong_AsLong(pyValue));
                 } else if ( PyFloat_Check(pyValue) ) {
                     result.setReal(PyFloat_AsDouble(pyValue));
