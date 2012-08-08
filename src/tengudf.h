@@ -39,6 +39,7 @@
 
 #include <vector>
 #include <string>
+#include <tr1/functional>
 #include "tengconfig.h"
 
 namespace Teng {
@@ -123,22 +124,8 @@ class UDFValue_t {
         : m_type(Integer), m_iValue(0) {};
 };
 
-
-/** User defined function handler*/
-class UDF_t {
-    public:
-        enum {E_OK = 0, E_ARGS = -1, E_OTHER = -2};
-        /**
-         * UDF callback
-         * \param args list of arguments
-         * \param res holds result
-         * \param errMsg error message
-         * \returns 0 on success, -1 on bad arguments, -2 on other error
-        */
-        virtual int call(const std::vector<UDFValue_t> &args, UDFValue_t &res,
-                         std::string &errMsg) = 0;
-        virtual ~UDF_t(){};
-};
+typedef enum {E_OK = 0, E_ARGS = -1, E_OTHER = -2} UDF_Status_t;
+typedef std::tr1::function<UDFValue_t (const std::vector<UDFValue_t> &)> UDFCallback_t;
 
 /**
  * @short registers user-defined function
@@ -146,13 +133,13 @@ class UDF_t {
  * @param name name of the function
  * @param udf pointer to user-defined function object
  */
-UDF_t *tengRegisterUDF(const std::string &name, UDF_t *udf);
+void registerUDF(const std::string &name, UDFCallback_t udf);
 
 /**
  * @short finds function in global UDF list, returns pointer or 0
  * @param name name of the function
  */
-UDF_t *tengFindUDF(const std::string &name);
+UDFCallback_t *findUDF(const std::string &name);
 
 }
 

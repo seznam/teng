@@ -45,6 +45,7 @@
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
+#include <stdexcept>
 
 #include <math.h>
 #include <time.h>
@@ -114,10 +115,12 @@ class FragVal_t {
 };
 
 // performs UDF calls
-int callUdf(const vector<ParserValue_t> &args, ParserValue_t &result, UDF_t *udf, string &err) {
+int callUdf(const vector<ParserValue_t> &args, ParserValue_t &result, UDFCallback_t &udf, string &err) {
     vector<UDFValue_t> udfArgs;
     UDFValue_t udfRes((IntType_t)0);
     udfArgs.reserve(args.size());
+    int res = E_OK;
+
     for (vector<ParserValue_t>::const_reverse_iterator it = args.rbegin();
             it != args.rend(); it++ ) {
         switch (it->type) {
@@ -132,7 +135,17 @@ int callUdf(const vector<ParserValue_t> &args, ParserValue_t &result, UDF_t *udf
                 break;
         }
     }
-    int res = udf->call(udfArgs, udfRes, err);
+
+    try {
+        udfRes = udf(udfArgs);
+    } catch (invalid_argument & e) {
+        err = e.what();
+        res = E_ARGS;
+    } catch (exception & e) {
+        res = E_OTHER;
+        err = e.what();
+    }
+
     if ( res == 0 ) {
         switch (udfRes.getType()) {
             case UDFValue_t::Integer:
@@ -146,7 +159,7 @@ int callUdf(const vector<ParserValue_t> &args, ParserValue_t &result, UDF_t *udf
                 break;
         }
     } else {
-        result.setString("undefined");
+        result.setString("undefinded");
     }
     return res;
 }
@@ -884,12 +897,12 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                 }
 
                 Function_t p = tengFindFunction(instr.value.stringValue);
-                UDF_t *udf = p == 0 ? tengFindUDF(instr.value.stringValue) : 0;
+                UDFCallback_t *udf = p == 0 ? findUDF(instr.value.stringValue) : 0;
 
                 if (p || udf) {
                     string errmsg;
                     fParam.logger.setInstruction(&instr);
-                    int res = p == 0 ? callUdf(v, a, udf, errmsg) : p(v, fParam, a);
+                    int res = p == 0 ? callUdf(v, a, *udf, errmsg) : p(v, fParam, a);
                     switch (res) {
                     case 0:
                         break; // OK
@@ -1400,7 +1413,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                         break;
 
                     default:
-                        a.setString("$fraglist$");
+                        a.setString("$null$");
                         break;
                 }
             }
@@ -1539,7 +1552,7 @@ int Processor_t::eval(ParserValue_t &result, int startAddress,
                 }
                 Function_t p = tengFindFunction(instr.value.stringValue, false);
                 ///TODO: UDF const optimizations
-                //UDF_t *udf = p == 0 ? tengFindUDF(instr.value.stringValue) : 0;
+                //UDF_t *udf = p == 0 ? findUDF(instr.value.stringValue) : 0;
                 if ( p /*|| udf*/ ) {
                     string errmsg;
                     fParam.logger.setInstruction(&instr);

@@ -12,34 +12,34 @@ pthread_rwlock_t udfLock = PTHREAD_RWLOCK_INITIALIZER;
 #endif
 
 #pragma GCC visibility push(hidden)
-map<string, UDF_t*> userDefinedFunction;
+map<string, UDFCallback_t> userDefinedFunction;
 #pragma GCC visibility pop
 
-UDF_t* Teng::tengRegisterUDF(const string &name, UDF_t *udf) {
-UDF_t *prev;
+void Teng::registerUDF(const string &name, Teng::UDFCallback_t udf) {
+
 std::string qId = "udf." + name;
 #ifndef NO_UDF_LOCKS
     pthread_rwlock_wrlock(&udfLock);
 #endif
 
-    prev = userDefinedFunction[qId];
     userDefinedFunction[qId] = udf;
 
 #ifndef NO_UDF_LOCKS
     pthread_rwlock_unlock(&udfLock);
 #endif
 
-    return prev;
+    return;
 }
 
-UDF_t *Teng::tengFindUDF(const string &name) {
-UDF_t *res;
+Teng::UDFCallback_t *Teng::findUDF(const string &name) {
+UDFCallback_t *res = 0;
 
 #ifndef NO_UDF_LOCKS
     pthread_rwlock_rdlock(&udfLock);
 #endif
 
-    res = userDefinedFunction[name];
+    if ( userDefinedFunction.find(name) != userDefinedFunction.end() )
+        res = &userDefinedFunction[name];
 
 #ifndef NO_UDF_LOCKS
     pthread_rwlock_unlock(&udfLock);
@@ -59,10 +59,6 @@ class UDFCleanup_t {
             #ifndef NO_UDF_LOCKS
                 pthread_rwlock_wrlock(&udfLock);
             #endif
-                for (map<string, UDF_t*>::iterator it = userDefinedFunction.begin();
-                    it != userDefinedFunction.end(); it++) {
-                    delete it->second;
-                }
                 userDefinedFunction.clear();
             #ifndef NO_UDF_LOCKS
                 pthread_rwlock_unlock(&udfLock);
