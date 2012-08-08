@@ -138,7 +138,7 @@ void registerUDF(const std::string &name, UDFCallback_t udf);
  * @short finds function in global UDF list, returns pointer or 0
  * @param name name of the function
  */
-UDFCallback_t *findUDF(const std::string &name);
+UDFCallback_t findUDF(const std::string &name);
 
 }
 

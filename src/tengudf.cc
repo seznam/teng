@@ -31,15 +31,15 @@ std::string qId = "udf." + name;
     return;
 }
 
-Teng::UDFCallback_t *Teng::findUDF(const string &name) {
-UDFCallback_t *res = 0;
+Teng::UDFCallback_t Teng::findUDF(const string &name) {
+UDFCallback_t res;
 
 #ifndef NO_UDF_LOCKS
     pthread_rwlock_rdlock(&udfLock);
 #endif
 
     if ( userDefinedFunction.find(name) != userDefinedFunction.end() )
-        res = &userDefinedFunction[name];
+        res = userDefinedFunction[name];
 
 #ifndef NO_UDF_LOCKS
     pthread_rwlock_unlock(&udfLock);

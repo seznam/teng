@@ -897,12 +897,12 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                 }
 
                 Function_t p = tengFindFunction(instr.value.stringValue);
-                UDFCallback_t *udf = p == 0 ? findUDF(instr.value.stringValue) : 0;
+                UDFCallback_t udf = p == 0 ? findUDF(instr.value.stringValue) : udf;
 
                 if (p || udf) {
                     string errmsg;
                     fParam.logger.setInstruction(&instr);
-                    int res = p == 0 ? callUdf(v, a, *udf, errmsg) : p(v, fParam, a);
+                    int res = p == 0 ? callUdf(v, a, udf, errmsg) : p(v, fParam, a);
                     switch (res) {
                     case 0:
                         break; // OK
