@@ -45,6 +45,7 @@
 #include "tengudf.h"
 
 #include <iostream>
+#include <stdexcept>
 
 #if PY_VERSION_HEX < 0x02050000 && !defined(PY_SSIZE_T_MIN)
 typedef int Py_ssize_t;
@@ -1619,14 +1620,15 @@ PyObject* Teng_generatePage(TengObject *self,
     }
 }
 
-class PythonUdf_t : public UDF_t {
+class PythonUdf_t {
     protected:
         std::string m_name;
         PyObject *m_callback;
 
-        void setErrorMessage(std::string &errMsg) {
+        std::string getErrorMessage() {
             PyObject *pyErrType = 0, *pyErrValue = 0, *pyErrTB = 0;
             PyObject *pyStr;
+            std::string errMsg;
 
             PyErr_Fetch(&pyErrType, &pyErrValue, &pyErrTB);
             if ( (pyErrType != 0) && ((pyStr = PyObject_Repr(pyErrType)) != 0) ) {
@@ -1640,6 +1642,7 @@ class PythonUdf_t : public UDF_t {
             Py_XDECREF(pyErrType);
             Py_XDECREF(pyErrValue);
             Py_XDECREF(pyErrTB);
+            return errMsg;
         }
 
     public:
@@ -1648,16 +1651,14 @@ class PythonUdf_t : public UDF_t {
             Py_INCREF(m_callback);
         }
 
-        int call(const std::vector<UDFValue_t> &args, UDFValue_t &result, std::string &errMsg) {
+        UDFValue_t operator()(const std::vector<UDFValue_t> &args) {
             PyObject *pyArgs = PyTuple_New(args.size()), *obj;
             PyObject *pyRes = 0;
             Py_ssize_t pos = 0;
-
-            result.setString("undefined");
+            UDFValue_t result(std::string("undefined"));
 
             if ( pyArgs == 0 ) {
-                errMsg = "Unable to allocate arg tuple";
-                return UDF_t::E_OTHER;
+                throw std::runtime_error("Unable to allocate arg tuple");
             }
 
             for (std::vector<UDFValue_t>::const_iterator it = args.begin(); it != args.end(); it++) {
@@ -1679,76 +1680,41 @@ class PythonUdf_t : public UDF_t {
 
                 if ( obj == 0 ) {
                     Py_DECREF(pyArgs);
-                    errMsg = "Unable to pass argument";
-                    return UDF_t::E_OTHER;
+                    throw std::runtime_error("Unable to pass argument");
                 }
                 PyTuple_SetItem(pyArgs, pos++, obj);
             }
 
             try {
-                PyObject *pyCode, *pyValue;
-                long code;
-
                 pyRes = PyObject_Call(m_callback, pyArgs, 0);
                 Py_DECREF(pyArgs);
 
                 if ( pyRes == 0 ) {
-                    this->setErrorMessage(errMsg);
-                    return UDF_t::E_OTHER;
+                    throw std::runtime_error(getErrorMessage());
                 }
 
-                if ( !PyTuple_Check(pyRes) || PyTuple_Size(pyRes) != 2 ) {
-                    Py_DECREF(pyRes);
-                    errMsg = "UDF must return tuple (statuCode, returnValue)";
-                    return UDF_t::E_OTHER;
-                }
-
-                pyCode = PyTuple_GetItem(pyRes, 0);
-                pyValue = PyTuple_GetItem(pyRes, 1);
-
-                if ( !PyInt_Check(pyCode) ) {
-                    Py_DECREF(pyRes);
-                    errMsg = "UDF must return tuple (statuCode, returnValue)";
-                    return UDF_t::E_OTHER;
-                }
-
-                code = PyInt_AsLong(pyCode);
-
-                if ( code != 0 ) {
-                    Py_DECREF(pyRes);
-                    if ( code == -1 ) {
-                        errMsg = std::string(PyString_AsString(pyValue));
-                        return UDF_t::E_ARGS;
-                    } else {
-                        errMsg = std::string(PyString_AsString(pyValue));
-                        return UDF_t::E_OTHER;
-                    }
-                }
-
-                if ( PyInt_Check(pyValue) ) {
-                    result.setInt(PyInt_AsLong(pyValue));
-                } else if ( PyLong_Check(pyValue) ) {
-                    result.setInt(PyLong_AsLong(pyValue));
-                } else if ( PyFloat_Check(pyValue) ) {
-                    result.setReal(PyFloat_AsDouble(pyValue));
-                } else if ( PyString_Check(pyValue) ) {
-                    result.setString(std::string(PyString_AsString(pyValue)));
+                if ( PyInt_Check(pyRes) ) {
+                    result.setInt(PyInt_AsLong(pyRes));
+                } else if ( PyLong_Check(pyRes) ) {
+                    result.setInt(PyLong_AsLong(pyRes));
+                } else if ( PyFloat_Check(pyRes) ) {
+                    result.setReal(PyFloat_AsDouble(pyRes));
+                } else if ( PyString_Check(pyRes) ) {
+                    result.setString(std::string(PyString_AsString(pyRes)));
                 } else {
                     Py_DECREF(pyRes);
-                    errMsg = "Return value can be int, float or string";
-                    return UDF_t::E_OTHER;
+                    std::runtime_error("Return value can be int, float or string");
                 }
             } catch (...) {
                 Py_XDECREF(pyRes);
                 Py_DECREF(pyArgs);
-                this->setErrorMessage(errMsg);
-                return UDF_t::E_OTHER;
+                throw std::runtime_error(getErrorMessage());
             }
 
             Py_DECREF(pyArgs);
             Py_DECREF(pyRes);
 
-            return UDF_t::E_OK;
+            return result;
         }
 
         ~PythonUdf_t() {
@@ -1769,13 +1735,13 @@ static PyObject* registerUdf(PyObject *self, PyObject *args) {
         return 0;
     }
 
-    if ( tengFindUDF("udf." + std::string(name)) != 0 ) {
+    if ( findUDF("udf." + std::string(name)) != 0 ) {
         //PyErr_SetString(PyExc_ValueError, "Duplicated callback name");
         Py_INCREF(Py_False);
         return Py_False;
     }
 
-    tengRegisterUDF(name, new PythonUdf_t(name, callback));
+    registerUDF(name, PythonUdf_t(name, callback));
 
     Py_INCREF(Py_True);
     return Py_True;
@@ -1813,9 +1779,5 @@ static PyMethodDef teng_methods[] = {
  */
 extern "C" DL_EXPORT(void) initteng(void) {
     /* Create the module and add the functions */
-    PyObject *pyMod = Py_InitModule("teng", teng_methods);
-    
-    PyModule_AddIntConstant(pyMod, "UDF_OK", 0);
-    PyModule_AddIntConstant(pyMod, "UDF_ARGS", -1);
-    PyModule_AddIntConstant(pyMod, "UDF_RUNTIME", -2);
+    Py_InitModule("teng", teng_methods);
 }
