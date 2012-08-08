@@ -1735,7 +1735,7 @@ static PyObject* registerUdf(PyObject *self, PyObject *args) {
         return 0;
     }
 
-    if ( findUDF("udf." + std::string(name)) != 0 ) {
+    if ( findUDF("udf." + std::string(name)) ) {
         //PyErr_SetString(PyExc_ValueError, "Duplicated callback name");
         Py_INCREF(Py_False);
         return Py_False;
