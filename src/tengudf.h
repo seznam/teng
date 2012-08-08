@@ -129,9 +129,8 @@ typedef std::tr1::function<UDFValue_t (const std::vector<UDFValue_t> &)> UDFCall
 
 /**
  * @short registers user-defined function
- * @returns returns pointer to previous handler
  * @param name name of the function
- * @param udf pointer to user-defined function object
+ * @param udf user-defined callable object
  */
 void registerUDF(const std::string &name, UDFCallback_t udf);
 
