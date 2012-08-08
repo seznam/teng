@@ -1651,6 +1651,11 @@ class PythonUdf_t {
             Py_INCREF(m_callback);
         }
 
+        PythonUdf_t(const PythonUdf_t &o)
+        : m_name(o.m_name), m_callback(o.m_callback) {
+            Py_INCREF(m_callback);
+        }
+
         UDFValue_t operator()(const std::vector<UDFValue_t> &args) {
             PyObject *pyArgs = PyTuple_New(args.size()), *obj;
             PyObject *pyRes = 0;
