@@ -629,25 +629,25 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     RETURN(LEX_EXIST);
 }
 
-"::jsonify" {
+"jsonify" {
     // match jsonify operator
     bufferPos.advanceColumn(yyleng);
     RETURN(LEX_JSONIFY);
 }
 
-"::type" {
+"type" {
     // match type operator
     bufferPos.advanceColumn(yyleng);
     RETURN(LEX_TYPE);
 }
 
-"::count" {
+"count" {
     // match count operator
     bufferPos.advanceColumn(yyleng);
     RETURN(LEX_COUNT);
 }
 
-"::select" {
+"select" {
     // match sel operator
     bufferPos.advanceColumn(yyleng);
     RETURN(LEX_FRAG_SEL);

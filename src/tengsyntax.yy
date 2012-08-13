@@ -512,7 +512,7 @@ no_options_LEX_END:
 
 
 options:
-    LEX_IDENT LEX_ASSIGN LEX_STRING options
+    identifier LEX_ASSIGN LEX_STRING options
         {
             $$.opt = $4.opt; //get all nested options
             $$.opt.insert(make_pair($1.val.stringValue, $3.val.stringValue));
@@ -1538,15 +1538,13 @@ frag_index_chain
 
 
 frag_id
-    : LEX_IDENT {
+    : identifier {
         CODE_VAL(GETATTR, $1.val);
-        $$.prgsize = $1.prgsize; //start of expr prog
     }
     ;
 
-
 dictionary_item:
-    LEX_IDENT
+    identifier
         {
             // find item in dictionary and code it as val
             // lookup lang dict first, param dict then else use identifier
@@ -1609,7 +1607,7 @@ voluntary_dollar_before_var:
 
 
 variable_identifier:
-    LEX_IDENT
+    identifier
         {
             // variable in local fragment context
             $$.id = CONTEXT->fragContext.back(); //frag context
@@ -1619,7 +1617,7 @@ variable_identifier:
             // rebuild identifier
             buildIdentifier($$);
         }
-    | LEX_IDENT dot_variable
+    | identifier dot_variable
         {
             // partitialy qualified variable
             // check for special identifier '_this'
@@ -1701,13 +1699,13 @@ variable_identifier:
 
 
 dot_variable:
-    LEX_SELECTOR LEX_IDENT
+    LEX_SELECTOR identifier
         {
             $$.id.erase($$.id.begin(), $$.id.end());
             $$.id.push_back($2.val.stringValue);
             $$.pos = $1.pos;
         }
-    | LEX_SELECTOR LEX_IDENT dot_variable
+    | LEX_SELECTOR identifier dot_variable
         {
             $$.id = $3.id;
             // ignore special identifier '_this'
@@ -1725,6 +1723,32 @@ dot_variable:
         }
     ;
 
+identifier
+    : LEX_IDENT {
+        $$ = $1;
+    }
+    | LEX_TYPE {
+        $$ = $1;
+        $$.val.stringValue = "type";
+    }
+    | LEX_COUNT {
+        $$ = $1;
+        $$.val.stringValue = "count";
+    }
+    | LEX_JSONIFY {
+        $$ = $1;
+        $$.val.stringValue = "jsonify";
+    }
+    | LEX_FRAG_SEL {
+        $$ = $1;
+        $$.val.stringValue = "select";
+    }
+    | LEX_EXIST {
+        //WARNING: Context bound
+        $$ = $1;
+        $$.val.stringValue = "exists";
+    }
+    ;
 
 case:
     LEX_CASE LEX_L_PAREN expression LEX_COMMA
