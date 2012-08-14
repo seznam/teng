@@ -387,6 +387,7 @@ static inline void codeForVariable(void *context,
 %token LEX_CASE
 %token LEX_DEFINED
 %token LEX_EXIST
+%token LEX_EXISTS
 %token LEX_JSONIFY
 %token LEX_TYPE
 %token LEX_COUNT
@@ -1743,8 +1744,7 @@ identifier
         $$ = $1;
         $$.val.stringValue = "select";
     }
-    | LEX_EXIST {
-        //WARNING: Context bound
+    | LEX_EXISTS {
         $$ = $1;
         $$.val.stringValue = "exists";
     }
@@ -2004,7 +2004,7 @@ defined:
     ;
 
 exist:
-    LEX_EXIST LEX_L_PAREN variable_identifier LEX_R_PAREN
+    exists_operator LEX_L_PAREN variable_identifier LEX_R_PAREN
         {
             // following code cannot be optimized
             $$.prgsize = CONTEXT->program->size(); //start of expr prog
@@ -2067,7 +2067,7 @@ exist:
         }
 
     // exist-operator error handling
-    | LEX_EXIST LEX_L_PAREN error
+    | exists_operator LEX_L_PAREN error
         {
             if (tengSyntax_lastErrorMessage.length() > 0) {
                 printUnexpectedElement(CONTEXT, yychar, yylval);
@@ -2085,6 +2085,15 @@ exist:
             $$.val.setInteger(0);
             CODE_VAL(VAL, $$.val); //fake value
         }
+    ;
+
+exists_operator
+    : LEX_EXIST {
+        $$ = $1;
+    }
+    | LEX_EXISTS {
+        $$ = $1;
+    }
     ;
 
 function_id

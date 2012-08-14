@@ -626,7 +626,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
 "exists" {
     // match exist operator
     bufferPos.advanceColumn(yyleng);
-    RETURN(LEX_EXIST);
+    RETURN(LEX_EXISTS);
 }
 
 "jsonify" {
