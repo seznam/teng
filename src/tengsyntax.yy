@@ -1470,19 +1470,19 @@ frag_expression
             v.setString(""); // to native value
             CODE_VAL(REPR, v);
     }
-    | LEX_JSONIFY LEX_L_PAREN LEX_VAR frag_expr_chain_start LEX_R_PAREN {
+    | LEX_JSONIFY LEX_L_PAREN LEX_VAR LEX_VAR frag_expr_chain_start LEX_R_PAREN {
             ParserValue_t v;
             v.setString("json"); // to json
             CODE_VAL(REPR, v);
             $$.prgsize = $1.prgsize; //start of expr prog
     }
-    | LEX_TYPE LEX_L_PAREN LEX_VAR frag_expr_chain_start LEX_R_PAREN {
+    | LEX_TYPE LEX_L_PAREN LEX_VAR LEX_VAR frag_expr_chain_start LEX_R_PAREN {
             ParserValue_t v;
             v.setString("type"); // return type
             CODE_VAL(REPR, v);
             $$.prgsize = $1.prgsize; //start of expr prog
     }
-    | LEX_COUNT LEX_L_PAREN LEX_VAR frag_expr_chain_start LEX_R_PAREN {
+    | LEX_COUNT LEX_L_PAREN LEX_VAR LEX_VAR frag_expr_chain_start LEX_R_PAREN {
             ParserValue_t v;
             v.setString("count"); // return count
             CODE_VAL(REPR, v);
