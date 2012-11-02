@@ -48,8 +48,8 @@ using namespace Teng;
 Configuration_t::Configuration_t(const string &root)
     : Dictionary_t(root), debug(false), errorFragment(false),
       logToOutput(false), bytecode(false), watchFiles(true),
-      alwaysEscape(true), maxIncludeDepth(10), format(true),
-      maxDebugValLength(40)
+      alwaysEscape(true), shortTag(false), maxIncludeDepth(10),
+      format(true), maxDebugValLength(40)
 {}
 
 Configuration_t::~Configuration_t() {
@@ -135,6 +135,7 @@ int Configuration_t::processDirective(const string &directive,
     else if (argument == "watchfiles") watchFiles = value;
     else if (argument == "format") format = value;
     else if (argument == "alwaysescape") alwaysEscape = value;
+    else if (argument == "shorttag") shortTag = value;
     else {
         err.logError(Error_t::LL_ERROR, pos,
                      "Invalid enable/disable argument '" + argument + "'");
@@ -153,6 +154,7 @@ int Configuration_t::isEnabled(const string &feature, bool &enabled) const {
     else if (feature == "watchfiles") enabled = watchFiles;
     else if (feature == "format") enabled = format;
     else if (feature == "alwaysescape") enabled = alwaysEscape;
+    else if (feature == "shortag") enabled = shortTag;
     else return -1;
 
     // OK
@@ -176,7 +178,8 @@ namespace Teng {
           << "    maxincludedepth: " << c.maxIncludeDepth << std::endl
           << "    maxdebugvallength: " << c.maxDebugValLength << std::endl
           << "    format: " << ENABLED(c.format) << std::endl
-          << "    alwaysescape: " << ENABLED(c.alwaysEscape) << std::endl;
+          << "    alwaysescape: " << ENABLED(c.alwaysEscape) << std::endl
+          << "    shorttag: " << ENABLED(c.shortTag) << std::endl;
 
         return o;
     }

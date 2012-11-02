@@ -647,12 +647,6 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     RETURN(LEX_COUNT);
 }
 
-"select" {
-    // match sel operator
-    bufferPos.advanceColumn(yyleng);
-    RETURN(LEX_FRAG_SEL);
-}
-
 "udf."{IDENT}(\.{IDENT})* {
     // match exist operator
     bufferPos.advanceColumn(yyleng);

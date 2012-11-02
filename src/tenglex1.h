@@ -55,6 +55,7 @@ public:
         TYPE_ERROR, /**< Parse error, token.value contains error message. */
         TYPE_TEXT, /**< General text. */
         TYPE_TENG, /**< Teng directive. */
+        TYPE_TENG_SHORT, /**< Teng directive. */
         TYPE_EXPR, /**< Shorted expression form. */
         TYPE_DICT, /**< Shorted dictionary item form. */
     };

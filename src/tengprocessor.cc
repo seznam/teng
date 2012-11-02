@@ -1209,7 +1209,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                     if ( cVal.type == FragVal_t::FRAGMENT ) {
                         Fragment_t::const_iterator it = cVal.frag->find(member);
                         if ( it == cVal.frag->end() ) {
-                            logErr(instr, "Unable to locate member '" + member + "'",
+                            logErr(instr, "Unable to locate member (1) '" + member + "'",
                                 Error_t::LL_WARNING);
                             cVal = FragVal_t();
                         } else {
@@ -1221,7 +1221,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                             Fragment_t *frag = (*nested)[0];
                             Fragment_t::const_iterator it = frag->find(member);
                             if ( it == frag->end() ) {
-                                logErr(instr, "Unable to locate member '" + member + "'",
+                                logErr(instr, "Unable to locate member (2) '" + member + "'",
                                     Error_t::LL_WARNING);
                                 cVal = FragVal_t();
                             } else {
@@ -1286,7 +1286,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                 if ( cVal.type == FragVal_t::FRAGMENT ) {
                     Fragment_t::const_iterator it = cVal.frag->find(member);
                     if ( it == cVal.frag->end() ) {
-                        logErr(instr, "Unable to locate member '" + member + "'",
+                        logErr(instr, "Unable to locate member (3) '" + member + "'",
                             Error_t::LL_WARNING);
                         cVal = FragVal_t();
                     } else {
@@ -1294,7 +1294,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                     }
                 } else if ( cVal.type == FragVal_t::FRAGMENT_VALUE ) {
                     if ( cVal.value->nestedFragments == 0 ) {
-                        logErr(instr, "Unable to locate member '" + member + "'"
+                        logErr(instr, "Unable to locate member (4) '" + member + "'"
                             " in value",
                             Error_t::LL_WARNING);
                         cVal = FragVal_t();
@@ -1303,7 +1303,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                             const Fragment_t *frag = (*cVal.value->nestedFragments)[0];
                             Fragment_t::const_iterator it = frag->find(member);
                             if ( it == frag->end() ) {
-                                logErr(instr, "Unable to locate member '" + member + "'",
+                                logErr(instr, "Unable to locate member (5) '" + member + "'",
                                     Error_t::LL_WARNING);
                                 cVal = FragVal_t();
                             } else {
@@ -1314,7 +1314,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                         }
                     }
                 } else if ( cVal.type != FragVal_t::FRAGMENT_NULL ) {
-                    logErr(instr, "Unable to locate member '" + member + "'"
+                    logErr(instr, "Unable to locate member (6) '" + member + "'"
                         " in fragment list",
                         Error_t::LL_WARNING);
                     cVal = FragVal_t();

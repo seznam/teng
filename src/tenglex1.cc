@@ -388,7 +388,7 @@ Lex1_t::Token_t Lex1_t::getElement()
             // skip "?>"
             incrementPosition(2);
             // return teng token
-            return Token_t(TYPE_TENG,
+            return Token_t(TYPE_TENG_SHORT,
                     input.substr(start_pos, position - start_pos),
                     start_line, start_column);
 

@@ -111,6 +111,10 @@ public:
     inline bool isAlwaysEscapeEnabled() const {
         return alwaysEscape;
     }
+    
+    inline bool isShortTagEnabled() const {
+        return shortTag;
+    }
 
     int isEnabled(const string &feature, bool &enabled) const;
 
@@ -122,7 +126,8 @@ private:
     bool logToOutput;     //!< Log error goes to ouput. (false)
     bool bytecode;        //!< <?teng bytecode?> works. (false)
     bool watchFiles;      //!< Cached templates are checked for change. (true)
-    bool alwaysEscape;    //!< Escapne always (true)
+    bool alwaysEscape;    //!< Escape always (true)
+    bool shortTag;         //!< Short tags <? ?> enabled (false)
 
     unsigned int maxIncludeDepth; //!< Maximal template include depth.
 

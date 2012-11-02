@@ -1,3 +1,10 @@
+libteng (2.3.4) Seznam; urgency=low
+
+  * Changed select to $$
+  * Added configuration option shorttag 
+
+ -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Thu, 01 Nov 2012 15:30:24 +0100
+
 libteng (2.3.3) Seznam; urgency=low
 
   * Operator exists

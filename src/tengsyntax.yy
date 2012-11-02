@@ -405,9 +405,6 @@ static inline void codeForVariable(void *context,
 %token LEX_INT
 %token LEX_REAL
 
-// selector
-%token LEX_FRAG_SEL
-
 // start symbol
 %start start
 
@@ -1468,11 +1465,10 @@ expression:
 
 
 frag_expression
-    : LEX_FRAG_SEL LEX_L_PAREN LEX_VAR frag_expr_chain_start LEX_R_PAREN {
+    : LEX_VAR LEX_VAR frag_expr_chain_start {
             ParserValue_t v;
             v.setString(""); // to native value
             CODE_VAL(REPR, v);
-            $$.prgsize = $1.prgsize; //start of expr prog
     }
     | LEX_JSONIFY LEX_L_PAREN LEX_VAR frag_expr_chain_start LEX_R_PAREN {
             ParserValue_t v;
@@ -1739,10 +1735,6 @@ identifier
     | LEX_JSONIFY {
         $$ = $1;
         $$.val.stringValue = "jsonify";
-    }
-    | LEX_FRAG_SEL {
-        $$ = $1;
-        $$.val.stringValue = "select";
     }
     | LEX_EXISTS {
         $$ = $1;
@@ -2208,7 +2200,8 @@ static int yylex(YYSTYPE *leftValue, void *context)
         Lex1_t::Token_t tok = CONTEXT->lex1.top()->getElement();
         if (tok.type == Lex1_t::TYPE_TENG
                 || tok.type == Lex1_t::TYPE_EXPR
-                || tok.type == Lex1_t::TYPE_DICT) {
+                || tok.type == Lex1_t::TYPE_DICT
+                || (tok.type == Lex1_t::TYPE_TENG_SHORT && CONTEXT->paramDictionary->isShortTagEnabled()) ) {
 
             // use lex2
             CONTEXT->tengLex2.init(tok.value);
@@ -2216,7 +2209,8 @@ static int yylex(YYSTYPE *leftValue, void *context)
             CONTEXT->lex2 = 1;
             continue; //read first lex2-element
 
-        } else if (tok.type == Lex1_t::TYPE_TEXT) {
+        } else if (tok.type == Lex1_t::TYPE_TEXT
+            || (tok.type == Lex1_t::TYPE_TENG_SHORT && !CONTEXT->paramDictionary->isShortTagEnabled()) ) {
 
             // plain text
             leftValue->val.setString(tok.value);
@@ -2421,8 +2415,6 @@ static void printUnexpectedElement(ParserContext_t *context,
         case LEX_UNARY: //LEX_UNARY is fake terminal
             msg = "fake lexical element used just for modifying "
                     "precedence of the unary operators. Huh?!?"; break;
-        case LEX_FRAG_SEL:
-            msg = "operator 'select'"; break;
 
         // other keywords/operators
         case LEX_CASE:
