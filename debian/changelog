@@ -1,3 +1,9 @@
+libteng (2.3.5) Seznam; urgency=low
+
+  * regex_replace (#180)
+
+ -- Martin Fousek <martin.fousek@firma.seznam.cz>  Mon, 04 Feb 2013 11:15:25 +0100
+
 libteng (2.3.4) Seznam; urgency=low
 
   * Changed select to $$
