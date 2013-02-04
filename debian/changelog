@@ -1,3 +1,15 @@
+python-teng (2.3.5) unstable; urgency=low
+
+  * Linked against 2.3.5
+
+ -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Mon, 04 Feb 2013 12:24:20 +0100
+
+python-teng (2.3.4) unstable; urgency=low
+
+  * Compiled against teng 2.3.4
+
+ -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Thu, 01 Nov 2012 15:34:53 +0100
+
 python-teng (2.3.2) unstable; urgency=low
 
   * Unified minor number
