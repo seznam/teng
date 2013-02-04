@@ -70,7 +70,7 @@ libteng_la_SOURCES = teng.cc tengstructs.cc tengutil.cc tengcache.cc \
 
 # with these flags (version info etc.)
 libteng_la_LDFLAGS = @VERSION_INFO@
-libteng_la_LIBADD = $(LTLIBOBJS)
+libteng_la_LIBADD = $(LTLIBOBJS) -lboost_regex
 
 # explicit rules for proper flex & bison sources compilation
 tenglex2.cc: tenglex2.ll tengsyntax.h tengsyntax.cc

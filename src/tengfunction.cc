@@ -55,8 +55,11 @@
 #include <ctype.h>
 #include <sys/time.h>
 
+#include <boost/regex.hpp>
+
 #include "tengfunction.h"
 #include "tengplatform.h"
+
 
 #ifndef HAVE_TRUNC
 // emulated trunc() math function if not in libc
@@ -1738,9 +1741,32 @@ static int tengFunctionReplace(const vector<ParserValue_t> &args,
     return 0;
 }
 
+static int tengFunctionPregReplace(const vector<ParserValue_t> &args,
+                               const Processor_t::FunctionParam_t &setting,
+                               ParserValue_t &result)
+{
+    std::string s;
+    std::string sRe;
+    std::string sTo;
+    if (args.size() == 3){
+	s = args[2].stringValue;
+	sRe = args[1].stringValue;
+	sTo = args[0].stringValue;
+    } else {
+	return -1;
+    }
+    boost::regex re(sRe);
+    std::string sResult;
+    //std::cout << "s: `" << s << "` " << "sRe: `" << sRe << "`" << " sTo: `" << sTo << "`" << std::endl;
+    sResult = boost::regex_replace(s, re, sTo);
+
+    result.setString(sResult);
+    return 0;
+}
+
 namespace {
-    struct FunctionStub_t {
-        const char *name;  // teng name
+struct FunctionStub_t {
+	const char *name;  // teng name
         bool eval;         // use for preevaluation (false for rand(), time() etc)
         Function_t func;   // C++ function addr
     };
@@ -1773,6 +1799,7 @@ namespace {
         {"quoteescape", true, tengFunctionQuoteEscape}, // escape strange chars
                                                         // in quoted string
         {"timestamp", true, tengFunctionTimestamp},
+        {"regex_replace", true, tengFunctionPregReplace},
         { 0, false, 0}                            // end of list
     };
 }
