@@ -1,3 +1,9 @@
+libteng (2.3.6) Seznam; urgency=low
+
+  * Linked against correct boost version
+
+ -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Wed, 06 Feb 2013 16:05:34 +0100
+
 libteng (2.3.5) Seznam; urgency=low
 
   * regex_replace (#180)
