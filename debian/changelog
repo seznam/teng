@@ -1,3 +1,10 @@
+libteng (2.3.7) Seznam; urgency=low
+
+  * using pcre++ instead of boost
+  * tld
+
+ -- Martin Fousek <martin.fousek@firma.seznam.cz>  Tue, 12 Feb 2013 14:14:37 +0100
+
 libteng (2.3.6) Seznam; urgency=low
 
   * Linked against correct boost version

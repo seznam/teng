@@ -2,7 +2,7 @@ Source: libteng
 Section: Seznam
 Priority: optional
 Maintainer: Lukas Lobotka <lukas.lobotka@firma.seznam.cz>
-Build-Depends: debhelper, autoconf, libtool, automake, bison, flex, libboost-regex-dev
+Build-Depends: debhelper, autoconf, libtool, automake, bison, flex, libpcre++0
 Standards-Version: 3.7.2.2
 
 Package: libteng2

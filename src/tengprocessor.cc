@@ -61,6 +61,8 @@
 #include "tengutil.h"
 #include "tengudf.h"
 
+#include "tengaux.h"
+
 #ifdef HAVE_FENV_H
 #include <fenv.h>
 #endif

@@ -60,6 +60,7 @@
 #include "tengformatter.h"
 #include "tengcode.h"
 #include "tenglex2.h"
+#include "tengaux.h"
 
 using namespace std;
 
@@ -1550,9 +1551,13 @@ dictionary_item:
             if (item == 0)
                 item = CONTEXT->paramDictionary->lookup($1.val.stringValue);
             if (item == 0) {
-                ERR(ERROR, $1.pos, "Cannot find '" + $1.val.stringValue
-                        + "' dictionary item");
-                item = &($1.val.stringValue);
+		if ($1.val.stringValue == "_tld"){
+		    item = &Tld::getInstance().tld();
+		} else {
+		    ERR(ERROR, $1.pos, "Cannot find '" + $1.val.stringValue
+			    + "' dictionary item");
+		    item = &($1.val.stringValue);
+		}
             }
             // generate code
             $$.prgsize = CONTEXT->program->size(); //start of expr prog

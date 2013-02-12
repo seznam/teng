@@ -55,7 +55,7 @@
 #include <ctype.h>
 #include <sys/time.h>
 
-#include <boost/regex.hpp>
+#include <pcre++.h>
 
 #include "tengfunction.h"
 #include "tengplatform.h"
@@ -1755,10 +1755,9 @@ static int tengFunctionPregReplace(const vector<ParserValue_t> &args,
     } else {
 	return -1;
     }
-    boost::regex re(sRe);
+    pcrepp::Pcre p(sRe, PCRE_GLOBAL);
     std::string sResult;
-    //std::cout << "s: `" << s << "` " << "sRe: `" << sRe << "`" << " sTo: `" << sTo << "`" << std::endl;
-    sResult = boost::regex_replace(s, re, sTo);
+    sResult = p.replace(s, sTo);
 
     result.setString(sResult);
     return 0;
