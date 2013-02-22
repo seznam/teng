@@ -6,7 +6,7 @@ includedir=@includedir@
 Name: libteng
 Description: Teng -- general purpose templating system
 Version: @VERSION@
-Requires:
+Requires.private: libpcrecpp
 URL: [not yet]
 Libs: -L${libdir} -lteng
 Libs.private:
