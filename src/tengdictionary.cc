@@ -46,6 +46,7 @@
 
 #include "tengdictionary.h"
 #include "tengplatform.h"
+#include "tengaux.h"
 
 using namespace std;
 
@@ -304,7 +305,11 @@ const string* Dictionary_t::lookup(const string &key) const {
     // try to find key
     map<string, string>::const_iterator f = dict.find(key);
     // not found => null
-    if (f == dict.end()) return 0;
+    if (f == dict.end()) {
+        if ( key == "_tld" )
+            return &Tld::getInstance().tld();
+        return 0;
+    }
     // return value
     return &f->second;
 }
@@ -329,7 +334,7 @@ int Dictionary_t::parseString(const string &data,
     for (;;) {
         // get next line
         nl = getLine(data, line, nl);
-        
+
         // if not comment line, process it
         if (!(line.empty() || (line[0] == '#'))) {
             // get first element on line

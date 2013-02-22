@@ -1551,13 +1551,8 @@ dictionary_item:
             if (item == 0)
                 item = CONTEXT->paramDictionary->lookup($1.val.stringValue);
             if (item == 0) {
-		if ($1.val.stringValue == "_tld"){
-		    item = &Tld::getInstance().tld();
-		} else {
-		    ERR(ERROR, $1.pos, "Cannot find '" + $1.val.stringValue
-			    + "' dictionary item");
-		    item = &($1.val.stringValue);
-		}
+        		ERR(ERROR, $1.pos, "Cannot find '" + $1.val.stringValue
+        		    + "' dictionary item");
             }
             // generate code
             $$.prgsize = CONTEXT->program->size(); //start of expr prog

@@ -41,9 +41,9 @@ Tld::Tld(){
     std::string s(buf);
     size_t pos = s.rfind(".");
     if ((pos == std::string::npos) || (idx == -1)){
-	m_domainSuffix = "__default__";
+        m_domainSuffix = "__default__";
     } else {
-	m_domainSuffix = s.substr(pos + 1, s.size());
+        m_domainSuffix = s.substr(pos + 1, s.size());
     }
 }
 

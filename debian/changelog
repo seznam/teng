@@ -1,3 +1,9 @@
+libteng (2.3.7+rc1) Seznam; urgency=low
+
+  * _tld expansion in dictionary file (#235)
+
+ -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Fri, 22 Feb 2013 14:38:14 +0100
+
 libteng (2.3.7-1) Seznam; urgency=low
 
   * Oprava zavilosti v dev balicku
