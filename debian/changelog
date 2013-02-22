@@ -1,3 +1,9 @@
+libteng (2.3.7-1) Seznam; urgency=low
+
+  * Oprava zavilosti v dev balicku
+
+ -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Fri, 22 Feb 2013 12:54:03 +0100
+
 libteng (2.3.7) Seznam; urgency=low
 
   * using pcre++ instead of boost
