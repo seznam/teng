@@ -1,3 +1,9 @@
+libteng (2.3.7+rc2) Seznam; urgency=low
+
+  * Segfault bugfix
+
+ -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Tue, 26 Feb 2013 17:46:54 +0100
+
 libteng (2.3.7+rc1) Seznam; urgency=low
 
   * _tld expansion in dictionary file (#235)

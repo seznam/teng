@@ -1553,6 +1553,7 @@ dictionary_item:
             if (item == 0) {
         		ERR(ERROR, $1.pos, "Cannot find '" + $1.val.stringValue
         		    + "' dictionary item");
+                item = &($1.val.stringValue);
             }
             // generate code
             $$.prgsize = CONTEXT->program->size(); //start of expr prog
