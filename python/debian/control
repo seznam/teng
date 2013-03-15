@@ -1,0 +1,18 @@
+Source: python-teng
+Section: python
+Priority: Extra
+Maintainer: Lukas Lobotka <lukas.lobotka@firma.seznam.cz>
+XS-Python-Standards-Version: 0.4
+XS-Python-Version: all
+Build-Depends: debhelper, python-all-dev, python-central
+
+
+Package: python-teng
+Section: python
+Architecture: any
+Depends: ${shlibs:Depends}, ${python:Depends}
+Conflicts: python2.5-teng, python2.6-teng
+Provides: ${python:Provides}
+XB-Python-Version: ${python:Versions}
+Description: Teng module for python
+  Teng is a powerful and easy to use templating system.

@@ -1,0 +1,38 @@
+python-teng (2.3.5) unstable; urgency=low
+
+  * Linked against 2.3.5
+
+ -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Mon, 04 Feb 2013 12:24:20 +0100
+
+python-teng (2.3.4) unstable; urgency=low
+
+  * Compiled against teng 2.3.4
+
+ -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Thu, 01 Nov 2012 15:34:53 +0100
+
+python-teng (2.3.2) unstable; urgency=low
+
+  * Unified minor number
+
+ -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Mon, 13 Aug 2012 09:40:09 +0200
+
+python-teng (2.2.1) unstable; urgency=low
+
+  * Compiled against teng 2.3.1
+  * Modified UDF return values
+
+ -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Wed, 08 Aug 2012 12:09:05 +0200
+
+python-teng (2.2.0) unstable; urgency=low
+
+  * Added teng.registerUDF
+  * Compiled against teng 2.3.0
+  * Maintainer changed
+
+ -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Wed, 11 Jul 2012 10:00:44 +0200
+
+python-teng (2.0.1) unstable; urgency=low
+
+  * Added debhelper packaging for squeeze.
+
+ -- Filip Volejnik <filip.volejnik@firma.seznam.cz>  Mon, 21 Feb 2011 14:11:41 +0100
