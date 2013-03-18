@@ -1,3 +1,9 @@
+libteng (2.3.9) Seznam; urgency=low
+
+  * Fixed short tags
+
+ -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Mon, 18 Mar 2013 13:32:18 +0100
+
 libteng (2.3.8) Seznam; urgency=low
 
   * See 2.3.7+rc1, 2.3.7+rc2

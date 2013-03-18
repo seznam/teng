@@ -63,7 +63,7 @@ Lex1_t::Lex1_t(const string &fname,
 {
     // normalize filename
     tengNormalizeFilename(filename);
-    
+
     // open file
     FILE *fp = fopen(filename.c_str(), "rb");
     if (fp == 0) {
@@ -105,10 +105,10 @@ inline static void newSequence(int &state, string &s, char c)
 
 
 /** Unescape substring of input string variable.
- * changes only $\{, \}, <\?, #\{, ?\> to ${, }, <?, #{, ?>  
+ * changes only $\{, \}, <\?, #\{, ?\> to ${, }, <?, #{, ?>
  * @param begin start position in string input.
  * @param end final position in string input + 1.
- * @return unescaped substring */ 
+ * @return unescaped substring */
 string Lex1_t::unescapeInputSubstr(unsigned int begin, unsigned int end)
 {
     int state = 0;
@@ -219,7 +219,7 @@ string Lex1_t::unescapeInputSubstr(unsigned int begin, unsigned int end)
                     state = 3;
                     goto state3;
                 }
-                break;           
+                break;
 
             default:
                 newSequence(state, s, input[begin]);
@@ -239,22 +239,22 @@ string Lex1_t::unescapeInputSubstr(unsigned int begin, unsigned int end)
         case 8: s.push_back('?'); break;
         case 9: s.append("?\\"); break;
     }
-    
+
     return s;
 }
 
 /** Get next token.
   * @return Token struct of next token. */
-Lex1_t::Token_t Lex1_t::getElement()
+Lex1_t::Token_t Lex1_t::getElement(bool shortTag)
 {
     // backup start values
     size_t start_pos = position;
     size_t start_line = line;
     size_t start_column = column;
-    
+
     // go up to element start
     while (position < input.length()) {
-        
+
         // test for elements
         if (position + 4 < input.length()
                 && input[position] == '<'
@@ -270,7 +270,7 @@ Lex1_t::Token_t Lex1_t::getElement()
                         start_line, start_column);
             // skip "<!---"
             incrementPosition(5);
-            
+
             // skip input until "--->"
             while (position < input.length()) {
                 // test for comment end
@@ -297,7 +297,7 @@ Lex1_t::Token_t Lex1_t::getElement()
             start_column = column;
             // continue with next token
             continue;
-            
+
         }
         else if (position + 6 < input.length()
                 && input[position] == '<'
@@ -318,7 +318,7 @@ Lex1_t::Token_t Lex1_t::getElement()
                         start_line, start_column);
             // skip "<?teng"
             incrementPosition(6);
-            
+
             // skip input until "?>"
             int escape = 0, inString = 0;
             while (position < input.length()) {
@@ -348,9 +348,10 @@ Lex1_t::Token_t Lex1_t::getElement()
             return Token_t(TYPE_TENG,
                     input.substr(start_pos, position - start_pos),
                     start_line, start_column);
-            
+
         }
-        else if (position + 1 < input.length()
+        else if ( shortTag == true
+                && position + 1 < input.length()
                 && input[position] == '<'
                 && input[position + 1] == '?') {
             // "<?teng" directive
@@ -404,7 +405,7 @@ Lex1_t::Token_t Lex1_t::getElement()
                         start_line, start_column);
             // skip "${"
             incrementPosition(2);
-            
+
             // skip input until "}", except escaped "\}"
             int escape = 0, inString = 0;
             while (position < input.length()) {
@@ -432,7 +433,7 @@ Lex1_t::Token_t Lex1_t::getElement()
             return Token_t(TYPE_EXPR,
                     input.substr(start_pos, position - start_pos),
                     start_line, start_column);
-            
+
         }
         else if (position + 1 < input.length()
                 && input[position] == '#'
@@ -445,7 +446,7 @@ Lex1_t::Token_t Lex1_t::getElement()
                         start_line, start_column);
             // skip "#{"
             incrementPosition(2);
-            
+
             // skip input until "}", except escaped \}
             int escape = 0;
             while (position < input.length()) {
@@ -473,21 +474,21 @@ Lex1_t::Token_t Lex1_t::getElement()
             return Token_t(TYPE_DICT,
                     input.substr(start_pos, position - start_pos),
                     start_line, start_column);
-            
+
         }
         else {
             // text
             incrementPosition(1);
         }
-        
+
     } //end while
-    
+
     // test for end of text token
     if (position > start_pos)
         return Token_t(TYPE_TEXT,
                 unescapeInputSubstr(start_pos, position),
                 start_line, start_column);
-    
+
     // return end token
     return Token_t(TYPE_EOF,
             "End of input stream",
@@ -510,10 +511,10 @@ void Lex1_t::incrementPosition(int num)
 {
     // repeat num-times
     while (num -- > 0) {
-        
+
         // check end
         if (position < input.length()) {
-            
+
             // advance line & column pointers
             if (input[position] == '\n') {
                 ++ line; //inc line
@@ -522,7 +523,7 @@ void Lex1_t::incrementPosition(int num)
                 column = ((column / 8) + 1) * 8; //skip to next tab
             } else
                 ++ column;
-            
+
             // next char in input
             ++ position;
         }

@@ -2197,12 +2197,14 @@ static int yylex(YYSTYPE *leftValue, void *context)
         }
         // remember lex1 position
         CONTEXT->lex1Pos = CONTEXT->lex1.top()->getPosition();
+        // short tags enabled
+        bool shortTag = CONTEXT->paramDictionary->isShortTagEnabled();
         // get next L1 token
-        Lex1_t::Token_t tok = CONTEXT->lex1.top()->getElement();
+        Lex1_t::Token_t tok = CONTEXT->lex1.top()->getElement(shortTag);
         if (tok.type == Lex1_t::TYPE_TENG
                 || tok.type == Lex1_t::TYPE_EXPR
                 || tok.type == Lex1_t::TYPE_DICT
-                || (tok.type == Lex1_t::TYPE_TENG_SHORT && CONTEXT->paramDictionary->isShortTagEnabled()) ) {
+                || (tok.type == Lex1_t::TYPE_TENG_SHORT && shortTag) ) {
 
             // use lex2
             CONTEXT->tengLex2.init(tok.value);
@@ -2211,7 +2213,7 @@ static int yylex(YYSTYPE *leftValue, void *context)
             continue; //read first lex2-element
 
         } else if (tok.type == Lex1_t::TYPE_TEXT
-            || (tok.type == Lex1_t::TYPE_TENG_SHORT && !CONTEXT->paramDictionary->isShortTagEnabled()) ) {
+            || (tok.type == Lex1_t::TYPE_TENG_SHORT && !shortTag) ) {
 
             // plain text
             leftValue->val.setString(tok.value);

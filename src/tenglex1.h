@@ -48,7 +48,7 @@ namespace Teng {
 class Lex1_t {
 
 public:
-        
+
     /** Possible token types. */
     enum Type_t {
         TYPE_EOF, /**< End of input, last token. */
@@ -59,25 +59,25 @@ public:
         TYPE_EXPR, /**< Shorted expression form. */
         TYPE_DICT, /**< Shorted dictionary item form. */
     };
-    
+
     /** Token type, returned by the get() method. */
     struct Token_t {
         Type_t type; /**< Token Type. */
         string value; /**< Value of the token. */
         int line; /**< Line number of the token start. */
         int column; /**< Column number of the token start. */
-        
+
         /** Construct structure with initialized members. */
         inline Token_t(Type_t t, const string &v, int l, int c)
             : type(t), value(v), line(l), column(c)
         {}
     };
-    
+
     /** Initialize lexical analyzer from string.
       * @param input Input string.
       * @param filename File from which the string was taken. */
     Lex1_t(const string &input, const string &filename);
-    
+
     /** Initialize lexical analyzer from file.
       * @param filename Input file to read.
       * @param position Position in source file.
@@ -85,22 +85,23 @@ public:
     Lex1_t(const string &filename,
            const Error_t::Position_t &position,
            Error_t &error);
-    
+
      /** Unescape substring of input string variable.
       * @param begin start position in string input.
       * @param end final position in string input + 1.
-      * @return unescaped substring */   
+      * @return unescaped substring */
     string unescapeInputSubstr(unsigned int begin, unsigned int end);
-    
+
     /** Get next token.
+      * @param shortTag enable short tah
       * @return Token struct of next token. */
-    Token_t getElement();
+    Token_t getElement(bool shortTag);
 
     /** Get error position.
       * @return Error position. */
     Error_t::Position_t getPosition() const;
-        
-    
+
+
 private:
 
     /** Advance actual position by one char
