@@ -39,7 +39,7 @@
 AM_CXXFLAGS = -Wall
 
 # extra compiler options
-AM_CPPFLAGS = -D_ISOC99_SOURCE -fPIC
+AM_CPPFLAGS = -D_ISOC99_SOURCE -fPIC ${pcrecpp_CFLAGS}
 
 # these are generated and thus ought to be prepared before anything else
 BUILT_SOURCES = tenglex2.cc tengsyntax.cc
@@ -70,7 +70,7 @@ libteng_la_SOURCES = teng.cc tengstructs.cc tengutil.cc tengcache.cc \
 
 # with these flags (version info etc.)
 libteng_la_LDFLAGS = @VERSION_INFO@
-libteng_la_LIBADD = $(LTLIBOBJS) -lpcre++
+libteng_la_LIBADD = $(LTLIBOBJS) ${pcrecpp_LIBS}
 
 # explicit rules for proper flex & bison sources compilation
 tenglex2.cc: tenglex2.ll tengsyntax.h tengsyntax.cc

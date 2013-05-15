@@ -34,6 +34,7 @@
  */
 
 #include "tengaux.h"
+#include <unistd.h>
 
 Tld::Tld(){
     char buf[256] = {0};

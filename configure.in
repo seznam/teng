@@ -51,6 +51,9 @@ AC_CONFIG_SRCDIR([src/teng.cc])
 # check for C++ compiler
 AC_PROG_CXX
 
+# pkg config
+PKG_PROG_PKG_CONFIG([0.25])
+
 # check for std C headers
 AC_HEADER_STDC
 
@@ -112,9 +115,6 @@ AC_ARG_ENABLE(lock-udf,[ --disable-udf-locks compile without thread safe UDF],[
     check_pthreads="yes"
 ])
 
-
-
-
 # check for flex and bison
 AM_PROG_LEX
 AC_PROG_YACC
@@ -125,6 +125,9 @@ AC_CHECK_HEADERS(fenv.h)
 # check for functions that may miss on some platforms
 AC_CHECK_LIB(m, floor)
 AC_REPLACE_FUNCS([trunc round])
+
+# pcrecpp
+PKG_CHECK_MODULES([pcrecpp], [libpcrecpp])
 
 AS_IF([test x$check_pthreads == xyes], [
     # Check for nonglibc header from serr library. The library is not
