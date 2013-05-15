@@ -1,3 +1,22 @@
+libteng (2.3.10) Seznam; urgency=low
+
+  * Function int now takes optional parameter which forces conversion (#248)
+  * Operators exist, exists and defined now works with selectors (#243)
+
+ -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Mon, 15 Apr 2013 12:27:59 +0200
+
+libteng (2.3.9+rc2) Seznam; urgency=low
+
+  * Function int now takes optional parameter which forces conversion
+
+ -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Thu, 04 Apr 2013 16:50:51 +0200
+
+libteng (2.3.9+rc1) Seznam; urgency=low
+
+  * Operators exist, exists and defined now works with selectors (#243)
+
+ -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Wed, 27 Mar 2013 10:40:49 +0100
+
 libteng (2.3.9) Seznam; urgency=low
 
   * Fixed short tags

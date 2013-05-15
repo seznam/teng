@@ -684,6 +684,10 @@ namespace {
     }
 }
 
+#define WARN_IF(...)\
+    if ( existMarks == 0 )\
+        logErr(__VA_ARGS__)
+
 void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                       Error_t &inError)
 {
@@ -697,6 +701,9 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
     while (!valueStack.empty()) valueStack.pop();
 
     int ip = 0; // Never will be changed to unsigned !!
+
+    // Number of nested exits to control error logging
+    int existMarks = 0;
 
     // remember error
     error = &inError;
@@ -1189,6 +1196,10 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
             fParam.escaper.pop(*error, position(instr, program));
             break;
 
+        case Instruction_t::EXISTMARK:
+            existMarks++;
+            break;
+
         case Instruction_t::AT:
             if (valueStack.empty()) {
                 logErr(instr, "Value stack underflow",
@@ -1211,7 +1222,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                     if ( cVal.type == FragVal_t::FRAGMENT ) {
                         Fragment_t::const_iterator it = cVal.frag->find(member);
                         if ( it == cVal.frag->end() ) {
-                            logErr(instr, "Unable to locate member (1) '" + member + "'",
+                            WARN_IF(instr, "Unable to locate member (1) '" + member + "'",
                                 Error_t::LL_WARNING);
                             cVal = FragVal_t();
                         } else {
@@ -1223,24 +1234,24 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                             Fragment_t *frag = (*nested)[0];
                             Fragment_t::const_iterator it = frag->find(member);
                             if ( it == frag->end() ) {
-                                logErr(instr, "Unable to locate member (2) '" + member + "'",
+                                WARN_IF(instr, "Unable to locate member (2) '" + member + "'",
                                     Error_t::LL_WARNING);
                                 cVal = FragVal_t();
                             } else {
                                 cVal = FragVal_t(it->second);
                             }
                         } else {
-                            logErr(instr, "String indices can be used only for fragments",
+                            WARN_IF(instr, "String indices can be used only for fragments",
                                 Error_t::LL_WARNING);
                         }
                     } else {
-                        logErr(instr, "String indices can be used only for fragments",
+                        WARN_IF(instr, "String indices can be used only for fragments",
                             Error_t::LL_WARNING);
                     }
                 } else if ( a.type == ParserValue_t::TYPE_INT ) {
                     if ( cVal.type == FragVal_t::FRAGMENT_LIST ) {
                         if ( a.integerValue < 0 || static_cast<size_t>(a.integerValue) >= cVal.list->size() ) {
-                            logErr(instr, "Index " + FragmentValue_t(a.integerValue).value +
+                            WARN_IF(instr, "Index " + FragmentValue_t(a.integerValue).value +
                                 " is out of range", Error_t::LL_WARNING);
                             cVal = FragVal_t();
                         } else {
@@ -1249,19 +1260,19 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                     } else if ( cVal.type == FragVal_t::FRAGMENT_VALUE && cVal.value->nestedFragments != 0 ) {
                         const FragmentList_t *nested = cVal.value->nestedFragments;
                         if ( a.integerValue < 0 || static_cast<size_t>(a.integerValue) >= nested->size() ) {
-                            logErr(instr, "Index " + FragmentValue_t(a.integerValue).value +
+                            WARN_IF(instr, "Index " + FragmentValue_t(a.integerValue).value +
                                 " is out of range", Error_t::LL_WARNING);
                             cVal = FragVal_t();
                         } else {
                             cVal = FragVal_t((*nested)[a.integerValue]);
                         }
                     } else {
-                        logErr(instr, "Only fragment lists can be indexed",
+                        WARN_IF(instr, "Only fragment lists can be indexed",
                             Error_t::LL_WARNING);
                         cVal = FragVal_t();
                     }
                 } else {
-                    logErr(instr, "Invalid combination of index and entity type",
+                    WARN_IF(instr, "Invalid combination of index and entity type",
                         Error_t::LL_WARNING);
                     cVal = FragVal_t();
                 }
@@ -1288,7 +1299,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                 if ( cVal.type == FragVal_t::FRAGMENT ) {
                     Fragment_t::const_iterator it = cVal.frag->find(member);
                     if ( it == cVal.frag->end() ) {
-                        logErr(instr, "Unable to locate member (3) '" + member + "'",
+                        WARN_IF(instr, "Unable to locate member (3) '" + member + "'",
                             Error_t::LL_WARNING);
                         cVal = FragVal_t();
                     } else {
@@ -1296,7 +1307,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                     }
                 } else if ( cVal.type == FragVal_t::FRAGMENT_VALUE ) {
                     if ( cVal.value->nestedFragments == 0 ) {
-                        logErr(instr, "Unable to locate member (4) '" + member + "'"
+                        WARN_IF(instr, "Unable to locate member (4) '" + member + "'"
                             " in value",
                             Error_t::LL_WARNING);
                         cVal = FragVal_t();
@@ -1305,7 +1316,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                             const Fragment_t *frag = (*cVal.value->nestedFragments)[0];
                             Fragment_t::const_iterator it = frag->find(member);
                             if ( it == frag->end() ) {
-                                logErr(instr, "Unable to locate member (5) '" + member + "'",
+                                WARN_IF(instr, "Unable to locate member (5) '" + member + "'",
                                     Error_t::LL_WARNING);
                                 cVal = FragVal_t();
                             } else {
@@ -1316,7 +1327,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                         }
                     }
                 } else if ( cVal.type != FragVal_t::FRAGMENT_NULL ) {
-                    logErr(instr, "Unable to locate member (6) '" + member + "'"
+                    WARN_IF(instr, "Unable to locate member (6) '" + member + "'"
                         " in fragment list",
                         Error_t::LL_WARNING);
                     cVal = FragVal_t();
@@ -1391,6 +1402,19 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
 
                     default:
                         a.setString("null");
+                        break;
+                }
+            } else if ( instr.value.stringValue == "exists" ) {
+                existMarks--;
+                switch ( cVal.type ) {
+                    case FragVal_t::FRAGMENT:
+                    case FragVal_t::FRAGMENT_LIST:
+                    case FragVal_t::FRAGMENT_VALUE:
+                        a.setInteger(1);
+                        break;
+
+                    default:
+                        a.setInteger(0);
                         break;
                 }
             } else {

@@ -1498,14 +1498,19 @@ static int tengFunctionInt(const vector<ParserValue_t> &args,
                            ParserValue_t &result)
 {
     result.setString("undefined");
-    if (args.size() != 1) return -1;
-    ParserValue_t a(args[0]);
+    int numArgs = args.size();
+    if (numArgs != 1 && numArgs != 2) return -1;
+    ParserValue_t a(numArgs == 1 ? args[0] : args[1]);
 
     a.validateThis();
     if (a.type == ParserValue_t::TYPE_STRING) {
-        setting.logger.logError(Error_t::LL_ERROR,
-                "int(): Cannot convert string to int.");
-        return -2;
+        if ( numArgs == 1 ) {
+            setting.logger.logError(Error_t::LL_ERROR,
+                    "int(): Cannot convert string to int.");
+            return -2;
+        }
+        result.setInteger(strtol(a.stringValue.c_str(), 0, 10));
+        return 0;
     }
     result.setInteger(a.integerValue);
     return 0;
@@ -1749,11 +1754,11 @@ static int tengFunctionPregReplace(const vector<ParserValue_t> &args,
     std::string sRe;
     std::string sTo;
     if (args.size() == 3){
-	s = args[2].stringValue;
-	sRe = args[1].stringValue;
-	sTo = args[0].stringValue;
+    	s = args[2].stringValue;
+    	sRe = args[1].stringValue;
+    	sTo = args[0].stringValue;
     } else {
-	return -1;
+	   return -1;
     }
     pcrepp::Pcre p(sRe, PCRE_GLOBAL);
     std::string sResult;

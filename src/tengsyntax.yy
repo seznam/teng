@@ -1467,27 +1467,39 @@ expression:
 
 frag_expression
     : LEX_VAR LEX_VAR frag_expr_chain_start {
-            ParserValue_t v;
-            v.setString(""); // to native value
-            CODE_VAL(REPR, v);
+        ParserValue_t v;
+        v.setString(""); // to native value
+        CODE_VAL(REPR, v);
     }
     | LEX_JSONIFY LEX_L_PAREN LEX_VAR LEX_VAR frag_expr_chain_start LEX_R_PAREN {
-            ParserValue_t v;
-            v.setString("json"); // to json
-            CODE_VAL(REPR, v);
-            $$.prgsize = $1.prgsize; //start of expr prog
+        ParserValue_t v;
+        v.setString("json"); // to json
+        CODE_VAL(REPR, v);
+        $$.prgsize = $1.prgsize; //start of expr prog
     }
     | LEX_TYPE LEX_L_PAREN LEX_VAR LEX_VAR frag_expr_chain_start LEX_R_PAREN {
-            ParserValue_t v;
-            v.setString("type"); // return type
-            CODE_VAL(REPR, v);
-            $$.prgsize = $1.prgsize; //start of expr prog
+        ParserValue_t v;
+        v.setString("type"); // return type
+        CODE_VAL(REPR, v);
+        $$.prgsize = $1.prgsize; //start of expr prog
     }
     | LEX_COUNT LEX_L_PAREN LEX_VAR LEX_VAR frag_expr_chain_start LEX_R_PAREN {
-            ParserValue_t v;
-            v.setString("count"); // return count
-            CODE_VAL(REPR, v);
-            $$.prgsize = $1.prgsize; //start of expr prog
+        ParserValue_t v;
+        v.setString("count"); // return count
+        CODE_VAL(REPR, v);
+        $$.prgsize = $1.prgsize; //start of expr prog
+    }
+    | exists_operator LEX_L_PAREN LEX_VAR LEX_VAR frag_expr_chain_start LEX_R_PAREN {
+        ParserValue_t v;
+        v.setString("exists"); // return count
+        CODE_VAL(REPR, v);
+        $$.prgsize = $1.prgsize; //start of expr prog
+    }
+    | defined_operator LEX_L_PAREN LEX_VAR LEX_VAR frag_expr_chain_start LEX_R_PAREN {
+        ParserValue_t v;
+        v.setString("exists"); // return count
+        CODE_VAL(REPR, v);
+        $$.prgsize = $1.prgsize; //start of expr prog
     }
     ;
 
@@ -1918,10 +1930,19 @@ case_values:
         }
     ;
 
+defined_operator
+    : LEX_DEFINED {
+        CODE(EXISTMARK);
+        $$ = $1;
+    }
+    ;
 
 defined:
-        LEX_DEFINED LEX_L_PAREN variable_identifier LEX_R_PAREN
+        defined_operator LEX_L_PAREN variable_identifier LEX_R_PAREN
         {
+            // Remove EXISTMARK instruction, it has no use here
+            CONTEXT->program->pop_back();
+
             // following code cannot be optimized
             $$.prgsize = CONTEXT->program->size(); //start of expr prog
             // clear val and copy variable identifier
@@ -1976,8 +1997,10 @@ defined:
         }
 
     // defined-operator error handling
-    | LEX_DEFINED LEX_L_PAREN error
+    | defined_operator LEX_L_PAREN error
         {
+            // Remove EXISTMARK instruction, it has no use here
+            CONTEXT->program->pop_back();
             if (tengSyntax_lastErrorMessage.length() > 0) {
                 printUnexpectedElement(CONTEXT, yychar, yylval);
                 if (yychar == LEX_VAR)
@@ -1999,6 +2022,8 @@ defined:
 exist:
     exists_operator LEX_L_PAREN variable_identifier LEX_R_PAREN
         {
+            // Remove EXISTMARK instruction, it has no use here
+            CONTEXT->program->pop_back();
             // following code cannot be optimized
             $$.prgsize = CONTEXT->program->size(); //start of expr prog
             // clear val and copy variable identifier
@@ -2062,6 +2087,8 @@ exist:
     // exist-operator error handling
     | exists_operator LEX_L_PAREN error
         {
+            // Remove EXISTMARK instruction, it has no use here
+            CONTEXT->program->pop_back();
             if (tengSyntax_lastErrorMessage.length() > 0) {
                 printUnexpectedElement(CONTEXT, yychar, yylval);
                 if (yychar == LEX_VAR)
@@ -2082,9 +2109,11 @@ exist:
 
 exists_operator
     : LEX_EXIST {
+        CODE(EXISTMARK);
         $$ = $1;
     }
     | LEX_EXISTS {
+        CODE(EXISTMARK);
         $$ = $1;
     }
     ;

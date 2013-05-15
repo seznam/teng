@@ -50,9 +50,9 @@ namespace Teng {
 
 struct Identifier_t {
     /** @short Name of identifier.
-     */ 
+     */
     string name;
-    
+
     /** @short Context of identifier.
      *
      * For fragments and variable means how many context we must go
@@ -64,7 +64,7 @@ struct Identifier_t {
     unsigned short int context;
 
     /** @short Depth in associated context.
-     * 
+     *
      * Indicates how deep the variable/fragment is in the context --
      * distance form the root.
      */
@@ -128,8 +128,9 @@ struct Instruction_t {
         GETATTR, /**< Get attribute. */
         AT, /**< Get value at given index */
         REPR, /**< Convert frag value into value */
+        EXISTMARK, /**< Marks start of exist/defined block */
     };
-    
+
     /** Create simple instruction without params.
       * @param op Inctruction code.
       * @param srcidx Index of the source file into program's source list.
@@ -137,7 +138,7 @@ struct Instruction_t {
       * @param col Column number in the source. */
     inline Instruction_t(OpCode_t op, int srcidx, int line, int col)
         : operation(op), sourceIndex(srcidx), line(line), column(col) {}
-    
+
     /** Create instruction with value-struct param.
       * @param op Inctruction code.
       * @param val Instruction's own operand.
@@ -148,11 +149,11 @@ struct Instruction_t {
                          int srcidx, int line, int col)
         : operation(op), value(val),
           sourceIndex(srcidx), line(line), column(col) {}
-    
+
     /** Print instruction into file stream.
       * @param fp File stream for output. */
     void dump(FILE *fp) const;
-    
+
     /** Print instruction into stream.
       * @param os stream for output
       * @param ip current instruction pointer (<0 for not to use)
@@ -161,15 +162,15 @@ struct Instruction_t {
 
     /** Operation to perform. */
     OpCode_t operation;
-    
+
     /** More data for the operation.
       * (type, string, integer, real). */
     ParserValue_t value;
-    
+
     /** Variable identifier.
       * Special additional data for some operations. */
     Identifier_t identifier;
-    
+
     /* Position in template --
       * that means the instruction was generated from statement
       * at given position in original source file. */
