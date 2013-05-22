@@ -52,7 +52,7 @@ AC_CONFIG_SRCDIR([src/teng.cc])
 AC_PROG_CXX
 
 # pkg config
-PKG_PROG_PKG_CONFIG([0.25])
+# PKG_PROG_PKG_CONFIG([0.25])
 
 # check for std C headers
 AC_HEADER_STDC
@@ -127,7 +127,9 @@ AC_CHECK_LIB(m, floor)
 AC_REPLACE_FUNCS([trunc round])
 
 # pcrecpp
-PKG_CHECK_MODULES([pcrecpp], [libpcrecpp])
+# PKG_CHECK_MODULES([pcrecpp], [libpcrecpp])
+
+AC_CHECK_LIB([pcre++], [_init],,AC_MSG_ERROR([pcre++ not installed]))
 
 AS_IF([test x$check_pthreads == xyes], [
     # Check for nonglibc header from serr library. The library is not

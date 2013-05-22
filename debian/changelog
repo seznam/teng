@@ -1,3 +1,9 @@
+libteng (2.3.10+rc3) Seznam; urgency=low
+
+  * Rebuilt with proper pcre++
+
+ -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Wed, 22 May 2013 16:18:23 +0200
+
 libteng (2.3.10+rc2) Seznam; urgency=low
 
   * Rebuilt with proper pcre
