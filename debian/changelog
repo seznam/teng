@@ -1,3 +1,9 @@
+libteng (2.3.10+rc1) Seznam; urgency=low
+
+  * escape json
+
+ -- Martin Fousek <martin.fousek@firma.seznam.cz>  Wed, 22 May 2013 11:38:49 +0200
+
 libteng (2.3.10) Seznam; urgency=low
 
   * Function int now takes optional parameter which forces conversion (#248)

@@ -37,6 +37,7 @@
 #include <utility>
 #include <algorithm>
 #include <ctype.h>
+#include <iomanip>
 
 #include "tengcontenttype.h"
 
@@ -51,6 +52,7 @@ ContentType_t* cCreator();
 ContentType_t* qstringCreator();
 ContentType_t* jshtmlCreator();
 ContentType_t* jsCreator();
+ContentType_t* jsonCreator();
 
 namespace {
 /**
@@ -101,6 +103,8 @@ static CreatorEntry_t creators[] = {
       "Quoted string embeddable into HTML pages." },
     { "application/x-javascript", jsCreator,
       "Javascript language." },
+    { "application/json", jsonCreator,
+      "Json." },
     { 0, 0 }
 };
 
@@ -453,6 +457,25 @@ ContentType_t* jsCreator() {
     js->addEscape('\v', "\\v");
     js->addEscape('\'', "\\'");
     js->addEscape('"', "\\\"");
+
+    // compile unescaping automaton
+    js->compileUnescaper();
+
+    // return descriptor
+    return js;
+}
+
+ContentType_t* jsonCreator() {
+    // create quoted-string descriptor
+    ContentType_t *js = new ContentType_t();
+
+    js->addEscape('\\', "\\\\");
+    js->addEscape('\'', "\\'");
+    for(int i = 0; i <= 0x1f; ++i) {
+        std::stringstream ss;
+        ss << "\\u" << std::setfill('0') << std::setw(4) << std::hex << i;
+        js->addEscape(i, ss.str());
+    }
 
     // compile unescaping automaton
     js->compileUnescaper();
