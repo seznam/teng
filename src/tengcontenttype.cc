@@ -72,6 +72,11 @@ struct CreatorEntry_t {
     const char *name;
 
     /**
+     * @short name of content type
+     */
+    const char *alias;
+
+    /**
      * @short content type descriptor creating function
      */
     Creator_t creator;
@@ -84,28 +89,28 @@ struct CreatorEntry_t {
 
 // creator array
 static CreatorEntry_t creators[] = {
-    { "text/html", htmlCreator,
+    { "text/html", "html", htmlCreator,
       "Hypertext markup language. Same processor as for"
       " 'text/xhtml' and 'text/xml'" },
-    { "text/xhtml", htmlCreator,
+    { "text/xhtml", "xhtml", htmlCreator,
       "X hypertext markup language. Same processor as for"
       " 'text/xhtml' and 'text/xml'" },
-    { "text/xml", htmlCreator,
+    { "text/xml", "xml", htmlCreator,
       "Extensible markup language. Same processor as for"
       " 'text/xhtml' and 'text/xml'" },
-    { "application/x-sh", shellCreator,
+    { "application/x-sh", "x-sh", shellCreator,
       "Common for all types of shell." },
-    { "text/csrc", cCreator,
+    { "text/csrc", "csrc", cCreator,
       "C/C++ source code" },
-    { "quoted-string", qstringCreator,
+    { "quoted-string", "quoted-string", qstringCreator,
       "Generic quoted string with escapes." },
-    { "jshtml", jshtmlCreator,
+    { "jshtml", "jshtml", jshtmlCreator,
       "Quoted string embeddable into HTML pages." },
-    { "application/x-javascript", jsCreator,
+    { "application/x-javascript", "js", jsCreator,
       "Javascript language." },
-    { "application/json", jsonCreator,
+    { "application/json", "json", jsonCreator,
       "Json." },
-    { 0, 0 }
+    { 0, 0, 0, 0 }
 };
 
 map<string, ContentType_t::Descriptor_t*> descriptors;
@@ -113,31 +118,37 @@ vector<ContentType_t::Descriptor_t*> descriptorIndex;
 
 ContentType_t::Descriptor_t *init_descriptors() {
     string pname("text/plain");
-    ContentType_t::Descriptor_t *unknown = new ContentType_t::Descriptor_t(
-            new ContentType_t(), 0,
-            pname, "Default (text/plain) type.");
-
-    descriptors.insert(pair<string, ContentType_t::Descriptor_t*>
-                       (pname, unknown));
+    string alias("plain");
+    ContentType_t::Descriptor_t *unknown = new ContentType_t::Descriptor_t( new ContentType_t(), 0, pname, "Default (text/plain) type." ); 
+    descriptors.insert(pair<string, ContentType_t::Descriptor_t*> (pname, unknown));
     descriptorIndex.push_back(unknown);
 
+    ContentType_t::Descriptor_t *unknownAlias = new ContentType_t::Descriptor_t( new ContentType_t(), 1, alias, "Default (text/plain) type." ); 
+    descriptors.insert(pair<string, ContentType_t::Descriptor_t*> (alias, unknownAlias));
+    descriptorIndex.push_back(unknownAlias);
+
     // all the descriptors are pre-created...
-    for (CreatorEntry_t *icreators = creators; icreators->name;
-         ++icreators) {
+    for (CreatorEntry_t *icreators = creators; icreators->name; ++icreators) {
+
         // create content type descriptor
-        ContentType_t::Descriptor_t *descriptor =
-            new ContentType_t::Descriptor_t(icreators->creator(),
-                                            descriptorIndex.size(),
-                                            icreators->name,
-                                            icreators->comment);
+        ContentType_t::Descriptor_t *descriptor = new ContentType_t::Descriptor_t(icreators->creator(), descriptorIndex.size(), icreators->name, icreators->comment);
+
         // remember descriptor in the descriptorIndex
         descriptorIndex.push_back(descriptor);
 
         // remember descriptor in the cache and return it to
         // the caller
-        descriptors.insert
-            (pair<string, ContentType_t::Descriptor_t*>(
-        	icreators->name, descriptor));
+        descriptors.insert( pair<string, ContentType_t::Descriptor_t*>(icreators->name, descriptor) );
+
+        // create content type descriptor
+        descriptor = new ContentType_t::Descriptor_t(icreators->creator(), descriptorIndex.size(), icreators->alias, icreators->comment);
+
+        // remember descriptor in the descriptorIndex
+        descriptorIndex.push_back(descriptor);
+
+        // remember descriptor in the cache and return it to
+        // the caller
+        descriptors.insert( pair<string, ContentType_t::Descriptor_t*>(icreators->alias, descriptor) );
     }
 
     return unknown;
@@ -470,7 +481,7 @@ ContentType_t* jsonCreator() {
     ContentType_t *js = new ContentType_t();
 
     js->addEscape('\\', "\\\\");
-    js->addEscape('\'', "\\'");
+    js->addEscape('"', "\\\"");
     for(int i = 0; i <= 0x1f; ++i) {
         std::stringstream ss;
         ss << "\\u" << std::setfill('0') << std::setw(4) << std::hex << i;
