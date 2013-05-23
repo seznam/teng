@@ -118,7 +118,7 @@ vector<ContentType_t::Descriptor_t*> descriptorIndex;
 
 ContentType_t::Descriptor_t *init_descriptors() {
     string pname("text/plain");
-    string alias("plain");
+    string alias("text");
     ContentType_t::Descriptor_t *unknown = new ContentType_t::Descriptor_t( new ContentType_t(), 0, pname, "Default (text/plain) type." ); 
     descriptors.insert(pair<string, ContentType_t::Descriptor_t*> (pname, unknown));
     descriptorIndex.push_back(unknown);
