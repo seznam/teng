@@ -1,3 +1,9 @@
+libteng (2.3.10+rc4) Seznam; urgency=low
+
+  * Content type aliases. Bufgix json escape.
+
+ -- Martin Fousek <martin.fousek@firma.seznam.cz>  Thu, 23 May 2013 12:42:32 +0200
+
 libteng (2.3.10+rc3) Seznam; urgency=low
 
   * Rebuilt with proper pcre++
