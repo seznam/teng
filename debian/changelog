@@ -1,3 +1,9 @@
+libteng (2.3.11) Seznam; urgency=low
+
+  * Release
+
+ -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Thu, 06 Jun 2013 11:20:39 +0200
+
 libteng (2.3.10+rc4) Seznam; urgency=low
 
   * Content type aliases. Bufgix json escape.
