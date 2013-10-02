@@ -242,7 +242,11 @@ int Dictionary_t::parseIdentLine(const string &line, string &name, string &value
 }
 
 int Dictionary_t::add(const string &name, const string &value) {
-    dict.insert(map<string, string>::value_type(make_pair(name, value)));
+    if (replaceValue) {
+        dict[name] = value;
+    } else {
+        dict.insert(map<string, string>::value_type(make_pair(name, value)));
+    }
     return 0;
 }
 
@@ -509,6 +513,18 @@ int Dictionary_t::processDirective(const string &directive,
             return 0;
         } else {
             err.logError(Error_t::LL_ERROR, pos, ("Invalid value of expand '"
+                                                  + param + "'."));
+            return -1;
+        }
+    } else if (directive == "replace") {
+        if (param == "yes") {
+            replaceValue = true;
+            return 0;
+        } else if (param == "no") {
+            replaceValue = false;
+            return 0;
+        } else {
+            err.logError(Error_t::LL_ERROR, pos, ("Invalid value of replace '"
                                                   + param + "'."));
             return -1;
         }

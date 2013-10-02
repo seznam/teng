@@ -63,7 +63,8 @@ public:
      * @param root path of root for locating files
      */
     Dictionary_t(const string &root)
-        : root(root), level(0), sources(), err(), expandValue(false)
+        : root(root), level(0), sources(), err(), expandValue(false),
+        replaceValue(false)
     {}
 
     /**
@@ -255,6 +256,12 @@ private:
      * Valid only during parse.
      */
     bool expandValue;
+
+    /** @short Flags whether replace values of already defined names.
+     *
+     * Valid only during parse.
+     */
+    bool replaceValue;
 };
 
 } // namespace Teng
