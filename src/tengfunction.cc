@@ -54,6 +54,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <sys/time.h>
+#include <limits.h>
 
 #include <pcre++.h>
 
@@ -249,38 +250,56 @@ static int tengFunctionSubstr(const vector<ParserValue_t> &args,
                               const Processor_t::FunctionParam_t &setting,
                               ParserValue_t &result)
 {
-    int s, e;
+    int s=0, e=INT_MAX;
     result.setString("undefined");
-    if (args.size() < 3 || args.size() > 5) return -1;
+    if (args.size() < 2 || args.size() > 5) return -1;
     string p1, p2; // default empty string to begin and end
-    s = 0;
 
-    switch(args.size()) {
-    case 5:
-        p2 = args[s++].stringValue;
-        p1 = args[s++].stringValue;
-        break;
+    vector<ParserValue_t>::const_reverse_iterator arg = args.rbegin();
 
-    case 4:
-        p2 = args[s++].stringValue;
-        p1 = p2;
-        break;
+    // 1: string
+    ParserValue_t a = *(arg++);
 
-    default:
-        break;
+    // 2: start
+    ParserValue_t b = *(arg++);
+    b.validateThis();
+    if (b.type != ParserValue_t::TYPE_INT) {
+        return -2;
+    }
+    s = b.integerValue;
+
+    // 3: end [optional]
+    bool bHasEnd = false;
+    if (arg != args.rend()) {
+        ParserValue_t tmp = *arg;
+        tmp.validateThis();
+        if (tmp.type == ParserValue_t::TYPE_INT) {
+            // 'end' is specified
+            e = tmp.integerValue;
+            bHasEnd = true;
+            arg++;
+        }
     }
 
-    ParserValue_t c(args[s++]);
-    ParserValue_t b(args[s++]);
-    ParserValue_t a(args[s++]);
+    // 4: prefix [optional]
+    if (arg != args.rend()) {
+        p1 = arg->stringValue;
+        arg++;
+    }
 
-    b.validateThis();
-    c.validateThis();
-    if ((b.type != ParserValue_t::TYPE_INT) ||
-        (c.type != ParserValue_t::TYPE_INT))
-        return -2;
-    s = b.integerValue;
-    e = c.integerValue;
+    // 5: suffix [optional]
+    if (arg != args.rend()) {
+        p2 = arg->stringValue;
+        arg++;
+    } else {
+        p2 = p1;
+    }
+
+    if (!bHasEnd && (arg != args.rend())) {
+        // 'end' is missing but we have 5 arguments? No way!
+        return -1;
+    }
+
     if (setting.encoding == "utf-8") {
         substrUTF8(a.stringValue, result.stringValue, s, e, p1, p2);
         /* result.validateThis(); */
@@ -397,36 +416,61 @@ static int tengFunctionWordSubstr(const vector<ParserValue_t> &args,
                                   const Processor_t::FunctionParam_t &setting,
                                   ParserValue_t &result)
 {
-    int s, e;
+    int s=0, e=INT_MAX;
     result.setString("undefined");
-    if ((args.size() < 3) || (args.size() > 5)) return -1;
-    s = 0;
+    if ((args.size() < 2) || (args.size() > 5)) return -1;
     string p1, p2;
-    switch (args.size()) {
-    case 5:
-        p2 = args[s++].stringValue;
-        p1 = args[s++].stringValue; break;
-    case 4: p2 = args[s++].stringValue;
-        p1 = p2;
-        break;
-    default:
-        break;
+
+    vector<ParserValue_t>::const_reverse_iterator arg = args.rbegin();
+
+    // 1: string
+    ParserValue_t a = *(arg++);
+
+    // 2: start
+    ParserValue_t b = *(arg++);
+    b.validateThis();
+    if (b.type != ParserValue_t::TYPE_INT) {
+        return -2;
+    }
+    s = b.integerValue;
+
+    // 3: end [optional]
+    bool bHasEnd = false;
+    if (arg != args.rend()) {
+        ParserValue_t tmp = *arg;
+        tmp.validateThis();
+        if (tmp.type == ParserValue_t::TYPE_INT) {
+            // 'end' is specified
+            e = tmp.integerValue;
+            bHasEnd = true;
+            arg++;
+        }
     }
 
-    ParserValue_t c(args[s++]);
-    ParserValue_t b(args[s++]);
-    ParserValue_t a(args[s++]);
-    b.validateThis();
-    c.validateThis();
-    if (b.type != ParserValue_t::TYPE_INT ||
-        c.type != ParserValue_t::TYPE_INT)
-        return -2;
-    s = b.integerValue;
-    e = c.integerValue;
+    // 4: prefix [optional]
+    if (arg != args.rend()) {
+        p1 = arg->stringValue;
+        arg++;
+    }
+
+    // 5: suffix [optional]
+    if (arg != args.rend()) {
+        p2 = arg->stringValue;
+        arg++;
+    } else {
+        p2 = p1;
+    }
+
+    if (!bHasEnd && (arg != args.rend())) {
+        // 'end' is missing but we have 5 arguments? No way!
+        return -1;
+    }
+
     if (setting.encoding == "utf-8") {
         substrIndexUTF8(a.stringValue, s, e);
         goto wordsplit;
     }
+
     if (s < 0) s = a.stringValue.size() + s;
     if (e < 0) e = a.stringValue.size() + e;
     if (s < 0) s = 0;
