@@ -1,3 +1,9 @@
+libteng (2.3.12) Seznam; urgency=low
+
+  * dict replace, optional args substr, getdict
+
+ -- Ondrej Kocian <ondrej.kocian@firma.seznam.cz>  Wed, 02 Oct 2013 12:39:20 +0200
+
 libteng (2.3.11) Seznam; urgency=low
 
   * Release
