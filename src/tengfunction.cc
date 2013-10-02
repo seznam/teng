@@ -1766,6 +1766,41 @@ static int tengFunctionDictExist(const vector<ParserValue_t> &args,
     return 0;
 }
 
+/** Check whether given key is present in dictionaries.
+ * @return Status: 0=ok, -1=wrong argument count, -2=other error.
+ * @param args Function arguments (list of values).
+ * @param setting Teng function setting.
+ * @param result Function's result value. */
+static int tengFunctionGetDict(const vector<ParserValue_t> &args,
+                                 const Processor_t::FunctionParam_t &setting,
+                                 ParserValue_t &result)
+{
+    // check params
+    if (args.size() != 2)
+        return -1; //bad args
+
+    ParserValue_t key(args[1]);
+    key.validateThis();
+    if (key.type != ParserValue_t::TYPE_STRING)
+        return -2; //not a string
+
+    ParserValue_t def(args[0]);
+    def.validateThis();
+    if (def.type != ParserValue_t::TYPE_STRING)
+        return -2; //not a string
+
+    // set result value
+    const string *val = setting.langDictionary.lookup(key.stringValue);
+    if (val == NULL) val = setting.configuration.lookup(key.stringValue);
+    if (val == NULL) {
+        result.setString(def.stringValue);
+    } else {
+        result.setString(*val);
+    }
+    return 0;
+}
+
+
 /** Replace - replace all occurences of a substring (args[1]) in a string (args[2]) with
   *   another substring (args[0])
   * @param args Teng function arguments
@@ -1842,6 +1877,7 @@ struct FunctionStub_t {
         {"sec_to_time", true, tengFunctionSecToTime}, // deprecated name
         {"isenabled", true, tengFunctionIsEnabled}, // isenabled(feature)
         {"dictexist", true, tengFunctionDictExist}, // dictexist(key)
+        {"getdict", true, tengFunctionGetDict},     // getdict(key, default)
         {"replace", true, tengFunctionReplace},   // replace all occurences of a substring
                                                   // with another one
         {"quoteescape", true, tengFunctionQuoteEscape}, // escape strange chars

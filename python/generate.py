@@ -260,18 +260,19 @@ if 'xml' in source.keys():
     
     dom.unlink()
     del dom
-    
-    errors = data[None]
-    expected = 0
-    for err in errors.values():
-        expected += len(err)
-    del data[None]
-    
+
     if error:
         if verbose:
             sys.stderr.write('%s: No ’tengData‘ root element found in file ’%s‘\n' % (sys.argv[0], sys.argv[2]))
             sys.stderr.flush()
         sys.exit(3)
+
+    errors = data[None]
+    expected = 0
+    for err in errors.values():
+        expected += len(err)
+    del data[None]
+
 # endif 'xml' in source.keys()
 
 engine = teng.Teng(contentType = source['content'], encoding = 'utf-8', errorFragment = 1)
