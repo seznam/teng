@@ -480,11 +480,18 @@ ContentType_t* jsonCreator() {
     // create quoted-string descriptor
     ContentType_t *js = new ContentType_t();
 
-    js->addEscape('\\', "\\\\");
     js->addEscape('"', "\\\"");
-    for(int i = 0; i <= 0x1f; ++i) {
+    js->addEscape('\\', "\\\\");
+    js->addEscape('\b',"\\b");
+    js->addEscape('\f',"\\f");
+    js->addEscape('\n',"\\n");
+    js->addEscape('\r',"\\r");
+    js->addEscape('\t',"\\t");
+    js->addEscape('/',"\\/");
+
+    for(int i = 0; i <= 0x1F; ++i) {
         std::stringstream ss;
-        ss << "\\u" << std::setfill('0') << std::setw(4) << std::hex << i;
+        ss << "\\u" << std::hex << std::uppercase <<  std::setfill('0') << std::setw(4) << std::hex << i;
         js->addEscape(i, ss.str());
     }
 
