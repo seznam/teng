@@ -1,3 +1,9 @@
+libteng (2.3.13) Seznam; urgency=low
+
+  * more readable json escaping 
+
+ -- Ondrej Kocian <ondrej.kocian@firma.seznam.cz>  Mon, 16 Dec 2013 08:15:29 +0100
+
 libteng (2.3.12) Seznam; urgency=low
 
   * dict replace, optional args substr, getdict
