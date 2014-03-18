@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-#DH_VERBOSE=1
+DH_VERBOSE=1
 #DEB_BUILD_OPTIONS='nostrip'
 PROCESSORS=$(shell cat /proc/cpuinfo | grep ^processor | wc -l)
 

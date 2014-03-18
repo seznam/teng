@@ -469,6 +469,7 @@ ContentType_t* jsCreator() {
     js->addEscape('\'', "\\'");
     js->addEscape('"', "\\\"");
 
+    js->addEscape('/', "\\/");
     // compile unescaping automaton
     js->compileUnescaper();
 
