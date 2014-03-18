@@ -2,7 +2,7 @@ Source: libteng
 Section: Seznam
 Priority: optional
 Maintainer: Lukas Lobotka <lukas.lobotka@firma.seznam.cz>
-Build-Depends: debhelper, autoconf, libtool, automake, bison, flex, libpcre++-dev
+Build-Depends: debhelper, dh-autoreconf, bison, flex, libpcre++-dev, libpcre++0
 Standards-Version: 3.7.2.2
 
 Package: libteng2
@@ -15,7 +15,7 @@ Description: Teng -- general purpose templating system
 Package: libteng-dev
 Architecture: any
 Section: Seznam
-Depends: libteng2 (= ${binary:Version}), libpcre++-dev
+Depends: libteng2 (= ${binary:Version}), libpcre++-dev, libpcre++0
 Description: Development files for teng library
  Here are files necessary for developing new applications
  that use teng library and its C/C++ interface.

@@ -1,3 +1,10 @@
+libteng (2.3.14) Seznam; urgency=low
+
+  * js escapes slash (xss defence) 
+  * new debhelper
+
+ -- Ondrej Kocian <ondrej.kocian@firma.seznam.cz>  Tue, 18 Mar 2014 13:20:32 +0100
+
 libteng (2.3.13) Seznam; urgency=low
 
   * more readable json escaping 
