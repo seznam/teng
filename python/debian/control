@@ -1,10 +1,12 @@
 Source: python-teng
 Section: python
 Priority: Extra
-Maintainer: Lukas Lobotka <lukas.lobotka@firma.seznam.cz>
+Maintainer: Seznam.cz a.s. <opensource@firma.seznam.cz>
 XS-Python-Standards-Version: 0.4
 XS-Python-Version: all
 Build-Depends: debhelper, python-all-dev, python-central, libteng-dev
+Vcs-Git: git://github.com/seznam/teng.git
+Vcs-Browser: https://github.com/seznam/teng
 
 
 Package: python-teng
