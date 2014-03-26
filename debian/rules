@@ -5,3 +5,7 @@ DH_VERBOSE=1
 
 %:
 	dh $@ --with autoreconf
+
+.PHONY: override_dh_strip
+override_dh_strip:
+		dh_strip --dbg-package=libteng2-dbg

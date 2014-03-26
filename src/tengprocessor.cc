@@ -1435,7 +1435,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                         if ( cVal.value->nestedFragments != 0 )
                             a.setString("$fraglist$");
                         else
-                            a.setString(cVal.value->value);
+                            a.setString(fParam.escaper.escape(cVal.value->value));
                         break;
 
                     default:

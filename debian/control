@@ -2,7 +2,7 @@ Source: libteng
 Section: Seznam
 Priority: optional
 Maintainer: Seznam.cz a.s. <opensource@firma.seznam.cz>
-Build-Depends: debhelper, dh-autoreconf, bison, flex, libpcre++-dev, libpcre++0
+Build-Depends: debhelper (>= 7.0.50), dh-autoreconf, bison, flex, libpcre++-dev, libpcre++0
 Standards-Version: 3.7.2.2
 Vcs-Git: git://github.com/seznam/teng.git
 Vcs-Browser: https://github.com/seznam/teng
@@ -12,6 +12,13 @@ Package: libteng2
 Architecture: any
 Section: Seznam
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Teng -- general purpose templating system
+ Teng is a powerful and easy to use templating system.
+
+Package: libteng2-dbg
+Architecture: any
+Section: debug
+Depends: libteng2 (= ${binary:Version}), ${misc:Depends}
 Description: Teng -- general purpose templating system
  Teng is a powerful and easy to use templating system.
 
