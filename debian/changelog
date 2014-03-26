@@ -1,3 +1,11 @@
+libteng (2.3.15) Seznam; urgency=low
+
+  * regex_replace fix
+  * unescaped variables printed from nested fragment
+  * basic gtests 
+
+ -- Ondrej Kocian <ondrej.kocian@firma.seznam.cz>  Wed, 26 Mar 2014 09:53:14 +0100
+
 libteng (2.3.14) Seznam; urgency=low
 
   * js escapes slash (xss defence) 
