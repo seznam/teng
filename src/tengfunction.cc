@@ -1839,7 +1839,7 @@ static int tengFunctionPregReplace(const vector<ParserValue_t> &args,
     } else {
 	   return -1;
     }
-    pcrepp::Pcre p(sRe, PCRE_GLOBAL | PCRE_UTF8);
+    pcrepp::Pcre p(sRe, PCRE_GLOBAL|PCRE_UTF8);
     std::string sResult;
     sResult = p.replace(s, sTo);
 

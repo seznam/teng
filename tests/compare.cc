@@ -83,7 +83,12 @@ TEST(Teng, BasicUnescape) {
 TEST(Teng, BasicRegexReplace) {
     EXPECT_EQ(get_teng_output("${regex_replace(\"foo bar\", \"\\\\w+\", \"-($0)-\")}"), "-(foo)- -(bar)-");
     EXPECT_EQ(get_teng_output("${regex_replace(\"opravdu <b>tučný</b> text\", \"<[^>]*>\", \"\")}"), "opravdu tučný text");
-    EXPECT_EQ(get_teng_output("${regex_replace(\"velmidlouhéslovo\", \"([^\\\\s]{5})\", \"$1 \")}"), "velmi dlouhé slovo");
+    EXPECT_EQ(get_teng_output("${regex_replace(\"velmivelkéslovo\", \"([^\\\\s]{5})\", \"$1 \")}"), "velmi velké slovo ");
+    EXPECT_EQ(get_teng_output("${regex_replace(\"velmivelkéslovo\", \"([^\\\\s]{6})\", \"$1 \")}"), "velmiv elkésl ovo");
+    EXPECT_EQ(get_teng_output("${regex_replace(\"velmivelkéslovo\", \"([^\\\\s]{4})\", \"$1 \")}"), "velm ivel késl ovo");
+    EXPECT_EQ(get_teng_output("${regex_replace(\"ééééééé\", \"([^\\\\s]{1})\", \"$1 \")}"), "é é é é é é é ");
+
+
 }
 
 TEST(Teng, BasicNl2br) {
