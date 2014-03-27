@@ -36,6 +36,11 @@ TEST(Teng, BasicEscape) {
     EXPECT_EQ(get_teng_output("${escape(\"<div>\")}"), "&lt;div&gt;");
 }
 
+TEST(Teng, AlwaysEscape) {
+    // wtf teng bug-feature
+    EXPECT_EQ(get_teng_output("<?teng set $.__q = '\"kaktus&<>\"'?><?teng set $.__r = $.__q?><?teng set $.__s = $.__r?><?teng set $.__t = $.__s?>${.__t}"), "&amp;amp;amp;quot;kaktus&amp;amp;amp;amp;&amp;amp;amp;lt;&amp;amp;amp;gt;&amp;amp;amp;quot;");
+}
+
 TEST(Teng, BasicInt) {
     EXPECT_EQ(get_teng_output("${int(\"12\"++\"3.5\")}"), "123");
     EXPECT_EQ(get_teng_output("${int(22.567)}"), "22");
@@ -82,7 +87,7 @@ TEST(Teng, BasicRegexReplace) {
 }
 
 TEST(Teng, BasicNl2br) {
-    EXPECT_EQ(get_teng_output("${nl2br(\"jede\\njede\\nmasina\")}"), "jede<br />jede<br />masina");
+    EXPECT_EQ(get_teng_output("${nl2br(\"jede\\njede\\nmasina\")}"), "jede\n<br />jede\n<br />masina");
 }
 
 TEST(Teng, BasicNumformat) {
@@ -92,6 +97,10 @@ TEST(Teng, BasicNumformat) {
 
 TEST(Teng, BasicReorder) {
     EXPECT_EQ(get_teng_output("${reorder(\"%1 a %2 b %1 \", \"c\", \"d\")}"), "c a d b c ");
+}
+
+TEST(Teng, BasicConcat) {
+    EXPECT_EQ(get_teng_output("<?teng set .variable = \"a\" ?><?teng set .variable = $.variable ++ \"b\" ?>${.variable}"), "ab");
 }
 
 int main(int argc, char** argv)
