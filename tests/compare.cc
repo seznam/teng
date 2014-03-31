@@ -32,6 +32,48 @@ TEST(Teng, EscapeDoubleDolar) {
             get_teng_output("<?teng frag fragment ?>${string}<?teng endfrag ?>", data));
 }
 
+TEST(Teng, BasicDefined) {
+    Teng::Fragment_t data;
+    Teng::Fragment_t &fragment = data.addFragment("fragment");
+    fragment.addVariable(std::string("empty_string"), std::string(""));
+    fragment.addVariable(std::string("nonempty_string"), std::string("abc"));
+    fragment.addVariable(std::string("nonzero_number"), 1.9);
+    fragment.addVariable(std::string("zero_number"), 0.0);
+
+    std::stringstream stream;
+    fragment.dump(stream);
+    std::cout << stream.str() << std::endl;
+
+    EXPECT_EQ(get_teng_output("<?teng frag fragment ?>${defined(empty_string) ? \"1\":\"0\"}<?teng endfrag ?>", data), "0");
+    EXPECT_EQ(get_teng_output("<?teng frag fragment ?>${defined(nonempty_string) ? \"1\":\"0\"}<?teng endfrag ?>", data), "1");
+    EXPECT_EQ(get_teng_output("${defined($$fragment.empty_string) ? \"1\":\"0\"}", data), "0");
+    EXPECT_EQ(get_teng_output("${defined($$fragment.nonempty_string) ? \"1\":\"0\"}", data), "1");
+}
+
+TEST(Teng, BasicExist) {
+    Teng::Fragment_t data;
+    Teng::Fragment_t &fragment = data.addFragment("fragment");
+    fragment.addVariable(std::string("empty_string"), std::string(""));
+    fragment.addVariable(std::string("nonempty_string"), std::string("abc"));
+    fragment.addVariable(std::string("nonzero_number"), 1.9);
+    fragment.addVariable(std::string("zero_number"), 0.0);
+
+
+    EXPECT_EQ(get_teng_output("<?teng frag fragment ?>${exist(empty_string)}<?teng endfrag ?>", data), "1");
+    EXPECT_EQ(get_teng_output("<?teng frag fragment ?>${exist(nonempty_string)}<?teng endfrag ?>", data), "1");
+    EXPECT_EQ(get_teng_output("${exist($$fragment.empty_string)}", data), "1");
+    EXPECT_EQ(get_teng_output("${exist($$fragment.nonempty_string)}", data), "1");
+
+    EXPECT_EQ(get_teng_output("<?teng frag fragment ?>${exist(empty_str)}<?teng endfrag ?>", data), "0");
+    EXPECT_EQ(get_teng_output("${exist($$fragment.nonempty_stri)}", data), "0");
+
+    EXPECT_EQ(get_teng_output("${exist($$fragment)}", data), "1");
+    EXPECT_EQ(get_teng_output("${exist(fragment)}", data), "1");
+
+    EXPECT_EQ(get_teng_output("${exist(fragmenttt)}", data), "0");
+    EXPECT_EQ(get_teng_output("${exist($$fragmenttt)}", data), "0");
+}
+
 TEST(Teng, BasicEscape) {
     EXPECT_EQ(get_teng_output("${escape(\"<div>\")}"), "&lt;div&gt;");
 }
@@ -87,8 +129,6 @@ TEST(Teng, BasicRegexReplace) {
     EXPECT_EQ(get_teng_output("${regex_replace(\"velmivelkéslovo\", \"([^\\\\s]{6})\", \"$1 \")}"), "velmiv elkésl ovo");
     EXPECT_EQ(get_teng_output("${regex_replace(\"velmivelkéslovo\", \"([^\\\\s]{4})\", \"$1 \")}"), "velm ivel késl ovo");
     EXPECT_EQ(get_teng_output("${regex_replace(\"ééééééé\", \"([^\\\\s]{1})\", \"$1 \")}"), "é é é é é é é ");
-
-
 }
 
 TEST(Teng, BasicNl2br) {
