@@ -36,8 +36,10 @@
 
 
 # initialize autoconf
-AC_INIT(teng, m4_esyscmd([head -n1 debian/changelog | tr -d '()' | cut -d' ' -f2 | tr -d '\n']), teng@firma.seznam.cz)
-# initialize automake(use AC_INIT's arguments)
+AC_INIT(teng, m4_esyscmd([head -n1 debian/changelog | tr -d '()' | cut -d' ' -f2 | tr -d '\n']), opensource@firma.seznam.cz)
+
+AC_PROG_LIBTOOL
+
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 
 AC_PREREQ(2.50)
@@ -52,7 +54,13 @@ AC_CONFIG_SRCDIR([src/teng.cc])
 AC_PROG_CXX
 
 # pkg config
-# PKG_PROG_PKG_CONFIG([0.25])
+PKG_PROG_PKG_CONFIG([0.25])
+
+DEPENS_NAMES="glib-2.0"
+PKG_CHECK_MODULES([DEPENS], [${DEPENS_NAMES}])
+AC_SUBST(DEPENS)
+
+
 
 # check for std C headers
 AC_HEADER_STDC
@@ -125,9 +133,6 @@ AC_CHECK_HEADERS(fenv.h)
 # check for functions that may miss on some platforms
 AC_CHECK_LIB(m, floor)
 AC_REPLACE_FUNCS([trunc round])
-
-# pcrecpp
-# PKG_CHECK_MODULES([pcrecpp], [libpcrecpp])
 
 AC_CHECK_LIB([pcre++], [_init],,AC_MSG_ERROR([pcre++ not installed]))
 

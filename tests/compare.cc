@@ -148,6 +148,18 @@ TEST(Teng, BasicConcat) {
     EXPECT_EQ(get_teng_output("<?teng set .variable = \"a\" ?><?teng set .variable = $.variable ++ \"b\" ?>${.variable}"), "ab");
 }
 
+TEST(Teng, BasicStrToLower) {
+    EXPECT_EQ(get_teng_output("${strtolower(\"aWSDFIeéE\")}"), "awsdfieée");
+    EXPECT_EQ(get_teng_output("${strtolower(\"Á\")}"), "á");
+    EXPECT_EQ(get_teng_output("${strtolower(\"ÁÉÍÓÚÝČŇŘŠŤŽĚ\")}"), "áéíóúýčňřšťžě");
+}
+
+TEST(Teng, BasicStrToUpper) {
+    EXPECT_EQ(get_teng_output("${strtoupper(\"aWSDFIeéE,.\")}"), "AWSDFIEÉE,.");
+    EXPECT_EQ(get_teng_output("${strtoupper(\"á\")}"), "Á");
+    EXPECT_EQ(get_teng_output("${strtoupper(\"áéíóúýčňřšťžě\")}"), "ÁÉÍÓÚÝČŇŘŠŤŽĚ");
+}
+
 int main(int argc, char** argv)
 {
     /*The method is initializes the Google framework and must be called before RUN_ALL_TESTS */

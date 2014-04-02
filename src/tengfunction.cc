@@ -55,6 +55,8 @@
 #include <ctype.h>
 #include <sys/time.h>
 #include <limits.h>
+#include <algorithm>
+#include <glib.h>
 
 #include <pcre++.h>
 
@@ -1847,6 +1849,39 @@ static int tengFunctionPregReplace(const vector<ParserValue_t> &args,
     return 0;
 }
 
+static int tengFunctionStrToLower(const vector<ParserValue_t> &args,
+                               const Processor_t::FunctionParam_t &setting,
+                               ParserValue_t &result)
+{
+    if (args.size() != 1)
+	   return -1;
+
+    ParserValue_t str(args[0]);
+    str.validateThis();
+    if (str.type != ParserValue_t::TYPE_STRING)
+        return -2; //not a string
+
+
+    result.setString(g_utf8_strdown(str.stringValue.c_str(), str.stringValue.size()));
+}
+
+static int tengFunctionStrToUpper(const vector<ParserValue_t> &args,
+                               const Processor_t::FunctionParam_t &setting,
+                               ParserValue_t &result)
+{
+    if (args.size() != 1)
+	   return -1;
+
+    ParserValue_t str(args[0]);
+    str.validateThis();
+    if (str.type != ParserValue_t::TYPE_STRING)
+        return -2; //not a string
+
+
+    result.setString(g_utf8_strup(str.stringValue.c_str(), str.stringValue.size()));
+    return 0;
+}
+
 namespace {
 struct FunctionStub_t {
 	const char *name;  // teng name
@@ -1884,6 +1919,8 @@ struct FunctionStub_t {
                                                         // in quoted string
         {"timestamp", true, tengFunctionTimestamp},
         {"regex_replace", true, tengFunctionPregReplace},
+        {"strtolower", true, tengFunctionStrToLower},
+        {"strtoupper", true, tengFunctionStrToUpper},
         { 0, false, 0}                            // end of list
     };
 }
