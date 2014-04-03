@@ -1862,7 +1862,14 @@ static int tengFunctionStrToLower(const vector<ParserValue_t> &args,
         return -2; //not a string
 
 
-    result.setString(g_utf8_strdown(str.stringValue.c_str(), str.stringValue.size()));
+    char *result_char = g_utf8_strdown(str.stringValue.c_str(), str.stringValue.size());
+
+    string result_string(result_char);
+    g_free(result_char);
+
+    result.setString(result_string);
+
+    return 0;
 }
 
 static int tengFunctionStrToUpper(const vector<ParserValue_t> &args,
@@ -1877,8 +1884,13 @@ static int tengFunctionStrToUpper(const vector<ParserValue_t> &args,
     if (str.type != ParserValue_t::TYPE_STRING)
         return -2; //not a string
 
+    char *result_char = g_utf8_strup(str.stringValue.c_str(), str.stringValue.size());
 
-    result.setString(g_utf8_strup(str.stringValue.c_str(), str.stringValue.size()));
+    string result_string(result_char);
+    g_free(result_char);
+
+    result.setString(result_string);
+
     return 0;
 }
 
