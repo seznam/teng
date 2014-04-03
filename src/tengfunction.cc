@@ -57,6 +57,7 @@
 #include <limits.h>
 #include <algorithm>
 #include <glib.h>
+#include <curl/curl.h>
 
 #include <pcre++.h>
 
@@ -1597,6 +1598,32 @@ static int tengFunctionUrlEscape(const vector<ParserValue_t> &args,
     return 0;
 }
 
+/** Unescape url - reverse urlescape function
+ * @return Status: 0=ok, -1=wrong argument count, -2=expected string param.
+ * @param args Function arguments (list of values).
+ * @param setting Teng function setting.
+ * @param result Function's result value. */
+static int tengFunctionUrlUnescape(const vector<ParserValue_t> &args,
+                                 const Processor_t::FunctionParam_t &setting,
+                                 ParserValue_t &result)
+{
+    if (args.size() != 1)
+	   return -1;
+
+    ParserValue_t argument(args[0]);
+    argument.validateThis();
+    if (argument.type != ParserValue_t::TYPE_STRING)
+        return -2; //not a string
+
+    const string& unescaped_string = argument.stringValue;
+    string escaped_string;
+
+    char *escaped_char = curl_easy_unescape(NULL, unescaped_string.c_str(), unescaped_string.size(), NULL);
+    result.setString(escaped_char);
+    curl_free(escaped_char);
+    return 0;
+
+}
 
 /** Create quotable string.
  * @return Status: 0=ok, -1=wrong argument count, -2=other error.
@@ -1848,7 +1875,13 @@ static int tengFunctionPregReplace(const vector<ParserValue_t> &args,
     result.setString(sResult);
     return 0;
 }
-
+/** tolower function with utf-8 support
+  *   string to convert (args[0])
+  * @param args Teng function arguments
+  * @param setting Teng function setting
+  * @param result Teng function result
+  * @return 0 OK, -1 wrong argument count
+  * */
 static int tengFunctionStrToLower(const vector<ParserValue_t> &args,
                                const Processor_t::FunctionParam_t &setting,
                                ParserValue_t &result)
@@ -1872,6 +1905,13 @@ static int tengFunctionStrToLower(const vector<ParserValue_t> &args,
     return 0;
 }
 
+/** toupper function with utf-8 support
+  *   string to convert (args[0])
+  * @param args Teng function arguments
+  * @param setting Teng function setting
+  * @param result Teng function result
+  * @return 0 OK, -1 wrong argument count
+  * */
 static int tengFunctionStrToUpper(const vector<ParserValue_t> &args,
                                const Processor_t::FunctionParam_t &setting,
                                ParserValue_t &result)
@@ -1918,6 +1958,7 @@ struct FunctionStub_t {
                                                   // order
         {"int", true, tengFunctionInt},           // like (int) in C
         {"urlescape", true, tengFunctionUrlEscape}, // escape strange chars in urls
+        {"urlunescape", true, tengFunctionUrlUnescape}, // escape strange chars in urls
         {"nl2br", true, tengFunctionNL2BR},       // convert '\n' => <br />
         {"isnumber", true, tengFunctionIsNumber}, // checks whether argument is s number
         {"sectotime", true, tengFunctionSecToTime}, // convert seconds to HH:MM:SS

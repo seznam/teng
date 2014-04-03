@@ -160,6 +160,14 @@ TEST(Teng, BasicStrToUpper) {
     EXPECT_EQ(get_teng_output("${strtoupper(\"áéíóúýčňřšťžě\")}"), "ÁÉÍÓÚÝČŇŘŠŤŽĚ");
 }
 
+TEST(Teng, BasicUrlEscape) {
+    EXPECT_EQ(get_teng_output("${urlescape(\"'asdf!@#$%^&*\(\")}"), "%27asdf%21%40%23%24%25%5E%26%2A%28");
+}
+
+TEST(Teng, BasicUrlUnescape) {
+    EXPECT_EQ(get_teng_output("${urlunescape(\"\%27asdf\%21\%40\%23\%24\%25\%5E\%26\%2A\%28\")}"), "'asdf!@#$%^&*\(");
+}
+
 int main(int argc, char** argv)
 {
     /*The method is initializes the Google framework and must be called before RUN_ALL_TESTS */

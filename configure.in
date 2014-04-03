@@ -1,7 +1,7 @@
 #
 # Teng -- a general purpose templating engine.
 # Copyright (C) 2004  Seznam.cz, a.s.
-#
+
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
 # License as published by the Free Software Foundation; either
@@ -56,7 +56,7 @@ AC_PROG_CXX
 # pkg config
 PKG_PROG_PKG_CONFIG([0.25])
 
-DEPENS_NAMES="glib-2.0"
+DEPENS_NAMES="glib-2.0 libcurl"
 PKG_CHECK_MODULES([DEPENS], [${DEPENS_NAMES}])
 AC_SUBST(DEPENS)
 
