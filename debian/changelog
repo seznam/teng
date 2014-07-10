@@ -1,4 +1,10 @@
-libteng (2.3.16) UNRELEASED; urgency=low
+libteng (2.3.16-1) testing; urgency=low
+
+  * missing deps in dev package
+
+ -- Ondrej Kocian <ondrej.kocian@firma.seznam.cz>  Thu, 10 Jul 2014 17:59:53 +0200
+
+libteng (2.3.16) testing; urgency=low
 
   * strtolower 
   * strtoupper
