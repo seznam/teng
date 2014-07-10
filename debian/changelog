@@ -1,3 +1,11 @@
+libteng (2.3.16) UNRELEASED; urgency=low
+
+  * strtolower 
+  * strtoupper
+  * urlunescape
+
+ -- Ondrej Kocian <ondrej.kocian@firma.seznam.cz>  Thu, 03 Apr 2014 14:48:32 +0200
+
 libteng (2.3.15) Seznam; urgency=low
 
   * regex_replace fix
