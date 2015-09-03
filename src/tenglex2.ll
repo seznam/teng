@@ -61,7 +61,7 @@
 #include <stdio.h>
 
 #include "tengyystype.h"
-#include "tengsyntax.h"
+#include "tengsyntax.hh"
 #include "tengparsercontext.h"
 #include "tengerror.h"
 
