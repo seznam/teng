@@ -39,7 +39,7 @@ install-ext-%:
 binary-arch: build install
 	dh_testdir -a
 	dh_testroot -a
-	dh_pycentral -a
+	dh_python2 -a
 	dh_installchangelogs -a
 	dh_compress -a
 	dh_fixperms -a

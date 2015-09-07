@@ -1,3 +1,9 @@
+python-teng (2.3.5-1) testing; urgency=low
+
+  *  switch to dh-python
+
+ -- Tomas Kral <tomas.kral@firma.seznam.cz>  Mon, 7 Sep 2015 16:49:11 +0200
+
 python-teng (2.3.5) unstable; urgency=low
 
   * Linked against 2.3.5
@@ -12,7 +18,7 @@ python-teng (2.3.4) unstable; urgency=low
 
 python-teng (2.3.2) unstable; urgency=low
 
-  * Unified minor number
+  * Unified minor numberu
 
  -- Lukas Lobotka <lukas.lobotka@firma.seznam.cz>  Mon, 13 Aug 2012 09:40:09 +0200
 
