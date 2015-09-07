@@ -1,3 +1,10 @@
+libteng (2.3.17) testing; urgency=low
+
+  *  Fix for debian jessie (with bison 3.0.x) !4 #3
+
+ -- Tomas Kral <tomas.kral@firma.seznam.cz>  Mon, 7 Sep 2015 13:20:11 +0200
+
+
 libteng (2.3.16-1) testing; urgency=low
 
   * missing deps in dev package
