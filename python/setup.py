@@ -81,6 +81,6 @@ setup (
     description      = DESCRIPTION,
     long_description = LONG_DESCRIPTION,
     ext_modules = [
-        Extension ("tengmodule", ["tengmodule.cc"], libraries=["teng"])
+        Extension ("teng", ["teng.cc"], libraries=["teng"])
     ]
 )

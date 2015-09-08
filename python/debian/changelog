@@ -1,3 +1,10 @@
+python-teng (2.3.5-2) testing; urgency=low
+
+  *  rename tengmodule to teng
+
+ -- Tomas Kral <tomas.kral@firma.seznam.cz>  Tue, 8 Sep 2015 9:30:11 +0200
+
+
 python-teng (2.3.5-1) testing; urgency=low
 
   *  switch to dh-python
