@@ -1,3 +1,9 @@
+python-teng (2.3.6) testing; urgency=low
+
+  * new version
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Tue, 29 Mar 2016 11:41:06 +0100
+
 python-teng (2.3.5-3) testing; urgency=low
 
   * more descriptive error message for std::exceptions in tengfunctions
