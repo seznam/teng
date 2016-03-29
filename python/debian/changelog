@@ -1,3 +1,9 @@
+python-teng (2.3.6-1) testing; urgency=low
+
+  * use pybuild
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Tue, 29 Mar 2016 18:52:18 +0100
+
 python-teng (2.3.6) testing; urgency=low
 
   * new version
