@@ -1,3 +1,9 @@
+python-teng (2.3.5-3) testing; urgency=low
+
+  * more descriptive error message for std::exceptions in tengfunctions
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Tue, 29 Mar 2016 10:38:09 +0100
+
 python-teng (2.3.5-2) testing; urgency=low
 
   *  rename tengmodule to teng
