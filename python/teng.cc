@@ -1614,6 +1614,9 @@ PyObject* Teng_generatePage(TengObject *self,
         return 0;
     } catch (const PyException_t &pe) {
         return 0;
+    } catch (const std::exception &e) {
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        return 0;
     } catch (...) {
         PyErr_SetString(PyExc_Exception, "Unknown C++ exception.");
         return 0;
