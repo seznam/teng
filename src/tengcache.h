@@ -302,7 +302,7 @@ public:
                  ilru != lru.rend(); ++ilru) {
                 if ((*ilru)->refCount <= 0) {
                     // remove it
-                    remove(ilru.base() + 1);
+                    remove(ilru.base() - 1);
                     break;
                 }
             }
