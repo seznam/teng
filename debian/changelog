@@ -1,3 +1,17 @@
+libteng (2.3.18) stable; urgency=low
+
+  * v2.3.17
+  * fix removing entries from teng cache lru
+  * python2.3.6-1
+  * use pybuild
+  * python2.3.6
+  * #! python2.3.5-3
+  * more descriptive error message for std::exceptions in tengfunctions
+  * rename tengmodule to teng
+  * switch to dh-python
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Fri, 06 May 2016 14:56:32 +0100
+
 libteng (2.3.17) testing; urgency=low
 
   *  Fix for debian jessie (with bison 3.0.x) !4 #3
