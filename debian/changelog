@@ -1,3 +1,9 @@
+libteng (2.3.19) stable; urgency=low
+
+  * be more tolerant in strtoupper/lower args checking
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Mon, 24 Oct 2016 10:57:32 +0100
+
 libteng (2.3.18) stable; urgency=low
 
   * v2.3.17
