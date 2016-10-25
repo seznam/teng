@@ -1890,8 +1890,6 @@ static int tengFunctionStrToLower(const vector<ParserValue_t> &args,
 	   return -1;
 
     ParserValue_t str(args[0]);
-    str.validateThis();
-
 
     char *result_char = g_utf8_strdown(str.stringValue.c_str(), str.stringValue.size());
 
@@ -1918,7 +1916,6 @@ static int tengFunctionStrToUpper(const vector<ParserValue_t> &args,
 	   return -1;
 
     ParserValue_t str(args[0]);
-    str.validateThis();
 
     char *result_char = g_utf8_strup(str.stringValue.c_str(), str.stringValue.size());
 
