@@ -52,8 +52,8 @@ noinst_HEADERS = tengcache.h tengcode.h tengcontenttype.h \
                  tengfunction.h tenginstruction.h tenglex1.h \
                  tengparsercontext.h tengparservalue.h tengprocessor.h \
                  tengprogram.h tengsourcelist.h tengtemplate.h \
-                 tengutil.h tengwriter.h tengsyntax.hh tengconfiguration.h \
-                 tengplatform.h tengaux.h
+                 tengutil.h tengwriter.h tengsyntax.h tengconfiguration.h \
+		 tengplatform.h tengaux.h
 
 # compile this library
 lib_LTLIBRARIES = libteng.la
@@ -73,8 +73,8 @@ libteng_la_LDFLAGS = @VERSION_INFO@
 libteng_la_LIBADD = $(LTLIBOBJS) ${DEPENS_LIBS}
 
 # explicit rules for proper flex & bison sources compilation
-tenglex2.cc: tenglex2.ll tengsyntax.hh tengsyntax.cc
-tengsyntax.hh: tengsyntax.yy
+tenglex2.cc: tenglex2.ll tengsyntax.h tengsyntax.cc
+tengsyntax.h: tengsyntax.yy
 tengsyntax.cc: tengsyntax.yy
 
 # test program
@@ -82,4 +82,3 @@ tengsyntax.cc: tengsyntax.yy
 
 doc:
 	doxygen
-

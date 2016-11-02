@@ -37,7 +37,7 @@
 #ifndef TENGLEX2_H
 #define TENGLEX2_H
 
-#include "tengsyntax.hh"
+#include "tengsyntax.h"
 
 /** @short Maximal depth of lex stack.
  */

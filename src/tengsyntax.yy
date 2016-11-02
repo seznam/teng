@@ -37,10 +37,10 @@
  *             Better error reporting when unexpected EOF
  */
 
-%param {void *context}
-
 // all external symbols will be prefixed with tengSyntax_
 %name-prefix="tengSyntax_"
+
+%lex-param {void * scanner}
 
 // we want to have y.tab.h
 %defines
@@ -85,7 +85,7 @@ namespace Teng {
 
 // local function prototypes
 static int yylex(YYSTYPE *leftValue, void *context);
-static int yyerror(void *context, const char *msg);
+static int yyerror(const char *msg);
 
 // errlog function
 static void printUnexpectedElement(ParserContext_t *context,
@@ -2272,7 +2272,7 @@ static int yylex(YYSTYPE *leftValue, void *context)
   * Function is unusable, because it does not know parser context :-((
   * @return 0=ok.
   * @param msg Error message to show. */
-static int yyerror(void *context, const char *msg)
+static int yyerror(const char *msg)
 {
 #if YYDEBUG
     // if debug enabled
