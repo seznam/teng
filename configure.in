@@ -136,6 +136,7 @@ AC_CHECK_HEADERS(fenv.h)
 AC_CHECK_LIB(m, floor)
 AC_REPLACE_FUNCS([trunc round])
 
+AC_LANG_CPLUSPLUS
 AC_CHECK_LIB([pcre++], [_init],,AC_MSG_ERROR([pcre++ not installed]))
 
 AS_IF([test x$check_pthreads == xyes], [
@@ -147,4 +148,3 @@ AS_IF([test x$check_pthreads == xyes], [
 # generate Makefile
 AC_OUTPUT(version Makefile src/Makefile src/tengconfig.h libteng.pc)
 #          doc/Makefile doc/manual/Makefile doc/manual/en/Makefile)
-
