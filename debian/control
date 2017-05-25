@@ -2,7 +2,7 @@ Source: libteng
 Section: Seznam
 Priority: optional
 Maintainer: Seznam.cz a.s. <opensource@firma.seznam.cz>
-Build-Depends: debhelper (>= 7.0.50), dh-autoreconf, bison, flex, libpcre++-dev, libpcre++0, libglib2.0-dev, pkg-config, libcurl-dev
+Build-Depends: debhelper (>= 7.0.50), dh-autoreconf, bison, flex, libpcre++-dev, libpcre++0 | libpcre++0v5, libglib2.0-dev, pkg-config, libcurl-dev
 Standards-Version: 3.7.2.2
 Vcs-Git: git://github.com/seznam/teng.git
 Vcs-Browser: https://github.com/seznam/teng
@@ -25,7 +25,7 @@ Description: Teng -- general purpose templating system
 Package: libteng-dev
 Architecture: any
 Section: Seznam
-Depends: libteng2 (= ${binary:Version}), libpcre++-dev, libpcre++0, libglib2.0-dev, libcurl-dev
+Depends: libteng2 (= ${binary:Version}), libpcre++-dev, libpcre++0 | libpcre++0v5, libglib2.0-dev, libcurl-dev
 Description: Development files for teng library
  Here are files necessary for developing new applications
  that use teng library and its C/C++ interface.
