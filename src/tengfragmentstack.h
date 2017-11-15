@@ -42,28 +42,27 @@
 #include <map>
 #include <algorithm>
 #include <utility>
-#include <iostream>
 
+#include "tengerror.h"
+#include "tengstructs.h"
 #include "tengparservalue.h"
 #include "tenginstruction.h"
 
-using namespace std;
-
 namespace Teng {
 
-const string ERROR_FRAG_NAME("_error");
+const std::string ERROR_FRAG_NAME("_error");
 
-const string FILENAME("filename");
+const std::string FILENAME("filename");
 
-const string NO_FILE("(no file)");
+const std::string NO_FILE("(no file)");
 
-const string LINE("line");
+const std::string LINE("line");
 
-const string COLUMN("column");
+const std::string COLUMN("column");
 
-const string LEVEL("level");
+const std::string LEVEL("level");
 
-const string MESSAGE("message");
+const std::string MESSAGE("message");
 
 enum Status_t {
     S_OK =               0,
@@ -84,11 +83,11 @@ public:
         // no-op
     }
 
-    virtual const FragmentList_t* findSubFragment(const string &name)
+    virtual const FragmentList_t *findSubFragment(const std::string &name)
         const = 0;
 
-    virtual Status_t findVariable(const string &name, ParserValue_t &var)
-        const = 0;
+    virtual Status_t findVariable(const std::string &name,
+                                  ParserValue_t &var) const = 0;
 
     virtual bool nextIteration() = 0;
 
@@ -98,20 +97,21 @@ public:
 
     virtual unsigned int iteration() const = 0;
 
-    virtual bool exists(const string &name, bool onlyData = false) const = 0;
+    virtual bool exists(const std::string &name,
+                        bool onlyData = false) const = 0;
 
     virtual const Fragment_t *getCurrentFragment() const = 0;
 
-    bool localExists(const string &name) const {
+    bool localExists(const std::string &name) const {
         return (locals.find(name) != locals.end());
     }
 
-    inline Status_t findLocalVariable(const string &name, ParserValue_t &var,
+    inline Status_t findLocalVariable(const std::string &name, ParserValue_t &var,
                                       bool testExistence = false)
         const
     {
         // try to find variable
-        map<string, ParserValue_t>::const_iterator flocals
+        std::map<std::string, ParserValue_t>::const_iterator flocals
             = locals.find(name);
         if (flocals == locals.end()) return S_NOT_FOUND;
 
@@ -125,14 +125,16 @@ public:
         return S_OK;
     }
 
-    inline Status_t setVariable(const string &name, const ParserValue_t &var) {
+    inline Status_t setVariable(const std::string &name,
+                                const ParserValue_t &var)
+    {
         // check whether there is non-local variable with given name
         // -- we are not allowed to override data from template
         if (exists(name, true)) return S_ALREADY_DEFINED;
 
-        // try to insert value to local variables 
-        pair<map<string, ParserValue_t>::iterator, bool> insertResult
-            = locals.insert(make_pair(name, var));
+        // try to insert value to local variables
+        std::pair<std::map<std::string, ParserValue_t>::iterator, bool>
+            insertResult = locals.insert(make_pair(name, var));
         if (!insertResult.second) {
             // unsuccesful (already set) -- change its value
             insertResult.first->second = var;
@@ -145,11 +147,11 @@ public:
     inline void resetLocals() {
         // remove all local variables (only when non empty)
         if (!locals.empty())
-            locals = map<string, ParserValue_t>();
+            locals = std::map<std::string, ParserValue_t>();
     }
 
 private:
-    map<string, ParserValue_t> locals;
+    std::map<std::string, ParserValue_t> locals;
 };
 
 class RegularFragmentFrame_t : public FragmentFrame_t {
@@ -169,15 +171,15 @@ public:
           index(0)
     {
 #ifdef WIN32
-		if (fragmentList)
-		{
-			data = fragmentList->begin();
-			dataEnd = fragmentList->end();
-		}
+        if (fragmentList)
+        {
+            data = fragmentList->begin();
+            dataEnd = fragmentList->end();
+        }
 #endif //WIN32
-		// no-op
-    }	
-    
+        // no-op
+    }
+
     RegularFragmentFrame_t(const Fragment_t *fragment)
         : FragmentFrame_t(),
           fragment(fragment),
@@ -190,7 +192,7 @@ public:
         // no-op
     }
 
-    virtual bool exists(const string &name, bool onlyData = false) const {
+    virtual bool exists(const std::string &name, bool onlyData = false) const {
         Fragment_t::const_iterator ffragment = fragment->find(name);
         if (ffragment != fragment->end()) {
             // we have found identifier in data
@@ -206,18 +208,19 @@ public:
         return onlyData ? false : localExists(name);
     }
 
-    virtual const FragmentList_t* findSubFragment(const string &name) const {
-        map<string, FragmentValue_t*>::const_iterator subFragment
+    virtual const FragmentList_t *
+    findSubFragment(const std::string &name) const {
+        std::map<std::string, FragmentValue_t*>::const_iterator subFragment
             = fragment->find(name);
         return ((subFragment == fragment->end()) ? 0
                 : subFragment->second->nestedFragments);
     }
 
-    virtual Status_t findVariable(const string &name, ParserValue_t &var)
+    virtual Status_t findVariable(const std::string &name, ParserValue_t &var)
         const
     {
         // try to find variable in the associated fragment
-        map<string, FragmentValue_t*>::const_iterator element
+        std::map<std::string, FragmentValue_t*>::const_iterator element
             = fragment->find(name);
 
         // when not found => try to find local variable
@@ -284,29 +287,30 @@ public:
     inline ErrorFragmentFrame_t(const Error_t &error)
         : FragmentFrame_t(), errors(error.getEntries()),
           errorSize(error.count()), index(0)
-        
+
     {
         // no-op
     }
 
-    virtual bool exists(const string &name, bool onlyData = false) const {
+    virtual bool exists(const std::string &name, bool onlyData = false) const {
         if ((name == FILENAME) || (name == LINE)
              || (name == COLUMN) || (name == LEVEL)
             || (name == MESSAGE)) return true;
         return onlyData ? false : localExists(name);
     }
 
-    virtual const FragmentList_t* findSubFragment(const string &name) const {
+    virtual const FragmentList_t *
+    findSubFragment(const std::string &name) const {
         // error fragment has no descendants
         return 0;
     }
 
-    virtual Status_t findVariable(const string &name, ParserValue_t &var)
+    virtual Status_t findVariable(const std::string &name, ParserValue_t &var)
         const
     {
         // try to match variable names
         if (name == FILENAME) {
-            const string &filename = errors[index].pos.filename;
+            const std::string &filename = errors[index].pos.filename;
             var.setString(filename.empty() ? NO_FILE : filename);
             return S_OK;
         } else if (name == LINE) {
@@ -322,7 +326,7 @@ public:
             var.setString(errors[index].message);
             return S_OK;
         }
-        
+
         // nothing matched, return local variable
         return findLocalVariable(name, var);
     }
@@ -370,13 +374,13 @@ public:
 
     inline ~FragmentChain_t() {
         // get rid of all remaining frames
-        for (vector<FragmentFrame_t*>::iterator iframes = frames.begin();
+        for (std::vector<FragmentFrame_t*>::iterator iframes = frames.begin();
              iframes != frames.end(); ++iframes)
             if (iframes != frames.begin())
                 delete *iframes;
     }
 
-    inline void pushFrame(const string &name, FragmentFrame_t *frame) {
+    inline void pushFrame(const std::string &name, FragmentFrame_t *frame) {
         path.push_back(name);
         frames.push_back(frame);
     }
@@ -396,7 +400,8 @@ public:
         return S_OK;
     }
 
-    inline const FragmentList_t* findSubFragment(const string &name) const {
+    inline const FragmentList_t *
+    findSubFragment(const std::string &name) const {
         return frames.back()->findSubFragment(name);
     }
 
@@ -434,7 +439,7 @@ public:
     {
         // check for range
         if (name.depth > path.size()) return S_OUT_OF_CONTEXT;
-        
+
         // find subfragment by name
         const FragmentList_t *subFragment
             = (*(frames.begin() + name.depth))->findSubFragment(name.name);
@@ -445,7 +450,7 @@ public:
             // subfragment not present, treating as zero size
             fragmentSize = 0;
         }
-        
+
         // OK
         return S_OK;
     }
@@ -453,7 +458,7 @@ public:
     inline Status_t getFragmentIteration(const Identifier_t &name,
                                          unsigned int &fragmentIteration,
                                          unsigned int *fragmentSize = 0)
-        const 
+        const
     {
         // check for range
         if (name.depth > path.size()) return S_OUT_OF_CONTEXT;
@@ -498,9 +503,9 @@ public:
 
 
 private:
-    vector<string> path;
+    std::vector<std::string> path;
 
-    vector<FragmentFrame_t*> frames;
+    std::vector<FragmentFrame_t*> frames;
 };
 
 
@@ -557,7 +562,7 @@ public:
         chain.pushFrame(name.name, frame);
         return S_OK;
     }
-    
+
     virtual const Fragment_t *getCurrentFragment() const {
         return chains.back().getCurrentFragment();
     }
@@ -681,8 +686,8 @@ public:
     inline Status_t repeatFragment(const Identifier_t &name,
                                    int returnAddress)
     {
-        cerr << "repeating " << name.name << " [" << hex
-             << returnAddress << "]" << endl;
+        std::cerr << "repeating " << name.name << " [" << std::hex
+             << returnAddress << "]" << std::endl;
         return S_NO_ITERATIONS;
     }
 
@@ -695,9 +700,10 @@ private:
     bool enableErrorFragment;
 
     RegularFragmentFrame_t root;
-    vector<FragmentChain_t> chains;
+    std::vector<FragmentChain_t> chains;
 };
 
 } // namespace Teng
 
 #endif // TENGFRAGEMENTSTACK_H
+

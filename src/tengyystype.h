@@ -53,17 +53,17 @@ struct LeftValue_t {
     ParserValue_t val;
 
     // define option list type
-    typedef map<string, string> OptionList_t;
+    typedef std::map<std::string, std::string> OptionList_t;
     // teng-directive options used for building code
     OptionList_t opt;
 
     // define list of addresses info
-    typedef vector<long> AddressList_t;
+    typedef std::vector<long> AddressList_t;
     // program address--tmp just for building code
     AddressList_t addr;
 
     // define identifier type
-    typedef vector<string> Identifier_t;
+    typedef std::vector<std::string> Identifier_t;
     // variable identifier
     Identifier_t id;
 
@@ -77,7 +77,7 @@ struct LeftValue_t {
 };
 
 // left value type
-#define YYSTYPE LeftValue_t
+#define YYSTYPE ::Teng::LeftValue_t
 
 } // namespace Teng
 

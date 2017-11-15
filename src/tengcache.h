@@ -46,15 +46,13 @@
 #include "tengutil.h"
 #include "tengerror.h"
 
-using namespace std;
-
 namespace Teng {
 
-typedef vector<string> Key_t;
+typedef std::vector<std::string> Key_t;
 
 /**
  * @short Creates key for given file.
- * 
+ *
  * The key (normalizad filenanme) is added into given key vector.
  *
  * @param root root for relative paths
@@ -62,17 +60,17 @@ typedef vector<string> Key_t;
  * @param key key vector (result)
  * @return 0 OK !0 error
  */
-int tengCreateKey(const string &root,
-                  const string &filename, vector<string> &key);
+int tengCreateKey(const std::string &root,
+                  const std::string &filename, std::vector<std::string> &key);
 
 /**
- * @short 
+ * @short
  *
  * @param data processed string
  * @param key key vector (result)
  * @return 0 OK !0 error
  */
-int tengCreateStringKey(const string &data, vector<string> &key);
+int tengCreateStringKey(const std::string &data, std::vector<std::string> &key);
 
 /**
  * @short Maps key from source list to cached value.
@@ -99,7 +97,7 @@ public:
             : data(data), refCount(1), serial(serial), dependSerial(dependSerial),
               valid(true), key(key)
         {}
-        
+
         /**
          * @short Delete assoicated data.
          */
@@ -150,17 +148,17 @@ public:
     /**
      * @short Mapping keys to entries.
      */
-    typedef map<Key_t, Entry_t*> EntryCache_t;
+    typedef std::map<Key_t, Entry_t*> EntryCache_t;
 
     /**
      * @short Mapping data to entries.
      */
-    typedef map<const DataType_t*, Entry_t*> EntryBackCache_t;
+    typedef std::map<const DataType_t*, Entry_t*> EntryBackCache_t;
 
     /**
      * @short LRU.
      */
-    typedef vector<Entry_t*> LRU_t;
+    typedef std::vector<Entry_t*> LRU_t;
 
     /**
      * @short Creates empty cache.
@@ -307,7 +305,7 @@ public:
                 }
             }
         }
-        
+
         // create new entry (defaults to have one reference)
         Entry_t *entry = new Entry_t(key, data, newSerial, dependSerial);
 
@@ -347,7 +345,7 @@ public:
         // decremente reference count if positive
         if (entry->refCount > 0) --entry->refCount;
         if ((entry->refCount <= 0) && !entry->valid) {
-            // no referrers and invalid entry => terminate it 
+            // no referrers and invalid entry => terminate it
             backcache.erase(fbackcache);
             delete entry;
         }
@@ -397,7 +395,7 @@ private:
             }
         }
 
-        // if there are no referrers and entry is invalid => terminate it 
+        // if there are no referrers and entry is invalid => terminate it
         if ((entry->refCount <= 0) && !entry->valid) {
             // try to find data in back mapping cache
             typename EntryBackCache_t::iterator fbackcache =
@@ -423,7 +421,7 @@ private:
     /** @short LRU of entries.
      */
     mutable LRU_t lru;
-    
+
     /** @short Maximal size of cache.
      */
     unsigned int maximalSize;

@@ -67,13 +67,10 @@
 #include <fenv.h>
 #endif
 
-
-using namespace std;
-
-using namespace Teng;
+namespace Teng {
 
 void Processor_t::Logger_t::logError(Error_t::Level_t level,
-                                     const string &message)
+                                     const std::string &message)
 {
     if (instr) processor.logErr(*instr, message, level);
 }
@@ -117,13 +114,17 @@ class FragVal_t {
 };
 
 // performs UDF calls
-int callUdf(const vector<ParserValue_t> &args, ParserValue_t &result, UDFCallback_t &udf, string &err) {
-    vector<UDFValue_t> udfArgs;
+int callUdf(const std::vector<ParserValue_t> &args,
+            ParserValue_t &result,
+            UDFCallback_t &udf,
+            std::string &err)
+{
+    std::vector<UDFValue_t> udfArgs;
     UDFValue_t udfRes((IntType_t)0);
     udfArgs.reserve(args.size());
     int res = E_OK;
 
-    for (vector<ParserValue_t>::const_reverse_iterator it = args.rbegin();
+    for (std::vector<ParserValue_t>::const_reverse_iterator it = args.rbegin();
             it != args.rend(); it++ ) {
         switch (it->type) {
             case ParserValue_t::TYPE_INT:
@@ -140,10 +141,10 @@ int callUdf(const vector<ParserValue_t> &args, ParserValue_t &result, UDFCallbac
 
     try {
         udfRes = udf(udfArgs);
-    } catch (invalid_argument & e) {
+    } catch (const std::invalid_argument &e) {
         err = e.what();
         res = E_ARGS;
-    } catch (exception & e) {
+    } catch (const std::exception &e) {
         res = E_OTHER;
         err = e.what();
     }
@@ -168,7 +169,7 @@ int callUdf(const vector<ParserValue_t> &args, ParserValue_t &result, UDFCallbac
 
 Processor_t::
 FunctionParam_t::FunctionParam_t(Processor_t &processor,
-                                 const string &encoding,
+                                 const std::string &encoding,
                                  const ContentType_t *contentType,
                                  const Configuration_t &configuration,
                                  const Dictionary_t &langDictionary)
@@ -180,24 +181,26 @@ FunctionParam_t::FunctionParam_t(Processor_t &processor,
 }
 
 namespace {
-    inline Error_t::Position_t position(const Instruction_t &instr,
-                                        const Program_t &program)
-    {
-        return Error_t::Position_t
-            (((instr.sourceIndex < 0) ? "" :
-              program.getSource(instr.sourceIndex)),
-             instr.line,
-             instr.column);
-    }
+
+inline Error_t::Position_t position(const Instruction_t &instr,
+                                    const Program_t &program)
+{
+    return Error_t::Position_t
+        (((instr.sourceIndex < 0) ? "" :
+          program.getSource(instr.sourceIndex)),
+         instr.line,
+         instr.column);
 }
 
-void Processor_t::logErr(const Instruction_t &instr, const string &s,
+}
+
+void Processor_t::logErr(const Instruction_t &instr, const std::string &s,
                          Error_t::Level_t level)
 {
     error->logRuntimeError(level, position(instr, program), s);
 }
 
-void Processor_t::logErrNoInstr(const string &s,
+void Processor_t::logErrNoInstr(const std::string &s,
                                 Error_t::Level_t level)
 {
     error->logRuntimeError(level,
@@ -207,7 +210,7 @@ void Processor_t::logErrNoInstr(const string &s,
 Processor_t::Processor_t(const Program_t &program,
                          const Dictionary_t &dict,
                          const Configuration_t &configuration,
-                         const string &encoding,
+                         const std::string &encoding,
                          const ContentType_t *contentType)
     : program(program), langDictionary(dict), configuration(configuration),
       fParam(*this, encoding, contentType, configuration, dict)
@@ -549,7 +552,7 @@ int Processor_t::binaryOp(const Instruction_t &instr) {
         }
 
         {
-            string s = a.stringValue;
+            std::string s = a.stringValue;
             a.setString("");
             a.stringValue.reserve(s.size() * b.integerValue);
             for (ParserValue_t::int_t i = 0; i < b.integerValue; i++) {
@@ -578,7 +581,7 @@ namespace {
     int dumpFragment(const Configuration_t &configuration,
                      const Escaper_t &escaper,
                      Formatter_t &output, const Fragment_t &fragment,
-                     const string &padding = string())
+                     const std::string &padding = std::string())
     {
         // dump all variables (no nestedFragments)
         for (Fragment_t::const_iterator ifragment = fragment.begin();
@@ -637,14 +640,14 @@ int Processor_t::instructionDebug(const Fragment_t &data, Formatter_t &output) {
     const SourceList_t &pl = program.getSources();
     for (unsigned int i = 0; i != pl.size(); ++i) {
         if (output.write(escaper.escape("    " + pl.getSource(i) + "\n")))
-	    return -1;
+        return -1;
     }
 
     output.write(escaper.escape("\nLanguage dictionary sources:\n"));
     const SourceList_t &l = langDictionary.getSources();
     for (unsigned int i = 0; i != pl.size(); ++i) {
         if (output.write(escaper.escape("    " + l.getSource(i) + "\n")))
-	    return -1;
+        return -1;
     }
 
     if (output.write(escaper.escape("\nConfiguration dictionary sources:\n")))
@@ -652,7 +655,7 @@ int Processor_t::instructionDebug(const Fragment_t &data, Formatter_t &output) {
     const SourceList_t &p = configuration.getSources();
     for (unsigned int i = 0; i != pl.size(); ++i) {
         if (output.write(escaper.escape("    " + p.getSource(i) + "\n")))
-	    return -1;
+        return -1;
     }
 
     // configuration
@@ -667,22 +670,24 @@ int Processor_t::instructionDebug(const Fragment_t &data, Formatter_t &output) {
 }
 
 namespace {
-    int dumpBytecode(const Escaper_t &escaper, const Program_t &program,
-                     Formatter_t &output)
-    {
-        // create bytecode dump
-        ostringstream os;
-        for (Program_t::const_iterator iprogram = program.begin();
-             iprogram != program.end(); ++iprogram) {
-            os << "0x" << std::hex << std::setw(8) << std::setfill('0')
-               << static_cast<unsigned int>(iprogram - program.begin()) << " ";
-            iprogram->dump(os, static_cast<unsigned int>(iprogram - program.begin()));
-        }
 
-        // write to output
-        return output.write(escaper.escape(os.str()));
+int dumpBytecode(const Escaper_t &escaper, const Program_t &program,
+                 Formatter_t &output)
+{
+    // create bytecode dump
+    std::ostringstream os;
+    for (Program_t::const_iterator iprogram = program.begin();
+         iprogram != program.end(); ++iprogram) {
+        os << "0x" << std::hex << std::setw(8) << std::setfill('0')
+           << static_cast<unsigned int>(iprogram - program.begin()) << " ";
+        iprogram->dump(os, static_cast<unsigned int>(iprogram - program.begin()));
     }
+
+    // write to output
+    return output.write(escaper.escape(os.str()));
 }
+
+} // namespace
 
 #define WARN_IF(...)\
     if ( existMarks == 0 )\
@@ -693,8 +698,8 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
 {
     ParserValue_t a;
     FragVal_t cVal;
-    vector<ParserValue_t> programStack;
-    stack<FragVal_t> fragmentValueStack;
+    std::vector<ParserValue_t> programStack;
+    std::stack<FragVal_t> fragmentValueStack;
 
     programStack.reserve(80);
 
@@ -761,7 +766,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
             a = valueStack.top();
             valueStack.pop();
             {
-                const string *item;
+                const std::string *item;
                 item = langDictionary.lookup(a.stringValue);
                 if (item == 0)
                     item = configuration.lookup(a.stringValue);
@@ -899,17 +904,18 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                     goto flushReturn;
                 }
 
-                vector <ParserValue_t> v(i);
+                std::vector <ParserValue_t> v(i);
                 for (j = 0; j < i; j++) {
                     v[j] = valueStack.top();
                     valueStack.pop();
                 }
 
                 Function_t p = tengFindFunction(instr.value.stringValue);
-                UDFCallback_t udf = p == 0 ? findUDF(instr.value.stringValue) : udf;
+                UDFCallback_t udf;
+                if (p) findUDF(instr.value.stringValue);
 
                 if (p || udf) {
-                    string errmsg;
+                    std::string errmsg;
                     fParam.logger.setInstruction(&instr);
                     int res = p == 0 ? callUdf(v, a, udf, errmsg) : p(v, fParam, a);
                     switch (res) {
@@ -1347,7 +1353,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
             fragmentValueStack.pop();
 
             if ( instr.value.stringValue == "json" ) {
-                stringstream os;
+                std::stringstream os;
                 switch ( cVal.type ) {
                     case FragVal_t::FRAGMENT:
                         cVal.frag->json(os);
@@ -1478,7 +1484,7 @@ int Processor_t::eval(ParserValue_t &result, int startAddress,
     Error_t fakeError;
     error = &fakeError;
 
-    vector<ParserValue_t> programStack;
+    std::vector<ParserValue_t> programStack;
     programStack.reserve(80);
 
     while (!valueStack.empty()) valueStack.pop();
@@ -1494,7 +1500,7 @@ int Processor_t::eval(ParserValue_t &result, int startAddress,
             if (b.type != ParserValue_t::TYPE_INT || b.integerValue < 0)
                 return -1;
             {
-                string s = a.stringValue;
+                std::string s = a.stringValue;
                 a.setString("");
                 a.stringValue.reserve(s.size() * b.integerValue);
                 for (ParserValue_t::int_t i = 0; i < b.integerValue; i++)
@@ -1571,7 +1577,7 @@ int Processor_t::eval(ParserValue_t &result, int startAddress,
                 int j;
                 if (i < 0) return -1;
                 if ((int)valueStack.size() < i) return -1;
-                vector <ParserValue_t> v(i);
+                std::vector <ParserValue_t> v(i);
                 for (j = 0; j < i; j++) {
                     v[j] = valueStack.top();
                     valueStack.pop();
@@ -1580,7 +1586,7 @@ int Processor_t::eval(ParserValue_t &result, int startAddress,
                 ///TODO: UDF const optimizations
                 //UDF_t *udf = p == 0 ? findUDF(instr.value.stringValue) : 0;
                 if ( p /*|| udf*/ ) {
-                    string errmsg;
+                    std::string errmsg;
                     fParam.logger.setInstruction(&instr);
                     //int res = p == 0 ? callUdf(v, a, udf, errmsg) : p(v, fParam, a);
                     int res = p(v, fParam, a);
@@ -1631,3 +1637,6 @@ int Processor_t::eval(ParserValue_t &result, int startAddress,
     result = valueStack.top();
     return 0;
 }
+
+} // namespace Teng
+

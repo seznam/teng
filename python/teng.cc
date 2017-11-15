@@ -53,7 +53,7 @@ typedef int Py_ssize_t;
 #define PY_SSIZE_T_MIN INT_MIN
 #endif
 
-using namespace Teng;
+namespace Teng {
 
 /** @short version of python */
 #define MY_PYTHON_VER (PY_MAJOR_VERSION * 10 + PY_MINOR_VERSION)
@@ -1789,3 +1789,6 @@ extern "C" DL_EXPORT(void) initteng(void) {
     /* Create the module and add the functions */
     Py_InitModule("teng", teng_methods);
 }
+
+} // namespace Teng
+

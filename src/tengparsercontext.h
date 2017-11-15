@@ -48,15 +48,13 @@
 #include "tengprogram.h"
 #include "tengprocessor.h"
 
-using namespace std;
-
 namespace Teng {
 
 /** Parser context contains all necessary parsing-time data. */
 struct ParserContext_t {
 
     /** Var/frag identifier. */
-    typedef vector<string> IdentifierName_t;
+    typedef std::vector<std::string> IdentifierName_t;
 
     /** Initialize.
      * @param langDictionary Language-dependent dictionary.
@@ -64,7 +62,7 @@ struct ParserContext_t {
      * @param root Application's root path for teng files. */
     ParserContext_t(const Dictionary_t *langDictionary,
                     const Configuration_t *paramDictionary,
-                    const string &root);
+                    const std::string &root);
 
     /** Delete lexical analyzer objects left on the stack. */
     ~ParserContext_t();
@@ -72,15 +70,15 @@ struct ParserContext_t {
     /** Compile file template into a program.
       * @return Pointer to program compiled within this context.
       * @param filename Template filename. */
-    Program_t* createProgramFromFile(const string &filename);
+    Program_t* createProgramFromFile(const std::string &filename);
 
     /** Compile string template into a program.
       * @return Pointer to program compiled within this context.
       * @param str Whole template is stored in this string. */
-    Program_t* createProgramFromString(const string &str);
+    Program_t* createProgramFromString(const std::string &str);
 
     bool pushFragment(const Error_t::Position_t &pos,
-                      const IdentifierName_t &name, const string &fullName,
+                      const IdentifierName_t &name, const std::string &fullName,
                       Identifier_t &id);
 
     void popFragment(unsigned int fragmentProgramStart);
@@ -89,7 +87,7 @@ struct ParserContext_t {
 
     bool findFragmentForVariable(const Error_t::Position_t &pos,
                                  const IdentifierName_t &name,
-                                 const string &fullName,
+                                 const std::string &fullName,
                                  Identifier_t &id) const;
 
     enum FragmentResolution_t {
@@ -100,7 +98,7 @@ struct ParserContext_t {
 
     FragmentResolution_t findFragment(const Error_t::Position_t *pos,
                                       const IdentifierName_t &name,
-                                      const string &fullName,
+                                      const std::string &fullName,
                                       Identifier_t &id,
                                       bool parentIsOK = false) const;
 
@@ -112,7 +110,7 @@ struct ParserContext_t {
 
     ExistResolution_t exists(const Error_t::Position_t &pos,
                              const IdentifierName_t &name,
-                             const string &fullName, Identifier_t &id,
+                             const std::string &fullName, Identifier_t &id,
                              bool mustBeOpen = false) const;
 
     int getFragmentAddress(const Error_t::Position_t &pos,
@@ -127,12 +125,12 @@ struct ParserContext_t {
     const Configuration_t *paramDictionary;
 
     /** Application root path (templates and dictionaries) */
-    string root;
+    std::string root;
 
     /** Lexical analyzer (level 1) object. */
-    stack<Lex1_t *> lex1;
+    std::stack<Lex1_t *> lex1;
     /** Source index relevant to the currently processed source by lex1. */
-    stack<int> sourceIndex;
+    std::stack<int> sourceIndex;
 
     /** Flag of using lexical analyzer (level2). */
     int lex2;
@@ -211,3 +209,4 @@ struct ParserContext_t {
 } // namespace Teng
 
 #endif // TENGPARSERCONTEXT_H
+

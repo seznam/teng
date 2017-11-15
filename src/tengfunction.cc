@@ -49,13 +49,14 @@
  *             Win32 support.
  */
 
-#include <stdio.h>
-#include <math.h>
-#include <stdlib.h>
-#include <ctype.h>
+#include <cstdio>
+#include <cmath>
+#include <cstdlib>
+#include <cctype>
 #include <sys/time.h>
-#include <limits.h>
+#include <climits>
 #include <algorithm>
+
 #include <glib.h>
 #include <curl/curl.h>
 
@@ -64,21 +65,17 @@
 #include "tengfunction.h"
 #include "tengplatform.h"
 
-
 #ifndef HAVE_TRUNC
 // emulated trunc() math function if not in libc
 double trunc(double x);
-#endif
+#endif /* HAVE_TRUNC */
 
 #ifndef HAVE_ROUND
 // emulated round() math function if not in libc
 double round(double x);
 #endif
 
-
-using namespace std;
-
-using namespace Teng;
+namespace Teng {
 
 namespace {
 
@@ -86,12 +83,12 @@ namespace {
  * @param str string
  * @return length of str
  * */
-static int strlenUTF8(const string &_str) {
-    string str = _str;
+static int strlenUTF8(const std::string &_str) {
+    std::string str = _str;
     int chars = 0;
-    string::iterator end = str.end();
+    std::string::iterator end = str.end();
 
-    for (string::iterator istr = str.begin(); istr != end; ) {
+    for (std::string::iterator istr = str.begin(); istr != end; ) {
         int bytes = 0;
         char tmp = *istr;
 
@@ -111,7 +108,7 @@ static int strlenUTF8(const string &_str) {
             continue;
         }
         --bytes;
-        string::iterator bstr = istr + 1;
+        std::string::iterator bstr = istr + 1;
         for (; (bstr != end) && bytes; ++bstr, --bytes) {
             if ((*bstr & 0xC0) != 0x80) break;
         }
@@ -137,8 +134,11 @@ static int strlenUTF8(const string &_str) {
  * @param s start index
  * @param e end index
  * */
-static void substrUTF8(const string &str, string &result, int s, int e,
-                       string &p1, string &p2)
+static void substrUTF8(const std::string &str,
+                       std::string &result,
+                       int s, int e,
+                       std::string &p1,
+                       std::string &p2)
 {
     int l = strlenUTF8(str);
     if (s < 0) s = l + s;
@@ -156,9 +156,9 @@ static void substrUTF8(const string &str, string &result, int s, int e,
         return;
     }
     else result = "";
-    string::const_iterator end = str.end();
+    std::string::const_iterator end = str.end();
     int i=0;
-    for (string::const_iterator istr = str.begin(); istr != end; ) {
+    for (std::string::const_iterator istr = str.begin(); istr != end; ) {
         int bytes = 0;
         char tmp = *istr;
 
@@ -182,7 +182,7 @@ static void substrUTF8(const string &str, string &result, int s, int e,
             continue;
         }
         --bytes;
-        string::const_iterator bstr = istr + 1;
+        std::string::const_iterator bstr = istr + 1;
         for (; (bstr != end) && bytes; ++bstr, --bytes) {
             if ((*bstr & 0xC0) != 0x80) break;
         }
@@ -249,18 +249,18 @@ static int unixtime(struct tm dateTime, time_t &res) {
  * @param result Teng function result
  * @return 0 OK, -1 wrong argument count, -2 other error
  * */
-static int tengFunctionSubstr(const vector<ParserValue_t> &args,
+static int tengFunctionSubstr(const std::vector<ParserValue_t> &args,
                               const Processor_t::FunctionParam_t &setting,
                               ParserValue_t &result)
 {
     int s=0, e=INT_MAX;
     result.setString("undefined");
     if (args.size() < 2 || args.size() > 5) return -1;
-    string p1, p2; // default empty string to begin and end
+    std::string p1, p2; // default empty string to begin and end
 
-    vector<ParserValue_t>::const_reverse_iterator arg = args.rbegin();
+    std::vector<ParserValue_t>::const_reverse_iterator arg = args.rbegin();
 
-    // 1: string
+    // 1: std::string
     ParserValue_t a = *(arg++);
 
     // 2: start
@@ -334,7 +334,7 @@ static int tengFunctionSubstr(const vector<ParserValue_t> &args,
   * @param s start index
   * @param e end index
   * */
-static void substrIndexUTF8(const string &str, int &s, int &e) {
+static void substrIndexUTF8(const std::string &str, int &s, int &e) {
     int l = strlenUTF8(str), index, end = str.size(),
         sset = 0, chars = 0;
     if (!l) {
@@ -415,16 +415,16 @@ static void substrIndexUTF8(const string &str, int &s, int &e) {
  * @param result Teng function result
  * @return 0 OK, -1 wrong argument count, -2 other error
  * */
-static int tengFunctionWordSubstr(const vector<ParserValue_t> &args,
+static int tengFunctionWordSubstr(const std::vector<ParserValue_t> &args,
                                   const Processor_t::FunctionParam_t &setting,
                                   ParserValue_t &result)
 {
     int s=0, e=INT_MAX;
     result.setString("undefined");
     if ((args.size() < 2) || (args.size() > 5)) return -1;
-    string p1, p2;
+    std::string p1, p2;
 
-    vector<ParserValue_t>::const_reverse_iterator arg = args.rbegin();
+    std::vector<ParserValue_t>::const_reverse_iterator arg = args.rbegin();
 
     // 1: string
     ParserValue_t a = *(arg++);
@@ -527,7 +527,7 @@ static int tengFunctionWordSubstr(const vector<ParserValue_t> &args,
  * @param result Teng function result
  * @return 0 OK, -1 wrong argument count, -2 other error
  * */
-static int tengFunctionReorder(const vector<ParserValue_t> &args,
+static int tengFunctionReorder(const std::vector<ParserValue_t> &args,
                                const Processor_t::FunctionParam_t &setting,
                                ParserValue_t &result)
 {
@@ -536,10 +536,10 @@ static int tengFunctionReorder(const vector<ParserValue_t> &args,
     int ret = 0;
 
     // format string
-    const string &format = args[args.size() - 1].stringValue;
+    const std::string &format = args[args.size() - 1].stringValue;
 
     // result (formated string) -- reserve some space
-    string res;
+    std::string res;
     res.reserve(2 * format.length());
 
     // status of automaton
@@ -559,8 +559,8 @@ static int tengFunctionReorder(const vector<ParserValue_t> &args,
     bool replace = false;
 
     // position of last %
-    string::const_iterator mark = format.begin();
-    for (string::const_iterator iformat = format.begin();
+    std::string::const_iterator mark = format.begin();
+    for (std::string::const_iterator iformat = format.begin();
          /* forever */; ++iformat) {
 
         // get next character of EOS when at the string end
@@ -694,7 +694,7 @@ static int tengFunctionReorder(const vector<ParserValue_t> &args,
                     char tc = c;
                     setting.logger.
                         logError(Error_t::LL_ERROR,
-                                 ("reorder(): '" + string(&tc, 1)
+                                 ("reorder(): '" + std::string(&tc, 1)
                                   + "' not allowed inside %{} or after %."));
                 }
                 ret = -2;
@@ -716,7 +716,7 @@ static int tengFunctionReorder(const vector<ParserValue_t> &args,
                 setting.logger.
                     logError(Error_t::LL_ERROR,
                              ("reorder(): invalid or missing index in format '"
-                              + string(mark, iformat + 1) + "'."));
+                              + std::string(mark, iformat + 1) + "'."));
                 ret = -2;
                 res.append(mark, iformat + 1);
             } else {
@@ -740,7 +740,7 @@ static int tengFunctionReorder(const vector<ParserValue_t> &args,
  * @param result Teng function result
  * @return 0 OK, -1 wrong argument count, -2 other error
  * */
-static int tengFunctionEscape(const vector<ParserValue_t> &args,
+static int tengFunctionEscape(const std::vector<ParserValue_t> &args,
                               const Processor_t::FunctionParam_t &setting,
                               ParserValue_t &result)
 {
@@ -758,7 +758,7 @@ static int tengFunctionEscape(const vector<ParserValue_t> &args,
  * @param result Teng function result
  * @return 0 OK, -1 wrong argument count, -2 other error
  * */
-static int tengFunctionUnescape(const vector<ParserValue_t> &args,
+static int tengFunctionUnescape(const std::vector<ParserValue_t> &args,
                                 const Processor_t::FunctionParam_t &setting,
                                 ParserValue_t &result)
 {
@@ -776,7 +776,7 @@ static int tengFunctionUnescape(const vector<ParserValue_t> &args,
  * @param result Teng function result
  * @return 0 OK, -1 wrong argument count, -2 other error
  * */
-static int tengFunctionLen(const vector<ParserValue_t> &args,
+static int tengFunctionLen(const std::vector<ParserValue_t> &args,
                            const Processor_t::FunctionParam_t &setting,
                            ParserValue_t &result)
 {
@@ -796,7 +796,7 @@ static int tengFunctionLen(const vector<ParserValue_t> &args,
  * @param result Teng function result
  * @return 0 OK, -1 wrong argument count, -2 other error
  * */
-static int tengFunctionRandom(const vector<ParserValue_t> &args,
+static int tengFunctionRandom(const std::vector<ParserValue_t> &args,
                               const Processor_t::FunctionParam_t &setting,
                               ParserValue_t &result)
 {
@@ -844,7 +844,7 @@ static int tengFunctionRandom(const vector<ParserValue_t> &args,
   * @param result Teng function result
   * @return 0 OK, -1 wrong argument count, -2 other error
   * */
-static int tengFunctionNow(const vector<ParserValue_t> &args,
+static int tengFunctionNow(const std::vector<ParserValue_t> &args,
                            const Processor_t::FunctionParam_t &setting,
                            ParserValue_t &result)
 {
@@ -863,7 +863,7 @@ static int tengFunctionNow(const vector<ParserValue_t> &args,
  * @param dateTime destination
  * @return 0 OK, -1 error
  * */
-static int parseDateTime(const string &str, struct tm &dateTime) {
+static int parseDateTime(const std::string &str, struct tm &dateTime) {
     char buf4[5];
     char buf2[3];
     char *end; // is set by strtoul
@@ -995,11 +995,11 @@ static int parseDateTime(const string &str, struct tm &dateTime) {
  * @param index Which substring put from setup-string into output.
  * @param setup The date-setup string.
  * @param out output string. */
-static int addDateString(unsigned int index, const string &setup,
-                         string &out)
+static int addDateString(unsigned int index, const std::string &setup,
+                         std::string &out)
 {
     // find the proper word
-    string::const_iterator isetup = setup.begin();
+    std::string::const_iterator isetup = setup.begin();
     for (++index; index > 0; --index) {
         // find next '|"
         for (; (isetup != setup.end()) && (*isetup != '|');
@@ -1014,7 +1014,7 @@ static int addDateString(unsigned int index, const string &setup,
     // not found => error (must be zero)
     if (index) return -1;
 
-    string::const_iterator esetup = isetup;
+    std::string::const_iterator esetup = isetup;
     // find terminating delimiter
     while  ((esetup != setup.end()) && (*esetup != '|'))
         esetup++;
@@ -1030,7 +1030,7 @@ static int addDateString(unsigned int index, const string &setup,
 }
 
 template <typename T1>
-static inline void formatValue(string &out, const char *format,
+static inline void formatValue(std::string &out, const char *format,
                                T1 v1)
 {
     char buf[60];
@@ -1039,7 +1039,7 @@ static inline void formatValue(string &out, const char *format,
 }
 
 template <typename T1, typename T2>
-static inline void formatValue(string &out, const char *format,
+static inline void formatValue(std::string &out, const char *format,
                                T1 v1, T2 v2)
 {
     char buf[60];
@@ -1048,7 +1048,7 @@ static inline void formatValue(string &out, const char *format,
 }
 
 template <typename T1, typename T2, typename T3>
-static inline void formatValue(string &out, const char *format,
+static inline void formatValue(std::string &out, const char *format,
                                T1 v1, T2 v2, T3 v3)
 {
     char buf[60];
@@ -1057,7 +1057,7 @@ static inline void formatValue(string &out, const char *format,
 }
 
 template <typename T1, typename T2, typename T3, typename T4>
-static inline void formatValue(string &out, const char *format,
+static inline void formatValue(std::string &out, const char *format,
                                T1 v1, T2 v2, T3 v3, T4 v4)
 {
     char buf[60];
@@ -1071,11 +1071,11 @@ static inline void formatValue(string &out, const char *format,
  * @param setup String with literals of month/day names.
  * @param dateTime Date/time for formating.
  * @param output Result (formated string). */
-static int formatBrokenDate(const string &format, const string &setup,
-                            const struct tm &dateTime, string &output)
+static int formatBrokenDate(const std::string &format, const std::string &setup,
+                            const struct tm &dateTime, std::string &output)
 {
     // for all chars in format string
-    for (string::const_iterator ptr = format.begin();
+    for (std::string::const_iterator ptr = format.begin();
          ptr != format.end(); ++ptr) {
         // if formating char '%'  found
         if (*ptr == '%') {
@@ -1246,8 +1246,8 @@ static int formatBrokenDate(const string &format, const string &setup,
  * @param output result
  * @return 0 OK, -1 error
  * */
-static int formatStringDate(const string &format,const string &setup,
-                            const string &date, string &output)
+static int formatStringDate(const std::string &format,const std::string &setup,
+                            const std::string &date, std::string &output)
 {
     struct tm dateTime;
 
@@ -1262,15 +1262,15 @@ static int formatStringDate(const string &format,const string &setup,
  * @param output result
  * @return 0 OK, -1 error
  * */
-static int formatTime_tDate(const string &format, const string &setup,
-                            time_t date, string &output)
+static int formatTime_tDate(const std::string &format, const std::string &setup,
+                            time_t date, std::string &output)
 {
     struct tm dateTime;
     if (!localtime_r(&date, &dateTime)) return -1;
     return formatBrokenDate(format, setup, dateTime, output);
 }
 
-static int tengFunctionTimestamp(const vector<ParserValue_t> &args,
+static int tengFunctionTimestamp(const std::vector<ParserValue_t> &args,
                                  const Processor_t::FunctionParam_t &setting,
                                  ParserValue_t &result)
 {
@@ -1304,7 +1304,7 @@ static int tengFunctionTimestamp(const vector<ParserValue_t> &args,
  * @param result Teng function result
  * @return 0 OK, -1 wrong argument count, -2 other error
  * */
-static int tengFunctionFormatDate(const vector<ParserValue_t> &args,
+static int tengFunctionFormatDate(const std::vector<ParserValue_t> &args,
                                   const Processor_t::FunctionParam_t &setting,
                                   ParserValue_t &result)
 {
@@ -1331,7 +1331,7 @@ static int tengFunctionFormatDate(const vector<ParserValue_t> &args,
     }
 
     date.validateThis();
-    string res;
+    std::string res;
     if ((date.type == ParserValue_t::TYPE_INT) ||
         (date.type == ParserValue_t::TYPE_REAL)) {
         if (formatTime_tDate(format.stringValue, setup.stringValue,
@@ -1354,7 +1354,7 @@ static int tengFunctionFormatDate(const vector<ParserValue_t> &args,
 /** Format number to be suitable for human reading.
  * Function works like round(), except it has two more params:
  * decimal point and thousands separator (both are strings). */
-static int tengFunctionNumFormat(const vector<ParserValue_t> &args,
+static int tengFunctionNumFormat(const std::vector<ParserValue_t> &args,
                                  const Processor_t::FunctionParam_t &setting,
                                  ParserValue_t &result)
 {
@@ -1379,11 +1379,11 @@ static int tengFunctionNumFormat(const vector<ParserValue_t> &args,
     ParserValue_t a(args[args.size() - 1]); //number
     ParserValue_t b(args[args.size() - 2]); //prec
     // decimal point
-    string decipoint = ".";
+    std::string decipoint = ".";
     if (args.size() >= 3)
         decipoint = args[args.size() - 3].stringValue;
     // thousands separator
-    string thousandsep;
+    std::string thousandsep;
     if (args.size() >= 4)
         thousandsep = args[args.size() - 4].stringValue;
 
@@ -1421,7 +1421,7 @@ static int tengFunctionNumFormat(const vector<ParserValue_t> &args,
     // print string using thousand and decimal separators
     double integer = trunc(num);
     ParserValue_t::int_t n = static_cast<ParserValue_t::int_t>(integer);
-    string str;
+    std::string str;
     char buf[16];
     int m;
     // if zero integer part
@@ -1442,14 +1442,14 @@ static int tengFunctionNumFormat(const vector<ParserValue_t> &args,
             }
             else {
                 snprintf(buf, sizeof(buf), "%s%d", sign < 0 ? "-" : "", m);
-                str = string(buf) + str;
+                str = std::string(buf) + str;
             }
         }
     }
     // if decimal part
     if (b.integerValue > 0) {
         n = static_cast<ParserValue_t::int_t>(powernum);
-        string str2;
+        std::string str2;
         int i;
         for (i = 0; i < b.integerValue; ++i) {
             m = n % 10; //decimal part
@@ -1473,7 +1473,7 @@ static int tengFunctionNumFormat(const vector<ParserValue_t> &args,
  * @param result Teng function result
  * @return 0 OK, -1 wrong argument count, -2 other error
  * */
-static int tengFunctionRound(const vector<ParserValue_t> &args,
+static int tengFunctionRound(const std::vector<ParserValue_t> &args,
                              const Processor_t::FunctionParam_t &setting,
                              ParserValue_t &result)
 {
@@ -1540,7 +1540,7 @@ static int tengFunctionRound(const vector<ParserValue_t> &args,
  * @param result Teng function result
  * @return 0 OK, -1 wrong argument count, -2 other error
  * */
-static int tengFunctionInt(const vector<ParserValue_t> &args,
+static int tengFunctionInt(const std::vector<ParserValue_t> &args,
                            const Processor_t::FunctionParam_t &setting,
                            ParserValue_t &result)
 {
@@ -1569,7 +1569,7 @@ static int tengFunctionInt(const vector<ParserValue_t> &args,
  * @param args Function arguments (list of values).
  * @param setting Teng function setting.
  * @param result Function's result value. */
-static int tengFunctionUrlEscape(const vector<ParserValue_t> &args,
+static int tengFunctionUrlEscape(const std::vector<ParserValue_t> &args,
                                  const Processor_t::FunctionParam_t &setting,
                                  ParserValue_t &result)
 {
@@ -1580,8 +1580,8 @@ static int tengFunctionUrlEscape(const vector<ParserValue_t> &args,
     ParserValue_t a(args[0]); //take 1st arg
 
     // quote
-    string res;
-    string::const_iterator i;
+    std::string res;
+    std::string::const_iterator i;
     for (i = a.stringValue.begin(); i != a.stringValue.end(); ++i) {
         if (isalnum((unsigned char)*i) || (*i == '_') || (*i == '-')
             || (*i == '.') || *i == '/') {
@@ -1603,26 +1603,27 @@ static int tengFunctionUrlEscape(const vector<ParserValue_t> &args,
  * @param args Function arguments (list of values).
  * @param setting Teng function setting.
  * @param result Function's result value. */
-static int tengFunctionUrlUnescape(const vector<ParserValue_t> &args,
+static int tengFunctionUrlUnescape(const std::vector<ParserValue_t> &args,
                                  const Processor_t::FunctionParam_t &setting,
                                  ParserValue_t &result)
 {
     if (args.size() != 1)
-	   return -1;
+       return -1;
+
+#warning aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!
 
     ParserValue_t argument(args[0]);
     argument.validateThis();
     if (argument.type != ParserValue_t::TYPE_STRING)
         return -2; //not a string
 
-    const string& unescaped_string = argument.stringValue;
-    string escaped_string;
+    const std::string& unescaped_string = argument.stringValue;
+    std::string escaped_string;
 
     char *escaped_char = curl_easy_unescape(NULL, unescaped_string.c_str(), unescaped_string.size(), NULL);
     result.setString(escaped_char);
     curl_free(escaped_char);
     return 0;
-
 }
 
 /** Create quotable string.
@@ -1630,7 +1631,7 @@ static int tengFunctionUrlUnescape(const vector<ParserValue_t> &args,
  * @param args Function arguments (list of values).
  * @param setting Teng function setting.
  * @param result Function's result value. */
-static int tengFunctionQuoteEscape(const vector<ParserValue_t> &args,
+static int tengFunctionQuoteEscape(const std::vector<ParserValue_t> &args,
                                    const Processor_t::FunctionParam_t &setting,
                                    ParserValue_t &result)
 {
@@ -1641,8 +1642,8 @@ static int tengFunctionQuoteEscape(const vector<ParserValue_t> &args,
     ParserValue_t a(args[0]); //take 1st arg
 
     // quote
-    string res;
-    string::const_iterator i;
+    std::string res;
+    std::string::const_iterator i;
     for (i = a.stringValue.begin(); i != a.stringValue.end(); ++i) {
         switch (*i) {
         case '\\': res.append("\\\\"); break;
@@ -1666,7 +1667,7 @@ static int tengFunctionQuoteEscape(const vector<ParserValue_t> &args,
  * @param args Function arguments (list of values).
  * @param setting Teng function setting.
  * @param result Function's result value. */
-static int tengFunctionNL2BR(const vector<ParserValue_t> &args,
+static int tengFunctionNL2BR(const std::vector<ParserValue_t> &args,
                              const Processor_t::FunctionParam_t &setting,
                              ParserValue_t &result)
 {
@@ -1677,8 +1678,8 @@ static int tengFunctionNL2BR(const vector<ParserValue_t> &args,
     ParserValue_t str(args[0]); //take 1st arg
 
     // convert
-    string res;
-    for (string::const_iterator i = str.stringValue.begin();
+    std::string res;
+    for (std::string::const_iterator i = str.stringValue.begin();
          i != str.stringValue.end(); ++i) {
         if (*i == '\n') res += "\n<br />";
         else res += *i;
@@ -1694,7 +1695,7 @@ static int tengFunctionNL2BR(const vector<ParserValue_t> &args,
  * @param args Function arguments (list of values).
  * @param setting Teng function setting.
  * @param result Function's result value. */
-static int tengFunctionIsNumber(const vector<ParserValue_t> &args,
+static int tengFunctionIsNumber(const std::vector<ParserValue_t> &args,
                                 const Processor_t::FunctionParam_t &setting,
                                 ParserValue_t &result)
 {
@@ -1713,7 +1714,7 @@ static int tengFunctionIsNumber(const vector<ParserValue_t> &args,
  * @param args Function arguments (list of values).
  * @param setting Teng function setting.
  * @param result Function's result value. */
-static int tengFunctionSecToTime(const vector<ParserValue_t> &args,
+static int tengFunctionSecToTime(const std::vector<ParserValue_t> &args,
                                  const Processor_t::FunctionParam_t &setting,
                                  ParserValue_t &result)
 {
@@ -1742,7 +1743,7 @@ static int tengFunctionSecToTime(const vector<ParserValue_t> &args,
  * @param args Function arguments (list of values).
  * @param setting Teng function setting.
  * @param result Function's result value. */
-static int tengFunctionIsEnabled(const vector<ParserValue_t> &args,
+static int tengFunctionIsEnabled(const std::vector<ParserValue_t> &args,
                                  const Processor_t::FunctionParam_t &setting,
                                  ParserValue_t &result)
 {
@@ -1775,7 +1776,7 @@ static int tengFunctionIsEnabled(const vector<ParserValue_t> &args,
  * @param args Function arguments (list of values).
  * @param setting Teng function setting.
  * @param result Function's result value. */
-static int tengFunctionDictExist(const vector<ParserValue_t> &args,
+static int tengFunctionDictExist(const std::vector<ParserValue_t> &args,
                                  const Processor_t::FunctionParam_t &setting,
                                  ParserValue_t &result)
 {
@@ -1800,7 +1801,7 @@ static int tengFunctionDictExist(const vector<ParserValue_t> &args,
  * @param args Function arguments (list of values).
  * @param setting Teng function setting.
  * @param result Function's result value. */
-static int tengFunctionGetDict(const vector<ParserValue_t> &args,
+static int tengFunctionGetDict(const std::vector<ParserValue_t> &args,
                                  const Processor_t::FunctionParam_t &setting,
                                  ParserValue_t &result)
 {
@@ -1819,7 +1820,7 @@ static int tengFunctionGetDict(const vector<ParserValue_t> &args,
         return -2; //not a string
 
     // set result value
-    const string *val = setting.langDictionary.lookup(key.stringValue);
+    const std::string *val = setting.langDictionary.lookup(key.stringValue);
     if (val == NULL) val = setting.configuration.lookup(key.stringValue);
     if (val == NULL) {
         result.setString(def.stringValue);
@@ -1837,7 +1838,7 @@ static int tengFunctionGetDict(const vector<ParserValue_t> &args,
   * @param result Teng function result
   * @return 0 OK, -1 wrong argument count
   * */
-static int tengFunctionReplace(const vector<ParserValue_t> &args,
+static int tengFunctionReplace(const std::vector<ParserValue_t> &args,
                                const Processor_t::FunctionParam_t &setting,
                                ParserValue_t &result)
 {
@@ -1854,7 +1855,7 @@ static int tengFunctionReplace(const vector<ParserValue_t> &args,
     return 0;
 }
 
-static int tengFunctionPregReplace(const vector<ParserValue_t> &args,
+static int tengFunctionPregReplace(const std::vector<ParserValue_t> &args,
                                const Processor_t::FunctionParam_t &setting,
                                ParserValue_t &result)
 {
@@ -1862,11 +1863,11 @@ static int tengFunctionPregReplace(const vector<ParserValue_t> &args,
     std::string sRe;
     std::string sTo;
     if (args.size() == 3){
-    	s = args[2].stringValue;
-    	sRe = args[1].stringValue;
-    	sTo = args[0].stringValue;
+        s = args[2].stringValue;
+        sRe = args[1].stringValue;
+        sTo = args[0].stringValue;
     } else {
-	   return -1;
+       return -1;
     }
     pcrepp::Pcre p(sRe, PCRE_GLOBAL|PCRE_UTF8);
     std::string sResult;
@@ -1882,18 +1883,18 @@ static int tengFunctionPregReplace(const vector<ParserValue_t> &args,
   * @param result Teng function result
   * @return 0 OK, -1 wrong argument count
   * */
-static int tengFunctionStrToLower(const vector<ParserValue_t> &args,
+static int tengFunctionStrToLower(const std::vector<ParserValue_t> &args,
                                const Processor_t::FunctionParam_t &setting,
                                ParserValue_t &result)
 {
     if (args.size() != 1)
-	   return -1;
+       return -1;
 
     ParserValue_t str(args[0]);
 
     char *result_char = g_utf8_strdown(str.stringValue.c_str(), str.stringValue.size());
 
-    string result_string(result_char);
+    std::string result_string(result_char);
     g_free(result_char);
 
     result.setString(result_string);
@@ -1908,18 +1909,18 @@ static int tengFunctionStrToLower(const vector<ParserValue_t> &args,
   * @param result Teng function result
   * @return 0 OK, -1 wrong argument count
   * */
-static int tengFunctionStrToUpper(const vector<ParserValue_t> &args,
+static int tengFunctionStrToUpper(const std::vector<ParserValue_t> &args,
                                const Processor_t::FunctionParam_t &setting,
                                ParserValue_t &result)
 {
     if (args.size() != 1)
-	   return -1;
+       return -1;
 
     ParserValue_t str(args[0]);
 
     char *result_char = g_utf8_strup(str.stringValue.c_str(), str.stringValue.size());
 
-    string result_string(result_char);
+    std::string result_string(result_char);
     g_free(result_char);
 
     result.setString(result_string);
@@ -1929,7 +1930,7 @@ static int tengFunctionStrToUpper(const vector<ParserValue_t> &args,
 
 namespace {
 struct FunctionStub_t {
-	const char *name;  // teng name
+    const char *name;  // teng name
         bool eval;         // use for preevaluation (false for rand(), time() etc)
         Function_t func;   // C++ function addr
     };
@@ -1977,7 +1978,7 @@ struct FunctionStub_t {
  *  optimalization (optimalizing strlen("hello") OK, now() error)
  * @return function OK, 0 error
  * */
-Function_t Teng::tengFindFunction(const string &name, bool normalRun) {
+Function_t tengFindFunction(const std::string &name, bool normalRun) {
     // try to find function
     for (FunctionStub_t *p = tengFunctions; p->name; ++p)
         if ((normalRun || p->eval) && (p->name == name))
@@ -1986,4 +1987,6 @@ Function_t Teng::tengFindFunction(const string &name, bool normalRun) {
     // not found
     return 0;
 }
+
+} // namespace Teng
 

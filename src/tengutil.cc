@@ -46,9 +46,7 @@
 #include "tengutil.h"
 #include "tengplatform.h"
 
-using namespace std;
-
-using namespace Teng;
+namespace Teng {
 
 namespace {
 
@@ -57,7 +55,7 @@ const unsigned int CLIP_DOTS_COUNT = 3;
 
 } // namespace
 
-int Teng::tengNormalizeFilename(string &filename)
+int tengNormalizeFilename(std::string &filename)
 {
     // check for empty filename
     if (filename.empty()) return -1;
@@ -65,14 +63,14 @@ int Teng::tengNormalizeFilename(string &filename)
         CONVERTNAMEBYPLATFORM(filename)
 
     // cache of filename parts
-    vector<string> parts;
+    std::vector<std::string> parts;
     parts.reserve(10);
     // run through filename and split it by slashes
-    for (string::size_type slash = 0; ; ) {
+    for (std::string::size_type slash = 0; ; ) {
         // find slash
-        string::size_type nextSlash = filename.find('/', slash);
+        std::string::size_type nextSlash = filename.find('/', slash);
         // cut filename part
-        string part = filename.substr(slash, nextSlash - slash);
+        std::string part = filename.substr(slash, nextSlash - slash);
         // if part is non-empty ("" or ".")
         if (!part.empty() && (part != ".")) {
             // if part means 'parent dir'
@@ -86,7 +84,7 @@ int Teng::tengNormalizeFilename(string &filename)
             }
         }
         // do until end-of-string
-        if (nextSlash == string::npos) break;
+        if (nextSlash == std::string::npos) break;
         // move after slash
         slash = nextSlash + 1;
     }
@@ -94,7 +92,7 @@ int Teng::tengNormalizeFilename(string &filename)
     // erase current filename
     filename.erase();
     // run through part cache and glue them with '/' together
-    for (vector<string>::const_iterator iparts = parts.begin();
+    for (std::vector<std::string>::const_iterator iparts = parts.begin();
          iparts != parts.end(); ++iparts) {
 #ifdef WIN32
         if (iparts != parts.begin())
@@ -111,7 +109,7 @@ namespace {
     void checkDataRecursion(const Fragment_t *root,
                             const Dictionary_t &dataDefinition,
                             Error_t &error,
-                            const string &path,
+                            const std::string &path,
                             int inRoot)
     {
         for (Fragment_t::const_iterator i = root->begin();
@@ -169,14 +167,13 @@ namespace {
     }
 }
 
-void Teng::tengCheckData(const Fragment_t &root, const Dictionary_t &data,
+void tengCheckData(const Fragment_t &root, const Dictionary_t &data,
                          Error_t &error)
 {
     checkDataRecursion(&root, data, error, "", 1);
 }
 
-void Teng::clipString(std::string &str, unsigned int len)
-{
+void clipString(std::string &str, unsigned int len) {
     if (str.size() + CLIP_DOTS_COUNT > len) {
         str = str.substr(0, std::max((int)len - (int)CLIP_DOTS_COUNT, 0));
         // find previous correct utf8 character
@@ -193,4 +190,6 @@ void Teng::clipString(std::string &str, unsigned int len)
             str += ".";
     }
 }
+
+} // namespace Teng
 

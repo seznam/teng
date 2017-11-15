@@ -72,7 +72,7 @@ void tengCode_generate(ParserContext_t *context,
   * @param name The function name.
   * @param nparams Number of params in the call. */
 void tengCode_generateFunctionCall(ParserContext_t *context,
-        const string &name, int nparams)
+        const std::string &name, int nparams)
 {
     // be optimal for unescape($variable)
     if ((name == "unescape")

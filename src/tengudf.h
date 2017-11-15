@@ -40,6 +40,7 @@
 #include <vector>
 #include <string>
 #include <tr1/functional>
+
 #include "tengconfig.h"
 
 namespace Teng {

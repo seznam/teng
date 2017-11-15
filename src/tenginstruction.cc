@@ -35,7 +35,7 @@
  *             Created.
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 #include <vector>
 #include <iostream>
@@ -45,9 +45,7 @@
 #include "tengparservalue.h"
 #include "tengcontenttype.h"
 
-using namespace std;
-
-using namespace Teng;
+namespace Teng {
 
 /** Print instruction into file stream.
   * @param fp File stream for output. */
@@ -273,8 +271,8 @@ namespace {
             : addr(addr), ip(ip)
         {}
 
-        friend ostream& operator<<(ostream &os, const hexaddr &ha) {
-            os << std::dec << std::setiosflags(ios::showpos) << ha.addr;
+        friend std::ostream& operator<<(std::ostream &os, const hexaddr &ha) {
+            os << std::dec << std::setiosflags(std::ios::showpos) << ha.addr;
             if (ha.ip >= 0)
                 os << " [abs 0x" << std::hex << std::setw(8)
                    << std::setfill('0') << (ha.addr + 1 + ha.ip) << ']';
@@ -288,213 +286,216 @@ namespace {
     };
 }
 
-void Instruction_t::dump(ostream &os, int ip) const {
+void Instruction_t::dump(std::ostream &os, int ip) const {
     switch (operation) {
     case VAL:
-        os << "VAL             '" << value.stringValue << '\'' << endl;
+        os << "VAL             '" << value.stringValue << '\'' << std::endl;
         break;
 
     case VAR:
         os << "VAR             <" << value.stringValue << "> ("
            << identifier.context << ":" << identifier.depth << ")";
         if (value.integerValue) os << " [escaped]";
-        os << endl;
+        os << std::endl;
         break;
 
     case DICT:
-        os << "DICT" << endl;
+        os << "DICT" << std::endl;
         break;
 
     case PUSH:
-        os << "PUSH" << endl;
+        os << "PUSH" << std::endl;
         break;
 
     case POP:
-        os << "POP" << endl;
+        os << "POP" << std::endl;
         break;
 
     case STACK:
-        os << "STACK           " << value.integerValue << endl;
+        os << "STACK           " << value.integerValue << std::endl;
         break;
 
     case ADD:
-        os << "ADD" << endl;
+        os << "ADD" << std::endl;
         break;
 
     case SUB:
-        os << "SUB" << endl;
+        os << "SUB" << std::endl;
         break;
 
     case MUL:
-        os << "MUL" << endl;
+        os << "MUL" << std::endl;
         break;
 
     case DIV:
-        os << "DIV" << endl;
+        os << "DIV" << std::endl;
         break;
 
     case MOD:
-        os << "MOD" << endl;
+        os << "MOD" << std::endl;
         break;
 
     case CONCAT:
-        os << "CONCAT" << endl;
+        os << "CONCAT" << std::endl;
         break;
 
     case REPEAT:
-        os << "REPEAT" << endl;
+        os << "REPEAT" << std::endl;
         break;
 
     case AND:
-        os << "AND             " << hexaddr(value.integerValue, ip) << endl;
+        os << "AND             " << hexaddr(value.integerValue, ip) << std::endl;
         break;
 
     case OR:
-        os << "OR              " << hexaddr(value.integerValue, ip) << endl;
+        os << "OR              " << hexaddr(value.integerValue, ip) << std::endl;
         break;
 
     case BITAND:
-        os << "BITAND" << endl;
+        os << "BITAND" << std::endl;
         break;
 
     case BITXOR:
-        os << "BITXOR" << endl;
+        os << "BITXOR" << std::endl;
         break;
 
     case BITOR:
-        os << "BITOR" << endl;
+        os << "BITOR" << std::endl;
         break;
 
     case BITNOT:
-        os << "BITNOT" << endl;
+        os << "BITNOT" << std::endl;
         break;
 
     case NOT:
-        os << "NOT" << endl;
+        os << "NOT" << std::endl;
         break;
 
     case NUMEQ:
-        os << "NUMEQ" << endl;
+        os << "NUMEQ" << std::endl;
         break;
 
     case NUMGE:
-        os << "NUMGE" << endl;
+        os << "NUMGE" << std::endl;
         break;
 
     case NUMGT:
-        os << "NUMGT" << endl;
+        os << "NUMGT" << std::endl;
         break;
 
     case STREQ:
-        os << "STREQ" << endl;
+        os << "STREQ" << std::endl;
         break;
 
     case FUNC:
         os << "FUNC            " << value.stringValue << "() "
-           << value.integerValue << endl;
+           << value.integerValue << std::endl;
         break;
 
     case JMPIFNOT:
-        os << "JMPIFNOT        '" << hexaddr(value.integerValue, ip) << endl;
+        os << "JMPIFNOT        '" << hexaddr(value.integerValue, ip) << std::endl;
         break;
 
     case JMP:
-        os << "JMP             '" << hexaddr(value.integerValue, ip) << endl;
+        os << "JMP             '" << hexaddr(value.integerValue, ip) << std::endl;
         break;
 
     case FORM:
-        os << "FORM            '" << value.integerValue << endl;
+        os << "FORM            '" << value.integerValue << std::endl;
         break;
 
     case ENDFORM:
-        os << "ENDFORM" << endl;
+        os << "ENDFORM" << std::endl;
         break;
 
     case FRAG:
         os << "FRAG            <" << value.stringValue << "> "
-           << hexaddr(value.integerValue, ip) << endl;
+           << hexaddr(value.integerValue, ip) << std::endl;
         break;
 
     case ENDFRAG:
-        os << "ENDFRAG         " << hexaddr(value.integerValue, ip) << endl;
+        os << "ENDFRAG         " << hexaddr(value.integerValue, ip) << std::endl;
         break;
 
     case FRAGCNT:
         os << "FRAGCNT         <" << value.stringValue << "> ("
            << identifier.context << ":" << identifier.depth << ")"
-           << endl;
+           << std::endl;
         break;
 
     case XFRAGCNT:
         os << "XFRAGCNT        <" << value.stringValue << "> ("
            << identifier.context << ":" << identifier.depth << ")"
-           << endl;
+           << std::endl;
         break;
 
     case FRAGITR:
-        os << "FRAGITR         <" << value.stringValue << '>' << endl;
+        os << "FRAGITR         <" << value.stringValue << '>' << std::endl;
         break;
 
     case PRINT:
-        os << "PRINT" << endl;
+        os << "PRINT" << std::endl;
         break;
 
     case SET:
-        os << "SET             <" << value.stringValue << '>' << endl;
+        os << "SET             <" << value.stringValue << '>' << std::endl;
         break;
 
     case HALT:
-        os << "HALT" << endl;
+        os << "HALT" << std::endl;
         break;
 
     case DEBUGING:
-        os << "DEBUG" << endl;
+        os << "DEBUG" << std::endl;
         break;
 
     case BYTECODE:
-        os << "BYTECODE" << endl;
+        os << "BYTECODE" << std::endl;
         break;
 
     case EXIST:
-        os << "EXIST           <" << value.stringValue << '>' << endl;
+        os << "EXIST           <" << value.stringValue << '>' << std::endl;
         break;
 
     case CTYPE:
         if (const ContentType_t::Descriptor_t *ct
             = ContentType_t::getContentType(value.integerValue)) {
-            os << "CTYPE           <" << ct->name << '>' << endl;
+            os << "CTYPE           <" << ct->name << '>' << std::endl;
         } else {
-            os << "CTYPE           <unknown>" << endl;
+            os << "CTYPE           <unknown>" << std::endl;
         }
         break;
 
     case ENDCTYPE:
-        os << "ENDCTYPE" << endl;
+        os << "ENDCTYPE" << std::endl;
         break;
 
     case REPEATFRAG:
         os << "REPEATFRAG      <" << value.stringValue << "> "
-           << hexaddr(value.integerValue, ip) << endl;
+           << hexaddr(value.integerValue, ip) << std::endl;
         break;
 
     case GETATTR:
-        os << "GETATTR         <" << value.stringValue << '>' << endl;
+        os << "GETATTR         <" << value.stringValue << '>' << std::endl;
         break;
 
     case AT:
-        os << "AT" << endl;
+        os << "AT" << std::endl;
         break;
 
     case REPR:
-        os << "REPR         " << value.stringValue << endl;
+        os << "REPR         " << value.stringValue << std::endl;
         break;
 
     case EXISTMARK:
-        os << "EXISTMARK" << endl;
+        os << "EXISTMARK" << std::endl;
         break;
 
     default:
-        os << "<ILLEGAL>       opcode == " << operation << endl;
+        os << "<ILLEGAL>       opcode == " << operation << std::endl;
         break;
     }
 }
+
+} // namespace Teng
+

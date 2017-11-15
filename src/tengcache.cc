@@ -46,10 +46,11 @@
 
 namespace Teng {
 
-int tengCreateKey(const string &root, const string &_filename,
-                  vector<string> &key)
+int tengCreateKey(const std::string &root,
+                  const std::string &_filename,
+                  std::vector<std::string> &key)
 {
-    string filename = _filename;
+    std::string filename = _filename;
     // if filename is relative prepend root
     if (!filename.empty() && !ISROOT(filename))
         filename = root + '/' + filename;
@@ -61,9 +62,11 @@ int tengCreateKey(const string &root, const string &_filename,
     return 0;
 }
 
-int tengCreateStringKey(const string &data, vector<string> &key) {
+int tengCreateStringKey(const std::string &data,
+                        std::vector<std::string> &key)
+{
     // compute md5 hexdigest from data
-    string hexdigest;
+    std::string hexdigest;
     tengMD5Hexdigest(data, hexdigest);
     // add it to the key
     key.push_back(hexdigest);

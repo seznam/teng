@@ -36,15 +36,14 @@
  *             Win32 support.
 */
 
-#include <stdio.h>
-#include <string.h>
-
+#include <cstdio>
+#include <cstring>
 #include <sstream>
 
 #include "tengstructs.h"
 #include "tengplatform.h"
 
-using namespace Teng;
+namespace Teng {
 
 FragmentValue_t::FragmentValue_t()
     : value(), nestedFragments(0)
@@ -270,3 +269,6 @@ void Fragment_t::dump(std::ostream &o) const {
     }
     o << '}';
 }
+
+} // namespace Teng
+

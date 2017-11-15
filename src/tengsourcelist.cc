@@ -43,16 +43,14 @@
 #include "tengsourcelist.h"
 #include "tengutil.h"
 
-using namespace std;
-
-using namespace Teng;
+namespace Teng {
 
 int FileStat_t::stat(const Error_t::Position_t &pos,
                      Error_t &err)
 {
     // invalidate data;
     valid = false;
-    
+
     // stat given file
     struct stat buf;
     if (::stat(filename.c_str(), &buf)) {
@@ -60,48 +58,48 @@ int FileStat_t::stat(const Error_t::Position_t &pos,
                             filename +"'");
         return -1;
     }
-    
+
     // check if not dir
     if (S_ISDIR(buf.st_mode)) {
         err.logError(Error_t::LL_ERROR, pos, "File '" + filename +
                      "' is a directory");
         return -1;
     }
-    
+
     // populate members of fileInfo from stat
     inode = buf.st_ino;
     size = buf.st_size;
     mtime = buf.st_mtime;
     ctime = buf.st_ctime;
-    
+
     // validate data
     valid = true;
     // OK
     return 0;
 }
 
-unsigned int SourceList_t::addSource(const string &_source,
+unsigned int SourceList_t::addSource(const std::string &_source,
                                      const Error_t::Position_t &pos,
                                      Error_t &err)
 {
     // normalize filename
-    string source = _source;
+    std::string source = _source;
     tengNormalizeFilename(source);
-    
+
     // create source info
     FileStat_t fs(source);
-    
+
     // try to find existing entry
-    vector<FileStat_t>::const_iterator fsources =
+    std::vector<FileStat_t>::const_iterator fsources =
         std::find(sources.begin(), sources.end(), fs);
     if (fsources != sources.end()) {
         // entry already present => just return its position
-		return static_cast<unsigned int>(fsources - sources.begin());
+        return static_cast<unsigned int>(fsources - sources.begin());
     }
-    
+
     // stat file
     fs.stat(pos, err);
-    
+
     // push info into source list
     sources.push_back(fs);
     return sources.size() - 1;
@@ -111,7 +109,7 @@ bool SourceList_t::isChanged() const {
     Error_t err;
     Error_t::Position_t pos;
     // run through source list
-    for (vector<FileStat_t>::const_iterator isources = sources.begin();
+    for (std::vector<FileStat_t>::const_iterator isources = sources.begin();
          isources != sources.end(); ++isources) {
         // stat file
         FileStat_t fs(isources->filename);
@@ -120,14 +118,16 @@ bool SourceList_t::isChanged() const {
         // compare with cached value
         if (fs != *isources) return true;
     }
-    
+
     // nothing changed
     return false;
 }
 
-string SourceList_t::getSource(unsigned int position) const
-{
+std::string SourceList_t::getSource(unsigned int position) const {
     if (position < sources.size())
         return sources[position].filename;
-    return string();
+    return std::string();
 }
+
+} // namespace Teng
+

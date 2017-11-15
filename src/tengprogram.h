@@ -37,20 +37,18 @@
 #ifndef TENGPROGRAM_H
 #define TENGPROGRAM_H
 
-#include <stdio.h>
+#include <cstdio>
 #include <vector>
 
 #include "tenginstruction.h"
 #include "tengsourcelist.h"
 #include "tengerror.h"
 
-using namespace std;
-
 namespace Teng {
 
 /** Program is an instruction flow. Whole template is
   * compiled into single program that can interpret it. */
-class Program_t : private vector<Instruction_t> {
+class Program_t : private std::vector<Instruction_t> {
 public:
 
     /** @short Create new program. */
@@ -83,7 +81,7 @@ public:
     /** @short Adds new source into the list.
       * @param source Filename of source.
       * @param pos Position in current file. */
-    inline unsigned int addSource(const string &source,
+    inline unsigned int addSource(const std::string &source,
                            const Error_t::Position_t &pos) {
         return sources.addSource(source, pos, error);
     }
@@ -91,7 +89,7 @@ public:
     /** Get source's filename based on index in source list.
       * @return Absolute filename string.
       * @param position Index into program's source list. */
-    inline string getSource(unsigned int position) const {
+    inline std::string getSource(unsigned int position) const {
         return sources.getSource(position);
     }
 
@@ -99,28 +97,28 @@ public:
         return sources;
     }
 
-    using vector<Instruction_t>::empty;
+    using std::vector<Instruction_t>::empty;
 
-    using vector<Instruction_t>::begin;
+    using std::vector<Instruction_t>::begin;
 
-    using vector<Instruction_t>::end;
+    using std::vector<Instruction_t>::end;
 
-    using vector<Instruction_t>::erase;
+    using std::vector<Instruction_t>::erase;
 
-    using vector<Instruction_t>::size;
+    using std::vector<Instruction_t>::size;
 
-    using vector<Instruction_t>::operator [];
+    using std::vector<Instruction_t>::operator[];
 
-    using vector<Instruction_t>::back;
+    using std::vector<Instruction_t>::back;
 
-    using vector<Instruction_t>::push_back;
+    using std::vector<Instruction_t>::push_back;
 
-    using vector<Instruction_t>::pop_back;
+    using std::vector<Instruction_t>::pop_back;
 
-    using vector<Instruction_t>::const_iterator;
+    using std::vector<Instruction_t>::const_iterator;
 
 private:
-    
+
     /** @short All source files for this program. */
     SourceList_t sources;
 

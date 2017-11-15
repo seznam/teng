@@ -43,8 +43,6 @@
 #include "tengparservalue.h"
 #include "tengprocessor.h"
 
-using namespace std;
-
 namespace Teng {
 
 /** Function in Teng (len, round, formatdate, ...)
@@ -53,9 +51,9 @@ namespace Teng {
  *        other (-2) other error
  *
  * vector            argument list
- * TengParserValue_t return type 
+ * TengParserValue_t return type
  * */
-typedef int (*Function_t)(const vector<ParserValue_t> &,
+typedef int (*Function_t)(const std::vector<ParserValue_t> &,
                           const Processor_t::FunctionParam_t&,
                           ParserValue_t &);
 
@@ -64,7 +62,7 @@ typedef int (*Function_t)(const vector<ParserValue_t> &,
  * @param name name of the function
  * @param normalRun true for normal run, false for preevaluation constant expr
  */
-Function_t tengFindFunction(const string &name, bool normalRun = true);
+Function_t tengFindFunction(const std::string &name, bool normalRun = true);
 
 } // namespace Teng
 

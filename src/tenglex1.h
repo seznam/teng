@@ -41,12 +41,9 @@
 
 #include "tengerror.h"
 
-using namespace std;
-
 namespace Teng {
 
 class Lex1_t {
-
 public:
 
     /** Possible token types. */
@@ -63,12 +60,12 @@ public:
     /** Token type, returned by the get() method. */
     struct Token_t {
         Type_t type; /**< Token Type. */
-        string value; /**< Value of the token. */
+        std::string value; /**< Value of the token. */
         int line; /**< Line number of the token start. */
         int column; /**< Column number of the token start. */
 
         /** Construct structure with initialized members. */
-        inline Token_t(Type_t t, const string &v, int l, int c)
+        inline Token_t(Type_t t, const std::string &v, int l, int c)
             : type(t), value(v), line(l), column(c)
         {}
     };
@@ -76,13 +73,13 @@ public:
     /** Initialize lexical analyzer from string.
       * @param input Input string.
       * @param filename File from which the string was taken. */
-    Lex1_t(const string &input, const string &filename);
+    Lex1_t(const std::string &input, const std::string &filename);
 
     /** Initialize lexical analyzer from file.
       * @param filename Input file to read.
       * @param position Position in source file.
       * @param error Error log class for dumping possible errors. */
-    Lex1_t(const string &filename,
+    Lex1_t(const std::string &filename,
            const Error_t::Position_t &position,
            Error_t &error);
 
@@ -90,7 +87,7 @@ public:
       * @param begin start position in string input.
       * @param end final position in string input + 1.
       * @return unescaped substring */
-    string unescapeInputSubstr(unsigned int begin, unsigned int end);
+    std::string unescapeInputSubstr(unsigned int begin, unsigned int end);
 
     /** Get next token.
       * @param shortTag enable short tah
@@ -113,11 +110,11 @@ private:
     Token_t getText(int end);
 
     /** Input string passed on init. */
-    string input;
+    std::string input;
     /** Position within the input string. */
     size_t position;
     /** File name identifying the original source. */
-    string filename;
+    std::string filename;
     /** Actual line number. */
     size_t line;
     /** Actual column number. */
@@ -127,3 +124,4 @@ private:
 } // namespace Teng
 
 #endif // TENGLEX1_H
+

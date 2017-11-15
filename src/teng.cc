@@ -50,13 +50,11 @@
 #include "tengformatter.h"
 #include "tengplatform.h"
 
-using namespace std;
-
-using namespace Teng;
-
 extern "C" int teng_library_present() {
     return 0;
 }
+
+namespace Teng {
 
 static int logErrors(const ContentType_t *contentType,
                      Writer_t &writer, Error_t &err)
@@ -72,8 +70,8 @@ static int logErrors(const ContentType_t *contentType,
             writer.write(contentType->blockComment.first + ' ');
     }
     writer.write("Error log:\n");
-    const vector<Error_t::Entry_t> &errorLog = err.getEntries();
-    for (vector<Error_t::Entry_t>::const_iterator
+    const std::vector<Error_t::Entry_t> &errorLog = err.getEntries();
+    for (std::vector<Error_t::Entry_t>::const_iterator
              ierrorLog = errorLog.begin();
          ierrorLog != errorLog.end(); ++ierrorLog) {
         if (useLineComment && !contentType->lineComment.empty())
@@ -86,7 +84,7 @@ static int logErrors(const ContentType_t *contentType,
     return 0;
 }
 
-Teng_t::Teng_t(const string &root, const Teng_t::Settings_t &settings)
+Teng_t::Teng_t(const std::string &root, const Teng_t::Settings_t &settings)
     : root(root), templateCache(0), err()
 {
     init(settings);
@@ -94,14 +92,14 @@ Teng_t::Teng_t(const string &root, const Teng_t::Settings_t &settings)
 
 void Teng_t::init(const Settings_t &settings) {
     // if not absolute path, prepend current working directory
-	if (root.empty() || !ISROOT(root)) {
+    if (root.empty() || !ISROOT(root)) {
         char cwd[2048];
         if (!getcwd(cwd, sizeof(cwd))) {
             Error_t::Position_t pos;
             err.logSyscallError(Error_t::LL_FATAL, pos, "Cannot get cwd");
-            throw runtime_error("Cannot get cwd.");
+            throw std::runtime_error("Cannot get cwd.");
         }
-        root = string(cwd) + '/' + root;
+        root = std::string(cwd) + '/' + root;
     }
 
     // create template cache
@@ -114,48 +112,55 @@ Teng_t::~Teng_t() {
 }
 
 namespace {
-    string prependBeforeExt(const string &str, const string &prep) {
-        // no prep or no str -> return str
-        if (prep.empty() || str.empty()) return str;
-        // find the last dot and the last slash
-        string::size_type dot = str.rfind('.');
-        string::size_type slash = str.rfind('/');
+
+std::string prependBeforeExt(const std::string &str, const std::string &prep) {
+    // no prep or no str -> return str
+    if (prep.empty() || str.empty()) return str;
+    // find the last dot and the last slash
+    std::string::size_type dot = str.rfind('.');
+    std::string::size_type slash = str.rfind('/');
 #ifdef WIN32
-        string::size_type bslash = str.rfind('\\');
-		if (bslash > slash)
-			slash = bslash;
+    std::string::size_type bslash = str.rfind('\\');
+    if (bslash > slash)
+        slash = bslash;
 #endif //WIN32
-        // if last slash exists and slash after dot or no dot
-        // append prep at the end
-        if (((slash != string::npos) && (slash > dot)) ||
-            (dot == string::npos)) {
-            return str + '.' + prep;
-        } else {
-            // else prepend prep before the last dot
-            return str.substr(0, dot) + '.' + prep + str.substr(dot);
-        }
+    // if last slash exists and slash after dot or no dot
+    // append prep at the end
+    if (((slash != std::string::npos) && (slash > dot)) ||
+        (dot == std::string::npos)) {
+        return str + '.' + prep;
+    } else {
+        // else prepend prep before the last dot
+        return str.substr(0, dot) + '.' + prep + str.substr(dot);
     }
 }
 
-int Teng_t::generatePage(const string &templateFilename, const string &skin,
-                         const string &_dict, const string &lang,
-                         const string &param, const string &scontentType,
-                         const string &encoding, const Fragment_t &data,
-                         Writer_t &writer, Error_t &err)
+} // namespace
+
+int Teng_t::generatePage(const std::string &templateFilename,
+                         const std::string &skin,
+                         const std::string &_dict,
+                         const std::string &lang,
+                         const std::string &param,
+                         const std::string &scontentType,
+                         const std::string &encoding,
+                         const Fragment_t &data,
+                         Writer_t &writer,
+                         Error_t &err)
 {
     // find contentType desciptor for given contentType
     const ContentType_t *contentType
         = ContentType_t::findContentType(scontentType, err)->contentType;
 
     // make proper filename for language dictionary
-    string langDictFilename = prependBeforeExt(_dict, lang);
-    
-    auto_ptr<Template_t>
+    std::string langDictFilename = prependBeforeExt(_dict, lang);
+
+    std::auto_ptr<Template_t>
         templ(templateCache->
               createTemplate(prependBeforeExt(templateFilename, skin),
                              langDictFilename, param,
                              TemplateCache_t::SRC_FILE));
-    
+
     // append error logs of dicts and program
     err.append(templ->langDictionary->getErrors());
     err.append(templ->paramDictionary->getErrors());
@@ -164,7 +169,7 @@ int Teng_t::generatePage(const string &templateFilename, const string &skin,
     // if program is valid (not empty) execute it
     if (!templ->program->empty()) {
         Formatter_t output(writer);
-        
+
         Processor_t(*templ->program, *templ->langDictionary,
                     *templ->paramDictionary, encoding,
                     contentType).run(data, output, err);
@@ -184,28 +189,33 @@ int Teng_t::generatePage(const string &templateFilename, const string &skin,
     return err.getLevel();
 }
 
-int Teng_t::generatePage(const string &templateString,
-                         const string &dict, const string &lang,
-                         const string &param, const string &scontentType,
-                         const string &encoding, const Fragment_t &data,
-                         Writer_t &writer, Error_t &err)
+int Teng_t::generatePage(const std::string &templateString,
+                         const std::string &dict,
+                         const std::string &lang,
+                         const std::string &param,
+                         const std::string &scontentType,
+                         const std::string &encoding,
+                         const Fragment_t &data,
+                         Writer_t &writer,
+                         Error_t &err)
 {
     // find contentType desciptor for given contentType
     const ContentType_t *contentType
         = ContentType_t::findContentType(scontentType, err)->contentType;
 
     // make proper filename for language dictionary
-    string langDictFilename = prependBeforeExt(dict, lang);
-    
-    auto_ptr<Template_t>templ(templateCache->createTemplate
-                              (templateString, langDictFilename,
-                               param, TemplateCache_t::SRC_STRING));
-    
+    std::string langDictFilename = prependBeforeExt(dict, lang);
+
+    std::auto_ptr<Template_t>
+        templ(templateCache->createTemplate
+                (templateString, langDictFilename,
+                 param, TemplateCache_t::SRC_STRING));
+
     // append error logs of dicts and program
     err.append(templ->langDictionary->getErrors());
     err.append(templ->paramDictionary->getErrors());
     err.append(templ->program->getErrors());
-    
+
     // if program is valid (not empty) execute it
     if (!templ->program->empty()) {
         // create formatter for writer
@@ -231,12 +241,14 @@ int Teng_t::generatePage(const string &templateString,
     return err.getLevel();
 }
 
-int Teng_t::dictionaryLookup(const string &config, const string &dict,
-                             const string &lang, const string &key,
-                             string &value)
+int Teng_t::dictionaryLookup(const std::string &config,
+                             const std::string &dict,
+                             const std::string &lang,
+                             const std::string &key,
+                             std::string &value)
 {
     // find value for key
-    const string *foundValue =
+    const std::string *foundValue =
         templateCache->createDictionary
         (config, prependBeforeExt(dict, lang))-> lookup(key);
     if (!foundValue) {
@@ -250,8 +262,12 @@ int Teng_t::dictionaryLookup(const string &config, const string &dict,
     return 0;
 }
 
-void Teng_t::listSupportedContentTypes(vector<pair<string, string> > &supported)
+void Teng_t::listSupportedContentTypes(
+        std::vector<std::pair<std::string, std::string> > &supported)
 {
     // retrieve supported content types
     ContentType_t::listSupported(supported);
 }
+
+} // namespace Teng
+

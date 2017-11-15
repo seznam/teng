@@ -45,8 +45,6 @@
 #include <tengerror.h>
 #include <tengwriter.h>
 
-using namespace std;
-
 namespace Teng {
 
 /** @short Filter for formatting whitespaces in data.
@@ -80,7 +78,7 @@ public:
      *  @param str string to be written
      *  @return 0 OK, !0 error
      */
-    int write(const string &str);
+    int write(const std::string &str);
 
     /** @short Flushes buffered data.
      *  @return 0 OK, !0 error
@@ -116,14 +114,14 @@ private:
      *  @param spaceBlock block of spaces
      *  @return 0 OK, !0 error
      */
-    int process(pair<string::const_iterator,
-                string::const_iterator> spaceBlock);
+    int process(std::pair<std::string::const_iterator,
+                std::string::const_iterator> spaceBlock);
 
     /** @short Process sequence of spaces.
      *  @param str white string
      *  @return 0 OK, !0 error
      */
-    int process(string &str);
+    int process(std::string &str);
 
     /** @short Output writer.
      */
@@ -131,13 +129,14 @@ private:
 
     /** @short Stack of formatting modes.
      */
-    stack<Mode_t> modeStack;
+    std::stack<Mode_t> modeStack;
 
     /** @short Buffer of whitespaces from previous run.
      */
-    string buffer;
+    std::string buffer;
 };
 
 } // namespace Teng
 
 #endif // TENGFORMATTER_H
+

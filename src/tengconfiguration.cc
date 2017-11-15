@@ -41,11 +41,9 @@
 
 #include "tengconfiguration.h"
 
-using namespace std;
+namespace Teng {
 
-using namespace Teng;
-
-Configuration_t::Configuration_t(const string &root)
+Configuration_t::Configuration_t(const std::string &root)
     : Dictionary_t(root), debug(false), errorFragment(false),
       logToOutput(false), bytecode(false), watchFiles(true),
       alwaysEscape(true), shortTag(false), maxIncludeDepth(10),
@@ -57,17 +55,19 @@ Configuration_t::~Configuration_t() {
 }
 
 namespace {
-    std::string strip(const string &str) {
-        std::string::size_type begin = 0;
-        std::string::size_type end = str.length();
-        while ((begin < end) && isspace(str[begin])) ++begin;
-        while ((begin < end) && isspace(str[end - 1])) --end;
-        return std::string(str, begin, end - begin);
-    }
+
+std::string strip(const std::string &str) {
+    std::string::size_type begin = 0;
+    std::string::size_type end = str.length();
+    while ((begin < end) && isspace(str[begin])) ++begin;
+    while ((begin < end) && isspace(str[end - 1])) --end;
+    return std::string(str, begin, end - begin);
 }
 
-int Configuration_t::processDirective(const string &directive,
-                                      const string &param,
+} // namespace
+
+int Configuration_t::processDirective(const std::string &directive,
+                                      const std::string &param,
                                       Error_t::Position_t &pos)
 {
     // strip argument
@@ -146,7 +146,9 @@ int Configuration_t::processDirective(const string &directive,
     return 0;
 }
 
-int Configuration_t::isEnabled(const string &feature, bool &enabled) const {
+int Configuration_t::isEnabled(const std::string &feature,
+                               bool &enabled) const
+{
     if (feature == "debug") enabled = debug;
     else if (feature == "errorfragment") enabled = errorFragment;
     else if (feature == "logtooutput") enabled = logToOutput;
@@ -162,25 +164,28 @@ int Configuration_t::isEnabled(const string &feature, bool &enabled) const {
 }
 
 namespace {
-    const char* ENABLED(bool value) {
-        return value ? "enabled" : "disabled";
-    }
+
+const char* ENABLED(bool value) {
+    return value ? "enabled" : "disabled";
 }
 
-namespace Teng {
-    std::ostream& operator<<(std::ostream &o, const Configuration_t &c) {
-        o << "Configuration: " << std::endl
-          << "    debug: " << ENABLED(c.debug) << std::endl
-          << "    errorfragment: " << ENABLED(c.errorFragment) << std::endl
-          << "    logtooutput: " << ENABLED(c.logToOutput) << std::endl
-          << "    bytecode: " << ENABLED(c.bytecode) << std::endl
-          << "    watchfiles: " << ENABLED(c.watchFiles) << std::endl
-          << "    maxincludedepth: " << c.maxIncludeDepth << std::endl
-          << "    maxdebugvallength: " << c.maxDebugValLength << std::endl
-          << "    format: " << ENABLED(c.format) << std::endl
-          << "    alwaysescape: " << ENABLED(c.alwaysEscape) << std::endl
-          << "    shorttag: " << ENABLED(c.shortTag) << std::endl;
+} // namespace
 
-        return o;
-    }
+std::ostream& operator<<(std::ostream &o, const Configuration_t &c) {
+    o << "Configuration: " << std::endl
+      << "    debug: " << ENABLED(c.debug) << std::endl
+      << "    errorfragment: " << ENABLED(c.errorFragment) << std::endl
+      << "    logtooutput: " << ENABLED(c.logToOutput) << std::endl
+      << "    bytecode: " << ENABLED(c.bytecode) << std::endl
+      << "    watchfiles: " << ENABLED(c.watchFiles) << std::endl
+      << "    maxincludedepth: " << c.maxIncludeDepth << std::endl
+      << "    maxdebugvallength: " << c.maxDebugValLength << std::endl
+      << "    format: " << ENABLED(c.format) << std::endl
+      << "    alwaysescape: " << ENABLED(c.alwaysEscape) << std::endl
+      << "    shorttag: " << ENABLED(c.shortTag) << std::endl;
+
+    return o;
 }
+
+} // namespace Teng
+

@@ -33,15 +33,13 @@
  *             Created.
  */
 
-#include <string.h>
+#include <cstring>
 #include <utility>
 #include <algorithm>
-#include <ctype.h>
+#include <cctype>
 #include <iomanip>
 
 #include "tengcontenttype.h"
-
-using namespace std;
 
 namespace Teng {
 
@@ -113,18 +111,18 @@ static CreatorEntry_t creators[] = {
     { 0, 0, 0, 0 }
 };
 
-map<string, ContentType_t::Descriptor_t*> descriptors;
-vector<ContentType_t::Descriptor_t*> descriptorIndex;
+std::map<std::string, ContentType_t::Descriptor_t*> descriptors;
+std::vector<ContentType_t::Descriptor_t*> descriptorIndex;
 
 ContentType_t::Descriptor_t *init_descriptors() {
-    string pname("text/plain");
-    string alias("text");
-    ContentType_t::Descriptor_t *unknown = new ContentType_t::Descriptor_t( new ContentType_t(), 0, pname, "Default (text/plain) type." ); 
-    descriptors.insert(pair<string, ContentType_t::Descriptor_t*> (pname, unknown));
+    std::string pname("text/plain");
+    std::string alias("text");
+    ContentType_t::Descriptor_t *unknown = new ContentType_t::Descriptor_t(new ContentType_t(), 0, pname, "Default (text/plain) type." ); 
+    descriptors.insert(std::pair<std::string, ContentType_t::Descriptor_t*>(pname, unknown));
     descriptorIndex.push_back(unknown);
 
     ContentType_t::Descriptor_t *unknownAlias = new ContentType_t::Descriptor_t( new ContentType_t(), 1, alias, "Default (text/plain) type." ); 
-    descriptors.insert(pair<string, ContentType_t::Descriptor_t*> (alias, unknownAlias));
+    descriptors.insert(std::pair<std::string, ContentType_t::Descriptor_t*> (alias, unknownAlias));
     descriptorIndex.push_back(unknownAlias);
 
     // all the descriptors are pre-created...
@@ -138,7 +136,7 @@ ContentType_t::Descriptor_t *init_descriptors() {
 
         // remember descriptor in the cache and return it to
         // the caller
-        descriptors.insert( pair<string, ContentType_t::Descriptor_t*>(icreators->name, descriptor) );
+        descriptors.insert(std::pair<std::string, ContentType_t::Descriptor_t*>(icreators->name, descriptor) );
 
         // create content type descriptor
         descriptor = new ContentType_t::Descriptor_t(icreators->creator(), descriptorIndex.size(), icreators->alias, icreators->comment);
@@ -148,7 +146,7 @@ ContentType_t::Descriptor_t *init_descriptors() {
 
         // remember descriptor in the cache and return it to
         // the caller
-        descriptors.insert( pair<string, ContentType_t::Descriptor_t*>(icreators->alias, descriptor) );
+        descriptors.insert(std::pair<std::string, ContentType_t::Descriptor_t*>(icreators->alias, descriptor) );
     }
 
     return unknown;
@@ -166,25 +164,25 @@ ContentType_t::ContentType_t()
     int *i = escapeBitmap;
     while (i != end) *i++ = -1;
     // create empty automaton
-    unescaper.push_back(pair<int, int>(0, 0));
+    unescaper.push_back(std::pair<int, int>(0, 0));
 }
 
-int ContentType_t::addEscape(unsigned char c, const string &escape) {
+int ContentType_t::addEscape(unsigned char c, const std::string &escape) {
     // if escape already present in bitmap make it error
     if (escapeBitmap[c] != -1) return -1;
     // add escape entry
-    escapes.push_back(pair<unsigned char, string>(c, escape));
+    escapes.push_back(std::pair<unsigned char, std::string>(c, escape));
     // update entry in escape bitmap
     return escapeBitmap[c] = escapes.size() - 1;
 }
 
-string ContentType_t::escape(const string &src) const {
+std::string ContentType_t::escape(const std::string &src) const {
     // output string
-    string dest;
+    std::string dest;
     dest.reserve(src.length());
 
     // run through input string
-    for (string::const_iterator isrc = src.begin();
+    for (std::string::const_iterator isrc = src.begin();
          isrc != src.end(); ++isrc) {
         // find entry in bitmap
         int pos = escapeBitmap[static_cast<unsigned char>(*isrc)];
@@ -197,16 +195,16 @@ string ContentType_t::escape(const string &src) const {
     return dest;
 }
 
-string ContentType_t::unescape(const string &src) const {
+std::string ContentType_t::unescape(const std::string &src) const {
     // output string
-    string dest;
+    std::string dest;
     dest.reserve(src.length());
 
     // run through input string
-    for (string::const_iterator isrc = src.begin();
+    for (std::string::const_iterator isrc = src.begin();
          isrc != src.end(); ) {
         // help iterator
-        string::const_iterator bsrc = isrc;
+        std::string::const_iterator bsrc = isrc;
         // index in automaton
         int state = 0;
         // run through remaining characters
@@ -238,7 +236,8 @@ int ContentType_t::nextState(unsigned char c, int state) const {
         (state < 0)) return 0;
 
     // iterator to state
-    vector<pair<int, int> >::const_iterator i = unescaper.begin() + state;
+    std::vector<std::pair<int, int> >::const_iterator
+        i = unescaper.begin() + state;
 
     // find rule to move to next state
     for (; i->first > 0; ++i)
@@ -255,7 +254,7 @@ struct UnescaperState_t {
     /**
      * @short Vector of next states.
      */
-    typedef vector<UnescaperState_t> UnescaperStateVector_t;
+    typedef std::vector<UnescaperState_t> UnescaperStateVector_t;
 
     /**
      * @short Create new state.
@@ -302,22 +301,22 @@ struct UnescaperState_t {
     /**
      * @short Linearize automaton tree.
      */
-    void linearize(vector<pair<int, int> > &unescaper) const {
+    void linearize(std::vector<std::pair<int, int> > &unescaper) const {
         // remember link holders
-        vector<int> referrers;
+        std::vector<int> referrers;
         // run throgh next states and write rule for each
         for (UnescaperStateVector_t::const_iterator i = nextStates.begin();
              i != nextStates.end(); ++i) {
             // remember position of link to next state
             referrers.push_back(unescaper.size());
             // create state
-            unescaper.push_back(pair<int, int>(i->rule, -i->nextState));
+            unescaper.push_back(std::pair<int, int>(i->rule, -i->nextState));
         }
         // put STOP indicator when we have any next state
         if (nextState == 0)
-            unescaper.push_back(pair<int, int>(0, 0));
+            unescaper.push_back(std::pair<int, int>(0, 0));
         // run through all rules
-        vector<int>::const_iterator ireferrers = referrers.begin();
+        std::vector<int>::const_iterator ireferrers = referrers.begin();
         for (UnescaperStateVector_t::const_iterator i = nextStates.begin();
              i != nextStates.end(); ++i, ++ireferrers) {
             if (!i->nextState) {
@@ -341,15 +340,15 @@ void ContentType_t::compileUnescaper() {
     UnescaperState_t root;
 
     // run through escape definitions
-    for (vector<pair<unsigned char, string> >::const_iterator
+    for (std::vector<std::pair<unsigned char, std::string> >::const_iterator
              iescapes = escapes.begin();
          iescapes != escapes.end(); ++iescapes) {
         // start state
         UnescaperState_t *state = &root;
         // escape sequence
-        const string &str = iescapes->second;
+        const std::string &str = iescapes->second;
         // run through escape sequence
-        for (string::const_iterator istr = str.begin();
+        for (std::string::const_iterator istr = str.begin();
              istr != str.end(); ++istr) {
             // add next state
             state = &state->add(*istr);
@@ -368,7 +367,7 @@ ContentType_t* htmlCreator() {
     // create HTML descriptor
     ContentType_t *html = new ContentType_t();
     // HTML has only block comments
-    html->blockComment = pair<string, string>("<!--", "-->");
+    html->blockComment = std::pair<std::string, std::string>("<!--", "-->");
     // and has these (necessary) escapes
     html->addEscape('&', "&amp;");
     html->addEscape('<', "&lt;");
@@ -399,7 +398,7 @@ ContentType_t* cCreator() {
     // create C descriptor
     ContentType_t *c = new ContentType_t();
     // C has only block comments
-    c->blockComment = pair<string, string>("/*", "*/");
+    c->blockComment = std::pair<std::string, std::string>("/*", "*/");
     // return descriptor
     return c;
 }
@@ -516,11 +515,11 @@ namespace {
 }
 
 const ContentType_t::Descriptor_t*
-ContentType_t::findContentType(const string &sname, Error_t &err,
+ContentType_t::findContentType(const std::string &sname, Error_t &err,
                                const Error_t::Position_t &pos, bool failOnError)
 {
     // make name lower
-    string name(sname);
+    std::string name(sname);
     transform(name.begin(), name.end(), name.begin(), ToLower_t());
 
     // create all static data
@@ -529,7 +528,7 @@ ContentType_t::findContentType(const string &sname, Error_t &err,
     if (name.empty()) return unknown;
 
     // try to find cached content type descriptor
-    map<string, ContentType_t::Descriptor_t*>::const_iterator
+    std::map<std::string, ContentType_t::Descriptor_t*>::const_iterator
         fdescriptors = descriptors.find(name);
     // if no content descriptor found
     if (fdescriptors == descriptors.end()) {
@@ -554,12 +553,14 @@ ContentType_t::getContentType(unsigned int index)
     return descriptorIndex[index];
 }
 
-void ContentType_t::listSupported(vector<pair<string, string> > &supported) {
+void ContentType_t::listSupported(
+        std::vector<std::pair<std::string, std::string> > &supported)
+{
     for (CreatorEntry_t *icreators = creators;
          icreators->name; ++icreators)
         supported.push_back(make_pair(icreators->name,
                                       (icreators->comment ? icreators->comment
-                                      : string())));
+                                      : std::string())));
 };
 
 void Escaper_t::push(ContentType_t *ct) {

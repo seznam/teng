@@ -58,7 +58,7 @@ void tengCode_generate(ParserContext_t *context,
   * @param name The function name.
   * @param narams Number of params in the call. */
 void tengCode_generateFunctionCall(ParserContext_t *context,
-        const string &name, int nparams);
+        const std::string &name, int nparams);
 
 /** Generate byte-code for printing a value.
   * @param context A parser context. */

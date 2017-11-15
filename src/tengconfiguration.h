@@ -42,8 +42,6 @@
 
 #include "tengdictionary.h"
 
-using namespace std;
-
 namespace Teng {
 
 /**
@@ -57,7 +55,7 @@ public:
      *
      * @param root path of root for locating files
      */
-    Configuration_t(const string &root = string());
+    Configuration_t(const std::string &root = std::string());
 
     /**
      * @short Destroy dictionary object.
@@ -72,8 +70,8 @@ public:
      * @param pos position in current file
      * @return 0 OK !0 error
      */
-    virtual int processDirective(const string &directive,
-                                 const string &param,
+    virtual int processDirective(const std::string &directive,
+                                 const std::string &param,
                                  Error_t::Position_t &pos);
 
     inline bool isDebugEnabled() const {
@@ -111,12 +109,12 @@ public:
     inline bool isAlwaysEscapeEnabled() const {
         return alwaysEscape;
     }
-    
+
     inline bool isShortTagEnabled() const {
         return shortTag;
     }
 
-    int isEnabled(const string &feature, bool &enabled) const;
+    int isEnabled(const std::string &feature, bool &enabled) const;
 
     friend std::ostream& operator<<(std::ostream &o, const Configuration_t &c);
 

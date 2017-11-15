@@ -48,11 +48,9 @@
 #include "tengplatform.h"
 #include "tengaux.h"
 
-using namespace std;
+namespace Teng {
 
-using namespace Teng;
-
-int Dictionary_t::parse(const string &filename) {
+int Dictionary_t::parse(const std::string &filename) {
     level = MAX_RECURSION_LEVEL;
     Error_t::Position_t pos(filename);
     return parse(filename, pos);
@@ -74,13 +72,13 @@ namespace {
      * @param err error logger
      * @return position of terminating <LF> in input string
      */
-    string::size_type getLine(const string &str, string &line,
-                              string::size_type begin)
+    std::string::size_type getLine(const std::string &str, std::string &line,
+                              std::string::size_type begin)
     {
         // find <LF>
-        string::size_type nl = str.find('\n', begin);
+        std::string::size_type nl = str.find('\n', begin);
         // remove (optional) preceding<CR>.
-        if ((nl > 0) && (nl != string::npos) && (str[nl - 1] == '\r'))
+        if ((nl > 0) && (nl != std::string::npos) && (str[nl - 1] == '\r'))
             line = str.substr(begin, nl - begin - 1);
         else line = str.substr(begin, nl - begin);
         // return position of terminating <LF> in input string
@@ -97,13 +95,13 @@ namespace {
  * @param err error logger
  * @return 0 OK !0 error
  */
-int Dictionary_t::parseValueLine(const string &line, string &value,
+int Dictionary_t::parseValueLine(const std::string &line, std::string &value,
                                  Error_t::Position_t &pos)
 {
     // erase value
     value.erase();
     // strip all whitespaces from begin
-    string::const_iterator iline = line.begin();
+    std::string::const_iterator iline = line.begin();
     while ((iline != line.end()) && isspace(*iline)) {
         if (*iline == '\t') pos.advanceToTab();
         else pos.advanceColumn();
@@ -217,11 +215,13 @@ int Dictionary_t::parseValueLine(const string &line, string &value,
     return 0;
 }
 
-int Dictionary_t::parseIdentLine(const string &line, string &name, string &value,
+int Dictionary_t::parseIdentLine(const std::string &line,
+                                 std::string &name,
+                                 std::string &value,
                                  Error_t::Position_t &pos)
 {
     // get all valid chars (assumes that first char is not number)
-    string::const_iterator iline = line.begin();
+    std::string::const_iterator iline = line.begin();
     for (; iline != line.end(); ++iline) {
         if (!(isalnum(*iline) || (*iline == '_')))
             break;
@@ -241,16 +241,16 @@ int Dictionary_t::parseIdentLine(const string &line, string &name, string &value
     return parseValueLine(line.substr(iline - line.begin()), value, pos);
 }
 
-int Dictionary_t::add(const string &name, const string &value) {
+int Dictionary_t::add(const std::string &name, const std::string &value) {
     if (replaceValue) {
         dict[name] = value;
     } else {
-        dict.insert(map<string, string>::value_type(make_pair(name, value)));
+        dict.insert(std::make_pair(name, value));
     }
     return 0;
 }
 
-int Dictionary_t::add(const string &name, const string &value,
+int Dictionary_t::add(const std::string &name, const std::string &value,
                       Error_t::Position_t &pos)
 {
     // insert new record into table
@@ -283,7 +283,7 @@ int Dictionary_t::add(const string &name, const string &value,
             index = close + 1;
 
             // try to find ename in so far read entries
-            const string *evalue = lookup(ename);
+            const std::string *evalue = lookup(ename);
             if (!evalue) {
                 // not found
                 err.logError(Error_t::LL_ERROR, pos,
@@ -305,9 +305,9 @@ int Dictionary_t::add(const string &name, const string &value,
     return add(name, value);
 }
 
-const string* Dictionary_t::lookup(const string &key) const {
+const std::string *Dictionary_t::lookup(const std::string &key) const {
     // try to find key
-    map<string, string>::const_iterator f = dict.find(key);
+    std::map<std::string, std::string>::const_iterator f = dict.find(key);
     // not found => null
     if (f == dict.end()) {
         if ( key == "_tld" )
@@ -318,17 +318,17 @@ const string* Dictionary_t::lookup(const string &key) const {
     return &f->second;
 }
 
-int Dictionary_t::parseString(const string &data,
+int Dictionary_t::parseString(const std::string &data,
                               Error_t::Position_t &pos)
 {
     // position of newline
-    string::size_type nl = 0;
+    std::string::size_type nl = 0;
     // current line
-    string line;
+    std::string line;
     // name of current ident
-    string currentName;
+    std::string currentName;
     // current value
-    string currentValue;
+    std::string currentValue;
     // identifies that currentName && currentValue are valid
     bool currentValid = false;
 
@@ -351,17 +351,17 @@ int Dictionary_t::parseString(const string &data,
                     currentValid = false;
                 }
                 // split directive to name and value
-                string::size_type sep = line.find_first_of(" \t\v", 1);
-                if (processDirective(line.substr(1, ((sep == string::npos)
+                std::string::size_type sep = line.find_first_of(" \t\v", 1);
+                if (processDirective(line.substr(1, ((sep == std::string::npos)
                                                      ? sep : (sep - 1))),
-                                     ((sep == string::npos)
-                                      ? string()
+                                     ((sep == std::string::npos)
+                                      ? std::string()
                                       : line.substr(sep + 1)), pos))
                     ret = -1;
             } else if (isspace(first)) {
                 // append to previous line
                 if (currentValid) {
-                    string value;
+                    std::string value;
                     parseValueLine(line, value, pos);
                     currentValue.push_back(' ');
                     currentValue.append(value);
@@ -390,7 +390,7 @@ int Dictionary_t::parseString(const string &data,
             currentValid = false;
         }
         // if not at end advance to next character (after newline)
-        if (nl != string::npos) ++nl;
+        if (nl != std::string::npos) ++nl;
         else {
             // if line is not empty, last char is not newline
             if (!line.empty()) {
@@ -415,11 +415,11 @@ int Dictionary_t::parseString(const string &data,
     return ret;
 }
 
-int Dictionary_t::parse(const string &infilename,
+int Dictionary_t::parse(const std::string &infilename,
                         Error_t::Position_t &pos)
 {
     // if relative path => prepend root
-    string filename = infilename;
+    std::string filename = infilename;
     if (!filename.empty() && !ISROOT(filename) && (!root.empty()))
         filename = root + '/' + filename;
 
@@ -447,7 +447,7 @@ int Dictionary_t::parse(const string &infilename,
 
 int Dictionary_t::parse(FILE *file, Error_t::Position_t &pos) {
     // loaded string
-    string str;
+    std::string str;
     // read whole file into memory
     while (!(feof(file) || ferror(file))) {
         char buff[1024];
@@ -466,8 +466,8 @@ int Dictionary_t::parse(FILE *file, Error_t::Position_t &pos) {
     return parseString(str, pos);
 }
 
-int Dictionary_t::processDirective(const string &directive,
-                                   const string &param,
+int Dictionary_t::processDirective(const std::string &directive,
+                                   const std::string &param,
                                    Error_t::Position_t &pos)
 {
     if (directive == "include") {
@@ -477,15 +477,15 @@ int Dictionary_t::processDirective(const string &directive,
             return -1;
         }
         // cut filename
-        string filename(param);
+        std::string filename(param);
         pos.advanceColumn(8);
         if (filename.empty()) {
             err.logError(Error_t::LL_ERROR, pos, "Missing file to include");
             return -1;
         }
         // strip filename
-        string::size_type begin = 0;
-        string::size_type end = filename.length();
+        std::string::size_type begin = 0;
+        std::string::size_type end = filename.length();
         while ((begin < end) && isspace(filename[begin]))
             ++begin;
         while ((begin < end) && isspace(filename[end - 1]))
@@ -535,9 +535,9 @@ int Dictionary_t::processDirective(const string &directive,
     return -1;
 }
 
-int Dictionary_t::dump(string &out) const {
+int Dictionary_t::dump(std::string &out) const {
     // dumm all records
-    for (map<string, string>::const_iterator i = dict.begin();
+    for (std::map<std::string, std::string>::const_iterator i = dict.begin();
          i != dict.end(); ++i) {
         out.append(i->first);
         out.append(": |");
@@ -547,3 +547,6 @@ int Dictionary_t::dump(string &out) const {
     // OK
     return 0;
 }
+
+} // namespace Teng
+

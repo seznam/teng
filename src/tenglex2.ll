@@ -65,10 +65,6 @@
 #include "tengparsercontext.h"
 #include "tengerror.h"
 
-    using namespace std;
-
-    using namespace Teng;
-
 #ifdef DEBUG_LEX
 #define RETURN(token) \
     cout << #token << " '" << yytext << "', sval == '" << value.stringValue \
@@ -103,7 +99,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
 
 %%
     // temporary string value
-    string tmpSval;
+    std::string tmpSval;
     // quote used to delimit string (" or ')
     char stringOpener = 0;
 
@@ -205,7 +201,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
 
 "<?teng"[[:space:]\0]*[[:alnum:]]* {
     // match '<?teng???'
-    value.stringValue = string(yytext + 6, yyleng - 6);
+    value.stringValue = std::string(yytext + 6, yyleng - 6);
     bufferPos.advance(yytext, yyleng);
     RETURN(LEX_TENG);
 }
@@ -650,7 +646,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
 "udf."{IDENT}(\.{IDENT})* {
     // match exist operator
     bufferPos.advanceColumn(yyleng);
-    value.stringValue = string(yytext, yyleng);
+    value.stringValue = std::string(yytext, yyleng);
     value.type = ParserValue_t::TYPE_STRING;
     RETURN(LEX_UDF_IDENT);
 }
@@ -753,7 +749,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     bufferPos.advanceColumn(yyleng);
     value.integerValue = strtoul(yytext, 0, 10);
     value.realValue = value.integerValue;
-    value.stringValue = string(yytext, yyleng);
+    value.stringValue = std::string(yytext, yyleng);
     value.type = ParserValue_t::TYPE_INT;
     RETURN(LEX_INT);
 }
@@ -765,7 +761,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     value.realValue = value.integerValue;
     char buff[100];
     snprintf(buff, sizeof(buff), "%zd", size_t(value.integerValue));
-    value.stringValue = string(buff);
+    value.stringValue = std::string(buff);
     value.type = ParserValue_t::TYPE_INT;
     RETURN(LEX_INT);
 }
@@ -777,7 +773,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     value.realValue = value.integerValue;
     char buff[100];
     snprintf(buff, sizeof(buff), "%zd", size_t(value.integerValue));
-    value.stringValue = string(buff);
+    value.stringValue = std::string(buff);
     value.type = ParserValue_t::TYPE_INT;
     RETURN(LEX_INT);
 }
@@ -786,7 +782,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     // match real number
     bufferPos.advanceColumn(yyleng);
     value.integerValue = ParserValue_t::int_t(value.realValue = atof(yytext));
-    value.stringValue = string(yytext, yyleng);
+    value.stringValue = std::string(yytext, yyleng);
     value.type = ParserValue_t::TYPE_REAL;
     RETURN(LEX_REAL);
 }
@@ -796,7 +792,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     // or dot
 
     // copy number into tmp value
-    tmpSval = string(yytext, yyleng);
+    tmpSval = std::string(yytext, yyleng);
     // start parsing of trailing characters
     BEGIN(badnumber);
 }
@@ -805,7 +801,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     // match hexa number followed by possible indentifier or dot
 
     // copy number into tmp value
-    tmpSval = string(yytext, yyleng);
+    tmpSval = std::string(yytext, yyleng);
     // start parsing of trailing characters
     BEGIN(badnumber);
 }
@@ -814,7 +810,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     // match bin number followed by possible indentifier or dot
 
     // copy number into tmp value
-    tmpSval = string(yytext, yyleng);
+    tmpSval = std::string(yytext, yyleng);
     // start parsing of trailing characters
     BEGIN(badnumber);
 }
@@ -823,7 +819,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     [._[:alnum:]]+ {
         // run of number, dot or identifier characters composing
         // bad token
-        value.stringValue = tmpSval + string(yytext, yyleng);
+        value.stringValue = tmpSval + std::string(yytext, yyleng);
         err.logError(Error_t::LL_ERROR, bufferPos, "Invalid token '" +
             value.stringValue + "'");
         bufferPos.advance(value.stringValue);
@@ -843,7 +839,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
 {IDENT} {
     // match identifier
     bufferPos.advanceColumn(yyleng);
-    value.stringValue = string(yytext, yyleng);
+    value.stringValue = std::string(yytext, yyleng);
     value.type = ParserValue_t::TYPE_STRING;
     RETURN(LEX_IDENT);
 }
@@ -855,7 +851,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
 
 . {
     // default rule
-    value.stringValue = string(yytext, yyleng);
+    value.stringValue = std::string(yytext, yyleng);
     err.logError(Error_t::LL_ERROR, bufferPos, "Unexpected character '"
                  + value.stringValue + "'");
     bufferPos.advance(yytext, yyleng);
@@ -933,7 +929,7 @@ Lex2_t::~Lex2_t() {
     yylex_destroy((yyscan_t)yyscanner);
 }
 
-int Lex2_t::init(const string &src) {
+int Lex2_t::init(const std::string &src) {
     // test for stack overflow
     if (stackTop >= MAX_LEX_STACK_DEPTH)
         return -1;

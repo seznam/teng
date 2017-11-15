@@ -74,11 +74,11 @@ public:
         {
             // no-op
         }
-           
+
         unsigned int programCacheSize;
         unsigned int dictCacheSize;
     };
-    
+
     /** @short Create new engine.
      *  @param root root of relative paths
      *  @param settings teng options
@@ -94,7 +94,7 @@ public:
      *  @param skin skin of template
      *  @param dict language dictionary
      *  @param lang language
-     *  @param param config (dictionary with non language data) 
+     *  @param param config (dictionary with non language data)
      *  @param contentType content type of page
      *  @param encoding encoding of page
      *  @param data data tree
@@ -113,7 +113,7 @@ public:
      *  @param templateString main template
      *  @param dict language dictionary
      *  @param lang language
-     *  @param param config (dictionary with non language data) 
+     *  @param param config (dictionary with non language data)
      *  @param contentType content type of page
      *  @param encoding encoding of page
      *  @param data data tree
@@ -168,7 +168,7 @@ private:
      *         disabled.
      */
     Teng_t operator=(const Teng_t&);
-    
+
     void init(const Settings_t &settings);
 
     /** @short Root of relative paths.
@@ -187,3 +187,4 @@ private:
 } // namespace Teng
 
 #endif // TENG_H
+

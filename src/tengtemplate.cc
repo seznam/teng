@@ -36,9 +36,7 @@
 
 #include "tengtemplate.h"
 
-using namespace std;
-
-using namespace Teng;
+namespace Teng {
 
 Template_t::~Template_t() {
     if (owner) {
@@ -48,7 +46,7 @@ Template_t::~Template_t() {
     }
 }
 
-TemplateCache_t::TemplateCache_t(const string &root,
+TemplateCache_t::TemplateCache_t(const std::string &root,
                                  unsigned int programCacheSize,
                                  unsigned int dictCacheSize)
     : root(root),
@@ -73,9 +71,9 @@ TemplateCache_t::~TemplateCache_t() {
 }
 
 Template_t*
-TemplateCache_t::createTemplate(const string &templateSource,
-                                const string &langFilename,
-                                const string &configFilename,
+TemplateCache_t::createTemplate(const std::string &templateSource,
+                                const std::string &langFilename,
+                                const std::string &configFilename,
                                 SourceType_t sourceType)
 {
     unsigned long int configSerial;
@@ -86,12 +84,12 @@ TemplateCache_t::createTemplate(const string &templateSource,
                            &configSerial);
 
     // create key from source file names
-    vector<string> key;
+    std::vector<std::string> key;
     if (sourceType == SRC_STRING) tengCreateStringKey(templateSource, key);
     else tengCreateKey(root, templateSource, key);
     tengCreateKey(root, langFilename, key);
     tengCreateKey(root, configFilename, key);
-   
+
     // cached program
     unsigned long int programSerial;
     unsigned long int programDependSerial;
@@ -113,11 +111,11 @@ TemplateCache_t::createTemplate(const string &templateSource,
             :
             ParserContext_t(configAndDict.second, configAndDict.first, root)
             .createProgramFromFile(templateSource);
-        
+
         // add program into cache
         cachedProgram = programCache->add(key, program, configSerial);
     }
-    
+
     // create template with cached sources
     // cannot return value directly, because of g++ 2.95 warnings
     Template_t *retval = new Template_t(cachedProgram,
@@ -126,12 +124,12 @@ TemplateCache_t::createTemplate(const string &templateSource,
 }
 
 TemplateCache_t::ConfigAndDict_t
-TemplateCache_t::getConfigAndDict(const string &configFilename,
-                                  const string &dictFilename,
+TemplateCache_t::getConfigAndDict(const std::string &configFilename,
+                                  const std::string &dictFilename,
                                   unsigned long int *serial)
 {
     // find or create configuration
-    vector<string> key;
+    std::vector<std::string> key;
     tengCreateKey(root, configFilename, key);
 
     unsigned long int configSerial = 0;
@@ -150,7 +148,7 @@ TemplateCache_t::getConfigAndDict(const string &configFilename,
 
     // reuse key for dictionary
     tengCreateKey(root, dictFilename, key);
-    
+
     // find or create dictionary
     unsigned long int dictSerial = 0;
     unsigned long int dictDependSerial = 0;
@@ -174,3 +172,6 @@ TemplateCache_t::getConfigAndDict(const string &configFilename,
     // return data
     return ConfigAndDict_t(cachedConfig, cachedDict);
 }
+
+} // namespace Teng
+

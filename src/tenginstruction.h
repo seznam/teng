@@ -44,14 +44,12 @@
 
 #include "tengparservalue.h"
 
-using namespace std;
-
 namespace Teng {
 
 struct Identifier_t {
     /** @short Name of identifier.
      */
-    string name;
+    std::string name;
 
     /** @short Context of identifier.
      *
@@ -158,7 +156,7 @@ struct Instruction_t {
       * @param os stream for output
       * @param ip current instruction pointer (<0 for not to use)
       */
-    void dump(ostream &os, int ip = -1) const;
+    void dump(std::ostream &os, int ip = -1) const;
 
     /** Operation to perform. */
     OpCode_t operation;
@@ -185,3 +183,4 @@ struct Instruction_t {
 } // namespace Teng
 
 #endif // TENGINSTRUCTION_H
+

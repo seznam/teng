@@ -37,6 +37,9 @@
 #ifndef TENGLEX2_H
 #define TENGLEX2_H
 
+#include <string>
+
+#include "tengerror.h"
 #include "tengsyntax.hh"
 
 /** @short Maximal depth of lex stack.
@@ -58,7 +61,7 @@ public:
      *         lex stack.
      * @return 0 OK, !0 error
      */
-    int init(const string &src);
+    int init(const std::string &src);
 
     int getElement(YYSTYPE *yylval_param,
                    ParserValue_t &value,

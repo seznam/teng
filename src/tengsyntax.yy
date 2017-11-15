@@ -62,10 +62,6 @@
 #include "tenglex2.h"
 #include "tengaux.h"
 
-using namespace std;
-
-using namespace Teng;
-
 namespace Teng {
 
 #define YYPARSE_PARAM context
@@ -539,7 +535,7 @@ teng_include:
                         "nesting level is too deep");
             } else {
                 // glue filename
-                string fname = i->second;
+                std::string fname = i->second;
                 if (!CONTEXT->root.empty() && !fname.empty() && fname[0] != '/')
                     fname = CONTEXT->root + "/" + fname;
                 // create new level #1 lex analyzer with file input
@@ -1558,7 +1554,7 @@ dictionary_item:
         {
             // find item in dictionary and code it as val
             // lookup lang dict first, param dict then else use identifier
-            const string *item;
+            const std::string *item;
             item = CONTEXT->langDictionary->lookup($1.val.stringValue);
             if (item == 0)
                 item = CONTEXT->paramDictionary->lookup($1.val.stringValue);
@@ -1681,7 +1677,7 @@ variable_identifier:
                 // handle error
                 if (err) {
                     LeftValue_t::Identifier_t::const_iterator id;
-                    string var = $1.val.stringValue;
+                    std::string var = $1.val.stringValue;
                     for (id = $2.id.begin(); id != $2.id.end(); ++id)
                         var += "." + *id;
                     ERR(ERROR, $1.pos, "Variable identifier '" + var
@@ -2308,7 +2304,7 @@ static void yyprint(FILE *fp, int element, const YYSTYPE &leftValue)
   * @param token Token name. */
 
 static std::string directive(const std::string &token) {
-    string directive;
+    std::string directive;
     if (token == "LEX_ENDFORMAT") {
         directive = "<?teng endformat?> directive";
     } else if (token == "LEX_ENDFRAGMENT") {
@@ -2330,7 +2326,7 @@ static std::string directive(const std::string &token) {
 static void printUnexpectedElement(ParserContext_t *context,
                                    int element, const YYSTYPE &leftValue)
 {
-    string msg;
+    std::string msg;
     switch (element) {
 
         // plain text
@@ -2505,3 +2501,4 @@ static void printUnexpectedElement(ParserContext_t *context,
 }
 
 } // namespace Teng
+

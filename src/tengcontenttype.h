@@ -47,8 +47,6 @@
 
 #include "tengerror.h"
 
-using namespace std;
-
 namespace Teng {
 
 /**
@@ -69,11 +67,11 @@ public:
 
     /** @short String used for commenting out line.
      */
-    string lineComment;
+    std::string lineComment;
 
     /** @short Start of commend and end of comment.
      */
-    pair<string, string> blockComment;
+    std::pair<std::string, std::string> blockComment;
 
     /** @short Add escape mapping into escaping table.
      * @param c character
@@ -81,7 +79,7 @@ public:
      * @return position in escape list or -1 when escape for given
      *         character already present
      */
-    int addEscape(unsigned char c, const string &escape);
+    int addEscape(unsigned char c, const std::string &escape);
 
     /** @short Compile unescaping automaton from escaping list.
      */
@@ -91,19 +89,19 @@ public:
      * @param src string to escape
      * @return escaped string
      */
-    virtual string escape(const string &src) const;
+    virtual std::string escape(const std::string &src) const;
 
     /** @short Unescape given string.
      * @param src string to unescape
      * @return unescaped string
      */
-    virtual string unescape(const string &src) const;
+    virtual std::string unescape(const std::string &src) const;
 
     /** @short Descriptor of content type.
      */
     struct Descriptor_t {
         Descriptor_t(ContentType_t *contentType, unsigned int index,
-                     const string &name, const string &description)
+                     const std::string &name, const std::string &description)
             : contentType(contentType), index(index),
               name(name), description(description)
         {
@@ -112,8 +110,8 @@ public:
 
         ContentType_t *contentType;
         unsigned int index;
-        string name;
-        string description;
+        std::string name;
+        std::string description;
     };
 
     /**
@@ -125,7 +123,7 @@ public:
      * @return descriptor od 0 on error
      */
     static const Descriptor_t*
-    findContentType(const string &name, Error_t &err,
+    findContentType(const std::string &name, Error_t &err,
                     const Error_t::Position_t &pos = Error_t::Position_t(),
                     bool failOnError = false);
 
@@ -141,13 +139,14 @@ public:
      * @short Lists supported content types.
      * @param supported list of supported content types.
      */
-    static void listSupported(vector<pair<string, string> > &supported);
+    static void listSupported(
+            std::vector<std::pair<std::string, std::string> > &supported);
 
 private:
     /**
      * @short List of escape rules.
      */
-    vector<pair<unsigned char, string> > escapes;
+    std::vector<std::pair<unsigned char, std::string> > escapes;
 
     /**
      * @short Map of indices to escape list (-1 -> no escape).
@@ -157,7 +156,7 @@ private:
     /**
      * @short Unescaping automaton.
      */
-    vector<pair<int, int> > unescaper;
+    std::vector<std::pair<int, int> > unescaper;
 
     /**
      * @short Moves to next state of automaton.
@@ -180,7 +179,7 @@ public:
         topLevel = (ct ? ct : ContentType_t::getDefault()->contentType);
         escapers.push(topLevel);
     }
-    
+
     /** @short Push new content type.
      *
      * @short ct content type
@@ -203,7 +202,7 @@ public:
      */
     void pop(Error_t &err,
              const Error_t::Position_t &pos = Error_t::Position_t());
-    
+
     /** @short Escape given string.
      *
      * Uses escaper on the top of the stack.
@@ -211,7 +210,7 @@ public:
      * @param src string to escape
      * @return escaped string
      */
-    inline string escape(const string &src) const {
+    inline std::string escape(const std::string &src) const {
         return escapers.top()->escape(src);
     }
 
@@ -222,7 +221,7 @@ public:
      * @param src string to unescape
      * @return unescaped string
      */
-    inline string unescape(const string &src) const {
+    inline std::string unescape(const std::string &src) const {
         return escapers.top()->unescape(src);
     }
 
@@ -233,7 +232,7 @@ public:
 private:
     /** @short Stack of un/escaperers.
      */
-    stack<const ContentType_t*> escapers;
+    std::stack<const ContentType_t*> escapers;
 
     /** @short Toplevel escapert.
      */

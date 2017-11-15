@@ -45,14 +45,12 @@
 #include "tengparservalue.h"
 #include "tengplatform.h"
 
-using namespace std;
+namespace Teng {
 
-using namespace Teng;
-
-void ParserValue_t::setString(const string &val) {
+void ParserValue_t::setString(const std::string &val) {
     const char *str;
     char *parseStr;
-    
+
     stringValue = val;
     if (val.size()) {
         str = val.c_str();
@@ -85,7 +83,7 @@ void ParserValue_t::setInteger(int_t val) {
 
 void ParserValue_t::setReal(double val) {
     char str[64];
-    
+
     int l = snprintf(str, sizeof(str), "%f", val);
     if (!strstr(str, ".")) strcpy(str + l,".0");
     else {
@@ -105,7 +103,7 @@ void ParserValue_t::setReal(double val) {
 
 void ParserValue_t::setReal(double val, int prec) {
     char str[64];
-    
+
     snprintf(str, sizeof(str), "%.*f", prec, val);
     stringValue = str;
     integerValue = (int_t)val;
@@ -115,7 +113,7 @@ void ParserValue_t::setReal(double val, int prec) {
 
 ParserValue_t ParserValue_t::validate() const {
     ParserValue_t r(*this);
-    
+
     r.validateThis();
     return r;
 }
@@ -124,7 +122,7 @@ void ParserValue_t::validateThis() {
     if (type == TYPE_STRING) {
         const char *str;
         char *parseStr;
-        
+
         if (stringValue.size()) {
             str = stringValue.c_str();
             integerValue = strtol(str, &parseStr, 10);
@@ -149,4 +147,6 @@ void ParserValue_t::validateThis() {
         }
     }
 }
+
+} // namespace Teng
 

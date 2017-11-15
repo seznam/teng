@@ -34,21 +34,21 @@
  *             Created.
  */
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "tengprogram.h"
 
-using namespace std;
-
-using namespace Teng;
+namespace Teng {
 
 /** Print whole program into file stream.
   * @param fp File stream for output. */
-void Program_t::dump(FILE *fp) const
-{
+void Program_t::dump(FILE *fp) const {
     Program_t::const_iterator i;
     for (i = begin(); i != end(); ++i) {
         fprintf(fp, "%td\t", i - begin());
         (*i).dump(fp);
     }
 }
+
+} // namespace Teng
+

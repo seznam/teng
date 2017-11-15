@@ -42,8 +42,6 @@
 
 #include <tengconfig.h>
 
-using namespace std;
-
 namespace Teng {
 
 struct ParserValue_t {
@@ -63,18 +61,18 @@ struct ParserValue_t {
     typedef IntType_t int_t;
 
     Type_t type;
-    string stringValue;
+    std::string stringValue;
     int_t integerValue;
     double realValue;
 
     /** Method sets type, stringValue, intValue and realValue.
       * If conversion to number fails, sets intValue and realValue to 0. */
-    void setString(const string &val = string());
+    void setString(const std::string &val = std::string());
     /** Sets type, stringValue, intValue and realValue. */
     void setInteger(int_t val);
     /** Sets type, stringValue, intValue and realValue. */
     void setReal(double val);
-    /** Sets type, stringValue, intValue and realValue. */ 
+    /** Sets type, stringValue, intValue and realValue. */
     void setReal(double val, int prec);
     /** If type==TYPE_STRING, try to convert string to a numeric value.
       * First, try to convert into real value, then integer value. */
@@ -85,10 +83,10 @@ struct ParserValue_t {
         switch (type) {
         case TYPE_INT:
             return integerValue;
-        
+
         case TYPE_REAL:
             return realValue;
-        
+
         default:
             return !stringValue.empty();
         }
@@ -107,16 +105,16 @@ struct ParserValue_t {
         return result;
     }
 
-    friend inline ostream& operator<< (ostream &o, ParserValue_t &v) {
+    friend inline std::ostream& operator<<(std::ostream &o, ParserValue_t &v) {
         switch (v.type) {
         case TYPE_INT:
             o << "int(" << v.integerValue << ")";
             break;
-        
+
         case TYPE_REAL:
             o << "real(" << v.realValue << ")";
             break;
-        
+
         default:
             o << "string(" << v.stringValue << ")";
             break;
@@ -128,3 +126,4 @@ struct ParserValue_t {
 } // namespace Teng
 
 #endif // TENGPARSERVALUE_H
+

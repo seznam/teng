@@ -39,9 +39,7 @@
 
 #include "tengformatter.h"
 
-using namespace std;
-
-using namespace Teng;
+namespace Teng {
 
 Formatter_t::Formatter_t(Writer_t &writer, Formatter_t::Mode_t initialMode)
     : writer(writer), modeStack(), buffer()
@@ -50,7 +48,7 @@ Formatter_t::Formatter_t(Writer_t &writer, Formatter_t::Mode_t initialMode)
     modeStack.push(initialMode);
 }
 
-int Formatter_t::write(const string &str) {
+int Formatter_t::write(const std::string &str) {
     // pass whole string when passing mode active
     if (modeStack.top() == MODE_PASSWHITE)
         return writer.write(str);
@@ -58,13 +56,13 @@ int Formatter_t::write(const string &str) {
     // indicates that we are in block of spaces
     bool spaces = false;
     // block of spaces
-    pair<string::const_iterator, string::const_iterator>
+    std::pair<std::string::const_iterator, std::string::const_iterator>
         spaceblock = make_pair(str.begin(), str.begin());
     // block of other characters
-    pair<string::const_iterator, string::const_iterator>
+    std::pair<std::string::const_iterator, std::string::const_iterator>
         charblock = make_pair(str.begin(), str.begin());
     // run through input string
-    for (string::const_iterator istr = str.begin();
+    for (std::string::const_iterator istr = str.begin();
          istr != str.end(); ++istr) {
         if (isspace(*istr)) {
             // current character is white space
@@ -162,7 +160,8 @@ Formatter_t::Mode_t Formatter_t::pop() {
 }
 
 int Formatter_t::
-process(pair<string::const_iterator, string::const_iterator> spaceBlock)
+process(std::pair<std::string::const_iterator,
+        std::string::const_iterator> spaceBlock)
 {
     if (modeStack.top() == MODE_NOWHITE) {
         // output of spaces disabled
@@ -177,7 +176,7 @@ process(pair<string::const_iterator, string::const_iterator> spaceBlock)
     return ret;
 }
 
-int Formatter_t::process(string &str) {
+int Formatter_t::process(std::string &str) {
     // ignore empty space block
     if (str.empty()) return 0;
 
@@ -203,8 +202,8 @@ int Formatter_t::process(string &str) {
     case MODE_STRIPLINES:
         {
             // find newline
-            string::size_type nl = str.find('\n');
-            if (nl == string::npos) {
+            std::string::size_type nl = str.find('\n');
+            if (nl == std::string::npos) {
                 // no newline found => pass whole string
                 if (writer.write(str)) return -1;
             } else {
@@ -216,8 +215,8 @@ int Formatter_t::process(string &str) {
     case MODE_JOINLINES:
         {
             // find newline
-            string::size_type nl = str.find('\n');
-            if (nl == string::npos) {
+            std::string::size_type nl = str.find('\n');
+            if (nl == std::string::npos) {
                 // no newline found => pass whole string
                 if (writer.write(str)) return -1;
             } else {
@@ -230,14 +229,14 @@ int Formatter_t::process(string &str) {
     case MODE_NOWHITELINES:
         {
             // find newline
-            string::size_type fnl = str.find('\n');
-            if (fnl == string::npos) {
+            std::string::size_type fnl = str.find('\n');
+            if (fnl == std::string::npos) {
                 // no newline found => pass whole string
                 if (writer.write(str)) return -1;
                 break;
             }
             // find newline from the end of string
-            string::size_type lnl = str.rfind('\n');
+            std::string::size_type lnl = str.rfind('\n');
             if (fnl == lnl) {
                 // indices are the same => single newline
                 // => pass whole string
@@ -256,3 +255,6 @@ int Formatter_t::process(string &str) {
     buffer.erase();
     return 0;
 }
+
+} // namespace Teng
+

@@ -82,15 +82,15 @@ public:
         : program(program), langDictionary(langDictionary),
           paramDictionary(paramDictionary), owner(owner)
     {}
-    
+
     /** @short Destroy template.
      */
     ~Template_t();
-    
+
     /** @short Byte compiled program.
      */
     const Program_t *program;
-    
+
     /** @short Language dictionary.
      */
     const Dictionary_t *langDictionary;
@@ -115,7 +115,7 @@ public:
      *  @param programCacheSize maximal number of programs in the cache
      *  @param dictCacheSizemaximal number of dictionaries in the cache
      */
-    TemplateCache_t(const string &root, unsigned int programCacheSize = 0,
+    TemplateCache_t(const std::string &root, unsigned int programCacheSize = 0,
                     unsigned int dictCacheSize = 0);
 
     ~TemplateCache_t();
@@ -126,7 +126,7 @@ public:
         SRC_FILE,   /**< source is filename */
         SRC_STRING, /**< source is template */
     };
-    	
+
     /** @short Create template from given data.
      *  @param templateSource source of template
      *  @param langFilename file with language dictionary
@@ -134,23 +134,24 @@ public:
      *  @param sourceType type of template source
      *  @return created template (borrowed pointer!!!)
      */
-    Template_t* createTemplate(const string &templateSource,
-                               const string &langFilename,
-                               const string &paramFilename,
+    Template_t* createTemplate(const std::string &templateSource,
+                               const std::string &langFilename,
+                               const std::string &paramFilename,
                                SourceType_t sourceType);
-    
+
     /** @short Create dictionary from given files.
      *
      *  @param configFilename file with configuration
      *  @param dictFilename file with dictionary
      *  @return created dictionary (borrowed pointer!!!)
      */
-    inline const Dictionary_t* createDictionary(const string &configFilename,
-                                                const string &dictFilename)
+    const Dictionary_t *
+    createDictionary(const std::string &configFilename,
+                     const std::string &dictFilename)
     {
         return getConfigAndDict(configFilename, dictFilename).second;
     }
-    
+
     /** @short Release program.
      *  @param program released program
      *  @return 0 OK, !0 error
@@ -186,7 +187,10 @@ private:
      */
     TemplateCache_t operator=(const TemplateCache_t&);
 
-    typedef pair<const Configuration_t*, const Dictionary_t*> ConfigAndDict_t;
+    typedef std::pair<
+        const Configuration_t *,
+        const Dictionary_t *
+    > ConfigAndDict_t;
 
     /** @short Get configuration and dictionary from given files.
      *
@@ -196,13 +200,13 @@ private:
      *  @param dependSerial serial number of data this data depends on (output)
      *  @return configuration and dictionary (borrowed pointers!!!)
      */
-    ConfigAndDict_t getConfigAndDict(const string &configFilename,
-                                     const string &dictFilename,
+    ConfigAndDict_t getConfigAndDict(const std::string &configFilename,
+                                     const std::string &dictFilename,
                                      unsigned long int *serial = 0);
 
     /** @short Root for relativa paths.
      */
-    string root;
+    std::string root;
 
     /** @short Cache of templates.
      */
@@ -220,3 +224,4 @@ private:
 } // namespace Teng
 
 #endif // TENGTEMPLATE_H
+

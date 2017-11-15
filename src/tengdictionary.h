@@ -40,13 +40,11 @@
 
 #include <string>
 #include <vector>
+#include <cstdio>
 #include <map>
-#include <stdio.h>
 
 #include "tengerror.h"
 #include "tengsourcelist.h"
-
-using namespace std;
 
 namespace Teng {
 
@@ -62,7 +60,7 @@ public:
      *
      * @param root path of root for locating files
      */
-    Dictionary_t(const string &root)
+    Dictionary_t(const std::string &root)
         : root(root), level(0), sources(), err(), expandValue(false),
         replaceValue(false)
     {}
@@ -78,7 +76,7 @@ public:
      * @param filename name of file to parse
      * @return 0 OK !0 error
      */
-    int parse(const string &filename);
+    int parse(const std::string &filename);
 
     /**
      * @short Adds new entry into dictionary. Doesn't replace
@@ -88,7 +86,7 @@ public:
      * @param value value of entry
      * @return 0 OK !0 error
      */
-    virtual int add(const string &name, const string &value);
+    virtual int add(const std::string &name, const std::string &value);
 
     /**
      * @short Searches for key in dictionary.
@@ -96,8 +94,8 @@ public:
      * @param key the key
      * @return found value or 0 when key not found
      */
-    virtual const string* lookup(const string &key) const;
-    
+    virtual const std::string* lookup(const std::string &key) const;
+
     /**
      * @short Check source files for change.
      *
@@ -113,7 +111,7 @@ public:
      * @param out output string
      * @return 0 OK !0 error
      */
-    virtual int dump(string &out) const;
+    virtual int dump(std::string &out) const;
 
     /**
      * @short Return source list.
@@ -141,7 +139,7 @@ protected:
      * @param pos position in current file
      * @return 0 OK !0 error
      */
-    virtual int parseString(const string &data, Error_t::Position_t &pos);
+    virtual int parseString(const std::string &data, Error_t::Position_t &pos);
 
     /**
      * @short Parses value line.
@@ -151,9 +149,9 @@ protected:
      * @param pos position in current file
      * @return 0 OK !0 error
      */
-    int parseValueLine(const string &line, string &value,
+    int parseValueLine(const std::string &line, std::string &value,
                        Error_t::Position_t &pos);
-    
+
     /**
      * @short Parses line beginning with identifier.
      *
@@ -163,9 +161,11 @@ protected:
      * @param pos position in current file
      * @return 0 OK !0 error
      */
-    virtual int parseIdentLine(const string &line, string &name, string &value,
+    virtual int parseIdentLine(const std::string &line,
+                               std::string &name,
+                               std::string &value,
                                Error_t::Position_t &pos);
-    
+
     /**
      * @short Parses and processes processing directive.
      *
@@ -174,8 +174,8 @@ protected:
      * @param pos position in current file
      * @return 0 OK !0 error
      */
-    virtual int processDirective(const string &directive,
-                                 const string &param,
+    virtual int processDirective(const std::string &directive,
+                                 const std::string &param,
                                  Error_t::Position_t &pos);
 
     /**
@@ -187,7 +187,7 @@ protected:
      * @param pos position in current file
      * @return 0 OK !0 error
      */
-    virtual int add(const string &name, const string &value,
+    virtual int add(const std::string &name, const std::string &value,
                     Error_t::Position_t &pos);
 
     /**
@@ -197,7 +197,7 @@ protected:
      * @param pos position in current file
      * @return 0 OK !0 error
      */
-    int parse(const string &filename, Error_t::Position_t &pos);
+    int parse(const std::string &filename, Error_t::Position_t &pos);
 
     /**
      * @short Maximal number of dictionary file inclusion.
@@ -207,7 +207,7 @@ protected:
     /**
      * @short Root directory for file lookup.
      */
-    string root;
+    std::string root;
 
     /**
      * @short Current level of recursion. Valid only when parsing.
@@ -249,7 +249,7 @@ private:
     /**
      * @short The dictionary itself.
      */
-    map<string, string> dict;
+    std::map<std::string, std::string> dict;
 
     /** @short Flags whether #{name} is expanded in values.
      *

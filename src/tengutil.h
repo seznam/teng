@@ -41,8 +41,6 @@
 #include <string>
 #include <map>
 
-using namespace std;
-
 #include "tengstructs.h"
 #include "tengerror.h"
 #include "tengdictionary.h"
@@ -58,20 +56,20 @@ namespace Teng {
  * @param filename normalized file (result)
  * @return 0 OK !0 error
  */
-int tengNormalizeFilename(string &filename);
+int tengNormalizeFilename(std::string &filename);
 
-/** @short Compute MD5 hexdigest of data; 
+/** @short Compute MD5 hexdigest of data;
  *  @param data input data
  *  @param hexdigest resulting hex digest
  *  @return 0 OK, !0 error
  */
-int tengMD5Hexdigest(const string &data, string &hexdigest);
+int tengMD5Hexdigest(const std::string &data, std::string &hexdigest);
 
 /** @short Reads all data from application and checks if it is in
  *         data definition (slow -> for debug only)
  *  @param root application data
  *  @param dataDefinition dictionary
- *  @param error log 
+ *  @param error log
  */
 void tengCheckData(const Fragment_t &root,
                    const Dictionary_t &dataDefinition,

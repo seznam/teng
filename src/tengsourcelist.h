@@ -40,13 +40,10 @@
 
 #include <string>
 #include <vector>
-
+#include <ctime>
 #include <sys/types.h>
-#include <time.h>
 
 #include "tengerror.h"
-
-using namespace std;
 
 namespace Teng {
 
@@ -61,7 +58,7 @@ struct FileStat_t {
      *
      * @param filename associated file name.
      */
-    FileStat_t(const string &filename = string())
+    FileStat_t(const std::string &filename = std::string())
         : filename(filename), inode(0), size(0),
           mtime(0), ctime(0), valid(false)
     {}
@@ -112,7 +109,7 @@ struct FileStat_t {
     /**
      * @short Name of associated file.
      */
-    string filename;
+    std::string filename;
 
     /**
      * @short Inode of file.
@@ -150,7 +147,7 @@ public:
     SourceList_t()
         : sources()
     {}
-    
+
     /**@short Adds new source into the list.
      *
      * @param source filename of source
@@ -158,7 +155,7 @@ public:
      * @param err error logger
      * @return position of added source in list
      */
-    unsigned int addSource(const string &source,
+    unsigned int addSource(const std::string &source,
                            const Error_t::Position_t &pos,
                            Error_t &err);
 
@@ -175,7 +172,7 @@ public:
      * @param position index in the source list
      * @return filename or empty string on error
      */
-    string getSource(unsigned int position) const;
+    std::string getSource(unsigned int position) const;
 
     inline unsigned int size() const {
         return sources.size();
@@ -194,9 +191,10 @@ private:
 
     /** @short List of source files.
      */
-    vector<FileStat_t> sources;
+    std::vector<FileStat_t> sources;
 };
 
 } // namespace Teng
 
 #endif // TENGSOURCELIST_H
+

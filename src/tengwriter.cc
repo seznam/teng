@@ -37,15 +37,13 @@
 
 #include "tengwriter.h"
 
-using namespace std;
+namespace Teng {
 
-using namespace Teng;
-
-StringWriter_t::StringWriter_t(string &str)
+StringWriter_t::StringWriter_t(std::string &str)
     : str(str)
 {}
 
-int StringWriter_t::write(const string &str)
+int StringWriter_t::write(const std::string &str)
 {
     this->str.append(str);
     return 0;
@@ -59,15 +57,15 @@ int StringWriter_t::write(const char *str)
 
 
 int StringWriter_t::
-write(const string &str,
-      pair<string::const_iterator, string::const_iterator> interval)
+write(const std::string &str,
+      std::pair<std::string::const_iterator, std::string::const_iterator> interval)
 {
     this->str.append(interval.first, interval.second);
     return 0;
 }
 
 
-FileWriter_t::FileWriter_t(const string &filename)
+FileWriter_t::FileWriter_t(const std::string &filename)
     : Writer_t(), file(0), borrowed(false)
 {
     file = fopen(filename.c_str(), "w");
@@ -89,7 +87,7 @@ FileWriter_t::~FileWriter_t() {
         fclose(file);
 }
 
-int FileWriter_t::write(const string &str)
+int FileWriter_t::write(const std::string &str)
 {
     if (!file) return -1;
     fwrite(str.data(), 1, str.length(), file);
@@ -115,8 +113,8 @@ int FileWriter_t::write(const char *str)
 }
 
 int FileWriter_t::
-write(const string &str,
-      pair<string::const_iterator, string::const_iterator> interval)
+write(const std::string &str,
+      std::pair<std::string::const_iterator, std::string::const_iterator> interval)
 {
     const char *cstr = str.data() + distance(str.begin(), interval.first);
     size_t len = distance(interval.first, interval.second);
@@ -133,3 +131,6 @@ int FileWriter_t::flush() {
     if (!file) return -1;
     return (fflush(file) ? -1 : 0);
 }
+
+} // namespace Teng
+

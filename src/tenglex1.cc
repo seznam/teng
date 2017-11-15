@@ -41,14 +41,12 @@
 #include "tenglex1.h"
 #include "tengutil.h"
 
-using namespace std;
-
-using namespace Teng;
+namespace Teng {
 
 /** Initialize lexical analyzer from string.
   * @param input Input string.
   * @param filename File name identifying the original input source. */
-Lex1_t::Lex1_t(const string &input, const string &fname)
+Lex1_t::Lex1_t(const std::string &input, const std::string &fname)
         : input(input), position(0), filename(fname), line(1), column(0)
 {
 }
@@ -56,7 +54,7 @@ Lex1_t::Lex1_t(const string &input, const string &fname)
 
 /** Initialize lexical analyzer from file.
   * @param input Input file to read. */
-Lex1_t::Lex1_t(const string &fname,
+Lex1_t::Lex1_t(const std::string &fname,
         const Error_t::Position_t &position,
         Error_t &error)
         : position(0), filename(fname), line(1), column(0)
@@ -71,7 +69,7 @@ Lex1_t::Lex1_t(const string &fname,
         error.logSyscallError(Error_t::LL_ERROR, position,
                 "Cannot open input file '" + filename + "'");
     }
-	else {
+    else {
         // read content from file
         char buf[1024];
         int i;
@@ -88,7 +86,7 @@ Lex1_t::Lex1_t(const string &fname,
   * @param state State of finine automaton.
   * @param s Output string.
   * @param c Next input char. */
-inline static void newSequence(int &state, string &s, char c)
+inline static void newSequence(int &state, std::string &s, char c)
 {
     switch (c) {
         case '$': state = 1; break;  // $\{
@@ -109,8 +107,7 @@ inline static void newSequence(int &state, string &s, char c)
  * @param begin start position in string input.
  * @param end final position in string input + 1.
  * @return unescaped substring */
-string Lex1_t::unescapeInputSubstr(unsigned int begin, unsigned int end)
-{
+std::string Lex1_t::unescapeInputSubstr(unsigned int begin, unsigned int end) {
     int state = 0;
     /*
       state
@@ -125,7 +122,7 @@ string Lex1_t::unescapeInputSubstr(unsigned int begin, unsigned int end)
       9 ?\
       0 other
     */
-    string s;
+    std::string s;
     s.reserve(end - begin);
     if (end >= input.size()) end = input.size();
     for (; begin < end; begin++) {
@@ -529,3 +526,6 @@ void Lex1_t::incrementPosition(int num)
         }
     }
 }
+
+} // namespace Teng
+
