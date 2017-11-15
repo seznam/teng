@@ -78,7 +78,9 @@ tengsyntax.hh: tengsyntax.yy
 tengsyntax.cc: tengsyntax.yy
 
 # test program
-#noinst_PROGRAMS = 
+EXTRA_PROGRAMS = example
+example_SOURCES = @top_srcdir@/tests/example.cc
+example_LDADD = libteng.la
 
 doc:
 	doxygen

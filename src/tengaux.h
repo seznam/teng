@@ -35,14 +35,17 @@
 
 #ifndef TENGAUX_H
 #define TENGAUX_H
+
 #include <string>
 
-class Tld{
-    Tld();
-    static Tld s_intance;
-    std::string m_domainSuffix;
-public:
-    static Tld& getInstance();
-    const std::string& tld() const;
-};
-#endif
+namespace Teng {
+
+/** Returns TLD domains derived from hostname or from enviroment TENG_TLD
+ * varibale. The enviroment variable is preferred source of TLD domain.
+ */
+const std::string &get_tld();
+
+} // namespace Teng
+
+#endif /* TENGAUX_H */
+

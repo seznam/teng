@@ -33,27 +33,38 @@
  *
  */
 
-#include "tengaux.h"
+#include <cstdlib>
 #include <unistd.h>
 
-Tld::Tld(){
-    char buf[256] = {0};
-    int idx = gethostname(buf, sizeof(buf));
-    std::string s(buf);
-    size_t pos = s.rfind(".");
-    if ((pos == std::string::npos) || (idx == -1)){
-        m_domainSuffix = "__default__";
-    } else {
-        m_domainSuffix = s.substr(pos + 1, s.size());
-    }
+#include "tengaux.h"
+
+namespace Teng {
+namespace {
+
+std::string resolve_tld() {
+    static const std::string default_tld = "__default__";
+
+    // take it from env
+    if (char *teng_tld = getenv("TENG_TLD"))
+        return teng_tld;
+
+    // resolve local hostname
+    char buf[1024] = {0};
+    if (gethostname(buf, sizeof(buf))) return default_tld;
+
+    // take it from host domain
+    std::string result = buf;
+    size_t pos = result.rfind(".");
+    if (pos == std::string::npos) return default_tld;
+    return result.substr(pos + 1);
 }
 
-const std::string& Tld::tld() const{
-    return m_domainSuffix;
+} // namespace
+
+const std::string &get_tld() {
+    static const std::string value = resolve_tld();
+    return value;
 }
 
-Tld& Tld::getInstance(){
-    return s_intance;
-}
+} // namespace Teng
 
-Tld Tld::s_intance;

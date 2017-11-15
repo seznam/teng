@@ -309,11 +309,8 @@ const std::string *Dictionary_t::lookup(const std::string &key) const {
     // try to find key
     std::map<std::string, std::string>::const_iterator f = dict.find(key);
     // not found => null
-    if (f == dict.end()) {
-        if ( key == "_tld" )
-            return &Tld::getInstance().tld();
-        return 0;
-    }
+    if (f == dict.end())
+        return key == "_tld"? &get_tld(): 0x0;
     // return value
     return &f->second;
 }

@@ -12,6 +12,7 @@ int main(int argc, char * argv[]) {
         <title>Example page</title>\n\
     </head>\n\
     <body>\n\
+        #{_tld}\n\
         <?teng frag row?><p>${rnum}\n\
             <?teng frag col?>${cnum} <?teng endfrag?>\n\
         </p><?teng endfrag?>\n\
