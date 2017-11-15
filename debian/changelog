@@ -1,3 +1,13 @@
+libteng (2.3.21) stable; urgency=low
+
+  * _tld can be set by env var
+  * remove using namespace std
+  * #! debian stretch
+  * Check pcre++ using C++
+  * #! python2.3.9
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Wed, 15 Nov 2017 16:11:44 +0100
+
 libteng (2.3.20) stable; urgency=low
 
   * #! python2.3.8
