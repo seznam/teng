@@ -62,6 +62,8 @@ typedef Cache_t<Program_t> ProgramCache_t;
 
 class TemplateCache_t;
 
+class FilesystemInterface_t;
+
 /** @short Teng template.
  *  Made up from program, laguage, config dictionary and data
  *  definition. It's able to check change of source files.
@@ -115,7 +117,9 @@ public:
      *  @param programCacheSize maximal number of programs in the cache
      *  @param dictCacheSizemaximal number of dictionaries in the cache
      */
-    TemplateCache_t(const std::string &root, unsigned int programCacheSize = 0,
+    TemplateCache_t(const std::string &root,
+                    const FilesystemInterface_t *filesystem,
+                    unsigned int programCacheSize = 0,
                     unsigned int dictCacheSize = 0);
 
     ~TemplateCache_t();
@@ -207,6 +211,8 @@ private:
     /** @short Root for relativa paths.
      */
     std::string root;
+
+    const FilesystemInterface_t *filesystem;
 
     /** @short Cache of templates.
      */

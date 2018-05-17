@@ -539,7 +539,7 @@ teng_include:
                 if (!CONTEXT->root.empty() && !fname.empty() && fname[0] != '/')
                     fname = CONTEXT->root + "/" + fname;
                 // create new level #1 lex analyzer with file input
-                CONTEXT->lex1.push(new Lex1_t(fname,
+                CONTEXT->lex1.push(new Lex1_t(CONTEXT->filesystem, fname,
                         CONTEXT->lex1.top()->getPosition(),
                         CONTEXT->program->getErrors())); //new lex1
                 // lex2 state should be 0 now (or after a while)

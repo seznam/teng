@@ -40,13 +40,14 @@
 
 #include <string>
 #include <vector>
-#include <cstdio>
 #include <map>
 
 #include "tengerror.h"
 #include "tengsourcelist.h"
 
 namespace Teng {
+
+class FilesystemInterface_t;
 
 /**
  * @short Dictionary -- mapping of string to string value.
@@ -76,7 +77,8 @@ public:
      * @param filename name of file to parse
      * @return 0 OK !0 error
      */
-    int parse(const std::string &filename);
+    int parse(const FilesystemInterface_t *filesystem,
+              const std::string &filename);
 
     /**
      * @short Adds new entry into dictionary. Doesn't replace
@@ -139,7 +141,9 @@ protected:
      * @param pos position in current file
      * @return 0 OK !0 error
      */
-    virtual int parseString(const std::string &data, Error_t::Position_t &pos);
+    virtual int parseString(const FilesystemInterface_t *filesystem,
+                            const std::string &data,
+                            Error_t::Position_t &pos);
 
     /**
      * @short Parses value line.
@@ -174,7 +178,8 @@ protected:
      * @param pos position in current file
      * @return 0 OK !0 error
      */
-    virtual int processDirective(const std::string &directive,
+    virtual int processDirective(const FilesystemInterface_t *filesystem,
+                                 const std::string &directive,
                                  const std::string &param,
                                  Error_t::Position_t &pos);
 
@@ -197,7 +202,9 @@ protected:
      * @param pos position in current file
      * @return 0 OK !0 error
      */
-    int parse(const std::string &filename, Error_t::Position_t &pos);
+    int parse(const FilesystemInterface_t *filesystem,
+              const std::string &filename,
+              Error_t::Position_t &pos);
 
     /**
      * @short Maximal number of dictionary file inclusion.
@@ -236,15 +243,6 @@ private:
      *        disabled.
      */
     Dictionary_t operator=(const Dictionary_t&);
-
-    /**
-     * @short Parses dicionary from given file. Worker function.
-     *
-     * @param file file open for reading
-     * @param pos position in current file
-     * @return 0 OK !0 error
-     */
-    int parse(FILE *file, Error_t::Position_t &pos);
 
     /**
      * @short The dictionary itself.

@@ -43,6 +43,7 @@
 #include <memory>
 
 #include "teng.h"
+#include "tengfilesystem.h"
 #include "tengstructs.h"
 #include "tengprocessor.h"
 #include "tengcontenttype.h"
@@ -85,12 +86,21 @@ static int logErrors(const ContentType_t *contentType,
 }
 
 Teng_t::Teng_t(const std::string &root, const Teng_t::Settings_t &settings)
-    : root(root), templateCache(0), err()
+    : root(root), filesystem(new Filesystem_t()), templateCache(0), err()
 {
     init(settings);
 }
 
-void Teng_t::init(const Settings_t &settings) {
+Teng_t::Teng_t(const std::string &root,
+               const Settings_t &settings,
+               FilesystemInterface_t *filesystem)
+    : root(root), filesystem(filesystem), templateCache(0), err()
+{
+    init(settings);
+}
+
+void Teng_t::init(const Settings_t &settings)
+{
     // if not absolute path, prepend current working directory
     if (root.empty() || !ISROOT(root)) {
         char cwd[2048];
@@ -103,12 +113,14 @@ void Teng_t::init(const Settings_t &settings) {
     }
 
     // create template cache
-    templateCache = new TemplateCache_t(root, settings.programCacheSize,
+    templateCache = new TemplateCache_t(root, filesystem,
+                                        settings.programCacheSize,
                                         settings.dictCacheSize);
 }
 
 Teng_t::~Teng_t() {
     delete templateCache;
+    delete filesystem;
 }
 
 namespace {

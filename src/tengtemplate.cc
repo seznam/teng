@@ -47,9 +47,11 @@ Template_t::~Template_t() {
 }
 
 TemplateCache_t::TemplateCache_t(const std::string &root,
+                                 const FilesystemInterface_t *filesystem,
                                  unsigned int programCacheSize,
                                  unsigned int dictCacheSize)
     : root(root),
+      filesystem(filesystem),
       programCache(new ProgramCache_t
                    (programCacheSize
                     ? programCacheSize
@@ -106,10 +108,10 @@ TemplateCache_t::createTemplate(const std::string &templateSource,
         // create new program
         Program_t *program = (sourceType == SRC_STRING)
             ?
-            ParserContext_t(configAndDict.second, configAndDict.first, root)
+            ParserContext_t(configAndDict.second, configAndDict.first, filesystem, root)
             .createProgramFromString(templateSource)
             :
-            ParserContext_t(configAndDict.second, configAndDict.first, root)
+            ParserContext_t(configAndDict.second, configAndDict.first, filesystem, root)
             .createProgramFromFile(templateSource);
 
         // add program into cache
@@ -141,7 +143,7 @@ TemplateCache_t::getConfigAndDict(const std::string &configFilename,
         // not found or changed -> create new configionary
         Configuration_t *config = new Configuration_t(root);
         // parse file
-        if (!configFilename.empty()) config->parse(configFilename);
+        if (!configFilename.empty()) config->parse(filesystem, configFilename);
         // add configionary to cache and return it
         cachedConfig = configCache->add(key, config, 0, &configSerial);
     }
@@ -160,7 +162,7 @@ TemplateCache_t::getConfigAndDict(const std::string &configFilename,
         // not found or changed -> create new dictionary
         Dictionary_t *dict = new Dictionary_t(root);
         // parse file
-        if (!dictFilename.empty()) dict->parse(dictFilename);
+        if (!dictFilename.empty()) dict->parse(filesystem, dictFilename);
         // add dictionary to cache and return it
         // (dict depends on config serial number)
         cachedDict = dictCache->add(key, dict, configSerial, &dictSerial);
