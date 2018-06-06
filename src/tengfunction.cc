@@ -1945,7 +1945,6 @@ struct FunctionStub_t {
         {"substr", false, tengFunctionSubstr},    // like str[a:b] in Python
         {"wordsubstr", false, tengFunctionWordSubstr}, // like str[a:b] in Python
                                                         // but does not split words
-        {"substr_word", false, tengFunctionWordSubstr}, // deprecated name
         {"escape", false, tengFunctionEscape},    // for example "<" => "&lt;"
         {"unescape", false, tengFunctionUnescape},// for example "&lt;" => "<"
         {"reorder", true, tengFunctionReorder},   // like sprintf with %s changing
@@ -1956,7 +1955,6 @@ struct FunctionStub_t {
         {"nl2br", true, tengFunctionNL2BR},       // convert '\n' => <br />
         {"isnumber", true, tengFunctionIsNumber}, // checks whether argument is s number
         {"sectotime", true, tengFunctionSecToTime}, // convert seconds to HH:MM:SS
-        {"sec_to_time", true, tengFunctionSecToTime}, // deprecated name
         {"isenabled", true, tengFunctionIsEnabled}, // isenabled(feature)
         {"dictexist", true, tengFunctionDictExist}, // dictexist(key)
         {"getdict", true, tengFunctionGetDict},     // getdict(key, default)
