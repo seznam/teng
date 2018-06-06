@@ -39,6 +39,7 @@
 #include <cstdio>
 #include <cstring>
 #include <sstream>
+#include <iomanip>
 
 #include "tengstructs.h"
 #include "tengplatform.h"
@@ -81,7 +82,7 @@ void replace_item(where_t &&items, const std::string &name, type_t &&value) {
 }
 
 void unicode_char(std::ostream &o, char ch) {
-    o << "\\u00" << std::hex << int(ch);
+    o << "\\u00" << std::hex << std::setw(2) << std::setfill('0') << int(ch);
 }
 
 void quote_json_string(std::ostream &o, const std::string &value) {
