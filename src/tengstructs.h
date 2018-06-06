@@ -40,6 +40,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <memory>
 #include <map>
 
 #include <tengconfig.h>
@@ -55,13 +56,20 @@ class FragmentList_t;
  * @short Single fragment. Maps names to variables and nested
  *        fragments.
  */
-class Fragment_t : private std::map<std::string, FragmentValue_t*> {
+class Fragment_t {
 public:
-    Fragment_t()
-        : std::map<std::string, FragmentValue_t*>()
-    {}
+    // types
+    using items_t = std::map<std::string, std::unique_ptr<FragmentValue_t>>;
+    using const_iterator = items_t::const_iterator;
 
-    ~Fragment_t();
+    // don't copy
+    Fragment_t(const Fragment_t &) = delete;
+    Fragment_t &operator=(const Fragment_t &) = delete;
+
+    /**
+     * @short C'tor.
+     */
+    Fragment_t() = default;
 
     /**
      * @short Add variable to fragment.
@@ -89,14 +97,14 @@ public:
      * @param name fragment name
      * @return created fragment
      */
-    Fragment_t& addFragment(const std::string &name);
+    Fragment_t &addFragment(const std::string &name);
 
     /**
      * @short Add new nested fragment list.
      * @param name fragment name
      * @return created fragment list
      */
-    FragmentList_t& addFragmentList(const std::string &name);
+    FragmentList_t &addFragmentList(const std::string &name);
 
     /**
      * @short Dump fragment to stream.
@@ -110,47 +118,51 @@ public:
      */
     void json(std::ostream &o) const;
 
-    using std::map<std::string, FragmentValue_t*>::begin;
-
-    using std::map<std::string, FragmentValue_t*>::end;
-
-    using std::map<std::string, FragmentValue_t*>::find;
-
-    using std::map<std::string, FragmentValue_t*>::const_iterator;
-
-private:
     /**
-     * @short Copy constructor intentionally private -- copying
-     *        disabled.
+     * @short Returns iterator to fragment item of desired name.
      */
-    Fragment_t(const Fragment_t&);
+    const_iterator find(const std::string &name) const {
+        return items.find(name);
+    }
 
     /**
-     * @short Assignment operator intentionally private -- assignment
-     *        disabled.
+     * @short Returns iterator to first fragment item.
      */
-    Fragment_t operator=(const Fragment_t&);
+    const_iterator begin() const {return items.begin();}
+
+    /**
+     * @short Returns iterator one past the last fragment item.
+     */
+    const_iterator end() const {return items.end();}
+
+protected:
+    items_t items; //!< fragments data
 };
 
 /**
  * @short List of fragments of same name at same level.
  */
-class FragmentList_t : private std::vector<Fragment_t*> {
+class FragmentList_t {
 public:
-    inline FragmentList_t()
-        : std::vector<Fragment_t*>()
-    {}
+    // types
+    using items_t = std::vector<std::unique_ptr<Fragment_t>>;
+    using const_iterator = items_t::const_iterator;
+    using size_type = items_t::size_type;
+
+    // don't copy
+    FragmentList_t(const FragmentList_t &) = delete;
+    FragmentList_t &operator=(const FragmentList_t &) = delete;
 
     /**
-     * @short Destroy fragment list.
+     * @short C'tor.
      */
-    ~FragmentList_t();
+    FragmentList_t() = default;
 
     /**
      * @short Add given or empty fragment to fragment list.
      * @return created fragment
      */
-    Fragment_t& addFragment();
+    Fragment_t &addFragment();
 
     /**
      * @short Dump fragment list to stream.
@@ -164,30 +176,33 @@ public:
      */
     void json(std::ostream &o) const;
 
-    using std::vector<Fragment_t*>::begin;
-
-    using std::vector<Fragment_t*>::end;
-
-    using std::vector<Fragment_t*>::size;
-
-    using std::vector<Fragment_t*>::empty;
-
-    using std::vector<Fragment_t*>::operator [];
-
-    using std::vector<Fragment_t*>::const_iterator;
-
-private:
     /**
-     * @short Copy constructor intentionally private -- copying
-     *        disabled.
+     * @short Returns the items count.
      */
-    FragmentList_t(const FragmentList_t&);
-    
+    size_type size() const {return items.size();}
+
     /**
-     * @short Assignment operator intentionally private -- assignment
-     *        disabled.
+     * @short Returns true if list is empty.
      */
-    FragmentList_t operator=(const FragmentList_t&);
+    size_type empty() const {return items.empty();}
+
+    /**
+     * @short Returns iterator to first fragment item.
+     */
+    const_iterator begin() const {return items.begin();}
+
+    /**
+     * @short Returns iterator one past the last fragment item.
+     */
+    const_iterator end() const {return items.end();}
+
+    /**
+     * @short Returns i-th fragment in the list.
+     */
+    Fragment_t *operator[](size_type i) const {return items[i].get();}
+
+protected:
+    items_t items; //!< the fragment list items
 };
 
 /**
@@ -197,6 +212,10 @@ private:
  */
 class FragmentValue_t {
 public:
+    // don't copy
+    FragmentValue_t(const FragmentValue_t &) = delete;
+    FragmentValue_t &operator=(const FragmentValue_t &) = delete;
+
     /**
      * @short Create new empty value.
      */
@@ -225,24 +244,46 @@ public:
      */
     FragmentValue_t(double value);
 
-    void setValue(const std::string &value);
+    /**
+     * @hosrt Create fragment list value.
+     * @param fragment_list the list.
+     */
+    FragmentValue_t(std::unique_ptr<FragmentList_t> fragment_list);
 
-    void setValue(const IntType_t value);
+    /**
+     * @short Sets value to string.
+     */
+    void setValue(const std::string &new_value);
 
-    void setValue(const double value);
+    /**
+     * @short Sets value to int.
+     */
+    void setValue(const IntType_t new_value);
+
+    /**
+     * @short Sets value to double.
+     */
+    void setValue(const double new_value);
+
+    /**
+     * @hosrt Ensures that value is fragment list and if not then other value
+     * is destroyed and new empty fragment list is assigned to value and
+     * returned.
+     */
+    FragmentList_t &ensureFragmentList();
 
     /**
      * @short Adds new empty fragment to the frament list.
      * @return new fragment
      */
-    Fragment_t& addFragment();
+    Fragment_t &addFragment();
 
     /**
      * @short Dump fragment list to stream.
      * @param o output stream
      */
     void dump(std::ostream &o) const;
-    
+
     /**
      * @short Dump fragment to stream in json format
      * @param o output stream
@@ -250,30 +291,38 @@ public:
     void json(std::ostream &o) const;
 
     /**
-     * @short String (scalar) value.
-     * Meaningles if nestedFragments non-null.
+     * @short Returns pointer to nested fragments or nullptr.
      */
-    std::string value;
+    const FragmentList_t *getNestedFragments() const {
+        return held_type == type::fragments? nestedFragments.get(): nullptr;
+    }
 
     /**
-     * @short List of nested fragments.
+     * @short Returns pointer to scallar value or nullptr.
      */
-    FragmentList_t *nestedFragments;
+    const std::string *getValue() const {
+        return held_type != type::fragments? &value: nullptr;
+    }
 
-private:
-    /**
-     * @short Copy constructor intentionally private -- copying
-     *        disabled.
+protected:
+    /** The type of value.
      */
-    FragmentValue_t(const FragmentValue_t&);
-    
-    /**
-     * @short Assignment operator intentionally private -- assignment
-     *        disabled.
-     */
-    FragmentValue_t operator=(const FragmentValue_t&);
+    enum class type {fragments, integer, floating, string} held_type;
+
+    union {
+        /**
+         * @short String (scalar) value.
+         */
+        std::string value;
+
+        /**
+         * @short List of nested fragments.
+         */
+        std::unique_ptr<FragmentList_t> nestedFragments;
+    };
 };
 
 } // namespace Teng
 
 #endif // TENGSTRUCTS_H
+

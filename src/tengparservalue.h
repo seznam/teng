@@ -44,7 +44,8 @@
 
 namespace Teng {
 
-struct ParserValue_t {
+class ParserValue_t {
+public:
 
     /** Value types for string/numeric operations. */
     enum Type_t {

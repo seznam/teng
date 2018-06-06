@@ -155,7 +155,7 @@ int Teng_t::generatePage(const std::string &templateFilename,
     // make proper filename for language dictionary
     std::string langDictFilename = prependBeforeExt(_dict, lang);
 
-    std::auto_ptr<Template_t>
+    std::unique_ptr<Template_t>
         templ(templateCache->
               createTemplate(prependBeforeExt(templateFilename, skin),
                              langDictFilename, param,
@@ -206,7 +206,7 @@ int Teng_t::generatePage(const std::string &templateString,
     // make proper filename for language dictionary
     std::string langDictFilename = prependBeforeExt(dict, lang);
 
-    std::auto_ptr<Template_t>
+    std::unique_ptr<Template_t>
         templ(templateCache->createTemplate
                 (templateString, langDictFilename,
                  param, TemplateCache_t::SRC_STRING));

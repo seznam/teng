@@ -159,8 +159,10 @@ public:
     RegularFragmentFrame_t(const FragmentList_t *fragmentList = 0)
         : FragmentFrame_t(),
           fragment(fragmentList
-                   ? (fragmentList->empty() ? 0 : *fragmentList->begin())
-                   : 0),
+                   ? (fragmentList->empty()
+                      ? nullptr
+                      : fragmentList->begin()->get())
+                   : nullptr),
 #ifndef WIN32
           data(fragmentList ? fragmentList->begin()
                : FragmentList_t::const_iterator()),
@@ -196,11 +198,10 @@ public:
         Fragment_t::const_iterator ffragment = fragment->find(name);
         if (ffragment != fragment->end()) {
             // we have found identifier in data
-            if (ffragment->second->nestedFragments) {
+            if (auto *nested = ffragment->second->getNestedFragments()) {
                 // identifier is fragment -- we have test whether it has any
                 // iteration
-                if (!ffragment->second->nestedFragments->empty())
-                    return true;
+                if (!nested->empty()) return true;
                 // fragment is empty => there can be local variable of
                 // this name
             } else return true; // identifier is variable => exists
@@ -210,29 +211,28 @@ public:
 
     virtual const FragmentList_t *
     findSubFragment(const std::string &name) const {
-        std::map<std::string, FragmentValue_t*>::const_iterator subFragment
-            = fragment->find(name);
-        return ((subFragment == fragment->end()) ? 0
-                : subFragment->second->nestedFragments);
+        auto subFragment = fragment->find(name);
+        return subFragment == fragment->end()
+             ? nullptr
+             : subFragment->second->getNestedFragments();
     }
 
     virtual Status_t findVariable(const std::string &name, ParserValue_t &var)
         const
     {
         // try to find variable in the associated fragment
-        std::map<std::string, FragmentValue_t*>::const_iterator element
-            = fragment->find(name);
+        auto ielement = fragment->find(name);
 
         // when not found => try to find local variable
-        if (element == fragment->end())
+        if (ielement == fragment->end())
             return findLocalVariable(name, var);
 
         // check whether found element is value (has no nested fragments)
-        if (element->second->nestedFragments)
+        if (ielement->second->getNestedFragments())
             return S_TYPE_MISMATCH;
 
         // OK we have variable's value from data tree!
-        var.setString(element->second->value);
+        var.setString(*ielement->second->getValue());
         return S_OK;
     }
 
@@ -247,7 +247,7 @@ public:
         if (++data == dataEnd) return false;
 
         // set current fragment (dereference data)
-        fragment = *data;
+        fragment = data->get();
 
         // reset local data;
         resetLocals();
@@ -367,12 +367,12 @@ private:
 
 class FragmentChain_t {
 public:
-    inline FragmentChain_t(FragmentFrame_t *rootFrame) {
+    FragmentChain_t(FragmentFrame_t *rootFrame) {
         frames.reserve(100);
         frames.push_back(rootFrame);
     }
 
-    inline ~FragmentChain_t() {
+    virtual ~FragmentChain_t() {
         // get rid of all remaining frames
         for (std::vector<FragmentFrame_t*>::iterator iframes = frames.begin();
              iframes != frames.end(); ++iframes)
@@ -380,12 +380,12 @@ public:
                 delete *iframes;
     }
 
-    inline void pushFrame(const std::string &name, FragmentFrame_t *frame) {
+    void pushFrame(const std::string &name, FragmentFrame_t *frame) {
         path.push_back(name);
         frames.push_back(frame);
     }
 
-    inline Status_t popFrame() {
+    Status_t popFrame() {
         // check for underflow
         if (path.empty()) return S_OUT_OF_CONTEXT;
 
@@ -400,12 +400,12 @@ public:
         return S_OK;
     }
 
-    inline const FragmentList_t *
+    const FragmentList_t *
     findSubFragment(const std::string &name) const {
         return frames.back()->findSubFragment(name);
     }
 
-    inline Status_t findVariable(const Identifier_t &name, ParserValue_t &var)
+    Status_t findVariable(const Identifier_t &name, ParserValue_t &var)
         const
     {
         // check for range
@@ -413,7 +413,7 @@ public:
         return (*(frames.begin() + name.depth))->findVariable(name.name, var);
     }
 
-    inline Status_t setVariable(const Identifier_t &name,
+    Status_t setVariable(const Identifier_t &name,
                                 const ParserValue_t &var)
     {
         // check for range
@@ -421,7 +421,7 @@ public:
         return (*(frames.begin() + name.depth))->setVariable(name.name, var);
     }
 
-    inline Status_t getFragmentSize(const Identifier_t &name,
+    Status_t getFragmentSize(const Identifier_t &name,
                                unsigned int &fragmentSize)
         const
     {
@@ -433,7 +433,7 @@ public:
         return S_OK;
     }
 
-    inline Status_t getSubFragmentSize(const Identifier_t &name,
+    Status_t getSubFragmentSize(const Identifier_t &name,
                                        unsigned int &fragmentSize)
         const
     {
@@ -455,7 +455,7 @@ public:
         return S_OK;
     }
 
-    inline Status_t getFragmentIteration(const Identifier_t &name,
+    Status_t getFragmentIteration(const Identifier_t &name,
                                          unsigned int &fragmentIteration,
                                          unsigned int *fragmentSize = 0)
         const
@@ -471,7 +471,7 @@ public:
         return S_OK;
     }
 
-    inline bool exists(const Identifier_t &name) const {
+    bool exists(const Identifier_t &name) const {
         // check for range
         if (name.depth > path.size()) return false;
 
@@ -479,28 +479,27 @@ public:
         return (*(frames.begin() + name.depth))->exists(name.name);
     };
 
-    inline bool empty() const {
+    bool empty() const {
         // check for empty path
         return path.empty();
     }
 
-    inline unsigned int size() const {
+    unsigned int size() const {
         // check for empty path
         return path.size();
     }
 
-    inline bool nextIteration() {
+    bool nextIteration() {
         return frames.back()->nextIteration();
     }
 
-    inline bool overflown() {
+    bool overflown() {
         return frames.back()->overflown();
     }
 
     virtual const Fragment_t *getCurrentFragment() const {
         return frames.back()->getCurrentFragment();
     }
-
 
 private:
     std::vector<std::string> path;

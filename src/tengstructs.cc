@@ -44,192 +44,123 @@
 #include "tengplatform.h"
 
 namespace Teng {
+namespace {
 
-FragmentValue_t::FragmentValue_t()
-    : value(), nestedFragments(0)
-{}
+template <typename type_t>
+void dispose(type_t *ptr) {ptr->~type_t();}
 
-FragmentValue_t::FragmentValue_t(const std::string &value)
-    : value(value), nestedFragments(0)
-{}
-
-FragmentValue_t::FragmentValue_t(IntType_t value_)
-    : nestedFragments(0)
-{
-    setValue(value_);
-}
-
-FragmentValue_t::FragmentValue_t(double value_)
-    : nestedFragments(0)
-{
-    setValue(value_);
-}
-
-void FragmentValue_t::setValue(const std::string &value_) {
-    // get rid of nested fragments if exist
-    if (nestedFragments) {
-        delete nestedFragments;
-        nestedFragments = 0;
-    }
-
-    value = value_;
-}
-
-void FragmentValue_t::setValue(const IntType_t value_) {
-    // get rid of nested fragments if exist
-    if (nestedFragments) {
-        delete nestedFragments;
-        nestedFragments = 0;
-    }
-
+std::string stringify(IntType_t value) {
     std::ostringstream os;
-    os << value_;
-    value = os.str();
+    os << value;
+    return os.str();
 }
 
-void FragmentValue_t::setValue(const double value_) {
-    // get rid of nested fragments if exist
-    if (nestedFragments) {
-        delete nestedFragments;
-        nestedFragments = 0;
+std::string stringify(double value) {
+    // produce at least d.d
+    char buffer[64];
+    auto len = snprintf(buffer, sizeof(buffer), "%#f", value);
+
+    // remove trialing zeroes
+    for (; len > 2; --len) {
+        if (buffer[len - 1] == '0')
+            if (buffer[len - 2] != '.')
+                continue;
+        break;
     }
 
-    char buff[64];
+    // done
+    return std::string(buffer, len);
+}
 
-    // print value to the buffer
-    int len = snprintf(buff, sizeof(buff), "%f", value_);
-    // find dot in the buffer
-    if (!strchr(buff, '.')) {
-        // no dot => append ".0"
-        value = std::string(buff, len);
-        value.append(".0");
-    } else {
-        // dot found => find first nonzero character from the right
-        for (char *c = buff + len - 1;
-             ((*(c - 1) != '.') && (*c == '0'));
-             --len, --c);
-        // create string
-        value = std::string(buff, len);
+template <typename where_t, typename type_t>
+void replace_item(where_t &&items, const std::string &name, type_t &&value) {
+    auto iitem = items.find(name);
+    if (iitem != items.end())
+        return iitem->second->setValue(value);
+    items.emplace_hint(iitem, name, std::make_unique<FragmentValue_t>(value));
+}
+
+void unicode_char(std::ostream &o, char ch) {
+    o << "\\u00" << std::hex << int(ch);
+}
+
+void quote_json_string(std::ostream &o, const std::string &value) {
+    o << '"';
+    for (char ch: value) {
+        switch (ch) {
+        case 0 ... 8:
+        case 11 ... 12:
+        case 14 ... 31: unicode_char(o, ch); break;
+        case '\n': o << "\\n"; break;
+        case '\r': o << "\\r"; break;
+        case '\t': o << "\\t"; break;
+        case '\\': o << "\\\\"; break;
+        case '"': o << "\\\""; break;
+        default: o << ch; break;
+        }
     }
+    o << '"';
 }
 
-FragmentValue_t::~FragmentValue_t() {
-    delete nestedFragments;
+} // namespace
+
+Fragment_t &FragmentList_t::addFragment() {
+    items.push_back(std::make_unique<Fragment_t>());
+    return *items.back();
 }
 
-Fragment_t::~Fragment_t() {
-    for (iterator i = begin(); i != end(); ++i)
-        delete i->second;
-}
-
-void Fragment_t::addVariable(const std::string &name, const std::string &value) {
-    // insert dummy zero
-    std::pair<iterator, bool> inserted(insert(value_type(name, 0)));
-
-    FragmentValue_t *&v = inserted.first->second;
-
-    if (inserted.second) {
-        // succeeded, replace by value
-        v = new FragmentValue_t(value);
-    } else {
-         // already present => destroy and create new
-        v->setValue(value);
+void Fragment_t::json(std::ostream &o) const {
+    o << '{';
+   for (const_iterator i = begin(); i != end(); ++i) {
+        if (i != begin()) o << ", ";
+        quote_json_string(o, i->first);
+        o << " : ";
+        i->second->json(o);
     }
+    o << '}';
+}
+
+void Fragment_t::dump(std::ostream &o) const {
+    o << '{';
+    for (const_iterator i = begin(); i != end(); ++i) {
+        if (i != begin()) o << ", ";
+        o << "'" << i->first << "': ";
+        i->second->dump(o);
+    }
+    o << '}';
+}
+
+void
+Fragment_t::addVariable(const std::string &name, const std::string &value) {
+    replace_item(items, name, value);
 }
 
 void Fragment_t::addVariable(const std::string &name, IntType_t value) {
-    // insert dummy zero
-    std::pair<iterator, bool> inserted(insert(value_type(name, 0)));
-
-    FragmentValue_t *&v = inserted.first->second;
-
-    if (inserted.second) {
-        // succeeded, replace by value
-        v = new FragmentValue_t(value);
-    } else {
-        // already present => destroy and create new
-        v->setValue(value);
-    }
+    replace_item(items, name, value);
 }
 
 void Fragment_t::addVariable(const std::string &name, double value) {
-    // insert dummy zero
-    std::pair<iterator, bool> inserted(insert(value_type(name, 0)));
-
-    FragmentValue_t *&v = inserted.first->second;
-
-    if (inserted.second) {
-        // succeeded, replace by value
-        v = new FragmentValue_t(value);
-    } else {
-         // already present => destroy and create new
-        v->setValue(value);
-    }
+    replace_item(items, name, value);
 }
 
-Fragment_t& Fragment_t::addFragment(const std::string &name) {
+Fragment_t &Fragment_t::addFragment(const std::string &name) {
     return addFragmentList(name).addFragment();
 }
 
-FragmentList_t&
+FragmentList_t &
 Fragment_t::addFragmentList(const std::string &name) {
-    // insert dummy zero
-    std::pair<iterator, bool> inserted(insert(value_type(name, 0)));
-
-    FragmentValue_t *&v = inserted.first->second;
-
-    if (inserted.second) {
-        // succeeded, replace by new value with an empty fragment list
-        v = new FragmentValue_t();
-        v->nestedFragments = new FragmentList_t();
-    } else {
-        // already present
-
-        // get rid of scalar value and create an empty fragment list if scalar
-        if (!v->nestedFragments) {
-            v->value.erase();
-            v->nestedFragments = new FragmentList_t();
-        }
-    }
-
-    // return fragment list
-    return *v->nestedFragments;
-}
-
-Fragment_t& FragmentValue_t::addFragment() {
-    if (!nestedFragments) nestedFragments = new FragmentList_t();
-
-    return nestedFragments->addFragment();
-}
-
-FragmentList_t::~FragmentList_t() {
-    for (iterator i = begin(); i != end(); ++i)
-        delete *i;
-}
-
-Fragment_t& FragmentList_t::addFragment() {
-    // add new (empty) fragment
-    push_back(new Fragment_t());
-    // return it
-    return *back();
-}
-
-void FragmentValue_t::json(std::ostream &o) const {
-    // print value or dump fragment list
-    if (nestedFragments) nestedFragments->json(o);
-    else o << '"' << value << '"';
-}
-
-
-void FragmentValue_t::dump(std::ostream &o) const {
-    // print value or dump fragment list
-    if (nestedFragments) nestedFragments->dump(o);
-    else o << '\'' << value << '\'';
+    auto iitem = items.find(name);
+    if (iitem != items.end())
+        return iitem->second->ensureFragmentList();
+    return items.emplace_hint(
+        iitem,
+        name,
+        std::make_unique<FragmentValue_t>(std::make_unique<FragmentList_t>())
+    )->second->ensureFragmentList();
 }
 
 void FragmentList_t::json(std::ostream &o) const {
     o << '[';
-    // dump all fragments
     for (const_iterator i = begin(); i != end(); ++i) {
         if (i != begin()) o << ", ";
         (*i)->json(o);
@@ -239,7 +170,6 @@ void FragmentList_t::json(std::ostream &o) const {
 
 void FragmentList_t::dump(std::ostream &o) const {
     o << '[';
-    // dump all fragments
     for (const_iterator i = begin(); i != end(); ++i) {
         if (i != begin()) o << ", ";
         (*i)->dump(o);
@@ -247,27 +177,85 @@ void FragmentList_t::dump(std::ostream &o) const {
     o << ']';
 }
 
+FragmentValue_t::FragmentValue_t()
+    : held_type(type::string), value()
+{}
 
-void Fragment_t::json(std::ostream &o) const {
-    o << '{';
-    // dump all values or fragment list
-    for (const_iterator i = begin(); i != end(); ++i) {
-        if (i != begin()) o << ", ";
-        o << "\"" << i->first << "\" : ";
-        i->second->json(o);
+FragmentValue_t::FragmentValue_t(const std::string &value)
+    : held_type(type::string), value(value)
+{}
+
+FragmentValue_t::FragmentValue_t(IntType_t value)
+    : held_type(type::integer), value(stringify(value))
+{}
+
+FragmentValue_t::FragmentValue_t(double value)
+    : held_type(type::floating), value(stringify(value))
+{}
+
+FragmentValue_t::FragmentValue_t(std::unique_ptr<FragmentList_t> fragment_list)
+    : held_type(type::fragments), nestedFragments(std::move(fragment_list))
+{}
+
+FragmentValue_t::~FragmentValue_t() {
+    switch (held_type) {
+    case type::fragments: dispose(&nestedFragments); break;
+    case type::string: dispose(&value); break;
+    case type::integer: dispose(&value); break;
+    case type::floating: dispose(&value); break;
     }
-    o << '}';
 }
 
-void Fragment_t::dump(std::ostream &o) const {
-    o << '{';
-    // dump all values or fragment list
-    for (const_iterator i = begin(); i != end(); ++i) {
-        if (i != begin()) o << ", ";
-        o << "'" << i->first << "': ";
-        i->second->dump(o);
+void FragmentValue_t::setValue(const std::string &new_value) {
+    if (held_type == type::fragments) {
+        dispose(&nestedFragments);
+        new (&value) std::string(new_value);
+    } else value = new_value;
+    held_type = type::string;
+}
+
+void FragmentValue_t::setValue(const IntType_t new_value) {
+    if (held_type == type::fragments) {
+        dispose(&nestedFragments);
+        new (&value) std::string(stringify(new_value));
+    } else value = stringify(new_value);;
+    held_type = type::integer;
+}
+
+void FragmentValue_t::setValue(const double new_value) {
+    if (held_type == type::fragments) {
+        dispose(&nestedFragments);
+        new (&value) std::string(stringify(new_value));
+    } else value = stringify(new_value);
+    held_type = type::floating;
+}
+
+FragmentList_t &FragmentValue_t::ensureFragmentList() {
+    if (held_type != type::fragments) {
+        dispose(&value);
+        new (&nestedFragments)
+            std::unique_ptr<FragmentList_t>(new FragmentList_t());
     }
-    o << '}';
+    return *nestedFragments;
+}
+
+Fragment_t &FragmentValue_t::addFragment() {
+    ensureFragmentList().addFragment();
+    return nestedFragments->addFragment();
+}
+
+void FragmentValue_t::json(std::ostream &o) const {
+    switch (held_type) {
+    case type::fragments: nestedFragments->json(o); break;
+    case type::string: quote_json_string(o, value); break;
+    case type::integer: o << value; break;
+    case type::floating: o << value; break;
+    }
+}
+
+void FragmentValue_t::dump(std::ostream &o) const {
+    if (held_type == type::fragments) nestedFragments->dump(o);
+    else o << '\'' << value << '\'';
 }
 
 } // namespace Teng
