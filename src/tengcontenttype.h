@@ -44,6 +44,7 @@
 #include <vector>
 #include <map>
 #include <stack>
+#include <memory>
 
 #include "tengerror.h"
 
@@ -100,15 +101,20 @@ public:
     /** @short Descriptor of content type.
      */
     struct Descriptor_t {
-        Descriptor_t(ContentType_t *contentType, unsigned int index,
-                     const std::string &name, const std::string &description)
-            : contentType(contentType), index(index),
-              name(name), description(description)
-        {
-            // no-op
-        }
+        Descriptor_t(unsigned int index,
+                     const std::string &name,
+                     const std::string &description)
+            : contentType(std::make_unique<ContentType_t>()),
+              index(index), name(name), description(description)
+        {}
 
-        ContentType_t *contentType;
+        template <typename Creator_t>
+        Descriptor_t(Creator_t &&creator, unsigned int index)
+            : contentType(creator.creator()),
+              index(index), name(creator.name), description(creator.comment)
+        {}
+
+        std::unique_ptr<ContentType_t> contentType;
         unsigned int index;
         std::string name;
         std::string description;
@@ -176,7 +182,7 @@ public:
     inline Escaper_t(const ContentType_t *ct = 0)
         : escapers()
     {
-        topLevel = (ct ? ct : ContentType_t::getDefault()->contentType);
+        topLevel = (ct ? ct : ContentType_t::getDefault()->contentType.get());
         escapers.push(topLevel);
     }
 

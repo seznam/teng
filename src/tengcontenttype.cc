@@ -44,20 +44,21 @@
 namespace Teng {
 
 // forward decls of all creators
-ContentType_t* htmlCreator();
-ContentType_t* shellCreator();
-ContentType_t* cCreator();
-ContentType_t* qstringCreator();
-ContentType_t* jshtmlCreator();
-ContentType_t* jsCreator();
-ContentType_t* jsonCreator();
+std::unique_ptr<ContentType_t> htmlCreator();
+std::unique_ptr<ContentType_t> shellCreator();
+std::unique_ptr<ContentType_t> cCreator();
+std::unique_ptr<ContentType_t> qstringCreator();
+std::unique_ptr<ContentType_t> jshtmlCreator();
+std::unique_ptr<ContentType_t> jsCreator();
+std::unique_ptr<ContentType_t> jsonCreator();
 
 namespace {
+
 /**
  * @short Function which creates content type descriptor
  * @return content type descriptor
  */
-typedef ContentType_t* (*Creator_t)();
+using Creator_t = std::unique_ptr<ContentType_t> (*)();
 
 /**
  * @short Entry in table of content type descriptor creating
@@ -111,49 +112,48 @@ static CreatorEntry_t creators[] = {
     { 0, 0, 0, 0 }
 };
 
-std::map<std::string, ContentType_t::Descriptor_t*> descriptors;
-std::vector<ContentType_t::Descriptor_t*> descriptorIndex;
+std::map<std::string, std::unique_ptr<ContentType_t::Descriptor_t>> descriptors;
+std::vector<ContentType_t::Descriptor_t *> descriptorIndex;
 
 ContentType_t::Descriptor_t *init_descriptors() {
-    std::string pname("text/plain");
-    std::string alias("text");
-    ContentType_t::Descriptor_t *unknown = new ContentType_t::Descriptor_t(new ContentType_t(), 0, pname, "Default (text/plain) type." ); 
-    descriptors.insert(std::pair<std::string, ContentType_t::Descriptor_t*>(pname, unknown));
-    descriptorIndex.push_back(unknown);
+    using Descriptor_t = ContentType_t::Descriptor_t;
+    std::string comment = "Default (text/plain) type.";
 
-    ContentType_t::Descriptor_t *unknownAlias = new ContentType_t::Descriptor_t( new ContentType_t(), 1, alias, "Default (text/plain) type." ); 
-    descriptors.insert(std::pair<std::string, ContentType_t::Descriptor_t*> (alias, unknownAlias));
-    descriptorIndex.push_back(unknownAlias);
+    // create content type descriptor for text/plain
+    std::string pname("text/plain");
+    auto i = descriptorIndex.size();
+    auto descriptor = std::make_unique<Descriptor_t>(i, pname, comment);
+    descriptorIndex.push_back(descriptor.get());
+    descriptors.emplace(pname, std::move(descriptor));
+
+    // create content type alias descriptor for text/plain
+    std::string aname("text");
+    i = descriptorIndex.size();
+    descriptor = std::make_unique<Descriptor_t>(i, aname, comment);
+    descriptorIndex.push_back(descriptor.get());
+    descriptors.emplace(aname, std::move(descriptor));
 
     // all the descriptors are pre-created...
     for (CreatorEntry_t *icreators = creators; icreators->name; ++icreators) {
-
         // create content type descriptor
-        ContentType_t::Descriptor_t *descriptor = new ContentType_t::Descriptor_t(icreators->creator(), descriptorIndex.size(), icreators->name, icreators->comment);
+        i = descriptorIndex.size();
+        descriptor = std::make_unique<Descriptor_t>(*icreators, i);
+        descriptorIndex.push_back(descriptor.get());
+        descriptors.emplace(icreators->name, std::move(descriptor));
 
-        // remember descriptor in the descriptorIndex
-        descriptorIndex.push_back(descriptor);
-
-        // remember descriptor in the cache and return it to
-        // the caller
-        descriptors.insert(std::pair<std::string, ContentType_t::Descriptor_t*>(icreators->name, descriptor) );
-
-        // create content type descriptor
-        descriptor = new ContentType_t::Descriptor_t(icreators->creator(), descriptorIndex.size(), icreators->alias, icreators->comment);
-
-        // remember descriptor in the descriptorIndex
-        descriptorIndex.push_back(descriptor);
-
-        // remember descriptor in the cache and return it to
-        // the caller
-        descriptors.insert(std::pair<std::string, ContentType_t::Descriptor_t*>(icreators->alias, descriptor) );
+        // create content type alias descriptor
+        i = descriptorIndex.size();
+        descriptor = std::make_unique<Descriptor_t>(*icreators, i);
+        descriptorIndex.push_back(descriptor.get());
+        descriptors.emplace(icreators->alias, std::move(descriptor));
     }
 
-    return unknown;
+    return descriptorIndex.front();
 }
 
 ContentType_t::Descriptor_t *unknown = init_descriptors();
-}
+
+} // namespace
 
 ContentType_t::ContentType_t()
     : lineComment(), blockComment(), escapes(),
@@ -363,9 +363,9 @@ void ContentType_t::compileUnescaper() {
 /** @short Create descriptor of HTML/XHTML/XML content type.
  * @return HTML descriptor
  */
-ContentType_t* htmlCreator() {
+std::unique_ptr<ContentType_t> htmlCreator() {
     // create HTML descriptor
-    ContentType_t *html = new ContentType_t();
+    auto html = std::make_unique<ContentType_t>();
     // HTML has only block comments
     html->blockComment = std::pair<std::string, std::string>("<!--", "-->");
     // and has these (necessary) escapes
@@ -382,9 +382,9 @@ ContentType_t* htmlCreator() {
 /** @short Create descriptor of shell.
  * @return shell descriptor
  */
-ContentType_t* shellCreator() {
+std::unique_ptr<ContentType_t> shellCreator() {
     // create SHELL descriptor
-    ContentType_t *shell = new ContentType_t();
+    auto shell = std::make_unique<ContentType_t>();
     // SHELL has only line comment
     shell->lineComment = "#";
     // return descriptor
@@ -394,9 +394,9 @@ ContentType_t* shellCreator() {
 /** @short Create descriptor of C language.
  * @return C descriptor
  */
-ContentType_t* cCreator() {
+std::unique_ptr<ContentType_t> cCreator() {
     // create C descriptor
-    ContentType_t *c = new ContentType_t();
+    auto c = std::make_unique<ContentType_t>();
     // C has only block comments
     c->blockComment = std::pair<std::string, std::string>("/*", "*/");
     // return descriptor
@@ -406,9 +406,9 @@ ContentType_t* cCreator() {
 /** @short Create descriptor of quoted string.
  * @return quoted string descriptor
  */
-ContentType_t* qstringCreator() {
+std::unique_ptr<ContentType_t> qstringCreator() {
     // create quoted-string descriptor
-    ContentType_t *qs = new ContentType_t();
+    auto qs = std::make_unique<ContentType_t>();
 
     qs->addEscape('\\', "\\\\");
     qs->addEscape('\n', "\\n");
@@ -429,9 +429,9 @@ ContentType_t* qstringCreator() {
 /** @short Create descriptor of quoted string.
  * @return quoted string descriptor
  */
-ContentType_t* jshtmlCreator() {
+std::unique_ptr<ContentType_t> jshtmlCreator() {
     // create quoted-string descriptor
-    ContentType_t *jshtml = new ContentType_t();
+    auto jshtml = std::make_unique<ContentType_t>();
 
     jshtml->addEscape('\\', "\\\\");
     jshtml->addEscape('\n', "\\n");
@@ -455,9 +455,9 @@ ContentType_t* jshtmlCreator() {
 /** @short Create descriptor of quoted string.
  * @return quoted string descriptor
  */
-ContentType_t* jsCreator() {
+std::unique_ptr<ContentType_t> jsCreator() {
     // create quoted-string descriptor
-    ContentType_t *js = new ContentType_t();
+    auto js = std::make_unique<ContentType_t>();
 
     js->addEscape('\\', "\\\\");
     js->addEscape('\n', "\\n");
@@ -476,9 +476,9 @@ ContentType_t* jsCreator() {
     return js;
 }
 
-ContentType_t* jsonCreator() {
+std::unique_ptr<ContentType_t> jsonCreator() {
     // create quoted-string descriptor
-    ContentType_t *js = new ContentType_t();
+    auto js = std::make_unique<ContentType_t>();
 
     js->addEscape('"', "\\\"");
     js->addEscape('\\', "\\\\");
@@ -491,7 +491,8 @@ ContentType_t* jsonCreator() {
 
     for(int i = 0; i <= 0x1F; ++i) {
         std::stringstream ss;
-        ss << "\\u" << std::hex << std::uppercase <<  std::setfill('0') << std::setw(4) << std::hex << i;
+        ss << "\\u" << std::hex << std::uppercase
+           <<  std::setfill('0') << std::setw(4) << std::hex << i;
         js->addEscape(i, ss.str());
     }
 
@@ -506,21 +507,13 @@ const ContentType_t::Descriptor_t* ContentType_t::getDefault() {
     return unknown;
 }
 
-namespace {
-    struct ToLower_t {
-        int operator () (int c) const {
-            return tolower(c);
-        }
-    };
-}
-
 const ContentType_t::Descriptor_t*
 ContentType_t::findContentType(const std::string &sname, Error_t &err,
                                const Error_t::Position_t &pos, bool failOnError)
 {
     // make name lower
     std::string name(sname);
-    transform(name.begin(), name.end(), name.begin(), ToLower_t());
+    std::transform(name.begin(), name.end(), name.begin(), tolower);
 
     // create all static data
     if (!unknown) getDefault();
@@ -528,8 +521,7 @@ ContentType_t::findContentType(const std::string &sname, Error_t &err,
     if (name.empty()) return unknown;
 
     // try to find cached content type descriptor
-    std::map<std::string, ContentType_t::Descriptor_t*>::const_iterator
-        fdescriptors = descriptors.find(name);
+    auto fdescriptors = descriptors.find(name);
     // if no content descriptor found
     if (fdescriptors == descriptors.end()) {
         // log error
@@ -542,12 +534,11 @@ ContentType_t::findContentType(const std::string &sname, Error_t &err,
     }
 
     // return cached entry
-    return fdescriptors->second;
+    return fdescriptors->second.get();
 };
 
 const ContentType_t::Descriptor_t*
-ContentType_t::getContentType(unsigned int index)
-{
+ContentType_t::getContentType(unsigned int index) {
     // check bounds and return desctiptor (or 0 on error)
     if (index >= descriptorIndex.size()) return 0;
     return descriptorIndex[index];
@@ -556,11 +547,10 @@ ContentType_t::getContentType(unsigned int index)
 void ContentType_t::listSupported(
         std::vector<std::pair<std::string, std::string> > &supported)
 {
-    for (CreatorEntry_t *icreators = creators;
-         icreators->name; ++icreators)
-        supported.push_back(make_pair(icreators->name,
-                                      (icreators->comment ? icreators->comment
-                                      : std::string())));
+    for (CreatorEntry_t *icreators = creators; icreators->name; ++icreators) {
+        auto comment = icreators->comment? icreators->comment: "";
+        supported.push_back(std::make_pair(icreators->name, comment));
+    }
 };
 
 void Escaper_t::push(ContentType_t *ct) {
@@ -577,7 +567,7 @@ void Escaper_t::push(unsigned int index, Error_t &err,
                      "Cannot push invalid content type -- using top instead.");
         escapers.push(escapers.top());
     } else {
-        escapers.push(descriptor->contentType);
+        escapers.push(descriptor->contentType.get());
     }
 }
 
@@ -591,3 +581,4 @@ void Escaper_t::pop(Error_t &err, const Error_t::Position_t &pos) {
 }
 
 } // namespace Teng
+

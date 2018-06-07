@@ -2084,7 +2084,8 @@ exist:
     | exists_operator LEX_L_PAREN error
         {
             // Remove EXISTMARK instruction, it has no use here
-            CONTEXT->program->pop_back();
+            if (!CONTEXT->program->empty())
+                CONTEXT->program->pop_back();
             if (tengSyntax_lastErrorMessage.length() > 0) {
                 printUnexpectedElement(CONTEXT, yychar, yylval);
                 if (yychar == LEX_VAR)

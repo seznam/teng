@@ -103,7 +103,7 @@ Program_t* ParserContext_t::createProgramFromFile(
     evalProcessor = new Processor_t(*program,
             *langDictionary, *paramDictionary,
             "", //encoding (program is invariant to it)
-            ContentType_t::getDefault()->contentType); //content-type (invariant)
+            ContentType_t::getDefault()->contentType.get()); //content-type (invariant)
 
     // prepend root if filename not absolute path
     std::string path;
@@ -172,7 +172,7 @@ Program_t* ParserContext_t::createProgramFromString(const std::string &str)
     evalProcessor = new Processor_t(*program,
             *langDictionary, *paramDictionary,
             "", //encoding (program is invariant to it)
-            ContentType_t::getDefault()->contentType); //content-type (invariant)
+            ContentType_t::getDefault()->contentType.get()); //content-type (invariant)
 
     // create first level-1 lexical analyzer (from file)
     sourceIndex.push(-1);

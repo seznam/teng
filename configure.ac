@@ -36,11 +36,12 @@
 
 
 # initialize autoconf
-AC_INIT(teng, [2.3.21], opensource@firma.seznam.cz)
+AC_INIT([teng], [2.3.21], [opensource@firma.seznam.cz])
 
 AC_PROG_LIBTOOL
+AC_CONFIG_MACRO_DIRS([m4])
 
-AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
+AM_INIT_AUTOMAKE(-Wall -Wno-portability color-tests)
 
 AC_PREREQ(2.50)
 
@@ -56,7 +57,7 @@ AC_PROG_CXX
 # pkg config
 PKG_PROG_PKG_CONFIG([0.25])
 
-DEPENS_NAMES="glib-2.0 libcurl"
+DEPENS_NAMES="glib-2.0"
 PKG_CHECK_MODULES([DEPENS], [${DEPENS_NAMES}])
 
 AC_SUBST(DEPENS_NAMES)

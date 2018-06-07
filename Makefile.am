@@ -34,10 +34,10 @@
 #                   Created.
 #
 
-SUBDIRS = src
-# directories temporarily out of order: 'test', 'doc'
+ACLOCAL_AMFLAGS = -I m4
 
-#
+SUBDIRS = src
+
 # Removed due to this request:
 #
 # From: Andrew Betts [mailto:andrew.betts@jasp.com]
@@ -56,3 +56,4 @@ SUBDIRS = src
 
 pkgconfigdir=@libdir@/pkgconfig
 pkgconfig_DATA=libteng.pc
+
