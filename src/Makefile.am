@@ -67,7 +67,7 @@ libteng_la_SOURCES = teng.cc tengstructs.cc tengutil.cc tengcache.cc \
                      tengformatter.cc tengcontenttype.cc \
                      tengtemplate.cc tenglex1.cc tengsyntax.yy \
                      tenglex2.ll tengcode.cc tengudf.cc \
-                     tengmd5.cc tengconfiguration.cc tengaux.cc
+                     tengmd5.cc tengconfiguration.cc tengaux.cc tengyylex.cc
 
 # with these flags (version info etc.)
 libteng_la_LDFLAGS = @VERSION_INFO@
@@ -80,8 +80,12 @@ tengsyntax.cc: tengsyntax.yy
 
 # test program
 EXTRA_PROGRAMS = example test-teng
-example_SOURCES = @top_srcdir@/example/example.cc
+example_SOURCES = example/example.cc
 example_LDADD = libteng.la
+
+CLEANFILES = @top_builddir@/src/tengsyntax.hh \
+			 @top_builddir@/src/tengsyntax.cc \
+			 @top_builddir@/src/tenglex2.cc
 
 doc:
 	doxygen

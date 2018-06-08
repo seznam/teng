@@ -66,21 +66,24 @@
 #include "tengerror.h"
 
 #ifdef DEBUG_LEX
-#define RETURN(token) \
-    cout << #token << " '" << yytext << "', sval == '" << value.stringValue \
-         << " nval == '" << value.integerValue << "' rval == '" \
-         << value.realValue << "'" << std::endl; \
-    return token;
+#define RETURN(LEX_TOKEN)                                                       \
+    cout << #LEX_TOKEN << " '" << yytext << "', sval == '" << value.stringValue \
+         << " nval == '" << value.integerValue << "' rval == '"                 \
+         << value.realValue << "'" << std::endl;                                \
+    return Parser::parser::token::LEX_TOKEN;
 #else
-#define RETURN(token) \
-    return token;
+#define RETURN(LEX_TOKEN) return Parser::parser::token::LEX_TOKEN;
 #endif
 
-#define YY_DECL int Teng::Lex2_t::getElement(   \
-            YYSTYPE *yylval_param,              \
-            ParserValue_t &value,               \
-            Error_t::Position_t                 \
-            &bufferPos,                         \
+#define YY_NO_INPUT
+
+#define YYSTYPE ::Teng::LeftValue_t
+
+#define YY_DECL int Teng::Lex2_t::getElement( \
+            YYSTYPE *yylval_param,            \
+            ParserValue_t &value,             \
+            Error_t::Position_t               \
+            &bufferPos,                       \
             Error_t &err)
 
 %}
@@ -326,7 +329,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
         err.logError(Error_t::LL_ERROR, bufferPos, "Unterminated xml tag");
         // leave this context
         BEGIN(INITIAL);
-        RETURN(-1);
+        RETURN(LEX_INVALID);
     }
 
     .|"\n" {
@@ -613,10 +616,10 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
     RETURN(LEX_DEFINED);
 }
 
-"exist" {
+"isempty" {
     // match exist operator
     bufferPos.advanceColumn(yyleng);
-    RETURN(LEX_EXIST);
+    RETURN(LEX_ISEMPTY);
 }
 
 "exists" {
@@ -644,7 +647,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
 }
 
 "udf."{IDENT}(\.{IDENT})* {
-    // match exist operator
+    // match udf
     bufferPos.advanceColumn(yyleng);
     value.stringValue = std::string(yytext, yyleng);
     value.type = ParserValue_t::TYPE_STRING;
@@ -681,7 +684,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
         bufferPos.advanceColumn(yyleng);
         // leave this context
         BEGIN(INITIAL);
-        RETURN(-1);
+        RETURN(LEX_INVALID);
     }
     "\\\n" {
         // newline escaped => bad token
@@ -690,14 +693,14 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
         bufferPos.newLine();
         // leave this context
         BEGIN(INITIAL);
-        RETURN(-1);
+        RETURN(LEX_INVALID);
     }
     <<EOF>> {
         // end of input => bad token
         err.logError(Error_t::LL_ERROR, bufferPos, "Unterminated string");
         // leave this context
         BEGIN(INITIAL);
-        RETURN(-1);
+        RETURN(LEX_INVALID);
     }
     "\\n" {
         // escape for <LF>
@@ -740,7 +743,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
         bufferPos.advanceColumn();
         // leave this context
         BEGIN(INITIAL);
-        RETURN(-1);
+        RETURN(LEX_INVALID);
     }
 }
 
@@ -825,7 +828,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
         bufferPos.advance(value.stringValue);
         // leave this context
         BEGIN(INITIAL);
-        RETURN(-1);
+        RETURN(LEX_INVALID);
     }
 
     [^._[:alnum:]]+ {
@@ -856,7 +859,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
                  + value.stringValue + "'");
     bufferPos.advance(yytext, yyleng);
     value.type = ParserValue_t::TYPE_STRING;
-    RETURN(-1); //ERROR
+    RETURN(LEX_INVALID); //ERROR
 }
 
 "/*" {
@@ -879,7 +882,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
         err.logError(Error_t::LL_ERROR, bufferPos, "Unterminated comment");
         // leave this context
         BEGIN(INITIAL);
-        RETURN(-1);
+        RETURN(LEX_INVALID);
     }
 
     .|"\n" {
@@ -908,7 +911,7 @@ IDENT   [_[:alpha:]][_[:alnum:]]*
         err.logError(Error_t::LL_ERROR, bufferPos, "Unterminated comment");
         // leave this context
         BEGIN(INITIAL);
-        RETURN(-1);
+        RETURN(LEX_INVALID);
     }
 
     . {

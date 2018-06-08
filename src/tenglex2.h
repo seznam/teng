@@ -40,53 +40,74 @@
 #include <string>
 
 #include "tengerror.h"
+#include "tengyystype.h"
 #include "tengsyntax.hh"
 
-/** @short Maximal depth of lex stack.
- */
-static const unsigned int MAX_LEX_STACK_DEPTH = 50;
 
 namespace Teng {
 
 // Forward decl.
 class ParserValue_t;
 
+/**
+ * @short Maximal depth of lex stack.
+ */
+static const unsigned int MAX_LEX_STACK_DEPTH = 50;
+
+/**
+ * @short This is glue class between lexer and parser.
+ */
 class Lex2_t {
 public:
+    // don't copy
+    Lex2_t(const Lex2_t &) = delete;
+    Lex2_t &operator=(const Lex2_t &) = delete;
+
+    /**
+     * @short C'tor.
+     */
     Lex2_t();
 
+    /**
+     * @short D'tor.
+     */
     ~Lex2_t();
 
-    /** @short Create new lex buffer for given string and push it onto the
-     *         lex stack.
+    /**
+     * @short Create new lex buffer for given string and push it onto the
+     * lex stack.
+     *
      * @return 0 OK, !0 error
      */
     int init(const std::string &src);
 
-    int getElement(YYSTYPE *yylval_param,
+    /**
+     * @short Entry point of lexer that do all the work.
+     */
+    int getElement(LeftValue_t *yylval_param,
                    ParserValue_t &value,
                    Error_t::Position_t &bufferPos,
                    Error_t &err);
 
-    /** @short Destroy buffer at the top of lex stack.
+    template <typename Ctx_t>
+    int getElement(LeftValue_t *yylval, ParserValue_t &value, Ctx_t *ctx) {
+        return getElement(yylval, value,
+                          ctx->lex2Pos, ctx->program->getErrors());
+    }
+
+    /**
+     * @short Destroy buffer at the top of lex stack.
+     *
      *  @return 0 OK, !0 error
      */
     int finish();
 
-    /** @short Top element in the lex stack */
-    unsigned int stackTop;
-
-    /** @short Stack of lex buffers. */
-    void * bufferStack[MAX_LEX_STACK_DEPTH];
-
-    /** @short reentrant scanner instance */
-    void * yyscanner;
-
-private:
-    Lex2_t(const Lex2_t &);
-    Lex2_t &operator=(const Lex2_t &);
+    unsigned int stackTop;                  //!< top element in the lex stack
+    void *bufferStack[MAX_LEX_STACK_DEPTH]; //!< stack of lex buffers
+    void *yyscanner;                        //!< reentrant scanner instance
 };
 
 } // namespace Teng
 
 #endif // TENGLEX2_H
+
