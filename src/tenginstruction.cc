@@ -238,8 +238,16 @@ void Instruction_t::dump(FILE *fp) const
             fprintf(fp, "DEBUG\n");
             break;
 
-        case EXIST:
-            fprintf(fp, "EXIST\t%s\n",
+        case DEFINED:
+            fprintf(fp, "DEFINED\t%s\n", value.stringValue.c_str());
+            break;
+
+        case ISEMPTY:
+            fprintf(fp, "ISEMPTY\t%s\n", value.stringValue.c_str());
+            break;
+
+        case EXISTS:
+            fprintf(fp, "EXISTS\t%s\n",
                     value.stringValue.c_str()); //rendered 'identifier' vector
             break;
 
@@ -453,8 +461,8 @@ void Instruction_t::dump(std::ostream &os, int ip) const {
         os << "BYTECODE" << std::endl;
         break;
 
-    case EXIST:
-        os << "EXIST           <" << value.stringValue << '>' << std::endl;
+    case EXISTS:
+        os << "EXISTS           <" << value.stringValue << '>' << std::endl;
         break;
 
     case CTYPE:

@@ -735,7 +735,19 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
             valueStack.push(a);
             break;
 
-        case Instruction_t::EXIST:
+        case Instruction_t::ISEMPTY:
+            throw std::runtime_error("----------!");
+            // a.setInteger(!fragmentStack.exists(instr.identifier));
+            // if (a) {
+            //     if (fragmentStack.findVariable(instr.identifier, a)) {
+            //         // Returns false if fragment
+            //         a.setInteger(static_cast<bool>(a));
+            //     }
+            // }
+            // valueStack.push(a);
+            break;
+
+        case Instruction_t::EXISTS:
             a.setInteger(!fragmentStack.exists(instr.identifier));
             valueStack.push(a);
             break;

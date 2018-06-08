@@ -34,8 +34,8 @@
  *             Created.
  */
 
-#include <stdio.h>
-#include <ctype.h>
+#include <cstdio>
+#include <cctype>
 
 #include "tengerror.h"
 #include "tenglex1.h"
@@ -48,8 +48,7 @@ namespace Teng {
   * @param filename File name identifying the original input source. */
 Lex1_t::Lex1_t(const std::string &input, const std::string &fname)
         : input(input), position(0), filename(fname), line(1), column(0)
-{
-}
+{}
 
 
 /** Initialize lexical analyzer from file.
@@ -86,8 +85,7 @@ Lex1_t::Lex1_t(const std::string &fname,
   * @param state State of finine automaton.
   * @param s Output string.
   * @param c Next input char. */
-inline static void newSequence(int &state, std::string &s, char c)
-{
+inline static void newSequence(int &state, std::string &s, char c) {
     switch (c) {
         case '$': state = 1; break;  // $\{
         case '\\': state = 3; break; // \}
@@ -242,8 +240,7 @@ std::string Lex1_t::unescapeInputSubstr(unsigned int begin, unsigned int end) {
 
 /** Get next token.
   * @return Token struct of next token. */
-Lex1_t::Token_t Lex1_t::getElement(bool shortTag)
-{
+Lex1_t::Token_t Lex1_t::getElement(bool shortTag) {
     // backup start values
     size_t start_pos = position;
     size_t start_line = line;
@@ -495,8 +492,7 @@ Lex1_t::Token_t Lex1_t::getElement(bool shortTag)
 
 /** Get error position.
   * @return Error position. */
-Error_t::Position_t Lex1_t::getPosition() const
-{
+Error_t::Position_t Lex1_t::getPosition() const {
     return Error_t::Position_t(filename, line, column);
 }
 
@@ -504,8 +500,7 @@ Error_t::Position_t Lex1_t::getPosition() const
 /** Advance actual position by one char
   * and also update line and column pointers.
   * @param num Increment position by this number of chars. */
-void Lex1_t::incrementPosition(int num)
-{
+void Lex1_t::incrementPosition(int num) {
     // repeat num-times
     while (num -- > 0) {
 

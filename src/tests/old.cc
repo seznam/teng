@@ -68,7 +68,7 @@ SCENARIO(
 }
 
 SCENARIO(
-    "Teng function exist",
+    "Teng function exists",
     "[old]"
 ) {
     GIVEN("Teng data with one fragment and some variables") {
@@ -80,11 +80,11 @@ SCENARIO(
         fragment.addVariable("zero_number", 0.0);
 
         WHEN("Existence is queried for existing variables") {
-            THEN("The exist function should return true") {
+            THEN("The exists function should return true") {
                 REQUIRE(
                     g(
                         "<?teng frag fff ?>"
-                        "${exist(empty_string)}"
+                        "${exists(empty_string)}"
                         "<?teng endfrag ?>",
                         data
                     ) == "1"
@@ -92,20 +92,20 @@ SCENARIO(
                 REQUIRE(
                     g(
                         "<?teng frag fff ?>"
-                        "${exist(nonempty_string)}"
+                        "${exists(nonempty_string)}"
                         "<?teng endfrag ?>",
                         data
                     ) == "1"
                 );
                 REQUIRE(
                     g(
-                        "${exist($$fff.empty_string)}",
+                        "${exists($$fff.empty_string)}",
                         data
                     ) == "1"
                 );
                 REQUIRE(
                     g(
-                        "${exist($$fff.nonempty_string)}",
+                        "${exists($$fff.nonempty_string)}",
                         data
                     ) == "1"
                 );
@@ -113,16 +113,16 @@ SCENARIO(
         }
 
         WHEN("Existence is queried for existing fragments") {
-            THEN("The exist function should return true") {
+            THEN("The exists function should return true") {
                 REQUIRE(
                     g(
-                        "${exist($$fff)}",
+                        "${exists($$fff)}",
                         data
                     ) == "1"
                 );
                 REQUIRE(
                     g(
-                        "${exist(fff)}",
+                        "${exists(fff)}",
                         data
                     ) == "1"
                 );
@@ -130,18 +130,18 @@ SCENARIO(
         }
 
         WHEN("Existence is queried for non-existing variables") {
-            THEN("The exist function should return true") {
+            THEN("The exists function should return true") {
                 REQUIRE(
                     g(
                         "<?teng frag fff ?>"
-                        "${exist(abc)}"
+                        "${exists(abc)}"
                         "<?teng endfrag ?>",
                         data
                     ) == "0"
                 );
                 REQUIRE(
                     g(
-                        "${exist($$fff.abc)}",
+                        "${exists($$fff.abc)}",
                         data
                     ) == "0"
                 );
@@ -149,16 +149,16 @@ SCENARIO(
         }
 
         WHEN("Existence is queried for non-existing fragments") {
-            THEN("The exist function should return true") {
+            THEN("The exists function should return true") {
                 REQUIRE(
                     g(
-                        "${exist($$ggg)}",
+                        "${exists($$ggg)}",
                         data
                     ) == "0"
                 );
                 REQUIRE(
                     g(
-                        "${exist(ggg)}",
+                        "${exists(ggg)}",
                         data
                     ) == "0"
                 );
