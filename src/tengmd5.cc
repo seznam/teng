@@ -71,7 +71,7 @@
  */
 
 
-#include <string.h>
+#include <cstring>
 
 // all goes to anonymos namespace
 namespace {
@@ -440,7 +440,7 @@ md5_finish(md5_state_t *pms, md5_byte_t digest[16])
 
 namespace Teng {
 
-int tengMD5Hexdigest(const std::string &data, std::string &hexdigest) {
+std::string MD5Hexdigest(const std::string &data) {
     // initialize md8 state
     md5_state_t state;
     md5_init(&state);
@@ -457,11 +457,8 @@ int tengMD5Hexdigest(const std::string &data, std::string &hexdigest) {
     char hexOutput[16*2 + 1];
     for (int di = 0; di < 16; ++di)
         sprintf(hexOutput + di * 2, "%02x", digest[di]);
-    // assign result
-    hexdigest = std::string(hexOutput);
 
-    // OK
-    return 0;
+    return hexOutput;
 };
 
 } // namespace Teng

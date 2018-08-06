@@ -29,6 +29,7 @@
  * AUTHORS
  * Jan Nemec <jan.nemec@firma.seznam.cz>
  * Vaclav Blazek <blazek@firma.seznam.cz>
+ * Michal Bukovsky <michal.bukovsky@firma.seznam.cz>
  *
  * HISTORY
  * 2003-09-22  (jan)
@@ -43,152 +44,65 @@
 #define TENGPROCESSOR_H
 
 #include <string>
-#include <map>
-
-#include "tengerror.h"
-#include "tengprogram.h"
-#include "tengdictionary.h"
-#include "tengconfiguration.h"
-#include "tengstructs.h"
-#include "tengformatter.h"
-#include "tenginstruction.h"
-#include "tengparservalue.h"
-#include "tengcontenttype.h"
 
 namespace Teng {
 
+// forwards
+class Error_t;
+class Program_t;
+class Fragment_t;
+class Formatter_t;
+class Dictionary_t;
+class Configuration_t;
+class ContentType_t;
+namespace Parser {class Value_t;}
+
+/** Does the template interpretation.
+ */
 class Processor_t {
 public:
-
     /** Inititalize processor.
+     *
+     * @param err Error log object.
      * @param program Program in byte-code to interpret.
      * @param dict Language dictionary.
-     * @param param Language-independent dictionaru (param.conf).
-     * @param encoding template encoding
-     * @param escaper output string escaper
-     * */
-    Processor_t(const Program_t &program, const Dictionary_t &dict,
-                const Configuration_t &param, const std::string &encoding,
-                const ContentType_t *contentType);
+     * @param params Language-independent dictionaru (param.conf).
+     * @param encoding Template encoding.
+     * @param contentType Content type of template.
+     */
+    Processor_t(
+        Error_t &err,
+        const Program_t &program,
+        const Dictionary_t &dict,
+        const Configuration_t &params,
+        const std::string &encoding = {},
+        const ContentType_t *contentType = nullptr
+    );
 
     /** Execute program.
-     * @param data Application data supplied bu user.
+     *
+     * @param data Application data supplied by user.
      * @param writer Output stream object.
-     * @param error Error log object. */
-    void run(const Fragment_t &data, Formatter_t &writer,
-             Error_t &error);
+     */
+    void run(const Fragment_t &data, Formatter_t &writer);
 
     /** Try to evaluate an expression.
-     * @return 0=ok (expression evaluated), -1=error (cannot evaluate).
+     *
      * @param result Structure for output value in case of success.
      * @param startAddress Run program from this address.
-     * @param endAddress Pointer after the last instruction of the prog. */
-    int eval(ParserValue_t &result, int startAddress, int endAddress);
+     * @param endAddress Pointer after the last instruction of the prog.
+     *
+     * @return 0=ok (expression evaluated), -1=error (cannot evaluate).
+     */
+    int eval(Parser::Value_t &result, int start, int end);
 
-    class Logger_t {
-    public:
-        inline Logger_t(Processor_t &processor)
-            : processor(processor), instr(0)
-        {}
-
-        void logError(Error_t::Level_t level, const std::string &message);
-
-        inline void setInstruction(const Instruction_t *instr) {
-            this->instr = instr;
-        }
-
-    private:
-        Processor_t &processor;
-        const Instruction_t *instr;
-    };
-
-    /** this structure must be added as param to all user teng functions
-     *  used by string function. */
-    struct FunctionParam_t {
-        FunctionParam_t(Processor_t &processor, const std::string &encoding,
-                        const ContentType_t *contentType,
-                        const Configuration_t &configuration,
-                        const Dictionary_t &langDictionary);
-
-        std::string encoding;  /** < encoding of template
-                              (other UTF-8 string functions) */
-        Escaper_t escaper; /** < string escaping */
-        mutable Logger_t logger;
-        const Configuration_t &configuration;
-        const Dictionary_t &langDictionary;
-    };
-
-    // we have to access logErr method, otherwise unaccesible
-    friend class Logger_t;
-
-private:
-    /** Logs runtime error
-     * @param instr on which instruction
-     * @param s error message */
-    void logErr(const Instruction_t &instr, const std::string &s,
-                Error_t::Level_t level);
-
-
-    /** Logs runtime error where no instruction available
-     * @param s error message */
-    void logErrNoInstr(const std::string &s, Error_t::Level_t level);
-
-
-    /** Evaluate simple binary numeric operation
-     * @return -1 (error) or 0 (OK)
-     * @param instr instruction
-     * @param a temporary value
-     * @param b temporary value
-     * */
-    int numOp(const Instruction_t &instr);
-
-    /** Evaluate simple binary numeric operation in preevaluation
-     * @return -1 (error) or 0 (OK)
-     * @param instr instruction
-     * @param a temporary value
-     * @param b temporary value
-     * */
-    int evalNumOp(const Instruction_t &instr);
-
-    /** Evaluate simple binary nonnumeric operation
-     * @return -1 (error) or 0 (OK)
-     * @param instr instruction
-     * @param a temporary value
-     * @param b temporary value
-     * */
-    int binaryOp(const Instruction_t &instr);
-
-    /** Evaluate simple binary nonnumeric operation in preevaluation
-     * @return -1 (error) or 0 (OK)
-     * @param instr instruction
-     * @param a temporary value
-     * @param b temporary value
-     * */
-    int evalBinaryOp(const Instruction_t &instr);
-
-    /** print all app data tree */
-    int instructionDebug(const Fragment_t &data, Formatter_t &output);
-
-    /** program (translated template) */
-    const Program_t &program;
-
-    /** language specific dictionary */
-    const Dictionary_t &langDictionary;
-
-    /** param dictionary */
-    const Configuration_t &configuration;
-
-    /** log error object */
-    Error_t *error;
-
-    /** processor stack */
-    std::stack<ParserValue_t> valueStack;
-
-    /** fragment.name -> fragment.iteration */
-    std::map<std::string,int> fragmentIter;
-
-    /** variable, that are added to teng user function (as 1 ptr to struct)*/
-    FunctionParam_t fParam;
+protected:
+    Error_t &err;                     //!< error log object
+    const Program_t &program;         //!< program (translated template)
+    const Dictionary_t &dict;         //!< language specific dictionary
+    const Configuration_t &params;    //!< param dictionary
+    const std::string &encoding;      //!< the template charset
+    const ContentType_t *contentType; //!< the template content/mime type
 };
 
 } // namespace Teng

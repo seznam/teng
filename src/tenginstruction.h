@@ -37,44 +37,26 @@
 #ifndef TENGINSTRUCTION_H
 #define TENGINSTRUCTION_H
 
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 #include <vector>
 #include <iosfwd>
 
+#include "tengposition.h"
+#include "tengidentifier.h"
 #include "tengparservalue.h"
 
 namespace Teng {
 
-struct Identifier_t {
-    /** @short Name of identifier.
-     */
-    std::string name;
-
-    /** @short Context of identifier.
-     *
-     * For fragments and variable means how many context we must go
-     * from the root one. 0 means the root, 1 one below the root etc.
-     *
-     * When opening new fragment 1 means open new context, 0 mean
-     * continue in then current context.
-     */
-    unsigned short int context;
-
-    /** @short Depth in associated context.
-     *
-     * Indicates how deep the variable/fragment is in the context --
-     * distance form the root.
-     */
-    unsigned short int depth;
-};
-
 /** Instruction for "teng computer".
-  * Syntax & semanthics analyzer creates program
-  * (sequence of instructions). */
+  * Syntax & semanthics analyzer creates program (sequence of instructions).
+  */
 struct Instruction_t {
+    // type
+    using Value_t = Parser::Value_t;
 
     /** Allowed operation codes. */
+    // TODO(burlog): enum class?
     enum OpCode_t {
         VAL, /**< Value literal. */
         VAR, /**< Get value from variable. */
@@ -107,47 +89,63 @@ struct Instruction_t {
         ENDFORM, /**< End of format block. */
         FRAG, /**< Start fragment block. */
         ENDFRAG, /**< End of fragment block. */
-        FRAGCNT, /**< Openned fragment size ($_count) -- fast access. */
-        XFRAGCNT, /**< Not open fragment size ($_count) --  slow access. */
-        FRAGITR, /**< Actual fragment iteration number ($_number). */
+        FRAGCNT, /**< Openned fragment size ($_count) - fast access. */
+        NESTED_FRAGCNT, /**< Not open fragment size ($_count) -  slow access. */
+        FRAGINDEX, /**< Actual fragment iteration number ($_number). */
         FRAGFIRST, /**< Is this the first iteration ($._first)? */
         FRAGLAST, /**< Is this the last iteration ($._last)? */
         FRAGINNER, /**< Is this inner iteration ($._inner)? */
         PRINT, /**< Print onto output. */
         SET, /**< Create new variable and assign value. */
         HALT, /**< End of program. Relax. */
-        DEBUGING, /**< Print data tree (vars & vals) to output. */
-        DEFINED, /**< Test if variable/fargment exists and has non-zero/non-empty value. */
+        DEBUG_FRAG, /**< Print data tree (vars & vals) to output. */
+        DEFINED, /**< OBSOLETE */
         ISEMPTY, /**< Test if fargment is empty. */
         EXISTS, /**< Test if exists variable/fragment. */
-        BYTECODE, /**< Print bytecode -- disassembled program. */
+        BYTECODE_FRAG, /**< Print bytecode -- disassembled program. */
         CTYPE, /**< Change content type (push new). */
         ENDCTYPE, /**< Change content type (pop). */
-        REPEATFRAG, /**< Recursively repeat fragment tree. */
-        GETATTR, /**< Get attribute. */
-        AT, /**< Get value at given index */
+        PUSH_ATTR, /**< Push attr/frag on stack. */
+        PUSH_ROOT_FRAG, /** Push root frag on frag stack */
+        PUSH_THIS_FRAG, /** Push this frag on frag stack */
+        PUSH_ATTR_AT, /**< Get value at given index */
         REPR, /**< Convert frag value into value */
-        EXISTMARK, /**< Marks start of exist/defined block */
+        REPR_JSONIFY, /**< Convert frag value into value */
+        REPR_COUNT, /**< Convert frag value into value */
+        REPR_TYPE, /**< Convert frag value into value */
+        REPR_DEFINED, /**< Convert frag value into value */
+        REPR_EXISTS, /**< Convert frag value into value */
+        REPR_ISEMPTY, /**< Convert frag value into value */
+        SUPRESS_LOG, /**< Marks start of exist/defined block */
     };
 
     /** Create simple instruction without params.
       * @param op Inctruction code.
-      * @param srcidx Index of the source file into program's source list.
-      * @param line Line number in the source.
-      * @param col Column number in the source. */
-    inline Instruction_t(OpCode_t op, int srcidx, int line, int col)
-        : operation(op), sourceIndex(srcidx), line(line), column(col) {}
+      * @param pos Position of instruction in source file.
+      */
+    Instruction_t(OpCode_t opcode, const Pos_t &pos)
+        : opcode(opcode), pos(pos)
+    {}
 
     /** Create instruction with value-struct param.
       * @param op Inctruction code.
       * @param val Instruction's own operand.
-      * @param srcidx Index of the source file into program's source list.
-      * @param line Line number in the source.
-      * @param col Column number in the source. */
-    inline Instruction_t(OpCode_t op, ParserValue_t val,
-                         int srcidx, int line, int col)
-        : operation(op), value(val),
-          sourceIndex(srcidx), line(line), column(col) {}
+      * @param pos Position of instruction in source file.
+      */
+    Instruction_t(OpCode_t opcode, Value_t val, const Pos_t &pos)
+        : opcode(opcode), value(std::move(val)), pos(pos)
+    {}
+
+    /** Create instruction with value-struct param.
+      * @param op Inctruction code.
+      * @param val1 Instruction's first own operand.
+      * @param val2 Instruction's second own operand.
+      * @param pos Position of instruction in source file.
+      */
+    Instruction_t(OpCode_t opcode, Value_t val1, Value_t val2, const Pos_t &pos)
+        : opcode(opcode), value(std::move(val1)), opt_value(std::move(val2)),
+          pos(pos)
+    {}
 
     /** Print instruction into file stream.
       * @param fp File stream for output. */
@@ -155,31 +153,22 @@ struct Instruction_t {
 
     /** Print instruction into stream.
       * @param os stream for output
-      * @param ip current instruction pointer (<0 for not to use)
       */
-    void dump(std::ostream &os, int ip = -1) const;
+    void dump(std::ostream &os) const;
 
-    /** Operation to perform. */
-    OpCode_t operation;
-
-    /** More data for the operation.
-      * (type, string, integer, real). */
-    ParserValue_t value;
-
-    /** Variable identifier.
-      * Special additional data for some operations. */
-    Identifier_t identifier;
-
-    /* Position in template --
-      * that means the instruction was generated from statement
-      * at given position in original source file. */
-    /** Source file. It is index into source list for saving memory. */
-    int sourceIndex;
-    /** Line number (counted from 1). */
-    int line;
-    /** Column number (counted from 0). */
-    int column;
+    OpCode_t opcode;         //!< Operation to perform
+    Value_t value;           //!< optional: value of literal/jump/...
+    Value_t opt_value;       //!< optional: another value
+    Identifier_t identifier; //!< optional: identifier of variable/frag/...
+    Pos_t pos;               //!< the position of instruction in source file
 };
+
+/** Writes human readable representation of the instruction to ouput stream.
+ */
+inline std::ostream &operator<<(std::ostream &os, const Instruction_t &instr) {
+    instr.dump(os);
+    return os;
+}
 
 } // namespace Teng
 

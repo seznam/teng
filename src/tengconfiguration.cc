@@ -39,106 +39,76 @@
 #include <cstring>
 #include <cstdlib>
 
+#include "tenglogging.h"
 #include "tengconfiguration.h"
 
 namespace Teng {
-
-Configuration_t::Configuration_t(const std::string &root)
-    : Dictionary_t(root), debug(false), errorFragment(false),
-      logToOutput(false), bytecode(false), watchFiles(true),
-      alwaysEscape(true), shortTag(false), maxIncludeDepth(10),
-      format(true), maxDebugValLength(40)
-{}
-
-Configuration_t::~Configuration_t() {
-    // no-op
-}
-
 namespace {
 
-std::string strip(const std::string &str) {
-    std::string::size_type begin = 0;
-    std::string::size_type end = str.length();
-    while ((begin < end) && isspace(str[begin])) ++begin;
-    while ((begin < end) && isspace(str[end - 1])) --end;
-    return std::string(str, begin, end - begin);
+string_view_t strip(const string_view_t &str) {
+    const char *begin = str.begin();
+    const char *end = str.end();
+    while ((begin < end) && isspace(*begin)) ++begin;
+    while ((begin < end) && isspace(*(end - 1))) --end;
+    return {begin, end};
 }
 
 } // namespace
 
-int Configuration_t::processDirective(const std::string &directive,
-                                      const std::string &param,
-                                      Error_t::Position_t &pos)
-{
+Configuration_t::Configuration_t(const std::string &root)
+    : Dictionary_t(root), debug(false), errorFragment(false),
+      logToOutput(false), bytecode(false), watchFiles(true),
+      alwaysEscape(true), shortTag(false), format(true),
+      maxIncludeDepth(10), maxDebugValLength(40)
+{}
+
+int Configuration_t::processDirective(string_view_t directive, string_view_t param) {
     // strip argument
-    std::string argument(strip(param));
+    string_view_t arg = strip(param);
 
     if (directive == "maxincludedepth") {
-        if (argument.empty()) {
-            err.logError(Error_t::LL_ERROR, pos,
-                         "Invalid value of max-include-depth '"
-                         + argument + "'");
-            return -1;
+        if (arg) {
+            char *end;
+            auto depth = strtoul(arg.data(), &end, 10);
+            if (*end == '\0') {
+                maxIncludeDepth = depth;
+                return 0;
+            }
         }
+        logError(err, pos, "Bad maxincludedepth '" + arg.str() + "' value");
+        return -1;
 
-        // convert to unsigned int
-        char *end;
-        unsigned long int depth = strtoul(argument.c_str(), &end, 10);
-        if (*end) {
-            err.logError(Error_t::LL_ERROR, pos,
-                         "Invalid value of max-include-depth '"
-                         + argument + "'");
-            return -1;
-        }
-
-        maxIncludeDepth = depth;
-        return 0;
     }
 
     if (directive == "maxdebugvallength") {
-        if (argument.empty()) {
-            err.logError(Error_t::LL_ERROR, pos,
-                         "Invalid value of max-debug-val-length '"
-                         + argument + "'");
-            return -1;
+        if (arg) {
+            char *end;
+            auto len = strtoul(arg.data(), &end, 10);
+            if (*end == '\0') {
+                maxDebugValLength = len;
+                return 0;
+            }
         }
-
-        // convert to unsigned int
-        char *end;
-        unsigned long int len = strtoul(argument.c_str(), &end, 10);
-        if (*end) {
-            err.logError(Error_t::LL_ERROR, pos,
-                         "Invalid value of max-debug-val-length '"
-                         + argument + "'");
-            return -1;
-        }
-
-        maxDebugValLength = len;
-        return 0;
+        logError(err, pos, "Bad maxdebugvallength '" + arg.str() + "' value");
+        return -1;
     }
 
-
     // enable/disable
-
     bool value = false;
     if (directive == "enable") value = true;
     else if (directive == "disable") value = false;
-    else {
-        // other directive
-        return Dictionary_t::processDirective(directive, param, pos);
-    }
+    else return Dictionary_t::processDirective(directive, param);
 
-    if (argument == "debug") debug = value;
-    else if (argument == "errorfragment") errorFragment = value;
-    else if (argument == "logtooutput") logToOutput = value;
-    else if (argument == "bytecode") bytecode = value;
-    else if (argument == "watchfiles") watchFiles = value;
-    else if (argument == "format") format = value;
-    else if (argument == "alwaysescape") alwaysEscape = value;
-    else if (argument == "shorttag") shortTag = value;
+    if (arg == "debug") debug = value;
+    else if (arg == "errorfragment") errorFragment = value;
+    else if (arg == "logtooutput") logToOutput = value;
+    else if (arg == "bytecode") bytecode = value;
+    else if (arg == "watchfiles") watchFiles = value;
+    else if (arg == "format") format = value;
+    else if (arg == "alwaysescape") alwaysEscape = value;
+    else if (arg == "shorttag") shortTag = value;
     else {
-        err.logError(Error_t::LL_ERROR, pos,
-                     "Invalid enable/disable argument '" + argument + "'");
+        logError(err, pos, "Bad enable/disable argument '" + arg.str() + "'");
         return -1;
     }
 
@@ -146,9 +116,8 @@ int Configuration_t::processDirective(const std::string &directive,
     return 0;
 }
 
-int Configuration_t::isEnabled(const std::string &feature,
-                               bool &enabled) const
-{
+int
+Configuration_t::isEnabled(const std::string &feature, bool &enabled) const {
     if (feature == "debug") enabled = debug;
     else if (feature == "errorfragment") enabled = errorFragment;
     else if (feature == "logtooutput") enabled = logToOutput;
@@ -158,20 +127,11 @@ int Configuration_t::isEnabled(const std::string &feature,
     else if (feature == "alwaysescape") enabled = alwaysEscape;
     else if (feature == "shortag") enabled = shortTag;
     else return -1;
-
-    // OK
     return 0;
 }
 
-namespace {
-
-const char* ENABLED(bool value) {
-    return value ? "enabled" : "disabled";
-}
-
-} // namespace
-
-std::ostream& operator<<(std::ostream &o, const Configuration_t &c) {
+std::ostream &operator<<(std::ostream &o, const Configuration_t &c) {
+    auto ENABLED = [] (bool value) {return value? "enabled": "disabled";};
     o << "Configuration: " << std::endl
       << "    debug: " << ENABLED(c.debug) << std::endl
       << "    errorfragment: " << ENABLED(c.errorFragment) << std::endl
@@ -183,7 +143,6 @@ std::ostream& operator<<(std::ostream &o, const Configuration_t &c) {
       << "    format: " << ENABLED(c.format) << std::endl
       << "    alwaysescape: " << ENABLED(c.alwaysEscape) << std::endl
       << "    shorttag: " << ENABLED(c.shortTag) << std::endl;
-
     return o;
 }
 

@@ -36,513 +36,441 @@
  *             Win32 support.
  */
 
-
-#include <iostream>
+#include <array>
+#include <cstdio>
 #include <utility>
-#include <ctype.h>
-#include <errno.h>
+#include <cctype>
+#include <cerrno>
+#include <sstream>
+#include <fstream>
+#include <algorithm>
 
-#include <stdio.h>
-
+#include "tenglogging.h"
 #include "tengdictionary.h"
 #include "tengplatform.h"
 #include "tengaux.h"
 
 namespace Teng {
-
-int Dictionary_t::parse(const std::string &filename) {
-    level = MAX_RECURSION_LEVEL;
-    Error_t::Position_t pos(filename);
-    return parse(filename, pos);
-}
-
-Dictionary_t::~Dictionary_t() {
-}
-
 namespace {
-    /**
-     * @short Extracts line from string.
-     *
-     * Removes terminating <LF> and (optional) preceding <CR>.
-     *
-     * @param str input string
-     * @param line found line
-     * @param begin start of line
-     * @param pos position in current file
-     * @param err error logger
-     * @return position of terminating <LF> in input string
-     */
-    std::string::size_type getLine(const std::string &str, std::string &line,
-                              std::string::size_type begin)
-    {
-        // find <LF>
-        std::string::size_type nl = str.find('\n', begin);
-        // remove (optional) preceding<CR>.
-        if ((nl > 0) && (nl != std::string::npos) && (str[nl - 1] == '\r'))
-            line = str.substr(begin, nl - begin - 1);
-        else line = str.substr(begin, nl - begin);
-        // return position of terminating <LF> in input string
-        return nl;
-    }
+
+/** Compose absolute filename.
+ */
+std::string absfile(const std::string &fs_root, const std::string &filename) {
+    return !fs_root.empty() && !filename.empty() && !ISROOT(filename)
+         ? fs_root + "/" + filename
+         : filename;
 }
 
 /**
- * @short Parses value line.
+ * @short Extracts line from string.
  *
- * @param line parsed line
- * @param value returend value
- * @param pos position in current file
- * @param err error logger
- * @return 0 OK !0 error
+ * Removes terminating <LF> and (optional) preceding <CR>.
+ *
+ * @param str input string
+ * @param offset pointer to the first char of current line
+ *
+ * @return line and position of terminating <LF> in input string
  */
-int Dictionary_t::parseValueLine(const std::string &line, std::string &value,
-                                 Error_t::Position_t &pos)
-{
-    // erase value
-    value.erase();
-    // strip all whitespaces from begin
-    std::string::const_iterator iline = line.begin();
-    while ((iline != line.end()) && isspace(*iline)) {
-        if (*iline == '\t') pos.advanceToTab();
-        else pos.advanceColumn();
-        ++iline;
+std::pair<string_view_t, const char *>
+getLine(Error_t &err, Pos_t &pos, const string_view_t &str, const char *iline) {
+    // search for next newline
+    auto eline = std::find(iline, str.end(), '\n');
+
+    // no new line found
+    if (eline == str.end()) {
+        pos.advanceColumn(eline - iline + 1);
+        logWarning(err, pos, "No newline at end of file");
+        return  {{iline, eline}, eline};
     }
+
+    // trim '\r' if any
+    if ((iline != str.begin()) && (*(iline - 1) == '\r'))
+        return {{iline, eline - 1}, eline};
+
+    // done
+    return  {{iline, eline}, eline};
+}
+
+/** Expands escape characters.
+ */
+std::array<char, 3>
+expand_escape(
+    Error_t &err,
+    Pos_t &pos,
+    const char *ivalue,
+    const char *evalue
+) {
+    // escaping of end-of-line is not allowed
+    if (++ivalue == evalue) {
+        logError(err, pos, "Escaping EOL not allowed");
+        pos.advanceColumn();
+        return {{'\\', '\0', '\0'}};
+    }
+
+    // escape -> interpret next char
+    pos.advanceColumn(2);
+    switch (*ivalue) {
+    case 'n':
+        return {{'\n', '\0', '\0'}};
+    case 'r':
+        return {{'\r', '\0', '\0'}};
+    case 't':
+        return {{'\t', '\0', '\0'}};
+    case 'v':
+        return {{'\v', '\0', '\0'}};
+    case '\\':
+        return {{'\\', '\0', '\0'}};
+    case '"':
+        return {{'\"', '\0', '\0'}};
+    default:
+        // other chars are not allowed to be escaped
+        logError(err, pos, "Invalid escape character");
+        return {{'\\', *ivalue, '\0'}};
+    }
+    throw std::runtime_error(__PRETTY_FUNCTION__);
+}
+
+/** Warns if tail contains no whitespaces.
+ */
+void
+warn_if_tail_is_not_empty(
+    Error_t &err,
+    Pos_t &pos,
+    const char *ivalue,
+    const char *evalue
+) {
+    for (; ivalue != evalue; ++ivalue) {
+        if (!isspace(*ivalue)) {
+            logError(err, pos, "Text after quoted line");
+            return;
+        }
+        pos.advance(*ivalue);
+    }
+}
+
+} // namespace
+
+int
+Dictionary_t::setBool(string_view_t name, string_view_t param, bool &value) {
+    if (param == "yes") {
+        value = true;
+        return 0;
+    }
+    if (param == "no") {
+        value = false;
+        return 0;
+    }
+    logError(
+        err,
+        pos,
+        "Invalid bool value of bool " + name.str()
+        + " directive '" + param.str() + "'"
+    );
+    return -1;
+}
+
+int Dictionary_t::includeFile(string_view_t filename) {
+    // include other source
+    if (!level) {
+        logError(err, pos, "Too many includes");
+        return -1;
+    }
+
+    // strip trailing whitespaces
+    auto efilename = filename.end();
+    for (; efilename > filename.begin(); --efilename)
+        if (!isspace(*(efilename - 1)))
+            break;
+    filename = {filename.begin(), efilename};
+
+    // check filename
+    if (!filename) {
+        logError(err, pos, "Missing file to include");
+        return -1;
+    }
+
+    // include it
+    --level;
+    int ret = parse(filename.str(), pos);
+    ++level;
+    return ret;
+}
+
+std::string Dictionary_t::parseValueLine(string_view_t value) {
+    // trim all leading whitespaces
+    auto ivalue = value.begin();
+    for (auto evalue = value.end(); ivalue != evalue; ++ivalue) {
+        if (isspace(*ivalue)) pos.advance(*ivalue);
+        else break;
+    }
+
     // reserve necessary space
-    value.reserve(line.end() - iline);
-    // indicates quoted line
-    bool quoted = false;
+    std::string result;
+    result.reserve(value.end() - ivalue);
+
+    // if value is still quoted at its end => quote not closed
+    struct quoted_t {
+        ~quoted_t() {if (v) logError(err, pos, "Missing terminating quote");}
+        quoted_t &operator=(bool nv) {v = nv; return *this;}
+        explicit operator bool() const {return v;}
+        bool v; Error_t &err; Pos_t &pos;
+    } quoted{false, err, pos};
+
     // process whole string char by char
-    for (bool first = true; iline != line.end(); ++iline) {
-        switch (*iline) {
+    for (bool first = true; ivalue != value.end(); ++ivalue) {
+        switch (*ivalue) {
         case '\\':
-            // escape -> interpret next char
-            if ((iline + 1) != line.end()) {
-                // next char available, advance to it
-                ++iline;
-                // interpret char
-                switch (*iline) {
-                case 'n':
-                    value.push_back('\n');
-                    break;
-                case 'r':
-                    value.push_back('\r');
-                    break;
-                case 't':
-                    value.push_back('\t');
-                    break;
-                case 'v':
-                    value.push_back('\v');
-                    break;
-                case '\\':
-                    value.push_back('\\');
-                    break;
-                case '"':
-                    value.push_back('"');
-                    break;
-                case '\t':
-                    // tabs are not allowed to be escaped
-                    err.logError(Error_t::LL_ERROR, pos, "Invalid escape");
-                    value.push_back(*(iline - 1));
-                    value.push_back(*iline);
-                    pos.advanceColumn();
-                default:
-                    // other chars are not allowed to be escaped
-                    err.logError(Error_t::LL_ERROR, pos, "Invalid escape");
-                    value.push_back(*(iline - 1));
-                    value.push_back(*iline);
-                    break;
-                }
-            } else {
-                // escaping of end-of-line is not allowed
-                err.logError(Error_t::LL_ERROR, pos,
-                             "Escaping EOL not allowed");
-            }
-            pos.advanceColumn();
+            // escape sequence
+            result.append(expand_escape(err, pos, ivalue, value.end()).data());
             break;
         case '"':
             // quote
+            pos.advanceColumn();
             if (first) {
-                // first quote => we have quoted line
                 quoted = true;
-                pos.advanceColumn();
             } else {
-                // other quote
                 if (quoted) {
-                    // close quoted line
-                    ++iline;
-                    pos.advanceColumn();
-                    // run through rest of line and find any non-white char
-                    while (iline != line.end()) {
-                        if (!isspace(*iline)) {
-                            // if found, report it as error
-                            err.logError(Error_t::LL_ERROR, pos,
-                                         "Text after quoted line");
-                            return -1;
-                        }
-                        if (*iline == '\t') pos.advanceToTab();
-                        else pos.advanceColumn();
-                        ++iline;
-                    }
-                    // OK
-                    return 0;
+                    warn_if_tail_is_not_empty(err, pos, ++ivalue, value.end());
+                    return result;
                 }
-                // insert quote to the value
-                value.push_back(*iline);
+                result.push_back(*ivalue);
             }
-            break;
-        case '\t':
-            // extra only for tab alignment
-            value.push_back(*iline);
-            pos.advanceToTab();
             break;
         default:
             // push to value
-            value.push_back(*iline);
-            pos.advanceColumn();
+            result.push_back(*ivalue);
+            pos.advance(*ivalue);
             break;
         }
         // indicate that we are not at the first character
         first = false;
     }
 
-    if (quoted) {
-        // if line is still quoted at its end => quote not closed
-        err.logError(Error_t::LL_ERROR, pos, "Missing terminating quote");
-        return -1;
-    }
-
-    // OK
-    return 0;
+    // done
+    return result;
 }
 
-int Dictionary_t::parseIdentLine(const std::string &line,
-                                 std::string &name,
-                                 std::string &value,
-                                 Error_t::Position_t &pos)
-{
+std::string *Dictionary_t::addIdent(string_view_t line) {
     // get all valid chars (assumes that first char is not number)
-    std::string::const_iterator iline = line.begin();
-    for (; iline != line.end(); ++iline) {
-        if (!(isalnum(*iline) || (*iline == '_')))
+    auto ivalue = line.begin();
+    for (auto eline = line.end(); ivalue != eline; ++ivalue)
+        if (!(isalnum(*ivalue) || (*ivalue == '_')))
             break;
-        pos.advanceColumn();
+    pos.advanceColumn(ivalue - line.begin());
+
+    // if first non-valid char is not white, report it as error
+    if ((ivalue != line.end()) && (!isspace(*ivalue))) {
+        logError(err, pos, "Invalid character in identifier");
+        return nullptr;
     }
-    if (iline != line.end()) {
-        // if first non-valid char is not white, report it as error
-        if (!isspace(*iline)) {
-            err.logError(Error_t::LL_ERROR, pos,
-                         "Invalid character in identifier");
-            return -1;
-        }
-    }
-    // cut name
-    name = line.substr(0, iline - line.begin());
+
     // parse rest of line as value
-    return parseValueLine(line.substr(iline - line.begin()), value, pos);
+    string_view_t name = {line.begin(), ivalue};
+    std::string value = parseValueLine({ivalue, line.end()});
+
+    // add ident
+    return addImpl(name, std::move(value));
 }
 
-int Dictionary_t::add(const std::string &name, const std::string &value) {
-    if (replaceValue) {
-        dict[name] = value;
-    } else {
-        dict.insert(std::make_pair(name, value));
-    }
-    return 0;
+void Dictionary_t::add(const std::string &name, const std::string &value) {
+    addImpl(name, std::move(value));
 }
 
-int Dictionary_t::add(const std::string &name, const std::string &value,
-                      Error_t::Position_t &pos)
-{
-    // insert new record into table
-    if (expandValue) {
-        // expand value
-        std::string expanded;
-        expanded.reserve(value.size());
-
-        for (std::string::size_type index = 0; index != std::string::npos; ) {
-            // find name openning
-            std::string::size_type open = value.find("#{", index);
-            if (open == std::string::npos) {
-                expanded.append(value, index, std::string::npos);
-                break;
-            } else {
-                expanded.append(value, index, open - index);
-            }
-
-            // find name closing
-            std::string::size_type close = value.find("}", open);
-            if (close == std::string::npos) {
-                err.logError(Error_t::LL_ERROR, pos,
-                             "Unterminated #{} directive.");
-                expanded.append(value, open, std::string::npos);
-                add(name, expanded);
-                return -1;
-            }
-
-            std::string ename(value, open + 2, close - open - 2);
-            index = close + 1;
-
-            // try to find ename in so far read entries
-            const std::string *evalue = lookup(ename);
-            if (!evalue) {
-                // not found
-                err.logError(Error_t::LL_ERROR, pos,
-                             "Dictionary item '" + ename + "' not found.");
-                expanded.append("#{");
-                expanded.append(ename);
-                expanded.push_back('}');
-            } else {
-                // found
-                expanded.append(*evalue);
-            }
-        }
-
-        // just add expanded value
-        return add(name, expanded);
-    }
-
-    // add value
-    return add(name, value);
+std::string *Dictionary_t::addImpl(string_view_t name, std::string value) {
+    return replaceValue
+        ? &(dict[name.str()] = std::move(value))
+        : &dict.emplace(name.str(), std::move(value)).first->second;
 }
 
-const std::string *Dictionary_t::lookup(const std::string &key) const {
-    // try to find key
-    std::map<std::string, std::string>::const_iterator f = dict.find(key);
-    // not found => null
-    if (f == dict.end())
-        return key == "_tld"? &get_tld(): 0x0;
-    // return value
-    return &f->second;
-}
+std::string *Dictionary_t::add(string_view_t name, string_view_t value) {
+    // insert new record into table immediately if expansion is disabled
+    if (!expandValue) return addImpl(name, {value.begin(), value.end()});
 
-int Dictionary_t::parseString(const std::string &data,
-                              Error_t::Position_t &pos)
-{
-    // position of newline
-    std::string::size_type nl = 0;
-    // current line
-    std::string line;
-    // name of current ident
-    std::string currentName;
-    // current value
-    std::string currentValue;
-    // identifies that currentName && currentValue are valid
-    bool currentValid = false;
+    // expand value
+    std::string expanded;
+    expanded.reserve(value.size());
 
-    // return value -- default ok
-    int ret = 0;
-    // forever
-    for (;;) {
-        // get next line
-        nl = getLine(data, line, nl);
-
-        // if not comment line, process it
-        if (!(line.empty() || (line[0] == '#'))) {
-            // get first element on line
-            char first = line[0];
-            if (first == '%') {
-                // process directive
-                if (currentValid) {
-                    // insert new identifier
-                    add(currentName, currentValue, pos);
-                    currentValid = false;
-                }
-                // split directive to name and value
-                std::string::size_type sep = line.find_first_of(" \t\v", 1);
-                if (processDirective(line.substr(1, ((sep == std::string::npos)
-                                                     ? sep : (sep - 1))),
-                                     ((sep == std::string::npos)
-                                      ? std::string()
-                                      : line.substr(sep + 1)), pos))
-                    ret = -1;
-            } else if (isspace(first)) {
-                // append to previous line
-                if (currentValid) {
-                    std::string value;
-                    parseValueLine(line, value, pos);
-                    currentValue.push_back(' ');
-                    currentValue.append(value);
-                } else {
-                    // no open line
-                    err.logError(Error_t::LL_ERROR, pos,
-                                 "No line to concatenate with");
-                    ret = -1;
-                }
-            } else if (isalpha(first) || (first == '_')  || (first == '.')) {
-                // new identifier
-                // insert new identifier
-                if (currentValid)
-                    add(currentName, currentValue, pos);
-                // parse identifier line
-                currentValid = !parseIdentLine(line, currentName,
-                                               currentValue, pos);
-            } else {
-                err.logError(Error_t::LL_ERROR, pos, "Illegal identifier");
-                ret = -1;
-            }
-        } else {
-            // comment or empty line terminates entry
-            if (currentValid)
-                add(currentName, currentValue, pos);
-            currentValid = false;
-        }
-        // if not at end advance to next character (after newline)
-        if (nl != std::string::npos) ++nl;
-        else {
-            // if line is not empty, last char is not newline
-            if (!line.empty()) {
-                // move to end of line and report error
-                pos.setColumn(line.length() + 1);
-                err.logError(Error_t::LL_WARNING, pos,
-                             "No newline at end of file");
-                // error indicator will be returned
-                ret = -1;
-            }
+    // expand all directives
+    for (const char *ivalue = value.begin(); ivalue != value.end();) {
+        // find name openning
+        static const std::string O = "#{";
+        auto iopen = std::search(ivalue, value.end(), O.begin(), O.end());
+        if (iopen == value.end()) {
+            expanded.append(ivalue, value.end());
             break;
         }
-        // move to next line
-        pos.newLine();
-    }
+        expanded.append(ivalue, iopen);
 
-    // if current data are valid, we must insert appropriate record
-    if (currentValid)
-        add(currentName, currentValue, pos);
-
-    // return error indicator
-    return ret;
-}
-
-int Dictionary_t::parse(const std::string &infilename,
-                        Error_t::Position_t &pos)
-{
-    // if relative path => prepend root
-    std::string filename = infilename;
-    if (!filename.empty() && !ISROOT(filename) && (!root.empty()))
-        filename = root + '/' + filename;
-
-    // insert source into source list
-    sources.addSource(filename, pos, err);
-
-    // open file
-    FILE *file = fopen(filename.c_str(), "r");
-    if (!file) {
-        // on error, log it
-        err.logSyscallError(Error_t::LL_ERROR, pos,
-                            "Cannot open file '" + filename + "'");
-        return -1;
-    }
-
-    // create new positioner
-    Error_t::Position_t newPos(filename, 1);
-    // parse file
-    int status = parse(file, newPos);
-    // close file
-    fclose(file);
-    // return status
-    return status;
-}
-
-int Dictionary_t::parse(FILE *file, Error_t::Position_t &pos) {
-    // loaded string
-    std::string str;
-    // read whole file into memory
-    while (!(feof(file) || ferror(file))) {
-        char buff[1024];
-        size_t r = fread(buff, 1, 1024, file);
-        if (r)
-            str.append(buff, r);
-    }
-
-    // on error report it and terminate processing
-    if (ferror(file)) {
-        err.logSyscallError(Error_t::LL_ERROR, pos, "Error reading file");
-        return -1;
-    }
-
-    // parse loaded string
-    return parseString(str, pos);
-}
-
-int Dictionary_t::processDirective(const std::string &directive,
-                                   const std::string &param,
-                                   Error_t::Position_t &pos)
-{
-    if (directive == "include") {
-        // include other source
-        if (!level) {
-            err.logError(Error_t::LL_ERROR, pos, "Too many includes");
-            return -1;
+        // find name closing
+        auto iclose = std::find(iopen, value.end(), '}');
+        if (iclose == value.end()) {
+            logError(err, pos, "Unterminated #{} directive.");
+            expanded.append(iopen, value.end());
+            return addImpl(name, expanded);
         }
-        // cut filename
-        std::string filename(param);
-        pos.advanceColumn(8);
-        if (filename.empty()) {
-            err.logError(Error_t::LL_ERROR, pos, "Missing file to include");
-            return -1;
-        }
-        // strip filename
-        std::string::size_type begin = 0;
-        std::string::size_type end = filename.length();
-        while ((begin < end) && isspace(filename[begin]))
-            ++begin;
-        while ((begin < end) && isspace(filename[end - 1]))
-            --end;
-        pos.advanceColumn(begin);
-        filename = filename.substr(begin, end - begin);
-        if (filename.empty()) {
-            // report empty filename
-            err.logError(Error_t::LL_ERROR, pos, "Missing file to include");
-            return -1;
-        }
-        // decrement recursion level
-        --level;
-        // parse given file
-        int ret = parse(filename, pos);
-        // indecrement recursion level
-        ++level;
-        return ret;
-    } else if (directive == "expand") {
-        if (param == "yes") {
-            expandValue = true;
-            return 0;
-        } else if (param == "no") {
-            expandValue = false;
-            return 0;
+
+        // compose dict value key
+        std::string key = {iopen + 2, iclose - 1};
+        ivalue = iclose + 1;
+
+        // try to find key in so far read entries
+        if (const std::string *dict_value = lookup(key)) {
+            expanded.append(*dict_value);
+
         } else {
-            err.logError(Error_t::LL_ERROR, pos, ("Invalid value of expand '"
-                                                  + param + "'."));
-            return -1;
-        }
-    } else if (directive == "replace") {
-        if (param == "yes") {
-            replaceValue = true;
-            return 0;
-        } else if (param == "no") {
-            replaceValue = false;
-            return 0;
-        } else {
-            err.logError(Error_t::LL_ERROR, pos, ("Invalid value of replace '"
-                                                  + param + "'."));
-            return -1;
+            expanded.append("#{");
+            expanded.append(key);
+            expanded.push_back('}');
+            logError(err, pos, "Dictionary item '" + key + "' not found");
         }
     }
-    // report unknown processing directive
-    err.logError(Error_t::LL_ERROR, pos, "Unknown procesing directive");
-    // indicate error
+
+    // just add expanded value
+    return add(name, expanded);
+}
+
+int
+Dictionary_t::processDirective(string_view_t directive, string_view_t param) {
+    if (directive == "include")
+        return includeFile(param);
+    else if (directive == "expand")
+        return setBool(directive, param, expandValue);
+    else if (directive == "replace")
+        return setBool(directive, param, replaceValue);
+    logError(err, pos, "Unknown procesing directive");
     return -1;
 }
 
-int Dictionary_t::dump(std::string &out) const {
-    // dumm all records
-    for (std::map<std::string, std::string>::const_iterator i = dict.begin();
-         i != dict.end(); ++i) {
-        out.append(i->first);
-        out.append(": |");
-        out.append(i->second);
-        out.append("|\n----------------------------------------\n");
+int Dictionary_t::processDirective(string_view_t line) {
+    // search for value
+    auto ivalue = std::find_if(line.begin(), line.end(), isspace);
+    pos.advanceColumn(ivalue - line.begin());
+
+    // trim all leading whitespaces
+    for (auto evalue = line.end(); ivalue != evalue; ++ivalue) {
+        if (isspace(*ivalue)) pos.advance(*ivalue);
+        else break;
     }
-    // OK
-    return 0;
+
+    // process directive
+    return processDirective({line.begin(), ivalue}, {ivalue, line.end()});
+}
+
+const std::string *Dictionary_t::lookup(const std::string &key) const {
+    auto ientry = dict.find(key);
+    return ientry == dict.end()
+         ? (key == "_tld"? &get_tld(): nullptr)
+         : &ientry->second;
+}
+
+int Dictionary_t::parseString(string_view_t data) {
+    // return value -- default ok
+    int ret = 0;
+
+    // process whole input line by line
+    string_view_t line;
+    auto iline = data.begin(), eline = data.end();
+    std::string *last_inserted_value = nullptr;
+    for (; iline != eline; pos.newLine(), ++iline) {
+
+        // get next line and skip empty lines
+        std::tie(line, iline) = getLine(err, pos, data, iline);
+        if (!line) continue;
+
+        // what kind of line is it
+        switch (line[0]) {
+        case '#':
+            // skip comments
+            last_inserted_value = nullptr;
+            continue;
+
+        case '%':
+            // it is directive
+            if (processDirective({line.begin() + 1, line.end()}))
+                ret = -1;
+            last_inserted_value = nullptr;
+            break;
+
+        case ' ': case '\t': case '\v':
+            // continuation
+            if (last_inserted_value) {
+                std::string value = parseValueLine(line);
+                last_inserted_value->push_back(' ');
+                last_inserted_value->append(value);
+            } else {
+                logError(err, pos, "No line to concatenate with");
+                ret = -1;
+            }
+            break;
+
+        case '.': case '_':
+        case 'a' ... 'z':
+        case 'A' ... 'Z':
+            last_inserted_value = addIdent(line);
+            break;
+
+        default:
+            last_inserted_value = nullptr;
+            logError(err, pos, "Illegal identifier: line=" + line.str());
+            ret = -1;
+        }
+    }
+    return ret;
+}
+
+int Dictionary_t::parse(const std::string &filename, const Pos_t &include_pos) {
+    // if relative path => prepend root
+    std::string path = absfile(fs_root, filename);
+
+    // insert source into source list
+    auto *source_path = sources.push(path, include_pos, err).first;
+
+    // reset pos and parse new file
+    pos = {source_path};
+    std::ifstream file(filename);
+    return parse(file, filename);
+}
+
+int Dictionary_t::parse(std::ifstream &file, const std::string &filename) {
+    try {
+        // restoring file stream exception settings
+        struct exception_restorer_t {
+            exception_restorer_t(std::ifstream *file)
+                : file(file), saved_exceptions(file->exceptions())
+            {file->exceptions(std::ios::failbit | std::ios::badbit);}
+            ~exception_restorer_t() {file->exceptions(saved_exceptions);}
+            std::ifstream *file;
+            std::ios::iostate saved_exceptions;
+        } restorer(&file);
+
+        // read whole file into memory
+        std::string str;
+        file.seekg(0, std::ios::end);
+        str.resize(file.tellg());
+        file.seekg(0, std::ios::beg);
+        file.read(&str[0], str.size());
+
+        // parse loaded string
+        return parseString(str);
+
+    } catch (const std::system_error &e) {
+        std::string sys = std::string("(") + e.code().message() + ")";
+        logError(err, pos, "Error reading file '" + filename + "' " + sys);
+        return -1;
+    }
+}
+
+void Dictionary_t::dump(std::string &out) const {
+    std::ostringstream os;
+    dump(os);
+    out.append(os.str());
+}
+
+void Dictionary_t::dump(std::ostream &out) const {
+    for (auto &item: dict) {
+        out << item.first << ": |" << item.second
+            << "|\n----------------------------------------\n";
+    }
 }
 
 } // namespace Teng

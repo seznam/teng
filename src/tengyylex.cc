@@ -27,97 +27,92 @@
  * Teng syntax analyzer.
  *
  * AUTHORS
- * Michal Bukovsky
+ * Michal Bukovsky <michal.bukovsky@firma.seznam.cz
  *
  * HISTORY
- * 2018-05-07  (burlog)
+ * 2018-07-07  (burlog)
  *             Adapted from tengsyntax.yy
  */
 
+// TODO(burlog): remove it?
+#include <iomanip>
+
 #include "tengyystype.h"
+#include "tengsyntax.hh"
+#include "tenglogging.h"
+#include "tengconfiguration.h"
 #include "tengparsercontext.h"
+#include "tengyylex.h"
 
 namespace Teng {
+namespace Parser {
 
-int yylex(LeftValue_t *leftValue, ParserContext_t *ctx) {
-    for (;;) {
-        // if lex2 is currently in use
-        if (ctx->lex2InUse) {
-            ParserValue_t val;
-            Error_t::Position_t pos = ctx->lex2Pos;
+int yylex(Symbol_t *symbol, Context_t *ctx) {
+    Pos_t last_valid_pos;
 
-            // get next L2 token and process it
-            switch (auto token = ctx->lex2.getElement(leftValue, val, ctx)) {
+    while (!ctx->lex1_stack.empty()) {
+        // if level 2 lexer is currently in use get next L2 token and process it
+        if (ctx->lex2.in_use()) {
+            switch ((*symbol = ctx->lex2.next()).id) {
             default:
-                leftValue->val = val;
-                leftValue->pos = pos; // elements position
-                ctx->position = pos; // actual position in input stream
-                leftValue->prgsize = ctx->program->size();
-                return token;
-            case Parser::parser::token::LEX_INVALID:
-                ctx->logError(pos, "Invalid lexical element");
+                std::cerr << "...." << "symbol=" << symbol->name()
+                          << ", str=\"" << symbol->symbol_string << "\""
+                          << std::endl;
+                // symbol->prgsize = ctx->program->size();
+                return symbol->id;
+            case LEX2::INVALID:
+                std::cerr << "...." << "invalid" << std::endl;
+                logError(ctx, symbol->pos, "Invalid lexical element");
                 continue;
-            case 0:
-                // that was last token
-                ctx->lex2.finish();
-                ctx->lex2InUse = false;
+            case 0: // means EOF
+                std::cerr << "...." << "eof" << std::endl;
+                ctx->lex2.finish_scanning();
                 break;
             }
         }
 
-        // test if lex1 stack is empty
-        if (ctx->lex1.empty()) {
-            leftValue->pos = ctx->lex1Pos; // last known position
-            ctx->position = ctx->lex1Pos; // last known position in input stream
-            leftValue->prgsize = ctx->program->size();
-            return 0; // EOF
-        }
-
-        // remember the token position
-        ctx->lex1Pos = ctx->lex1.top()->getPosition();
-        bool shortTag = ctx->paramDictionary->isShortTagEnabled();
-
         // get next L1 token and process it
-        auto token = ctx->lex1.top()->getElement(shortTag);
-        switch (token.type) {
-        case Lex1_t::TYPE_TENG:
-        case Lex1_t::TYPE_EXPR:
-        case Lex1_t::TYPE_DICT:
-        expr_label:
-            // use lex2
-            ctx->lex2.init(token.value);
-            ctx->lex2Pos = ctx->lex1Pos;
-            ctx->lex2InUse = true;
-            continue; // read first lex2-element in next loop
+        using LEX1 = Lex1_t::LEX1;
+        bool accept_short_directives = ctx->params->isShortTagEnabled();
+        std::cerr << "******************************************" << std::endl;
+        switch (auto token = ctx->lex1().next(accept_short_directives)) {
+        case LEX1::TENG: case LEX1::EXPR:
+        case LEX1::DICT: case LEX1::TENG_SHORT:
+            std::cerr << "* teng,expr,dict" << " " << token.flex_view() << std::endl;
+            ctx->lex2.start_scanning(std::move(token.flex_view()), token.pos);
+            continue; // parse token value by level 2 lexer in next loop
 
-        case Lex1_t::TYPE_TEXT:
-        text_label:
-            // plain text
-            leftValue->val.setString(token.value);
-            leftValue->pos = ctx->lex1Pos; // element's position
-            ctx->position = ctx->lex1Pos;
-            leftValue->prgsize = ctx->program->size();
-            return Parser::parser::token::LEX_TEXT;
+        case LEX1::TEXT:
+            std::cerr << "* text" << std::endl;
+            symbol->id = LEX2::TEXT;
+            symbol->symbol_string = token.string_view();
+            symbol->pos = token.pos;
+            // symbol->prgsize = ctx->program->size();
+            return symbol->id;
 
-        case Lex1_t::TYPE_TENG_SHORT:
-            if (shortTag) goto expr_label;
-            else goto text_label;
-
-        case Lex1_t::TYPE_ERROR:
-            // error
-            ctx->logError(ctx->lex1Pos, token.value);
+        case LEX1::ERROR:
+            std::cerr << "* error" << std::endl;
+            logError(ctx, token.pos, token.string_view());
             continue; // ignore bad element
 
-        case Lex1_t::TYPE_EOF:
-            // EOF from current lex
-            // remove it from stack and try again
-            delete ctx->lex1.top();
-            ctx->lex1.pop();
-            ctx->sourceIndex.pop();
+        case LEX1::END_OF_INPUT:
+            std::cerr << "* eof" << std::endl;
+            // EOF from current lex so remove it from stack and try again
+            last_valid_pos = ctx->lex1().position();
+            ctx->lex1_stack.pop();
             break;
         }
     }
+
+    // stop if there is nothing to do
+    std::cerr << "******************************************" << std::endl;
+    symbol->id = 0;
+    symbol->symbol_string = {};
+    symbol->pos = last_valid_pos;
+    // symbol->prgsize = ctx->program->size();
+    return 0; // EOF
 }
 
+} // namespace Parser
 } // namespace Teng
 

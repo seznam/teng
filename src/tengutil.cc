@@ -39,15 +39,13 @@
 
 
 #include <vector>
+#include <cstring>
+#include <algorithm>
 
-#include "tengstructs.h"
-#include "tengerror.h"
-#include "tengdictionary.h"
-#include "tengutil.h"
 #include "tengplatform.h"
+#include "tengutil.h"
 
 namespace Teng {
-
 namespace {
 
 // count of "." characters, which are appended to clipped string
@@ -55,12 +53,11 @@ const unsigned int CLIP_DOTS_COUNT = 3;
 
 } // namespace
 
-int tengNormalizeFilename(std::string &filename)
-{
+void normalizeFilename(std::string &filename) {
     // check for empty filename
-    if (filename.empty()) return -1;
+    if (filename.empty()) return;
 
-        CONVERTNAMEBYPLATFORM(filename)
+    CONVERTNAMEBYPLATFORM(filename)
 
     // cache of filename parts
     std::vector<std::string> parts;
@@ -92,90 +89,20 @@ int tengNormalizeFilename(std::string &filename)
     // erase current filename
     filename.erase();
     // run through part cache and glue them with '/' together
-    for (std::vector<std::string>::const_iterator iparts = parts.begin();
-         iparts != parts.end(); ++iparts) {
+    for (auto &part: parts) {
 #ifdef WIN32
-        if (iparts != parts.begin())
+        if (!filename.empty())
 #endif //WIN32
         filename.push_back('/');
-        filename.append(*iparts);
+        filename.append(part);
     }
-
-    // OK
-    return 0;
-}
-
-namespace {
-    void checkDataRecursion(const Fragment_t *root,
-                            const Dictionary_t &dataDefinition,
-                            Error_t &error,
-                            const std::string &path,
-                            int inRoot)
-    {
-        for (Fragment_t::const_iterator i = root->begin();
-             i != root->end(); i++) {
-
-            if (!i->second->getNestedFragments()){
-
-                if (i -> first.size() &&
-                    i -> first[0] == '_' &&
-                    ((inRoot && i -> first == "_error") ||
-                         i -> first == "_count" ||
-                         i -> first == "_number" ||
-                         i -> first == "_this"))
-                {
-
-                    error.logError(Error_t::LL_WARNING,
-                                   Error_t::Position_t(),
-                                   "Variable '" + path + "." + i->first +
-                                   "' has wrong name");
-                } else {
-                    if (!dataDefinition.lookup(path + "." + i->first)) {
-                        error.logError(Error_t::LL_WARNING,
-                                       Error_t::Position_t(),
-                                       "Variable '" + path + "." + i->first +
-                                       "' is not present in data definition");
-                    }
-                }
-            } else {
-                if (i -> first.size() && i -> first[0] == '_' &&
-                    (i -> first == "_error" || i -> first == "_count" ||
-                     i -> first == "_number" ||i -> first == "_this")) {
-                    error.logError(Error_t::LL_WARNING, Error_t::Position_t(),
-                                   "Fragment '" + path + "." + i->first +
-                                   "' has wrong name");
-
-                } else {
-                    if (!dataDefinition.lookup(path + "." + i->first)) {
-                        error.logError(Error_t::LL_WARNING,
-                                       Error_t::Position_t(),
-                                       "Fragment '" +  path + "." + i->first +
-                                       "' is not present in data definition");
-                    }
-                }
-
-                for (auto &nested: *i->second->getNestedFragments()) {
-                    checkDataRecursion(nested.get(), dataDefinition, error,
-                                       path + "." + i->first,
-                                       0);
-                }
-            }
-        }
-    }
-}
-
-void tengCheckData(const Fragment_t &root, const Dictionary_t &data,
-                         Error_t &error)
-{
-    checkDataRecursion(&root, data, error, "", 1);
 }
 
 void clipString(std::string &str, unsigned int len) {
     if (str.size() + CLIP_DOTS_COUNT > len) {
         str = str.substr(0, std::max((int)len - (int)CLIP_DOTS_COUNT, 0));
         // find previous correct utf8 character
-        while (str.length() &&
-                (str[str.length() - 1] & 0x80) == 0x80) {
+        while (str.length() && (str[str.length() - 1] & 0x80) == 0x80) {
             char ch = str[str.length() - 1];
             str.erase(str.length() - 1, 1);
             // char 11xxxxxx is begin of utf8 char, we can break
@@ -186,6 +113,18 @@ void clipString(std::string &str, unsigned int len) {
         for (unsigned int i = 0; i < CLIP_DOTS_COUNT && str.length() < len; i++)
             str += ".";
     }
+}
+
+std::string tolower(std::string str) {
+    std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+    return str;
+}
+
+std::string strerr() {
+    char system_error_string[1024];
+    system_error_string[0] = '\0';
+    strerror_r(errno, system_error_string, sizeof(system_error_string));
+    return system_error_string;
 }
 
 } // namespace Teng

@@ -29,6 +29,7 @@
  * AUTHORS
  * Jan Nemec <jan.nemec@firma.seznam.cz>
  * Vaclav Blazek <blazek@firma.seznam.cz>
+ * Michal Bukovsky <michal.bukovsky@firma.seznam.cz>
  *
  * HISTORY
  * 2003-09-26  (jan)
@@ -38,31 +39,23 @@
 #ifndef TENGFUNCTION_H
 #define TENGFUNCTION_H
 
-#include <vector>
-
-#include "tengparservalue.h"
-#include "tengprocessor.h"
+#include <tenginvoke.h>
 
 namespace Teng {
 
-/** Function in Teng (len, round, formatdate, ...)
- *         return  0 OK
- *                -1 wrong argument count
- *        other (-2) other error
- *
- * vector            argument list
- * TengParserValue_t return type
- * */
-typedef int (*Function_t)(const std::vector<ParserValue_t> &,
-                          const Processor_t::FunctionParam_t&,
-                          ParserValue_t &);
+/** Teng builtin functions type.
+ */
+using Function_t
+    = FunctionResult_t (*)(FunctionCtx_t &, const FunctionArgs_t &);
 
 /**
- * @short finds function in global list, returns pointer or 0
+ * @short Finds builtin function in global list, returns pointer or nullptr.
+ *
  * @param name name of the function
  * @param normalRun true for normal run, false for preevaluation constant expr
  */
-Function_t tengFindFunction(const std::string &name, bool normalRun = true);
+Invoker_t<Function_t>
+findFunction(const std::string &name, bool normalRun = true);
 
 } // namespace Teng
 

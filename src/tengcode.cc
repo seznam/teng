@@ -35,110 +35,146 @@
  */
 
 #include "tengerror.h"
+#include "tengprogram.h"
 #include "tenginstruction.h"
 #include "tengparservalue.h"
+#include "tenglogging.h"
 #include "tengcode.h"
 
-
 namespace Teng {
+namespace {
 
-/** Generate byte-code for general instruction.
-  * @param context A parser context.
-  * @param code Instruction code.
-  * @param value Optional instruction parameter value(s). */
-void generateCode(ParserContext_t *context,
-                  Instruction_t::OpCode_t code,
-                  const ParserValue_t &value /*= ParserValue_t()*/)
-{
-    // get source index (instead of full filename)
-    int srcidx = -1; //may be undefined
-    if (context->sourceIndex.empty() == 0) {
-        srcidx = context->sourceIndex.top();
-    }
-    // get position
-    Error_t::Position_t pos;
-    if (context->lex1.empty() == 0) {
-        pos = context->lex1.top()->getPosition();
-    }
+template <typename type_t, typename opt_type_t>
+std::size_t
+genCode(
+    Parser::Context_t *ctx,
+    Instruction_t::OpCode_t opcode,
+    type_t &&value,
+    opt_type_t &&opt_value
+) {
+    // save program size/address
+    auto prgsize = ctx->program->size();
+
     // create instruction
-    context->program->push_back(Instruction_t(code, value,
-            srcidx, pos.lineno, pos.col));
+    ctx->program->emplace_back(
+        opcode,
+        Parser::Value_t(std::forward<type_t>(value)),
+        Parser::Value_t(std::forward<opt_type_t>(opt_value)),
+        ctx->position()
+    );
+
+    // return origin program size/address
+    return prgsize;
 }
 
+} // namespace
 
-/** Generate byte-code for a function call.
-  * Also optimize 'unescape($variable)' call.
-  * @param context A parser context.
-  * @param name The function name.
-  * @param nparams Number of params in the call. */
-void tengCode_generateFunctionCall(ParserContext_t *context,
-                                   const std::string &name, int nparams)
+std::size_t
+generateCode(Parser::Context_t *ctx,
+             Instruction_t::OpCode_t opcode,
+             const Parser::Symbol_t &value,
+             const Parser::Symbol_t &opt_value)
+{
+    return genCode(ctx, opcode, value.str(), opt_value.str());
+}
+
+unsigned int
+generateExpression(Parser::Context_t *ctx,
+                   unsigned int start,
+                   Instruction_t::OpCode_t code1,
+                   bool negated)
+{
+    generateCode(ctx, code1);
+    if (negated) generateCode(ctx, Instruction_t::NOT);
+    optimizeExpression(ctx, start);
+    return start;
+}
+
+void replaceCode(Parser::Context_t *ctx,
+                 Instruction_t::OpCode_t code,
+                 const Parser::Symbol_t &symbol)
+{
+    ctx->program->clear();
+    syntaxError(ctx, symbol, "Fatal parse error in template");
+    generateCode(ctx, code);
+}
+
+void generateFunctionCall(Parser::Context_t *ctx,
+                          const std::string &name,
+                          int nparams)
 {
     // be optimal for unescape($variable)
-    if ((name == "unescape")
-        && (nparams == 1)
-        && (context->program->back().operation // if last instr. is VAR
-            == Instruction_t::VAR)             // and should be escaped
-        && context->program->back().value.integerValue) {
-        // unescaping a single variable --
-        // change escaping status of that variable
-        context->program->back().value.integerValue = 0; //noescape
-    } else {
-        // other function call -- generate code for it
-        ParserValue_t val;
-        val.stringValue = name; //function name
-        val.integerValue = nparams; //number of args
-        generateCode(context, Instruction_t::FUNC, val);
+    // if last instr. is VAR and should be escaped
+    // unescaping a single variable -- change escaping status of that variable
+    if ((name == "unescape") && (nparams == 1)) {
+        if (ctx->program->back().opcode == Instruction_t::VAR) {
+            if (ctx->program->back().value) {   // means do escape
+                ctx->program->back().value = 0; // set don't escape
+                return;
+            }
+        }
     }
+
+    // other function call -- generate code for it
+    genCode(ctx, Instruction_t::FUNC, name, nparams);
 }
 
+void generatePrint(Parser::Context_t *ctx) {
+    return (void)generateCode(ctx, Instruction_t::PRINT);
 
-/** Generate byte-code for printing a value.
-  * @param context A parser context. */
-void generatePrint(ParserContext_t *context) {
-    // get actual program size
-    unsigned int prgsize = context->program->size();
-    // if optimalization does not step across opt limit address
-    if (prgsize >= 3 //overflow protect
-            && prgsize - 3 >= context->lowestValPrintAddress
-            && (*context->program)[prgsize - 1].operation
-            == Instruction_t::VAL //last op.
-            && (*context->program)[prgsize - 2].operation
-            == Instruction_t::PRINT
-            && (*context->program)[prgsize - 3].operation
-            == Instruction_t::VAL) {
-        // optimalize sequence of VAL, PRINT, VAL, PRINT
-        // to a single VAL, PRINT pair
-        (*context->program)[prgsize - 3].value.setString(
-                (*context->program)[prgsize - 3].value.stringValue
-                + (*context->program)[prgsize - 1].value.stringValue);
-        context->program->pop_back(); //delete last VAL instruction
-    } else {
-        // no way, simply add print instruction
-        generateCode(context, Instruction_t::PRINT);
-    }
+    // // TODO(burlog): lowestValPrintAddress nahrada
+    // // get actual program size
+    // auto prgsize = ctx->program->size();
+    //
+    // // overflow protect -> no optimalization can be peformed for now
+    // if ((prgsize <= 3) || (ctx->lowestValPrintAddress + 3) >= prgsize)
+    //     return (void)generateCode(ctx, Instruction_t::PRINT);
+    //
+    // // attempt to optimize consecutive print instrs to one merged
+    // if ((*ctx->program)[prgsize - 1].opcode != Instruction_t::VAL)
+    //     return (void)generateCode(ctx, Instruction_t::PRINT);
+    // if ((*ctx->program)[prgsize - 2].opcode != Instruction_t::PRINT)
+    //     return (void)generateCode(ctx, Instruction_t::PRINT);
+    // if ((*ctx->program)[prgsize - 3].opcode != Instruction_t::VAL)
+    //     return (void)generateCode(ctx, Instruction_t::PRINT);
+    //
+    // // optimalize sequence of VAL, PRINT, VAL, PRINT to single VAL, PRINT pair
+    // (*ctx->program)[prgsize - 3].value = std::string(
+    //     (*ctx->program)[prgsize - 3].value.str()
+    //     + (*ctx->program)[prgsize - 1].value.str()
+    // );
+    //
+    // // delete last VAL instruction (optimized out)
+    // ctx->program->pop_back();
 }
 
+void generatePrint(Parser::Context_t *ctx, const Parser::Symbol_t &symbol) {
+    generateCode(ctx, Instruction_t::VAL, symbol);
+    generatePrint(ctx);
+}
 
-/** Optimize byte code for static expressions.
-  * Expressions are examined for evaluation (from given start to end of prog)
-  * and on success result is substituted instead of tested expression code.
-  * @param context A parser context.
-  * @param start Expressions starting address within program. */
-void optimizeExpression(ParserContext_t *context, unsigned int start) {
+void optimizeExpression(Parser::Context_t *ctx, unsigned int start) {
     // try to evaluate given part of prog
-    ParserValue_t val;
-    int rc = context->evalProcessor->eval(
-            val, start, context->program->size());
-    // subst code on success
-    if (rc == 0) {
-        // remove expression's program
-        context->program->erase(
-                context->program->begin() + start,
-                context->program->end());
-        // code value
-        generateCode(context, Instruction_t::VAL, val);
-    }
+    Parser::Value_t val;
+    std::cerr << "optimizing: <" << start << "," << ctx->program->size() << ">" << std::endl;
+    // int rc = ctx->coproc.eval(val, start, ctx->program->size());
+
+    // // subst code on success
+    // if (rc == 0) {
+    //     // remove expression's program
+    //     ctx->program->erase(ctx->program->begin() + start, ctx->program->end());
+    //     generateCode(ctx, Instruction_t::VAL, val);
+    // }
+}
+
+void eraseCodeFrom(Parser::Context_t *ctx, unsigned int start) {
+    auto *program = ctx->program.get();
+    program->erase(program->begin() + start, program->end());
+}
+
+void generateHalt(Parser::Context_t *ctx) {
+    ctx->program->emplace_back(Instruction_t::HALT, Pos_t());
 }
 
 } // namespace Teng
+

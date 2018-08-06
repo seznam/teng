@@ -35,7 +35,8 @@
  */
 
 
-#include <ctype.h>
+#include <cctype>
+#include <unordered_map>
 
 #include "tengformatter.h"
 
@@ -56,11 +57,9 @@ int Formatter_t::write(const std::string &str) {
     // indicates that we are in block of spaces
     bool spaces = false;
     // block of spaces
-    std::pair<std::string::const_iterator, std::string::const_iterator>
-        spaceblock = make_pair(str.begin(), str.begin());
+    auto spaceblock = make_pair(str.begin(), str.begin());
     // block of other characters
-    std::pair<std::string::const_iterator, std::string::const_iterator>
-        charblock = make_pair(str.begin(), str.begin());
+    auto charblock = make_pair(str.begin(), str.begin());
     // run through input string
     for (std::string::const_iterator istr = str.begin();
          istr != str.end(); ++istr) {
@@ -254,6 +253,21 @@ int Formatter_t::process(std::string &str) {
     // erase buffer
     buffer.erase();
     return 0;
+}
+
+Formatter_t::Mode_t resolveFormat(const std::string &name) {
+    static const std::unordered_map<std::string, Formatter_t::Mode_t> modes = {
+        {"nowhite", Formatter_t::MODE_NOWHITE},
+        {"onespace", Formatter_t::MODE_ONESPACE},
+        {"striplines", Formatter_t::MODE_STRIPLINES},
+        {"joinlines", Formatter_t::MODE_JOINLINES},
+        {"nowhitelines", Formatter_t::MODE_NOWHITELINES},
+        {"noformat", Formatter_t::MODE_PASSWHITE},
+    };
+    auto imode = modes.find(name);
+    return imode == modes.end()
+        ? Formatter_t::MODE_INVALID
+        : imode->second;
 }
 
 } // namespace Teng

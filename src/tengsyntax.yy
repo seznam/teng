@@ -35,6 +35,8 @@
  *             Created.
  * 2006-06-21  (sten__)
  *             Better error reporting when unexpected EOF
+ * 2018-06-07  (burlog)
+ *             Cleaned.
  */
 
  /********************************************** PROLOGUE: C/C++ declaration. */
@@ -42,21 +44,28 @@
 
 #include "tengsemantic.h"
 
+ // I don't know better eay how to access look-ahead symbol
+#define look_ahead_symbol yyla.value
+
 %}
 
- /*********************** BISON DECLARATIONS: options that modifies parser. ***/
+ /************************* BISON DECLARATIONS: options that modifies parser. */
+
 
 // enable debugging
-%define parse.trace
+%define parse.trace true
 
 // add forward declaration to tengsyntax.hh
-%code requires {namespace Teng {struct ParserContext_t; struct LeftValue_t;}}
+%code requires {#include "tengyystype.h"}
+%code requires {namespace Teng {namespace Parser {struct Context_t;}}}
+%code {using I = Teng::Instruction_t;}
+%code provides {namespace Teng {namespace Parser {using LEX2 = Teng::Parser::parser::token::yytokentype;}}}
 
 // use C++ parser (is always pure parser)
 %skeleton "lalr1.cc"
 
 // all callbacks takes context
-%param {Teng::ParserContext_t *ctx}
+%param {Teng::Parser::Context_t *ctx}
 
 // close whole parser into Teng::Parser namespace
 %define api.namespace {Teng::Parser}
@@ -64,1912 +73,569 @@
 // we want to have all lexical symbols in tengsyntax.hh
 %defines
 
-// the type lexical symbol
-%define api.value.type {Teng::LeftValue_t}
+// the type of the lexical symbol
+// %define api.value.type {Teng::Parser::Symbol_t}
+// %union {
+//     Symbol_t symbol;
+// }
+
+%define api.value.type variant
+
+%type <Symbol_t> TEXT TENG teng_fragment_open variable ENDFRAGMENT local_variable
+               absolute_variable relative_variable absolute_variable_path_root
+               absolute_variable_path_this absolute_variable_path_parent
+               identifier BUILTIN_THIS BUILTIN_PARENT absolute_variable_middle
+               SELECTOR identifier_relative TYPE COUNT JSONIFY EXISTS BUILTIN_COUNT
+               BUILTIN_INDEX BUILTIN_FIRST BUILTIN_LAST BUILTIN_INNER
 
  /******************************************* BISON DECLARATIONS: lex tokens. */
 
 // plain text
-%token LEX_TEXT
+%token TEXT
 
 // teng directives
-%token LEX_DEBUG LEX_BYTECODE LEX_INCLUDE LEX_FORMAT LEX_ENDFORMAT LEX_FRAGMENT
-%token LEX_ENDFRAGMENT LEX_IF LEX_ELSEIF LEX_ELSE LEX_ENDIF LEX_SET LEX_EXPR
-%token LEX_TENG LEX_END LEX_SHORT_EXPR LEX_SHORT_DICT LEX_SHORT_END LEX_CTYPE
-%token LEX_ENDCTYPE LEX_REPEATFRAG
+%token DEBUG_FRAG BYTECODE_FRAG INCLUDE FORMAT ENDFORMAT FRAGMENT ENDFRAGMENT
+       IF ELSEIF ELSE ENDIF SET EXPR TENG END SHORT_EXPR SHORT_DICT SHORT_END
+       CTYPE ENDCTYPE
 
 // assignment
-%token LEX_ASSIGN LEX_COMMA
+%token ASSIGN COMMA
 
 // conditional expression
-%right LEX_COND_EXPR LEX_COLON
+%right COND_EXPR COLON
 
 // logic operators (must be right-associative for proper code-generation)
-%right LEX_OR LEX_AND
+%right OR AND
 
 // bitwise operators
-%left LEX_BITOR LEX_BITXOR LEX_BITAND
+%left BITOR BITXOR BITAND
 
 // comparison operators
-%left LEX_EQ LEX_NE LEX_STR_EQ LEX_STR_NE
-%left LEX_GE LEX_LE LEX_GT LEX_LT
+%left EQ NE STR_EQ STR_NE GE LE GT LT
 
 // expressions
-%left LEX_ADD LEX_SUB LEX_CONCAT
-%left LEX_MUL LEX_DIV LEX_MOD LEX_REPEAT
-%right LEX_NOT LEX_BITNOT
+%left ADD SUB CONCAT
+%left MUL DIV MOD REPEAT
+%precedence NOT BITNOT
 
-// LEX_UNARY is fake terminal
-%right LEX_UNARY
+// UNARY is fake terminal
+%precedence UNARY
 
 // other keywords/operators
-%token LEX_CASE LEX_DEFINED LEX_ISEMPTY LEX_EXISTS LEX_JSONIFY LEX_TYPE
-%token LEX_COUNT
+%token CASE DEFINED ISEMPTY EXISTS JSONIFY TYPE COUNT
 
 // parentheses
-%token LEX_L_PAREN LEX_R_PAREN
-%token LEX_L_BRACKET LEX_R_BRACKET
+%token L_PAREN R_PAREN
+%token L_BRACKET R_BRACKET
 
 // identifiers and literals
-%right LEX_VAR LEX_DICT LEX_DICT_INDIRECT
-%token LEX_SELECTOR LEX_UDF_IDENT LEX_IDENT LEX_STRING LEX_INT LEX_REAL
+%token BUILTIN_FIRST BUILTIN_INNER BUILTIN_LAST BUILTIN_INDEX BUILTIN_COUNT
+       BUILTIN_THIS BUILTIN_PARENT VAR DICT DICT_INDIRECT
+       SELECTOR UDF_IDENT IDENT STRING INT REAL
 
 // invalid lexical token
-%token LEX_INVALID
+%token INVALID
 
 // start symbol
 %start start
 
+// There is one shift/reduce conflict:
+//
+// start -> error
+// teng_format -> error lex_endformat lex_end
+// ...
+//
+// which I don't know how to resolve.
+//
+// This declaration mutes warning caused by this conflict.
+//%expect 1
+
  /*********************************************** GRAMMAR RULES: teng syntax. */
 %%
 
+
 start
-    : template {generateCode(ctx, Instruction_t::HALT);}
-    | error {generateCode(ctx, Instruction_t::HALT);
-        /* if (tengSyntax_lastErrorMessage.length() > 0) { */
-        /*     printUnexpectedElement(CONTEXT, yychar, yylval); */
-        /*     ERR(FATAL, CONTEXT->position, "Big, fatal or " */
-        /*             "unhandled parse error in template"); */
-        /* } */
-        /* tengSyntax_lastErrorMessage.erase(); //clear error */
-        /* CONTEXT->program->erase(CONTEXT->program->begin(), */
-        /*         CONTEXT->program->end()); //discard program */
-        /* CODE(HALT); //end of program */
-    }
+    : template {generateHalt(ctx);}
+    | error {replaceCode(ctx, I::HALT, look_ahead_symbol);}
     ;
 
 
 template
-    :
+    : template TEXT {generatePrint(ctx, $TEXT);}
+    | template teng_directive
+    | %empty
     ;
-//    : template LEX_TEXT {
-//        CODE_VAL(VAL, $2.val); //static text
-//        tengCode_generatePrint(CONTEXT);
-//    }
-//    | template teng_directive
-//    | //empty
-//    ;
-//
-//
-//teng_directive
-//    : teng_unknown
-//    | teng_debug
-//    | teng_bytecode
-//    | teng_include
-//    | teng_format
-//    | teng_fragment
-//    | teng_if
-//    | teng_set
-//    | teng_expr
-//    | teng_dict
-//    | teng_ctype
-//    | teng_repeatfrag
-//    ;
-//
-//
-//teng_unknown:
-//    LEX_TENG error LEX_END
-//        {
-//            ERR(ERROR, $1.pos, "Unknown <?teng"
-//                    + $1.val.stringValue + "?> directive");
-//        }
-//    ;
-//
-//
-//teng_debug:
-//    LEX_DEBUG no_options_LEX_END
-//        {
-//            CODE(DEBUGING); //print debug info
-//        }
-//    ;
-//
-//
-//teng_bytecode:
-//    LEX_BYTECODE no_options_LEX_END
-//        {
-//            CODE(BYTECODE); //print disassembled bytecode
-//        }
-//    ;
-//
-//
-//no_options_LEX_END:
-//    options LEX_END
-//        {
-//            if ($1.opt.size() > 0)
-//                ERR(ERROR, $1.pos, "Teng directive "
-//                        "does not accept any option(s)");
-//        }
-//
-//    // no_options_LEX_END error handling
-//    | error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, CONTEXT->position, "Syntax error "
-//                        "inside <?teng ...?> directive");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_END //no code may be produced here
-//    ;
-//
-//
-//options:
-//    identifier LEX_ASSIGN LEX_STRING options
-//        {
-//            $$.opt = $4.opt; //get all nested options
-//            $$.opt.insert(make_pair($1.val.stringValue, $3.val.stringValue));
-//            $$.pos = $1.pos; //propagate start of options position
-//        }
-//    | //empty
-//        {
-//            $$.opt.erase($$.opt.begin(), $$.opt.end()); //clear residuals
-//        }
-//    ;
-//
-//
-//teng_include:
-//    LEX_INCLUDE options LEX_END
-//        {
-//            // file may be included only at the end of teng directive,
-//            // because of flex-generated lexical analyzer is not reentrant.
-//            LeftValue_t::OptionList_t::const_iterator i = $2.opt.find("file");
-//            if (i == $2.opt.end()) {
-//                ERR(ERROR, $1.pos, "Cannot include a file; "
-//                        "option 'file' is not specified");
-//            } else if (CONTEXT->lex1.size() >=
-//                       CONTEXT->paramDictionary->getMaxIncludeDepth()) {
-//                ERR(ERROR, $1.pos, "Cannot include a file; template "
-//                        "nesting level is too deep");
-//            } else {
-//                // glue filename
-//                std::string fname = i->second;
-//                if (!CONTEXT->root.empty() && !fname.empty() && fname[0] != '/')
-//                    fname = CONTEXT->root + "/" + fname;
-//                // create new level #1 lex analyzer with file input
-//                CONTEXT->lex1.push(new Lex1_t(fname,
-//                        CONTEXT->lex1.top()->getPosition(),
-//                        CONTEXT->program->getErrors())); //new lex1
-//                // lex2 state should be false now (or after a while)
-//                CONTEXT->lex2.finish();
-//                CONTEXT->lex2InUse = false; //for sure
-//                // append source list
-//                CONTEXT->sourceIndex.push( //remember source index
-//                        CONTEXT->program->addSource(fname,
-//                        CONTEXT->lex1.top()->getPosition()));
-//            }
-//        }
-//
-//    // teng_include error handling
-//    | LEX_INCLUDE error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, $1.pos, "Invalid <?teng "
-//                        "include ...?> directive");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_END
-//    ;
-//
-//
-//teng_format:
-//    LEX_FORMAT options LEX_END
-//        {
-//            // get chosen formating type
-//            LeftValue_t::OptionList_t::const_iterator i = $2.opt.find("space");
-//            if (i == $2.opt.end() || i->second.length() == 0) {
-//                ERR(ERROR, $1.pos,"Formatting block has no effect; "
-//                        "option 'space' is not specified or is empty");
-//            } else {
-//                // reset val
-//                $$.val = ParserValue_t();
-//                $$.val.integerValue = -1;
-//                // check space option
-//                if (i->second == "nowhite") {
-//                    $$.val.integerValue = Formatter_t::MODE_NOWHITE;
-//                } else if (i->second == "onespace") {
-//                    $$.val.integerValue = Formatter_t::MODE_ONESPACE;
-//                } else if (i->second == "striplines") {
-//                    $$.val.integerValue = Formatter_t::MODE_STRIPLINES;
-//                } else if (i->second == "joinlines") {
-//                    $$.val.integerValue = Formatter_t::MODE_JOINLINES;
-//                } else if (i->second == "nowhitelines") {
-//                    $$.val.integerValue = Formatter_t::MODE_NOWHITELINES;
-//                } else if (i->second == "noformat") {
-//                    $$.val.integerValue = Formatter_t::MODE_PASSWHITE;
-//                } else {
-//                    ERR(ERROR, $1.pos, "Unsupported value '" + i->second
-//                            + "' of 'space' formatting option");
-//                }
-//                // if not err, generate code
-//                if ($$.val.integerValue >= 0)
-//                    CODE_VAL(FORM, $$.val);
-//            }
-//        }
-//    template LEX_ENDFORMAT no_options_LEX_END
-//        {
-//            // if was not error no block start
-//            if ($4.val.integerValue >= 0)
-//                CODE(ENDFORM); //generate code
-//            // do not optimize (join) print-vals across current prog end-addr
-//            CONTEXT->lowestValPrintAddress = CONTEXT->program->size();
-//        }
-//
-//    // teng_format error handling
-//    | LEX_FORMAT error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, $1.pos, "Invalid <?teng format ...?> directive");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_END template LEX_ENDFORMAT no_options_LEX_END
-//    | LEX_FORMAT error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, $1.pos, "Syntax error in teng format block; "
-//                        "discarding block content");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_ENDFORMAT no_options_LEX_END
-//        {
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $1.prgsize,
-//                    CONTEXT->program->end()); //discard program
-//        }
-//    | error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                // If EOF, do not print this message
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                if (yychar) // I don't know why, but when unexpected EOF
-//                            // occurs, this error handler is called
-//                    ERR(ERROR, CONTEXT->position,
-//                        "Misplaced <?teng endformat?> directive");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_ENDFORMAT no_options_LEX_END
-//        {
-//            // discard program from point the LEX_ENDFORMAT was read
-//            // (destroy HALT instruction created by reduction start->template)
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $3.prgsize,
-//                    CONTEXT->program->end()); //discard program
-//        }
-//    ;
-//
-//
-//teng_fragment:
-//    LEX_FRAGMENT variable_identifier LEX_END
-//        {
-//            // save actual prog size/addr
-//            $$.prgsize = CONTEXT->program->size();
-//            // clear val and copy variable identifier
-//            $$.val = ParserValue_t(); //clear
-//            $$.id = $2.id;
-//            $$.val.stringValue = $2.val.stringValue;
-//
-//            Identifier_t id;
-//            if (CONTEXT->pushFragment($2.pos, $$.id, $$.val.stringValue, id)) {
-//                // generate code
-//                CODE_VAL(FRAG, $$.val);
-//                // set identifier
-//                CONTEXT->program->back().identifier = id;
-//            } else {
-//                // error in fragment, erase identifier to mark error
-//                $$.id.clear();
-//            }
-//        }
-//    template LEX_ENDFRAGMENT no_options_LEX_END
-//        {
-//            // pop previous fragment or remove invalid code
-//            if ($4.id.empty()) CONTEXT->cropCode($4.prgsize);
-//            else {
-//                // generate code for fragment end
-//                CODE(ENDFRAG);
-//                // pop frame
-//                CONTEXT->popFragment($4.prgsize);
-//            }
-//        }
-//
-//    // teng_fragment error handling
-//    | LEX_FRAGMENT error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, $1.pos, "Invalid <?teng frag ...?> directive; "
-//                        "discarding fragment block content");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_END template LEX_ENDFRAGMENT no_options_LEX_END
-//        {
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $1.prgsize,
-//                    CONTEXT->program->end()); //discard program
-//        }
-//    | LEX_FRAGMENT error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, $1.pos, "Syntax error in teng fragment block; "
-//                        "discarding block content");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_ENDFRAGMENT no_options_LEX_END
-//        {
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $1.prgsize,
-//                    CONTEXT->program->end()); //discard program
-//        }
-//    | error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, CONTEXT->position,
-//                        "Misplaced <?teng endfrag?> directive");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_ENDFRAGMENT no_options_LEX_END
-//        {
-//            // discard program from point the LEX_ENDFRAGMENT was read
-//            // (destroy HALT instruction created by reduction start->template)
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $3.prgsize,
-//                    CONTEXT->program->end()); //discard program
-//        }
-//    ;
-//
-//
-//teng_set:
-//    LEX_SET voluntary_dollar_before_var variable_identifier
-//    LEX_ASSIGN expression LEX_END
-//        {
-//            // clear val and copy variable identifier
-//            $$.val = ParserValue_t(); //clear
-//            $$.id = $3.id;
-//            $$.val.stringValue = $3.val.stringValue;
-//
-//            // error indicator
-//            bool found = false;
-//
-//            if ($$.id.size() == 0) {
-//                // bad variable identifier
-//                ERR(ERROR, $3.pos, "Invalid variable identifier; "
-//                        "variable will not be set");
-//            } else {
-//                Identifier_t id;
-//                if (CONTEXT->
-//                    findFragmentForVariable($$.pos, $$.id,
-//                                            $$.val.stringValue, id)) {
-//                    // fully qualified variable identifier is in
-//                    // $$.val.stringValue
-//                    CODE_VAL(SET, $$.val);
-//                    // set identifier
-//                    CONTEXT->program->back().identifier = id;
-//                    found = true;
-//                }
-//            }
-//            if (!found) {
-//                // variable not found => destroy program for expression
-//                CONTEXT->program->erase(CONTEXT->program->begin() + $1.prgsize,
-//                                        CONTEXT->program->end());
-//            }
-//        }
-//
-//    // teng_set error handling
-//    | LEX_SET voluntary_dollar_before_var variable_identifier
-//    LEX_ASSIGN error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, $1.pos, "Invalid expression in <?teng set ...?> "
-//                        "directive; variable '" +$3.val.stringValue
-//                        + "' will not be set");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_END
-//        {
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $1.prgsize,
-//                    CONTEXT->program->end()); //discard program
-//        }
-//    | LEX_SET error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, $1.pos, "Invalid variable identifier in "
-//                        "<?teng set ...?> directive");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_ASSIGN expression LEX_END
-//        {
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $1.prgsize,
-//                    CONTEXT->program->end()); //discard program
-//        }
-//    | LEX_SET error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, $1.pos, "Invalid <?teng set ...?> directive");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_END
-//        {
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $1.prgsize,
-//                    CONTEXT->program->end()); //discard program
-//        }
-//    ;
-//
-//
-//teng_if:
-//    LEX_IF expression LEX_END
-//        {
-//            // here is $4
-//            $$.prgsize = CONTEXT->program->size(); //save actual addr
-//            CODE(JMPIFNOT); //if not true, jump to next case
-//        }
-//    template
-//        {
-//            // here is $6
-//            $$.prgsize = CONTEXT->program->size(); //save actual addr
-//        }
-//    teng_else LEX_ENDIF no_options_LEX_END
-//        {
-//            // calculate jump offset
-//            // add +1 for end-jump if some else(if) section was generated
-//            (*CONTEXT->program)[$4.prgsize].value.integerValue =
-//                    $6.prgsize - $4.prgsize - 1
-//                    + ($6.prgsize != CONTEXT->program->size());
-//            // update all end-jumps with proper address
-//            LeftValue_t::AddressList_t::const_iterator i;
-//            for (i = $7.addr.begin(); i != $7.addr.end(); ++i) {
-//                (*CONTEXT->program)[*i].value.integerValue =
-//                        CONTEXT->program->size() - *i - 1;
-//            }
-//            // do not optimize (join) print-vals across current prog end-addr
-//            CONTEXT->lowestValPrintAddress = CONTEXT->program->size();
-//        }
-//
-//    // teng_if error handling
-//    | LEX_IF error
-//        {
-//            // if expression error, behave like the expression is true
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, $1.pos, "Error in condition expression "
-//                        "in <?teng if ...?> directive");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_END
-//        {
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $1.prgsize,
-//                    CONTEXT->program->end()); //discard expression program
-//        }
-//    template
-//        {
-//            $$.prgsize = CONTEXT->program->size(); //save actual addr
-//        }
-//    teng_else LEX_ENDIF no_options_LEX_END
-//        {
-//        	// delete all else(if) code for the faily if expression
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $7.prgsize,
-//                    CONTEXT->program->end()); //discard further else-parts
-//        }
-//    | LEX_IF error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, $1.pos, "Syntax error in teng conditional "
-//                        "block; discarding block content");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_ENDIF no_options_LEX_END
-//        {
-//        	// drop whole if section code
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $1.prgsize,
-//                    CONTEXT->program->end()); //discard else-parts of program
-//        }
-//    | error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, CONTEXT->position, "Misplaced "
-//                        "<?teng elseif ...?> directive");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_ELSEIF error LEX_END
-//        {
-//            // discard program from point the LEX_ELSEIF was read
-//            // (destroy HALT instruction created by reduction start->template)
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $3.prgsize,
-//                    CONTEXT->program->end()); //discard program
-//        }
-//    | error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, CONTEXT->position,
-//                        "Misplaced <?teng else?> directive");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_ELSE no_options_LEX_END
-//        {
-//            // discard program from point the LEX_ELSE was read
-//            // (destroy HALT instruction created by reduction start->template)
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $3.prgsize,
-//                    CONTEXT->program->end()); //discard program
-//        }
-//    | error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, CONTEXT->position,
-//                        "Misplaced <?teng endif?> directive");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_ENDIF no_options_LEX_END
-//        {
-//            // discard program from point the LEX_ENDIF was read
-//            // (destroy HALT instruction created by reduction start->template)
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $3.prgsize,
-//                    CONTEXT->program->end()); //discard program
-//        }
-//    ;
-//
-//
-//teng_else:
-//    LEX_ELSE no_options_LEX_END
-//        {
-//            // insert previous program block end-jump
-//            $$.addr.erase($$.addr.begin(), $$.addr.end()); //clear
-//            $$.addr.push_back(CONTEXT->program->size()); //save end-jump addr
-//            CODE(JMP); //previous was true, skip else section
-//        }
-//    template
-//        {
-//            $$.addr = $3.addr; //preserve end-jump info
-//        }
-//    | LEX_ELSEIF
-//        {
-//            // insert end jump
-//            $$.prgsize = CONTEXT->program->size(); //end-jump addr
-//            CODE(JMP); //previous was true, skip future elseif and else sections
-//        }
-//    expression LEX_END
-//        {
-//            $$.prgsize = CONTEXT->program->size(); //save actual addr
-//            CODE(JMPIFNOT); //if not true, jump to the next case
-//        }
-//    template
-//        {
-//            $$.prgsize = CONTEXT->program->size(); //save actual addr
-//        }
-//    teng_else
-//        {
-//            // calculate jump offset
-//            // add +1 for end-jump if some else(if) section was generated
-//            (*CONTEXT->program)[$5.prgsize].value.integerValue =
-//                    $7.prgsize - $5.prgsize - 1
-//                    + ($7.prgsize != CONTEXT->program->size());
-//            // preserve end-jumps info
-//            $$.addr = $8.addr;
-//            $$.addr.push_back($2.prgsize);
-//        }
-//    | //empty
-//        {
-//            $$.addr.erase($$.addr.begin(), $$.addr.end()); //clear residuals
-//        }
-//
-//    // teng_if error handling
-//    | LEX_ELSEIF error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, $1.pos, "Error in condition expression "
-//                        "in <?teng elseif ...?> directive");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_END
-//        {
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $1.prgsize,
-//                    CONTEXT->program->end()); //discard expression program
-//        }
-//    template
-//        {
-//            $$.prgsize = CONTEXT->program->size(); //save actual addr
-//        }
-//    teng_else
-//        {
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $7.prgsize,
-//                    CONTEXT->program->end()); //discard further else-parts
-//        }
-//    ;
-//
-//
-//teng_expr:
-//    LEX_EXPR expression LEX_END
-//        {
-//            tengCode_generatePrint(CONTEXT); //print expression value
-//        }
-//    | LEX_SHORT_EXPR expression LEX_SHORT_END
-//        {
-//            tengCode_generatePrint(CONTEXT); //print expression value
-//        }
-//    | LEX_SHORT_EXPR variable_identifier LEX_SHORT_END
-//        {
-//            // generate code for variable
-//            codeForVariable(context, $$, $2);
-//            // print value
-//            tengCode_generatePrint(CONTEXT);
-//        }
-//
-//    // teng_expr error handling
-//    | LEX_EXPR error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, $1.pos, "Invalid expression "
-//                        "in <?teng expr ...?> directive");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_END
-//        {
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $1.prgsize,
-//                    CONTEXT->program->end()); //discard program
-//            $$.val.setString("undefined");
-//            CODE_VAL(VAL, $$.val); //fake value
-//            tengCode_generatePrint(CONTEXT); //print expression 'undef' value
-//        }
-//    | LEX_SHORT_EXPR error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, $1.pos, "Invalid expression in ${...} statement");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_SHORT_END
-//        {
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $1.prgsize,
-//                    CONTEXT->program->end()); //discard program
-//            $$.val.setString("undefined");
-//            CODE_VAL(VAL, $$.val); //fake value
-//            tengCode_generatePrint(CONTEXT); //print expression 'undef' value
-//        }
-//    ;
-//
-//
-//teng_dict:
-//    LEX_SHORT_DICT dictionary_item LEX_SHORT_END
-//        {
-//            tengCode_generatePrint(CONTEXT); //print dictionary item's value
-//        }
-//
-//    // teng_dict error handling
-//    | LEX_SHORT_DICT error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, $1.pos, "Invalid dictionary item "
-//                        "in #{...} statement");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_SHORT_END
-//        {
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $1.prgsize,
-//                    CONTEXT->program->end()); //discard program
-//            $$.val.setString("undefined");
-//            CODE_VAL(VAL, $$.val); //fake value
-//            tengCode_generatePrint(CONTEXT); //print 'undef' value
-//        }
-//    ;
-//
-//
-//teng_ctype:
-//    LEX_CTYPE LEX_STRING LEX_END
-//        {
-//            // reset val
-//            $$.val = ParserValue_t();
-//            $$.val.integerValue = -1;
-//
-//            // get content type descriptor for given type
-//            const ContentType_t::Descriptor_t *ct
-//                = ContentType_t::findContentType($2.val.stringValue,
-//                                                 CONTEXT->program->getErrors(),
-//                                                 $2.pos, true);
-//
-//            if (ct) {
-//                $$.val.integerValue = ct->index;
-//                CODE_VAL(CTYPE, $$.val);
-//            }
-//        }
-//
-//    template LEX_ENDCTYPE no_options_LEX_END
-//        {
-//            // if was not error no block start
-//            if ($4.val.integerValue >= 0)
-//                CODE(ENDCTYPE); //generate code
-//            // no print-values join below following address
-//            CONTEXT->lowestValPrintAddress = CONTEXT->program->size();
-//        }
-//
-//    // teng_ctype error handling
-//    | LEX_CTYPE error
-//        {
-//            if (!tengSyntax_lastErrorMessage.empty()) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, $1.pos, "Invalid <?teng ctype ...?> directive");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_END template LEX_ENDCTYPE no_options_LEX_END
-//    | LEX_CTYPE error
-//        {
-//            if (!tengSyntax_lastErrorMessage.empty()) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, $1.pos, "Syntax error in teng ctype block; "
-//                        "discarding block content");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_ENDCTYPE no_options_LEX_END
-//        {
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $1.prgsize,
-//                    CONTEXT->program->end()); //discard program
-//        }
-//    | error
-//        {
-//            if (!tengSyntax_lastErrorMessage.empty()) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, CONTEXT->position,
-//                        "Misplaced <?teng endctype?> directive");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_ENDCTYPE no_options_LEX_END
-//        {
-//            // discard program from point the LEX_ENDCTYP was read
-//            // (destroy HALT instruction created by reduction start->template)
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $3.prgsize,
-//                    CONTEXT->program->end()); //discard program
-//        }
-//    ;
-//
-//teng_repeatfrag:
-//    LEX_REPEATFRAG variable_identifier LEX_END
-//        {
-//            // get address of referenced fragment
-//            Identifier_t id;
-//            int address = CONTEXT->getFragmentAddress($2.pos, $2.id,
-//                                                      $2.val.stringValue, id);
-//            if (address >= 0) {
-//                // set offset
-//                $2.val.integerValue = address - CONTEXT->program->size();
-//
-//                // generate instruction
-//                CODE_VAL(REPEATFRAG, $2.val);
-//
-//                // set identifier
-//                CONTEXT->program->back().identifier = id;
-//
-//                // do not optimize (join) print-vals across current
-//                // prog end-addr
-//                CONTEXT->lowestValPrintAddress = CONTEXT->program->size();
-//            }
-//        }
-//    ;
-//
-//expression:
-//    LEX_L_PAREN expression LEX_R_PAREN
-//        {
-//            $$.prgsize = $2.prgsize; //start of expr prog
-//        }
-//    | expression LEX_EQ expression
-//        {
-//            CODE(NUMEQ);
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | expression LEX_NE expression
-//        {
-//            CODE(NUMEQ);
-//            CODE(NOT);
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | expression LEX_GE expression
-//        {
-//            CODE(NUMGE);
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | expression LEX_LE expression
-//        {
-//            CODE(NUMGT);
-//            CODE(NOT);
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | expression LEX_GT expression
-//        {
-//            CODE(NUMGT);
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | expression LEX_LT expression
-//        {
-//            CODE(NUMGE);
-//            CODE(NOT);
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | expression LEX_STR_EQ expression
-//        {
-//            CODE(STREQ);
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | expression LEX_STR_NE expression
-//        {
-//            CODE(STREQ);
-//            CODE(NOT);
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | expression LEX_OR
-//        {
-//            $$.prgsize = CONTEXT->program->size(); //save actual prog size
-//            CODE(OR); //generate infix code
-//        }
-//    expression
-//        {
-//            // calc and update jump offset
-//            (*CONTEXT->program)[$3.prgsize].value.integerValue =
-//                    CONTEXT->program->size() - $3.prgsize - 1;
-//            // try to optimalize
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//            // do not optimize (join) print-vals across current prog end-addr
-//            CONTEXT->lowestValPrintAddress = CONTEXT->program->size();
-//        }
-//    | expression LEX_AND
-//        {
-//            $$.prgsize = CONTEXT->program->size(); //save actual prog size
-//            CODE(AND); //generate infix code
-//        }
-//    expression
-//        {
-//            // calc and update jump offset
-//            (*CONTEXT->program)[$3.prgsize].value.integerValue =
-//                    CONTEXT->program->size() - $3.prgsize - 1;
-//            // try to optimalize
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//            // do not optimize (join) print-vals across current prog end-addr
-//            CONTEXT->lowestValPrintAddress = CONTEXT->program->size();
-//        }
-//    | expression LEX_BITOR expression
-//        {
-//            CODE(BITOR);
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | expression LEX_BITXOR expression
-//        {
-//            CODE(BITXOR);
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | expression LEX_BITAND expression
-//        {
-//            CODE(BITAND);
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | expression LEX_ADD expression
-//        {
-//            CODE(ADD);
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | expression LEX_SUB expression
-//        {
-//            CODE(SUB);
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | expression LEX_CONCAT expression
-//        {
-//            CODE(CONCAT);
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | expression LEX_MUL expression
-//        {
-//            CODE(MUL);
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | expression LEX_DIV expression
-//        {
-//            CODE(DIV);
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | expression LEX_MOD expression
-//        {
-//            CODE(MOD);
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | expression LEX_REPEAT expression
-//        {
-//            CODE(REPEAT);
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | expression LEX_COND_EXPR
-//        {
-//            $$.prgsize = CONTEXT->program->size(); //save actual addr
-//            CODE(JMPIFNOT); //jump offset stored later
-//        }
-//    expression LEX_COLON
-//        {
-//            // correct conditional jump offset (relative addr) +1=JMP
-//            (*CONTEXT->program)[$3.prgsize].value.integerValue =
-//                    CONTEXT->program->size() - $3.prgsize - 1 + 1;
-//            $$.prgsize = CONTEXT->program->size(); //save actual addr
-//            CODE(JMP); //jump stored later
-//        }
-//    expression
-//        {
-//            // correct jump offset (relative addr)
-//            (*CONTEXT->program)[$6.prgsize].value.integerValue =
-//                    CONTEXT->program->size() - $6.prgsize - 1;
-//            // try to optimalize
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//            // do not optimize (join) print-vals across current prog end-addr
-//            CONTEXT->lowestValPrintAddress = CONTEXT->program->size();
-//        }
-//    | LEX_NOT expression
-//        {
-//            CODE(NOT);
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | LEX_BITNOT expression
-//        {
-//            CODE(BITNOT);
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | LEX_SUB %prec LEX_UNARY
-//        {
-//            $$.prgsize = CONTEXT->program->size();
-//            $$.val.setInteger(0); //compile as (0 - expression)
-//            CODE_VAL(VAL, $$.val);
-//        }
-//    expression
-//        {
-//            CODE(SUB);
-//            $$.prgsize = $2.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | LEX_ADD %prec LEX_UNARY
-//        {
-//            $$.prgsize = CONTEXT->program->size();
-//            $$.val.setInteger(0); //compile as (0 + expression)
-//            CODE_VAL(VAL, $$.val);
-//        }
-//    expression
-//        {
-//            CODE(ADD);
-//            $$.prgsize = $2.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | LEX_DICT dictionary_item
-//        {
-//            $$.prgsize = $2.prgsize;
-//            // this compilation is always optimal
-//        }
-//    | LEX_DICT_INDIRECT expression
-//        {
-//            CODE(DICT); //indirect dictionary lookup
-//            $$.prgsize = $2.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//    | LEX_VAR variable_identifier
-//        {
-//            // following code cannot be optimized
-//            $$.prgsize = CONTEXT->program->size(); //start of expr prog
-//            // generate code for variable
-//            codeForVariable(context, $$, $2);
-//        }
-//    | value_literal
-//        {
-//            // following code is always optimal
-//            $$.prgsize = CONTEXT->program->size(); //start of expr prog
-//            CODE_VAL(VAL, $1.val);
-//        }
-//    | case
-//        {
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//        }
-//    | defined
-//        {
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//        }
-//    | exists
-//        {
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//        }
-//    | function
-//        {
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//        }
-//
-//    // expression error handling
-//    | LEX_L_PAREN error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, $1.pos, "Invalid "
-//                        "sub-expression (in parentheses)");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_R_PAREN
-//        {
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $1.prgsize,
-//                    CONTEXT->program->end()); //discard program
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            $$.val.setString("undefined");
-//            CODE_VAL(VAL, $$.val); //fake value
-//        }
-//    | frag_expression
-//        {
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//        }
-//    ;
-//
-//
-//
-//frag_expression
-//    : LEX_VAR LEX_VAR frag_expr_chain_start {
-//        ParserValue_t v;
-//        v.setString(""); // to native value
-//        CODE_VAL(REPR, v);
-//    }
-//    | LEX_JSONIFY LEX_L_PAREN LEX_VAR LEX_VAR frag_expr_chain_start LEX_R_PAREN {
-//        ParserValue_t v;
-//        v.setString("json"); // to json
-//        CODE_VAL(REPR, v);
-//        $$.prgsize = $1.prgsize; //start of expr prog
-//    }
-//    | LEX_TYPE LEX_L_PAREN LEX_VAR LEX_VAR frag_expr_chain_start LEX_R_PAREN {
-//        ParserValue_t v;
-//        v.setString("type"); // return type
-//        CODE_VAL(REPR, v);
-//        $$.prgsize = $1.prgsize; //start of expr prog
-//    }
-//    | LEX_COUNT LEX_L_PAREN LEX_VAR LEX_VAR frag_expr_chain_start LEX_R_PAREN {
-//        ParserValue_t v;
-//        v.setString("count"); // return count
-//        CODE_VAL(REPR, v);
-//        $$.prgsize = $1.prgsize; //start of expr prog
-//    }
-//    | exists_operator LEX_L_PAREN LEX_VAR LEX_VAR frag_expr_chain_start LEX_R_PAREN {
-//        ParserValue_t v;
-//        v.setString("exists"); // return exists
-//        CODE_VAL(REPR, v);
-//        $$.prgsize = $1.prgsize; //start of expr prog
-//    }
-//    | defined_operator LEX_L_PAREN LEX_VAR LEX_VAR frag_expr_chain_start LEX_R_PAREN {
-//        ParserValue_t v;
-//        v.setString("defined"); // return defined
-//        CODE_VAL(REPR, v);
-//        $$.prgsize = $1.prgsize; //start of expr prog
-//    }
-//    ;
-//
-//frag_expr_chain_start
-//    : LEX_SELECTOR {
-//            ParserValue_t v;
-//            v.setString("@(root)"); // magic value
-//            CODE_VAL(GETATTR, v);
-//        } frag_expr_chain {
-//    }
-//    | {
-//            ParserValue_t v;
-//            v.setString("@(this)"); // magic value
-//            CODE_VAL(GETATTR, v);
-//        }
-//    frag_expr_chain {
-//    }
-//    ;
-//
-//frag_expr_chain
-//    : frag_expr {
-//        $$.prgsize = $1.prgsize; //start of expr prog
-//    }
-//    | frag_expr_chain LEX_SELECTOR frag_expr {
-//        $$.prgsize = $1.prgsize; //start of expr prog
-//    }
-//    ;
-//
-//frag_expr
-//    : frag_id {
-//        $$.prgsize = $1.prgsize; //start of expr prog
-//    }
-//    | frag_id frag_index_chain {
-//        $$.prgsize = $1.prgsize; //start of expr prog
-//    }
-//    ;
-//
-//frag_index_chain
-//    : LEX_L_BRACKET expression LEX_R_BRACKET {
-//        CODE(AT);
-//    }
-//    | frag_index_chain LEX_L_BRACKET expression LEX_R_BRACKET {
-//        CODE(AT);
-//    }
-//    ;
-//
-//
-//frag_id
-//    : identifier {
-//        CODE_VAL(GETATTR, $1.val);
-//    }
-//    ;
-//
-//dictionary_item:
-//    identifier
-//        {
-//            // find item in dictionary and code it as val
-//            // lookup lang dict first, param dict then else use identifier
-//            const std::string *item;
-//            item = CONTEXT->langDictionary->lookup($1.val.stringValue);
-//            if (item == 0)
-//                item = CONTEXT->paramDictionary->lookup($1.val.stringValue);
-//            if (item == 0) {
-//        		ERR(ERROR, $1.pos, "Cannot find '" + $1.val.stringValue
-//        		    + "' dictionary item");
-//                item = &($1.val.stringValue);
-//            }
-//            // generate code
-//            $$.prgsize = CONTEXT->program->size(); //start of expr prog
-//            $$.val.setString(*item);
-//            CODE_VAL(VAL, $$.val);
-//        }
-//    ;
-//
-//
-//value_literal:
-//    string_literal
-//        {
-//            $$.val = $1.val;
-//        }
-//    | LEX_INT
-//        {
-//            $$.val = $1.val;
-//        }
-//    | LEX_REAL
-//        {
-//            $$.val = $1.val;
-//        }
-//    ;
-//
-//
-//string_literal:
-//    LEX_STRING
-//        {
-//            $$.val = $1.val;
-//        }
-//    | LEX_STRING string_literal
-//        {
-//            $$.val = $1.val;
-//            $$.val.stringValue += $2.val.stringValue;
-//        }
-//    ;
-//
-//
-//voluntary_dollar_before_var:
-//    LEX_VAR
-//    | //empty
-//        {
-//#if 0
-//            ERR(DEBUG, CONTEXT->position, "Variable identifier should "
-//                    "start with '$'. Leaving it out is obsolete syntax.");
-//#endif
-//        }
-//    ;
-//
-//
-//variable_identifier:
-//    identifier
-//        {
-//            // variable in local fragment context
-//            $$.id = CONTEXT->fragContext.back(); //frag context
-//            $$.id.push_back($1.val.stringValue); //name
-//            $$.pos = $1.pos; //var position
-//
-//            // rebuild identifier
-//            buildIdentifier($$);
-//        }
-//    | identifier dot_variable
-//        {
-//            // partitialy qualified variable
-//            // check for special identifier '_this'
-//            if ($1.val.stringValue == "_this") {
-//                // supply actual fragment context
-//                $$.id = CONTEXT->fragContext.back();
-//                // add more identifier qualifiers and ident itself
-//                $$.id.insert($$.id.end(), $2.id.begin(), $2.id.end());
-//            } else {
-//                // try to find name on fragment stack--
-//                // sequence of following fragment names must match
-//                $$.id.erase($$.id.begin(), $$.id.end()); //clear
-//                const ParserContext_t::FragmentContext_t
-//                        &fc = CONTEXT->fragContext.back();
-//                ParserContext_t::IdentifierName_t::const_reverse_iterator
-//                        ri;
-//                for (ri = fc.name.rbegin(); ri != fc.name.rend(); ++ri)
-//                    if (*ri == $1.val.stringValue)
-//                        break; //found fragment of specified name
-//                // if found
-//                int err = 0;
-//                if (ri == fc.name.rend()) {
-//                    err = 1; //not found
-//                } else {
-//                    // check all consequenting parts of the identifier
-//                    // beware! method forward iterator created using base()
-//                    // from reverse iterator does not refer to the same
-//                    // element, but to the next element in forward order.
-//                    ParserContext_t::IdentifierName_t::const_iterator
-//                            i = ri.base() - 1;
-//                    LeftValue_t::Identifier_t::const_iterator
-//                            id = $2.id.begin();
-//                    ++i; //skip already matching frag name
-//                    while (i != fc.name.end()
-//                            && id != $2.id.end()
-//                            && id != $2.id.end() - 1) {
-//                        if (*i != *id) {
-//                            err = 1; //mis-match
-//                            break;
-//                        }
-//                        ++i;
-//                        ++id;
-//                    }
-//                    // if overlaying identifier parts are matching
-//                    if (!err) {
-//                        $$.id.insert($$.id.begin(), fc.name.begin(), i);
-//                        $$.id.push_back(*id);
-//                    } else
-//                        err = 1; //mis-match
-//                }
-//                // handle error
-//                if (err) {
-//                    LeftValue_t::Identifier_t::const_iterator id;
-//                    std::string var = $1.val.stringValue;
-//                    for (id = $2.id.begin(); id != $2.id.end(); ++id)
-//                        var += "." + *id;
-//                    ERR(ERROR, $1.pos, "Variable identifier '" + var
-//                            + "' not found in current context");
-//                }
-//            }
-//            // var position
-//            $$.pos = $1.pos;
-//
-//            // create fully-qualified identifier string
-//            // rebuild identifier
-//            buildIdentifier($$);
-//        }
-//    | dot_variable
-//        {
-//            // fully qualified variable name
-//            $$.id = $1.id;
-//            $$.pos = $1.pos; //variable position
-//
-//            // create fully-qualified identifier string
-//            // rebuild identifier
-//            buildIdentifier($$);
-//        }
-//    ;
-//
-//
-//dot_variable:
-//    LEX_SELECTOR identifier
-//        {
-//            $$.id.erase($$.id.begin(), $$.id.end());
-//            $$.id.push_back($2.val.stringValue);
-//            $$.pos = $1.pos;
-//        }
-//    | LEX_SELECTOR identifier dot_variable
-//        {
-//            $$.id = $3.id;
-//            // ignore special identifier '_this'
-//            // inside the variable qualification
-//            if (('_' == $2.val.stringValue[0])
-//                && (($2.val.stringValue == "_this")
-//                    || ($2.val.stringValue == "_parent"))) {
-//                ERR(DEBUGING, $2.pos, "Using the special identifier '"
-//                    + $2.val.stringValue
-//                    + "' inside the identifier qualification is useless");
-//            } else {
-//                $$.id.insert($$.id.begin(), $2.val.stringValue);
-//                $$.pos = $1.pos;
-//            }
-//        }
-//    ;
-//
-//identifier
-//    : LEX_IDENT {
-//        $$ = $1;
-//    }
-//    | LEX_TYPE {
-//        $$ = $1;
-//        $$.val.stringValue = "type";
-//    }
-//    | LEX_COUNT {
-//        $$ = $1;
-//        $$.val.stringValue = "count";
-//    }
-//    | LEX_JSONIFY {
-//        $$ = $1;
-//        $$.val.stringValue = "jsonify";
-//    }
-//    | LEX_EXISTS {
-//        $$ = $1;
-//        $$.val.stringValue = "exists";
-//    }
-//    ;
-//
-//case:
-//    LEX_CASE LEX_L_PAREN expression LEX_COMMA
-//        {
-//            CODE(PUSH); //store expr value on program stack
-//        }
-//    case_options LEX_R_PAREN
-//        {
-//            // update all end-jumps with proper address
-//            LeftValue_t::AddressList_t::const_iterator i;
-//            for (i = $6.addr.begin(); i != $6.addr.end(); ++i) {
-//                (*CONTEXT->program)[*i].value.integerValue =
-//                        CONTEXT->program->size() - *i - 1;
-//            }
-//            // remove previously pushed value
-//            CODE(POP);
-//            // try to optimize
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//            // do not optimize (join) print-vals across current prog end-addr
-//            CONTEXT->lowestValPrintAddress = CONTEXT->program->size();
-//        }
-//
-//    // case-operator error handling
-//    | LEX_CASE LEX_L_PAREN error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, $1.pos, "Invalid condition expression "
-//                        "in 'case()' operator");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_COMMA case_options LEX_R_PAREN
-//        {
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $1.prgsize,
-//                    CONTEXT->program->end()); //discard program
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            $$.val.setString("undefined");
-//            CODE_VAL(VAL, $$.val); //fake value
-//        }
-//    | LEX_CASE LEX_L_PAREN error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, $1.pos, "Invalid 'case()' operator arguments");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_R_PAREN
-//        {
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $1.prgsize,
-//                    CONTEXT->program->end()); //discard program
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            $$.val.setString("undefined");
-//            CODE_VAL(VAL, $$.val); //fake value
-//        }
-//    ;
-//
-//
-//case_options:
-//    case_values LEX_COLON
-//        {
-//            $$.prgsize = CONTEXT->program->size(); //save actual addr
-//            CODE(JMPIFNOT); //if not true, jump to the next case
-//        }
-//    expression
-//        {
-//            $$.prgsize = CONTEXT->program->size(); //save actual addr
-//        }
-//    case_more_options
-//        {
-//            // propagate end-jump info
-//            $$.addr = $6.addr;
-//            // calculate jump offset
-//            // add +1 for end-jump if some other case option was generated
-//            (*CONTEXT->program)[$3.prgsize].value.integerValue =
-//                    $5.prgsize - $3.prgsize - 1
-//                    + ($5.prgsize != CONTEXT->program->size());
-//        }
-//    | LEX_MUL LEX_COLON expression
-//        {
-//            // propagate end-jump info
-//            $$.addr.erase($$.addr.begin(), $$.addr.end()); //no end-jumps
-//        }
-//    ;
-//
-//
-//case_more_options:
-//    LEX_COMMA
-//        {
-//            // insert end-jump
-//            $$.prgsize = CONTEXT->program->size(); //save end-jump addr
-//            CODE(JMP); //previous was true, skip else section
-//        }
-//    case_options
-//        {
-//            $$.addr = $3.addr; //propagate end-jump info
-//            $$.addr.push_back($2.prgsize);
-//        }
-//    | //empty
-//        {
-//            // default value, for case the default value is not supplied
-//            $$.addr.erase($$.addr.begin(), $$.addr.end()); //clear residuals
-//            $$.addr.push_back(CONTEXT->program->size()); //save end-jump addr
-//            CODE(JMP); //previous was true, skip else section
-//            CODE(VAL); //empty value
-//        }
-//    ;
-//
-//
-//
-//// Following code is for parsing literals used in case label. It must
-//// be literal for fast evaluation but we must allow thing like +number
-//// and -number.
-//case_literal:
-//    value_literal
-//        {
-//            // ordinal literal (int, real or string)
-//            $$.val = $1.val;
-//        }
-//    | LEX_ADD LEX_INT
-//        {
-//            // + integer
-//            $$.val = $2.val;
-//        }
-//    | LEX_ADD LEX_REAL
-//        {
-//            // + real
-//            $$.val = $2.val;
-//        }
-//    | LEX_SUB LEX_INT
-//        {
-//            // - integer
-//            $$.val = -$2.val;
-//        }
-//    | LEX_SUB LEX_REAL
-//        {
-//            // - real
-//            $$.val = -$2.val;
-//        }
-//    ;
-//
-//case_values:
-//    case_literal
-//        {
-//            // generate code
-//            $$.val = ParserValue_t();
-//            $$.val.integerValue = 0;
-//            CODE_VAL(STACK, $$.val); //compare to stack top
-//            CODE_VAL(VAL, $1.val);
-//            if ($1.val.type == ParserValue_t::TYPE_STRING)
-//                CODE(STREQ); //compare as strings
-//            else
-//                CODE(NUMEQ); //compare as numbers
-//        }
-//    | case_literal LEX_COMMA case_values
-//        {
-//            // join two case values with OR
-//            $$.prgsize = CONTEXT->program->size(); //save actual prog size
-//            CODE(OR); //generate infix code
-//            // generate code
-//            $$.val = ParserValue_t();
-//            $$.val.integerValue = 0;
-//            CODE_VAL(STACK, $$.val); //compare to stack top
-//            CODE_VAL(VAL, $1.val);
-//            if ($1.val.type == ParserValue_t::TYPE_STRING)
-//                CODE(STREQ); //compare as strings
-//            else
-//                CODE(NUMEQ); //compare as numbers
-//            // calculate OR-jump offset
-//            (*CONTEXT->program)[$$.prgsize].value.integerValue =
-//                    CONTEXT->program->size() - $$.prgsize - 1;
-//        }
-//    ;
-//
-//defined_operator
-//    : LEX_DEFINED {
-//        CODE(EXISTMARK);
-//        $$ = $1;
-//    }
-//    ;
-//
-//defined
-//    : defined_operator LEX_L_PAREN variable_identifier LEX_R_PAREN {
-//        if (!CONTEXT->program->empty())
-//            if (CONTEXT->program->back().operation == Instruction_t::EXISTMARK)
-//                CONTEXT->program->pop_back();
-//
-//        // following code cannot be optimized
-//        $$.prgsize = CONTEXT->program->size(); //start of expr prog
-//        // clear val and copy variable identifier
-//        $$.val = ParserValue_t(); //clear
-//        $$.id = $3.id;
-//        $$.val.stringValue = $3.val.stringValue;
-//        if ($$.id.empty()) {
-//            // bad identifier -- code fake value
-//            ERR(ERROR, $3.pos, "Invalid identifier "
-//                    "in 'defined()' operator");
-//            $$.val.setString("undefined");
-//            CODE_VAL(VAL, $$.val); //fake value
-//        } else {
-//            bool mustBeOpen = false;
-//            // check for automatic variable
-//            if ($$.id.back() == "_count") {
-//                // remove automatic variable name
-//                $$.id.pop_back();
-//                // rebuild identifier
-//                buildIdentifier($$);
-//            } else if ($$.id.back() == "_number") {
-//                // remove automatic variable name
-//                $$.id.pop_back();
-//                // rebuild identifier
-//                buildIdentifier($$);
-//
-//                // this fragment must be open!
-//                mustBeOpen = true;
-//            }
-//
-//            // resolve existence
-//            Identifier_t id;
-//            ParserContext_t::ExistResolution_t er
-//                = CONTEXT->exists($3.pos, $$.id, $$.val.stringValue, id, mustBeOpen);
-//
-//            // generate code
-//            switch (er) {
-//            case ParserContext_t::ER_FOUND:
-//            case ParserContext_t::ER_RUNTIME:
-//                // object may be defined
-//                CODE_VAL(DEFINED, $$.val);
-//                CONTEXT->program->back().identifier = id;
-//                break;
-//
-//            case ParserContext_t::ER_NOT_FOUND:
-//                // object cannot be present => always false
-//                $$.val.setInteger(false);
-//                CODE_VAL(VAL, $$.val);
-//                break;
-//            }
-//        }
-//    }
-//
-//    | defined_operator LEX_L_PAREN error {
-//        // defined-operator error handling
-//
-//        if (!CONTEXT->program->empty())
-//            if (CONTEXT->program->back().operation == Instruction_t::EXISTMARK)
-//                CONTEXT->program->pop_back();
-//
-//        if (tengSyntax_lastErrorMessage.length() > 0) {
-//            printUnexpectedElement(CONTEXT, yychar, yylval);
-//            if (yychar == LEX_VAR)
-//                ERR(ERROR, $1.pos, "Variable identifier must not "
-//                        "start with '$' here");
-//            ERR(ERROR, $1.pos, "Invalid identifier "
-//                    "in 'defined()' operator");
-//        }
-//        tengSyntax_lastErrorMessage.erase(); //clear error
-//    } LEX_R_PAREN {
-//        $$.prgsize = CONTEXT->program->size(); //start of expr prog
-//        $$.val.setInteger(0);
-//        CODE_VAL(VAL, $$.val); //fake value
-//    }
-//    ;
-//
-//isempty_operator
-//    : LEX_ISEMPTY {
-//        CODE(EXISTMARK);
-//        $$ = $1;
-//    }
-//    ;
-//
-//isempty:
-//        isempty_operator LEX_L_PAREN variable_identifier LEX_R_PAREN
-//        {
-//        if (!CONTEXT->program->empty())
-//            if (CONTEXT->program->back().operation == Instruction_t::EXISTMARK)
-//                CONTEXT->program->pop_back();
-//
-//            // following code cannot be optimized
-//            $$.prgsize = CONTEXT->program->size(); //start of expr prog
-//            // clear val and copy variable identifier
-//            $$.val = ParserValue_t(); //clear
-//            $$.id = $3.id;
-//            $$.val.stringValue = $3.val.stringValue;
-//            if ($$.id.empty()) {
-//                // bad identifier -- code fake value
-//                ERR(ERROR, $3.pos, "Invalid identifier "
-//                        "in 'defined()' operator");
-//                $$.val.setString("undefined");
-//                CODE_VAL(VAL, $$.val); //fake value
-//            } else {
-//                bool mustBeOpen = false;
-//                // check for automatic variable
-//                if ($$.id.back() == "_count") {
-//                    // remove automatic variable name
-//                    $$.id.pop_back();
-//                    // rebuild identifier
-//                    buildIdentifier($$);
-//                } else if ($$.id.back() == "_number") {
-//                    // remove automatic variable name
-//                    $$.id.pop_back();
-//                    // rebuild identifier
-//                    buildIdentifier($$);
-//
-//                    // this fragment must be open!
-//                    mustBeOpen = true;
-//                }
-//
-//                // resolve existence
-//                Identifier_t id;
-//                ParserContext_t::ExistResolution_t er
-//                    = CONTEXT->exists($3.pos, $$.id, $$.val.stringValue, id, mustBeOpen);
-//
-//                // generate code
-//                switch (er) {
-//                case ParserContext_t::ER_FOUND:
-//                case ParserContext_t::ER_RUNTIME:
-//                    // object may be defined
-//                    CODE_VAL(DEFINED, $$.val);
-//                    CONTEXT->program->back().identifier = id;
-//                    break;
-//
-//                case ParserContext_t::ER_NOT_FOUND:
-//                    // object cannot be present => always false
-//                    $$.val.setInteger(false);
-//                    CODE_VAL(VAL, $$.val);
-//                    break;
-//                }
-//            }
-//        }
-//
-//    // defined-operator error handling
-//    | defined_operator LEX_L_PAREN error
-//        {
-//        if (!CONTEXT->program->empty())
-//            if (CONTEXT->program->back().operation == Instruction_t::EXISTMARK)
-//                CONTEXT->program->pop_back();
-//
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                if (yychar == LEX_VAR)
-//                    ERR(ERROR, $1.pos, "Variable identifier must not "
-//                            "start with '$' here");
-//                ERR(ERROR, $1.pos, "Invalid identifier "
-//                        "in 'defined()' operator");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_R_PAREN
-//        {
-//            $$.prgsize = CONTEXT->program->size(); //start of expr prog
-//            $$.val.setInteger(0);
-//            CODE_VAL(VAL, $$.val); //fake value
-//        }
-//    ;
-//
-//exists:
-//    exists_operator LEX_L_PAREN variable_identifier LEX_R_PAREN
-//        {
-//        if (!CONTEXT->program->empty())
-//            if (CONTEXT->program->back().operation == Instruction_t::EXISTMARK)
-//                CONTEXT->program->pop_back();
-//
-//            // following code cannot be optimized
-//            $$.prgsize = CONTEXT->program->size(); //start of expr prog
-//            // clear val and copy variable identifier
-//            $$.val = ParserValue_t(); //clear
-//            $$.id = $3.id;
-//            $$.val.stringValue = $3.val.stringValue;
-//            if ($$.id.empty()) {
-//                // bad identifier -- code fake value
-//                ERR(ERROR, $3.pos, "Invalid identifier "
-//                        "in 'exists()' operator");
-//                $$.val.setString("undefined");
-//                CODE_VAL(VAL, $$.val); //fake value
-//            } else {
-//                bool mustBeOpen = false;
-//                // check for automatic variable
-//                if ($$.id.back() == "_count") {
-//                    // remove automatic variable name
-//                    $$.id.pop_back();
-//                    // rebuild identifier
-//                    buildIdentifier($$);
-//                } else if ($$.id.back() == "_number") {
-//                    // remove automatic variable name
-//                    $$.id.pop_back();
-//                    // rebuild identifier
-//                    buildIdentifier($$);
-//
-//                    // this fragment must be open!
-//                    mustBeOpen = true;
-//                }
-//
-//                // resolve existence
-//                Identifier_t id;
-//                ParserContext_t::ExistResolution_t er
-//                    = CONTEXT->exists($3.pos, $$.id, $$.val.stringValue,
-//                                      id, mustBeOpen);
-//
-//                // generate code
-//                switch (er) {
-//                case ParserContext_t::ER_FOUND:
-//                    // object found in template => always true
-//                    $$.val.setInteger(true);
-//                    CODE_VAL(VAL, $$.val);
-//
-//                    break;
-//                case ParserContext_t::ER_RUNTIME:
-//                    // object may be present in data => resolution postponed
-//                    // to runtime
-//                    CODE_VAL(EXISTS, $$.val);
-//                    CONTEXT->program->back().identifier = id;
-//                    break;
-//
-//                case ParserContext_t::ER_NOT_FOUND:
-//                    // object cannot be present in data => always false
-//                    $$.val.setInteger(false);
-//                    CODE_VAL(VAL, $$.val);
-//                    break;
-//                }
-//            }
-//        }
-//
-//    // exist-operator error handling
-//    | exists_operator LEX_L_PAREN error
-//        {
-//        if (!CONTEXT->program->empty())
-//            if (CONTEXT->program->back().operation == Instruction_t::EXISTMARK)
-//                CONTEXT->program->pop_back();
-//
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                if (yychar == LEX_VAR)
-//                    ERR(ERROR, $1.pos, "Variable identifier must not "
-//                            "start with '$' here");
-//                ERR(ERROR, $1.pos, "Invalid identifier "
-//                        "in 'exists()' operator");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_R_PAREN
-//        {
-//            $$.prgsize = CONTEXT->program->size(); //start of expr prog
-//            $$.val.setInteger(0);
-//            CODE_VAL(VAL, $$.val); //fake value
-//        }
-//    ;
-//
-//exists_operator
-//    : LEX_EXISTS {
-//        CODE(EXISTMARK);
-//        $$ = $1;
-//    }
-//    ;
-//
-//function_id
-//    : LEX_IDENT {
-//        $$ = $1;
-//    }
-//    | LEX_UDF_IDENT {
-//        $$ = $1;
-//    }
-//    ;
-//
-//function:
-//    function_id LEX_L_PAREN function_arguments LEX_R_PAREN
-//        {
-//            // call special code generation for functions
-//            tengCode_generateFunctionCall(CONTEXT,
-//                    $1.val.stringValue, //function name
-//                    $3.val.integerValue); //number of args
-//            $$.prgsize = $2.prgsize; //start of expr prog
-//            tengCode_optimizeExpression(CONTEXT, $$.prgsize); //optimize
-//        }
-//
-//    // function error handling
-//    | function_id LEX_L_PAREN error
-//        {
-//            if (tengSyntax_lastErrorMessage.length() > 0) {
-//                printUnexpectedElement(CONTEXT, yychar, yylval);
-//                ERR(ERROR, $1.pos, "Invalid function '"
-//                        + $1.val.stringValue + "()' argument(s)");
-//            }
-//            tengSyntax_lastErrorMessage.erase(); //clear error
-//        }
-//    LEX_R_PAREN
-//        {
-//            CONTEXT->program->erase(CONTEXT->program->begin() + $1.prgsize,
-//                    CONTEXT->program->end()); //discard program
-//            $$.prgsize = $1.prgsize; //start of expr prog
-//            $$.val.setString("undefined");
-//            CODE_VAL(VAL, $$.val); //fake value
-//        }
-//    ;
-//
-//
-//function_arguments:
-//    expression LEX_COMMA function_arguments
-//        {
-//            $$.val.integerValue = $3.val.integerValue + 1; //more than 1 args
-//        }
-//    | expression
-//        {
-//            $$.val.integerValue = 1; //single argument
-//        }
-//    | //empty
-//        {
-//            $$.val.integerValue = 0; //no args
-//        }
-//    ;
 
- /****************************** EPILOGUE: connection between bison and flex. */
+
+teng_directive
+    : teng_unknown  // done
+//     | teng_debug    // skip
+//     | teng_bytecode // skip
+//     | teng_include  // done
+//     | teng_format   // done
+    | teng_fragment // done
+//     | teng_if
+//     | teng_set
+//     | teng_expr
+//     | teng_dict
+//     | teng_ctype
+    ;
+
+
+ /********************************************************* RULES: directives */
+
+
+no_options
+//     : options {if (!$options.opt.empty()) logWarning(ctx, $options.pos, "This directive does not accept any option(s)");}
+    : error {syntaxError(ctx, look_ahead_symbol, "Syntax error inside <?teng ...?> directive");}
+    ;
+
+
+// options
+//     : identifier ASSIGN STRING options[parsed_options] {$$.opt = std::move($parsed_options.opt); $$.opt.emplace($identifier.val.str(), $STRING.val.str()); $$.pos = $identifier.pos;}
+//     | %empty {$$.opt.clear();}
+//     ;
+
+
+teng_unknown
+    : TENG error END {logError(ctx, $TENG.pos, "Unknown directive: " + $TENG.str());}
+    ;
+
+
+// teng_debug
+//     : DEBUG_FRAG no_options END {generateCode(ctx, I::DEBUG_FRAG);}
+//     ;
+//
+//
+// teng_bytecode
+//     : BYTECODE_FRAG no_options END {generateCode(ctx, I::BYTECODE_FRAG);}
+//     ;
+//
+//
+// teng_include
+//     : INCLUDE options END {includeFile(ctx, $INCLUDE, $options);}
+//     | INCLUDE error {syntaxError(ctx, $error, "Invalid <?teng include ...?> directive");} END
+//     ;
+//
+//
+// teng_format
+//     : FORMAT options END {openFormat(ctx, $$, $FORMAT, $options);}
+//       template ENDFORMAT no_options END {closeFormat(ctx, $ENDFORMAT);}
+//     | FORMAT error {syntaxError(ctx, $error, "Invalid <?teng format ...?> directive");}
+//       END template ENDFORMAT no_options END
+//     | FORMAT error {syntaxError(ctx, $error, "Syntax error in teng format block; discarding it");}
+//       ENDFORMAT no_options END {eraseCodeFrom(ctx, $FORMAT.prgsize);}
+//     | error {if (yyn) syntaxError(ctx, $error, "Misplaced <?teng endformat?> directive");}
+//       ENDFORMAT no_options END {eraseCodeFrom(ctx, $ENDFORMAT.prgsize);}
+//     ;
+
+
+teng_fragment_open
+    : FRAGMENT variable END {openFrag(ctx, $$, $variable);
+   {
+        std::cerr << ">>> " << $variable.pos << std::endl;
+        std::cerr << ">>> " << $variable.name() << std::endl;
+    } }
+    ;
+
+
+teng_fragment_close
+    : ENDFRAGMENT no_options END {closeFrag(ctx, $ENDFRAGMENT);}
+    ;
+
+
+teng_fragment
+    : teng_fragment_open template teng_fragment_close {
+        std::cerr << ">>> " << $teng_fragment_open.pos << std::endl;
+        std::cerr << ">>> " << $teng_fragment_open.name() << std::endl;
+    }
+//    | FRAGMENT error {syntaxError(ctx, $error, "Invalid <?teng frag ...?> directive; discarding it");}
+//      END template ENDFRAGMENT no_options END {eraseCodeFrom(ctx, $FRAGMENT.prgsize);}
+//    | FRAGMENT variable END error {syntaxError(ctx, $error, "Syntax error in teng fragment block; discarding it");}
+//      ENDFRAGMENT no_options END {eraseCodeFrom(ctx, $FRAGMENT.prgsize);}
+//    | error {syntaxError(ctx, $error, "Misplaced <?teng endfrag?> directive");}
+//      ENDFRAGMENT no_options END {eraseCodeFrom(ctx, $ENDFRAGMENT.prgsize);}
+    ;
+
+
+// teng_set
+//     : SET setting_variable ASSIGN expression END {setVariable(ctx, $$, $SET, $setting_variable);}
+//     | SET invalid_set_expression END {eraseCodeFrom(ctx, $SET.prgsize);}
+//     ;
+//
+//
+// invalid_set_expression
+//     : setting_variable ASSIGN error {syntaxError(ctx, $error, "Invalid expression in <?teng set ...?> directive; variable '" + $setting_variable.val.str() + "' will not be set");}
+//     | error {syntaxError(ctx, $error, "Invalid variable identifier in <?teng set ...?> directive");} ASSIGN expression
+//     | error {syntaxError(ctx, $error, "Invalid <?teng set ...?> directive");}
+//     ;
+//
+//
+// teng_if
+//     : IF expression END {$$.prgsize = generateCode(ctx, I::JMPIFNOT);}
+//       template {$$.prgsize = ctx->program->size();}
+//       teng_else ENDIF no_options END {buildIfEndJump(ctx, $4, $6, $7);}
+//     | IF error {syntaxError(ctx, $error, "Error in condition expression " "in <?teng if ...?> directive");}
+//       END {eraseCodeFrom(ctx, $IF.prgsize);}
+//       template {$$.prgsize = ctx->program->size();}
+//       teng_else ENDIF no_options END {eraseCodeFrom(ctx, $7.prgsize);}
+//     | IF error {syntaxError(ctx, $error, "Syntax error in teng conditional block; discarding it");}
+//       ENDIF no_options END {eraseCodeFrom(ctx, $IF.prgsize);}
+//     | error[first_error] {syntaxError(ctx, $first_error, "Misplaced <?teng elseif ...?> directive");}
+//       ELSEIF error[second_error] END {eraseCodeFrom(ctx, $second_error.prgsize);}
+//     | error {syntaxError(ctx, $error, "Misplaced <?teng else?> directive");}
+//       ELSE no_options END {eraseCodeFrom(ctx, $error.prgsize);}
+//     | error {syntaxError(ctx, $error, "Misplaced <?teng endif?> directive");}
+//       ENDIF no_options END {eraseCodeFrom(ctx, $error.prgsize);}
+//     ;
+//
+//
+// teng_else
+//     : ELSE no_options END {$$.addr = {generateCode(ctx, I::JMP)};}
+//       template {$$.addr = $END.addr;}
+//     | ELSEIF {$$.prgsize = generateCode(ctx, I::JMP);}
+//       expression END {$$.prgsize = generateCode(ctx, I::JMPIFNOT);}
+//       template {$$.prgsize = ctx->program->size();}
+//       teng_else {buildElseEndJump(ctx, $$, $2, $5, $7, $8);}
+//     | ELSEIF
+//       error {syntaxError(ctx, $error, "Error in condition expression in <?teng elseif ...?> directive");}
+//       END {eraseCodeFrom(ctx, $ELSEIF.prgsize);}
+//       template {$$.prgsize = ctx->program->size();}
+//       teng_else {eraseCodeFrom(ctx, $7.prgsize);}
+//     | %empty {$$.addr.clear();}
+//     ;
+//
+//
+// teng_expr
+//     : EXPR expression END {generatePrint(ctx);}
+//     | SHORT_EXPR expression SHORT_END {generatePrint(ctx);}
+//     | EXPR error {syntaxError(ctx, $error, "Invalid expression in <?teng expr ...?> directive");}
+//       END {generateUndefined(ctx, $$, $EXPR); generatePrint(ctx);}
+//     | SHORT_EXPR error {syntaxError(ctx, $error, "Invalid expression in ${...} statement");}
+//       SHORT_END {generateUndefined(ctx, $$, $SHORT_EXPR); generatePrint(ctx);}
+//     ;
+//
+//
+// teng_dict
+//     : SHORT_DICT dictionary_item SHORT_END {generatePrint(ctx);}
+//     | SHORT_DICT error {syntaxError(ctx, $error, "Invalid dictionary item in #{...} statement");}
+//       SHORT_END {generateUndefined(ctx, $$, $SHORT_DICT); generatePrint(ctx);}
+//     ;
+//
+//
+// teng_ctype
+//     : CTYPE STRING END {$$.val = openCType(ctx, $STRING);}
+//       template ENDCTYPE no_options END {closeCType(ctx, $ENDCTYPE);}
+//     | CTYPE error {syntaxError(ctx, $error, "Invalid <?teng ctype ...?> directive");}
+//       END template ENDCTYPE no_options END
+//     | CTYPE error {syntaxError(ctx, $error, "Syntax error in teng ctype block; discarding it");}
+//       ENDCTYPE no_options END {eraseCodeFrom(ctx, $CTYPE.prgsize);}
+//     | error {syntaxError(ctx, $error, "Misplaced <?teng endctype?> directive");}
+//       ENDCTYPE no_options END {eraseCodeFrom(ctx, $ENDCTYPE.prgsize);}
+//     ;
+//
+//
+//  /********************************************************* RULES: expression */
+//
+//
+// expression
+//     : unary_expression {$$ = $unary_expression;}
+//     | binary_expression {$$ = $binary_expression;}
+//     | ternary_expression {$$ = $ternary_expression;}
+//     ;
+//
+//
+// unary_expression
+//     : L_PAREN expression R_PAREN {$$.prgsize = $unary_expression.prgsize;}
+//     | L_PAREN error {syntaxError(ctx, $error, "Invalid sub-expression (in parentheses)");} R_PAREN {generateUndefined(ctx, $$, $L_PAREN);}
+//     | NOT expression {$$.prgsize = generateExpression(ctx, $NOT.prgsize, I::NOT);}
+//     | BITNOT expression {$$.prgsize = generateExpression(ctx, $BITNOT.prgsize, I::BITNOT);}
+//     | SUB %prec UNARY {$$.val = 0; $$.prgsize = generateCode(ctx, I::VAL, $$.val);}
+//       expression {$$.prgsize = generateExpression(ctx, $expression.prgsize, I::SUB);}
+//     | ADD %prec UNARY {$$.val = 0; $$.prgsize = generateCode(ctx, I::VAL, $$.val);}
+//       expression {$$.prgsize = generateExpression(ctx, $expression.prgsize, I::ADD);}
+//     | DICT dictionary_item {$$.prgsize = $dictionary_item.prgsize;}
+//     | DICT_INDIRECT unary_expression[expression] {$$.prgsize = generateExpression(ctx, $expression.prgsize, I::DICT);}
+//     | VAR variable {$$.prgsize = ctx->program->size(); codeForVariable(ctx, $$, $variable);}
+//     | variable {$$.prgsize = ctx->program->size(); codeForVariable(ctx, $$, $variable);}
+//     | runtime_variable {generateRepr(ctx); $$.prgsize = ctx->program->size();}
+//     | value_literal {$$.prgsize = generateCode(ctx, I::VAL, $value_literal.val);}
+//     | function_expression {$$.prgsize = $function_expression.prgsize;}
+//     | query_expression {$$.prgsize = $query_expression.prgsize;}
+//     | case_expression {$$.prgsize = $case_expression.prgsize;}
+//     ;
+//
+//
+// binary_expression
+//     : expression[lhs] EQ expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::NUMEQ);}
+//     | expression[lhs] NE expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::NUMEQ, true);}
+//     | expression[lhs] GE expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::NUMGE);}
+//     | expression[lhs] LE expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::NUMGT, true);}
+//     | expression[lhs] GT expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::NUMGT);}
+//     | expression[lhs] LT expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::NUMGE, true);}
+//     | expression[lhs] STR_EQ expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::STREQ);}
+//     | expression[lhs] STR_NE expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::STREQ, true);}
+//     | expression[lhs] OR {$$.prgsize = generateCode(ctx, I::OR);}
+//       expression[rhs] {$$.prgsize = finalizeBinOp(ctx, $lhs, $rhs);}
+//     | expression[lhs] AND {$$.prgsize = generateCode(ctx, I::AND);}
+//       expression[rhs] {$$.prgsize = finalizeBinOp(ctx, $lhs, $rhs);}
+//     | expression[lhs] BITOR expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::BITOR);}
+//     | expression[lhs] BITXOR expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::BITXOR);}
+//     | expression[lhs] BITAND expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::BITAND);}
+//     | expression[lhs] ADD expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::ADD);}
+//     | expression[lhs] SUB expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::SUB);}
+//     | expression[lhs] CONCAT expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::CONCAT);}
+//     | expression[lhs] MUL expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::MUL);}
+//     | expression[lhs] DIV expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::DIV);}
+//     | expression[lhs] MOD expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::MOD);}
+//     | expression[lhs] REPEAT expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::REPEAT);}
+//     ;
+//
+//
+// ternary_expression
+//     : expression[cond] COND_EXPR {$$.prgsize = generateCode(ctx, I::JMPIFNOT);}
+//       expression[true] COLON {$$.prgsize = buildTernOp(ctx, $[true]);}
+//       expression[false] {$$.prgsize = finalizeTernOp(ctx, $[cond], $[false]);}
+//     ;
+// 
+// 
+//  /*********************************************** RULES: identifier, literals */
+// 
+// 
+// dictionary_item
+//     : identifier {generateDictLookup(ctx, $$, $identifier);}
+//     ;
+// 
+// 
+// value_literal
+//     : string_literal {$$.val = $string_literal.val;}
+//     | INT {$$.val = $INT.val;}
+//     | REAL {$$.val = $REAL.val;}
+//     ;
+// 
+// 
+// string_literal
+//     : STRING {$$.val = $STRING.val;}
+//     | STRING string_literal[tail] {$$.val = $STRING.val.str() + $tail.val.str();}
+//     ;
+
+
+identifier_relative
+    : IDENT {}
+    | BUILTIN_FIRST
+    | BUILTIN_INNER
+    | BUILTIN_LAST
+    | BUILTIN_INDEX
+    | BUILTIN_COUNT
+    | TYPE
+    | COUNT
+    | JSONIFY
+    | EXISTS
+    ;
+
+
+identifier
+    : identifier_relative {}
+    | BUILTIN_THIS
+    | BUILTIN_PARENT
+    ;
+
+
+ /****************************************************** RULES: teng variable */
+
+
+variable
+    : absolute_variable // {buildAbsVar(ctx, $$, $absolute_variable);}
+    | relative_variable // {buildRelVar(ctx, $$, $relative_variable);}
+    | local_variable
+   {
+        std::cerr << ">>> " << $local_variable.pos << std::endl;
+        std::cerr << ">>> " << $local_variable.name() << std::endl;
+    } // {buildLocVar(ctx, $$, $local_variable);}
+    ;
+
+
+absolute_variable
+    : absolute_variable_path_root
+    | absolute_variable_path_this
+    | absolute_variable_path_parent
+    ;
+
+
+absolute_variable_path_root
+    : /* {ctx->ident = {};} */
+      absolute_variable_middle // identifier {pushVarName(ctx, $$, $2, $3);}
+    ;
+
+
+absolute_variable_path_this
+    : BUILTIN_THIS // {ctx->ident = ctx->frag_ctxs.top().ident;}
+      absolute_variable_middle identifier // {pushVarName(ctx, $$, $1, $4);}
+    ;
+
+
+absolute_variable_path_parent
+    : BUILTIN_PARENT // {ctx->ident = ctx->frag_ctxs.top().ident; popAbsVarSegment(ctx, $1);}
+      absolute_variable_middle identifier // {pushVarName(ctx, $$, $1, $4);}
+    ;
+
+
+absolute_variable_middle
+    : absolute_variable_middle identifier_relative SELECTOR // {pushAbsVarSegment(ctx, $2); $$.pos = $1.pos;}
+    | absolute_variable_middle BUILTIN_THIS SELECTOR // {logWarning(ctx, $2.pos, "Ignoring useless _this variable path segment"); $$.pos = $1.pos;}
+    | absolute_variable_middle BUILTIN_PARENT SELECTOR // {popAbsVarSegment(ctx, $2); $$.pos = $1.pos;}
+    | SELECTOR // {$$.pos = $1.pos;}
+    ;
+
+
+relative_variable
+    : identifier_relative // {ctx->ident = {std::move($1.val.as_str())};}
+      SELECTOR relative_variable_middle identifier // {pushVarName(ctx, $$, $1, $5);}
+    ;
+
+
+relative_variable_middle
+    : relative_variable_middle identifier SELECTOR // {pushRelVarSegment(ctx, $2);}
+    | %empty
+    ;
+
+
+local_variable
+    : identifier
+    ;
+
+
+// setting_variable
+//     : VAR variable {$$.val = std::move($2.val); $$.id = std::move($2.id);}
+//     | variable {$$.val = std::move($1.val); $$.id = std::move($1.id);}
+//     ;
+//
+//
+// runtime_variable
+//     : VAR VAR runtime_variable_path
+//     ;
+//
+//
+// runtime_variable_path
+//     : SELECTOR {generateCode(ctx, I::PUSH_ROOT_FRAG);} runtime_variable_segment
+//     | {generateCode(ctx, I::PUSH_THIS_FRAG);} runtime_variable_segment
+//     ;
+//
+//
+// runtime_variable_segment
+//     : runtime_variable_segment SELECTOR runtime_variable_identifier runtime_variable_subscript
+//     | runtime_variable_identifier runtime_variable_subscript
+//     ;
+//
+//
+// runtime_variable_subscript
+//     : runtime_variable_subscript L_BRACKET expression R_BRACKET {generateCode(ctx, I::PUSH_ATTR_AT);}
+//     | %empty
+//     ;
+//
+//
+// runtime_variable_identifier
+//     : identifier {if ($1.token_id != token::BUILTIN_THIS) generateCode(ctx, I::PUSH_ATTR, $1.val);}
+//     ;
+//
+//
+//  /**************************************************** RULES: case expression */
+//
+//
+// case_options
+//     : case_values COLON {$$.prgsize = generateCode(ctx, I::JMPIFNOT);}
+//       expression {$$.prgsize = ctx->program->size();}
+//       case_more_options {finalizeCaseOptionsOp(ctx, $$, $3, $5, $6);}
+//     | MUL COLON expression {$$.addr.clear();}
+//     ;
+//
+//
+// case_more_options
+//     : COMMA {$$.prgsize = generateCode(ctx, I::JMP);}
+//       case_options {$$.addr = $3.addr; $$.addr.push_back($2.prgsize);}
+//     | %empty {$$.addr = {generateCode(ctx, I::JMP, I::VAL)};}
+//     ;
+//
+//
+// // Following code is for parsing literals used in case label. It must
+// // be literal for fast evaluation but we must allow thing like +number
+// // and -number.
+// case_literal
+//     : value_literal {$$.val = $1.val;}
+//     | ADD INT {$$.val = $2.val;}
+//     | ADD REAL {$$.val = $2.val;}
+//     | SUB INT {$$.val = -$2.val;}
+//     | SUB REAL {$$.val = -$2.val;}
+//     ;
+//
+//
+// case_values
+//     : case_literal {generateCaseLiteral(ctx, $$, $1);}
+//     | case_literal COMMA case_values {generateCaseValues(ctx, $$, $1);}
+//     ;
+//
+//
+// case_expression
+//     : CASE L_PAREN expression COMMA {generateCode(ctx, I::PUSH);}
+//       case_options R_PAREN {finalizeCaseOp(ctx, $$, $1, $6);}
+//     | CASE L_PAREN error {syntaxError(ctx, $error, "Invalid condition expression in 'case()' operator");}
+//       COMMA case_options R_PAREN {$$.prgsize = generateUndefined(ctx, $$, $1);}
+//     | CASE L_PAREN error {syntaxError(ctx, $error, "Invalid 'case()' operator arguments");}
+//       R_PAREN {$$.prgsize = generateUndefined(ctx, $$, $1);}
+//     ;
+//
+//
+//  /************************************************ RULES: function expression */
+//
+//
+// function_name
+//     : IDENT {$$.val = $1.val;}
+//     | UDF_IDENT {$$.val = $1.val;}
+//     ;
+//
+//
+// function_arguments
+//     : expression COMMA function_arguments {$$.val = $3.val.integral() + 1;}
+//     | expression {$$.val = 1;}
+//     | %empty {$$.val = 0;}
+//     ;
+//
+//
+//  // {syntaxError(ctx, yyla.value, "Invalid function '" + $1.val.str() + "()' arg(s)");}
+// function_expression
+//     : function_name L_PAREN function_arguments R_PAREN {$$.prgsize = generateFunction(ctx, $1, $2, $3);}
+//     | function_name L_PAREN error R_PAREN {$$.prgsize = generateUndefined(ctx, $$, $1);}
+//     ;
+//
+//
+//  /*************************************************** RULES: query expression */
+//
+//
+// query_argument
+//     : variable {$$.val = std::move($1.val); $$.id = std::move($1.id);}
+//     | VAR variable {$$.val = "$";}
+//     | %empty
+//     ;
+//
+//
+// query_name
+//     : DEFINED {prepareQueryInstr(ctx, $$, $1, "_defined");}
+//     | ISEMPTY {prepareQueryInstr(ctx, $$, $1, "_isempty");}
+//     | EXISTS {prepareQueryInstr(ctx, $$, $1, "_exists");}
+//     ;
+//
+//
+//  // {syntaxError(ctx, yyla.value, "Invalid query '" + $1.val.str() + "()' arg");}
+// query_expression
+//     : query_name L_PAREN query_argument R_PAREN {generateQueryInstr(ctx, $$, $1, $3);}
+//     | query_name L_PAREN runtime_variable R_PAREN {/* warn */generateRepr(ctx, $1);}
+//     | query_name L_PAREN error {generateQueryInstr(ctx, $$, $1, $error);} R_PAREN
+//     /* | EXISTS L_PAREN runtime_variable R_PAREN { */
+//     /*     generateFunctionCall(ctx, "_exists", 1); */
+//     /* } */
+//     ;
+
+
+ /************************************ EPILOGUE: glue between bison and flex. */
 %%
 

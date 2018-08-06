@@ -37,24 +37,22 @@
 #ifndef TENGSTRUCTS_H
 #define TENGSTRUCTS_H
 
+#include <map>
+#include <memory>
 #include <string>
 #include <vector>
-#include <iostream>
-#include <memory>
-#include <map>
+#include <cstdint>
 
 #include <tengconfig.h>
 
-#include <stdint.h>
-
 namespace Teng {
 
+// forwards
 class FragmentValue_t;
 class FragmentList_t;
 
 /**
- * @short Single fragment. Maps names to variables and nested
- *        fragments.
+ * @short Single fragment. Maps names to variables and nested fragments.
  */
 class Fragment_t {
 public:
@@ -83,14 +81,38 @@ public:
      * @param name variable name
      * @param value variable value
      */
-    void addVariable(const std::string &name, IntType_t value);
+    template <
+        typename type_t,
+        std::enable_if_t<std::is_integral<type_t>::value, bool> = true
+    > void addVariable(const std::string &name, type_t value) {
+        addIntVariable(name, value);
+    }
 
     /**
      * @short Add variable to fragment.
      * @param name variable name
      * @param value variable value
      */
-    void addVariable(const std::string &name, double value);
+    template <
+        typename type_t,
+        std::enable_if_t<std::is_floating_point<type_t>::value, bool> = true
+    > void addVariable(const std::string &name, type_t value) {
+        addRealVariable(name, value);
+    }
+
+    /**
+     * @short Add variable to fragment.
+     * @param name variable name
+     * @param value variable value
+     */
+    void addIntVariable(const std::string &name, IntType_t value);
+
+    /**
+     * @short Add variable to fragment.
+     * @param name variable name
+     * @param value variable value
+     */
+    void addRealVariable(const std::string &name, double value);
 
     /**
      * @short Add nested fragment.
@@ -216,15 +238,13 @@ public:
     FragmentValue_t(const FragmentValue_t &) = delete;
     FragmentValue_t &operator=(const FragmentValue_t &) = delete;
 
-    /**
-     * @short Create new empty value.
-     */
-    FragmentValue_t();
+    // types
+    enum class tag {fragments, integral, real, string};
 
     /**
-     * @short Destroy value.
+     * @short Create empty fragment list value.
      */
-    ~FragmentValue_t();
+    FragmentValue_t();
 
     /**
      * @short Create new scalar value with given value.
@@ -245,10 +265,9 @@ public:
     FragmentValue_t(double value);
 
     /**
-     * @hosrt Create fragment list value.
-     * @param fragment_list the list.
+     * @short Destroy value.
      */
-    FragmentValue_t(std::unique_ptr<FragmentList_t> fragment_list);
+    ~FragmentValue_t();
 
     /**
      * @short Sets value to string.
@@ -258,15 +277,31 @@ public:
     /**
      * @short Sets value to int.
      */
-    void setValue(const IntType_t new_value);
+    template <
+        typename type_t,
+        std::enable_if_t<std::is_integral<type_t>::value, bool> = true
+    > void setValue(type_t new_value) {setInt(new_value);}
+
+    /**
+     * @short Sets value to int.
+     */
+    void setInt(IntType_t new_value);
 
     /**
      * @short Sets value to double.
      */
-    void setValue(const double new_value);
+    template <
+        typename type_t,
+        std::enable_if_t<std::is_floating_point<type_t>::value, bool> = true
+    > void setValue(type_t new_value) {setDouble(new_value);}
 
     /**
-     * @hosrt Ensures that value is fragment list and if not then other value
+     * @short Sets value to double.
+     */
+    void setDouble(double new_value);
+
+    /**
+     * @short Ensures that value is fragment list and if not then other value
      * is destroyed and new empty fragment list is assigned to value and
      * returned.
      */
@@ -294,31 +329,53 @@ public:
      * @short Returns pointer to nested fragments or nullptr.
      */
     const FragmentList_t *getNestedFragments() const {
-        return held_type == type::fragments? nestedFragments.get(): nullptr;
+        return tag_value == tag::fragments? &nestedFragments: nullptr;
+    }
+
+    /**
+     * @short Returns true if value is leaf => string/integral/real.
+     */
+    bool isScalar() const {return tag_value != tag::fragments;}
+
+    /**
+     * @short Returns type of value.
+     */
+    tag type() const {return tag_value;}
+
+    /**
+     * @short Returns pointer to scallar value or nullptr.
+     */
+    std::string getValue() const;
+
+    /**
+     * @short Returns pointer to scallar value or nullptr.
+     */
+    const std::string &str() const {
+        static const std::string empty;
+        return tag_value == tag::string? string_value: empty;
     }
 
     /**
      * @short Returns pointer to scallar value or nullptr.
      */
-    const std::string *getValue() const {
-        return held_type != type::fragments? &value: nullptr;
+    IntType_t integral() const {
+        return tag_value == tag::integral? integral_value: 0;
+    }
+
+    /**
+     * @short Returns pointer to scallar value or nullptr.
+     */
+    double real() const {
+        return tag_value == tag::real? real_value: 0;
     }
 
 protected:
-    /** The type of value.
-     */
-    enum class type {fragments, integer, floating, string} held_type;
-
+    tag tag_value; //!< the type of value
     union {
-        /**
-         * @short String (scalar) value.
-         */
-        std::string value;
-
-        /**
-         * @short List of nested fragments.
-         */
-        std::unique_ptr<FragmentList_t> nestedFragments;
+        std::string string_value; //!< String (scalar) value.
+        IntType_t integral_value; //!< Integral number (scalar) value.
+        double real_value;        //!< Real number (scalar) value.
+        FragmentList_t nestedFragments; //!< List of nested fragments.
     };
 };
 
