@@ -125,7 +125,7 @@ int callUdf(const std::vector<ParserValue_t> &args,
     int res = E_OK;
 
     for (std::vector<ParserValue_t>::const_reverse_iterator it = args.rbegin();
-            it != args.rend(); it++) {
+            it != args.rend(); it++ ) {
         switch (it->type) {
             case ParserValue_t::TYPE_INT:
                 udfArgs.push_back(UDFValue_t(it->integerValue));
@@ -149,7 +149,7 @@ int callUdf(const std::vector<ParserValue_t> &args,
         err = e.what();
     }
 
-    if (res == 0) {
+    if ( res == 0 ) {
         switch (udfRes.getType()) {
             case UDFValue_t::Integer:
                 result.setInteger(udfRes.getInt());
@@ -586,13 +586,13 @@ namespace {
         // dump all variables (no nestedFragments)
         for (Fragment_t::const_iterator ifragment = fragment.begin();
              ifragment != fragment.end(); ++ifragment) {
-            if (!ifragment->second->getNestedFragments()) {
+            if (!ifragment->second->nestedFragments) {
                 if (output.write(padding)) return -1;
                 if (output.write(ifragment->first)) return -1;
                 if (output.write(escaper.escape(": \""))) return -1;
 
                 // clip string to specified length
-                std::string strVal = *ifragment->second->getValue();
+                std::string strVal = ifragment->second->value;
                 int unsigned len = configuration.getMaxDebugValLength();
                 if (len > 0)
                     Teng::clipString(strVal, len);
@@ -607,17 +607,20 @@ namespace {
         // dump all fragments (nestedFragments non-null)
         for (Fragment_t::const_iterator ifragment = fragment.begin();
              ifragment != fragment.end(); ++ifragment) {
-            if (ifragment->second->getNestedFragments()) {
+            if (ifragment->second->nestedFragments) {
                 unsigned int k = 0;
-                for (auto &nested: *ifragment->second->getNestedFragments()) {
+                for (FragmentList_t::const_iterator
+                         inestedFragments = ifragment->second->nestedFragments->begin();
+                     inestedFragments != ifragment->second->nestedFragments->end();
+                     ++inestedFragments, ++k) {
                     if (output.write(padding)) return -1;
 
                     char s[20];
                     if (output.write(ifragment->first)) return -1;
-                    sprintf(s, "[%u]: \n", k++);
+                    sprintf(s, "[%u]: \n", k);
 
                     if (output.write(escaper.escape(s))) return -1;
-                    if (dumpFragment(configuration, escaper, output, *nested,
+                    if (dumpFragment(configuration, escaper, output, **inestedFragments,
                                      padding + "    "))
                         return -1;
                     if (output.write(escaper.escape("\n"))) return -1;
@@ -687,7 +690,7 @@ int dumpBytecode(const Escaper_t &escaper, const Program_t &program,
 } // namespace
 
 #define WARN_IF(...)\
-    if (existMarks == 0 )\
+    if ( existMarks == 0 )\
         logErr(__VA_ARGS__)
 
 void Processor_t::run(const Fragment_t &data, Formatter_t &output,
@@ -785,17 +788,17 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                        Error_t::LL_WARNING);
                 a = ParserValue_t();
             } else {
-                if (configuration.isAlwaysEscapeEnabled()) {
+                if ( configuration.isAlwaysEscapeEnabled() ) {
                     // check whether we have to escape variable
                     // FIXME: This is bug, type should be used
                     if (instr.value.integerValue)
                         a.setString(fParam.escaper.escape(a.stringValue));
                 } else {
                     // Peek next inst and escape only if PRINT follows
-                    if ((ip < (int)program.size()) &&
+                    if ( (ip < (int)program.size()) &&
                         program[ip].operation == Instruction_t::PRINT &&
                         instr.value.type == ParserValue_t::TYPE_STRING
-                       ) {
+                        ) {
                         a.setString(fParam.escaper.escape(a.stringValue));
                     }
                 }
@@ -919,7 +922,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                     case 0:
                         break; // OK
                     case -1:
-                        if (p != 0) {
+                        if ( p != 0 ) {
                             logErr(instr, "Bad argument count for function '"
                                 + instr.value.stringValue + "()'",
                                 Error_t::LL_ERROR);
@@ -929,7 +932,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                         }
                         break;
                     default:
-                        if (p != 0) {
+                        if ( p != 0 ) {
                             logErr(instr, "Function '"
                                 + instr.value.stringValue
                                 + "()' call failed",
@@ -1219,151 +1222,124 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
             // Fetch fragment value
             cVal = fragmentValueStack.top();
             fragmentValueStack.pop();
-            if (cVal.type == FragVal_t::FRAGMENT_NULL) {
-                fragmentValueStack.push(cVal);
-                break;
-            }
-            switch (a.type) {
-            case ParserValue_t::TYPE_STRING: {
-                const std::string &member = a.stringValue;
-                switch (cVal.type) {
-                case FragVal_t::FRAGMENT: {
-                    Fragment_t::const_iterator it = cVal.frag->find(member);
-                    if (it == cVal.frag->end()) {
-                        WARN_IF(instr, "Unable to locate member (1) '" + member + "'",
-                            Error_t::LL_WARNING);
-                        cVal = FragVal_t();
-                    } else {
-                        cVal = FragVal_t(it->second.get());
-                    }
-                    break;
-                }
-                case FragVal_t::FRAGMENT_VALUE:
-                    if (auto *nested = cVal.value->getNestedFragments()) {
-                        if (nested->size() == 1) {
+            if ( cVal.type != FragVal_t::FRAGMENT_NULL ) {
+                if ( a.type == ParserValue_t::TYPE_STRING ) {
+                    const std::string &member = a.stringValue;
+                    if ( cVal.type == FragVal_t::FRAGMENT ) {
+                        Fragment_t::const_iterator it = cVal.frag->find(member);
+                        if ( it == cVal.frag->end() ) {
+                            WARN_IF(instr, "Unable to locate member (1) '" + member + "'",
+                                Error_t::LL_WARNING);
+                            cVal = FragVal_t();
+                        } else {
+                            cVal = FragVal_t(it->second);
+                        }
+                    } else if ( cVal.type == FragVal_t::FRAGMENT_VALUE && cVal.value->nestedFragments != 0 ) {
+                        const FragmentList_t *nested = cVal.value->nestedFragments;
+                        if ( nested->size() == 1 ) {
                             Fragment_t *frag = (*nested)[0];
                             Fragment_t::const_iterator it = frag->find(member);
-                            if (it == frag->end()) {
+                            if ( it == frag->end() ) {
                                 WARN_IF(instr, "Unable to locate member (2) '" + member + "'",
                                     Error_t::LL_WARNING);
                                 cVal = FragVal_t();
                             } else {
-                                cVal = FragVal_t(it->second.get());
+                                cVal = FragVal_t(it->second);
                             }
+                        } else {
+                            WARN_IF(instr, "String indices can be used only for fragments",
+                                Error_t::LL_WARNING);
                         }
-                    }
-                    break;
-                case FragVal_t::FRAGMENT_LIST:
-                case FragVal_t::FRAGMENT_NULL:
-                    WARN_IF(instr, "String indices can be used only "
-                                   "for fragments", Error_t::LL_WARNING);
-                    break;
-                }
-                break;
-            }
-            case ParserValue_t::TYPE_INT:
-                switch (cVal.type) {
-                case FragVal_t::FRAGMENT_LIST:
-                    if (a.integerValue < 0 || static_cast<size_t>(a.integerValue) >= cVal.list->size()) {
-                        WARN_IF(instr, "Index " + *FragmentValue_t(a.integerValue).getValue() +
-                            " is out of range", Error_t::LL_WARNING);
-                        cVal = FragVal_t();
                     } else {
-                        cVal = FragVal_t((*cVal.list)[a.integerValue]);
+                        WARN_IF(instr, "String indices can be used only for fragments",
+                            Error_t::LL_WARNING);
                     }
-                    break;
-                case FragVal_t::FRAGMENT_VALUE:
-                    if (auto *nested = cVal.value->getNestedFragments()) {
-                        if (a.integerValue < 0 || static_cast<size_t>(a.integerValue) >= nested->size()) {
-                            WARN_IF(instr, "Index " + *FragmentValue_t(a.integerValue).getValue() +
-                                    " is out of range", Error_t::LL_WARNING);
+                } else if ( a.type == ParserValue_t::TYPE_INT ) {
+                    if ( cVal.type == FragVal_t::FRAGMENT_LIST ) {
+                        if ( a.integerValue < 0 || static_cast<size_t>(a.integerValue) >= cVal.list->size() ) {
+                            WARN_IF(instr, "Index " + FragmentValue_t(a.integerValue).value +
+                                " is out of range", Error_t::LL_WARNING);
+                            cVal = FragVal_t();
+                        } else {
+                            cVal = FragVal_t((*cVal.list)[a.integerValue]);
+                        }
+                    } else if ( cVal.type == FragVal_t::FRAGMENT_VALUE && cVal.value->nestedFragments != 0 ) {
+                        const FragmentList_t *nested = cVal.value->nestedFragments;
+                        if ( a.integerValue < 0 || static_cast<size_t>(a.integerValue) >= nested->size() ) {
+                            WARN_IF(instr, "Index " + FragmentValue_t(a.integerValue).value +
+                                " is out of range", Error_t::LL_WARNING);
                             cVal = FragVal_t();
                         } else {
                             cVal = FragVal_t((*nested)[a.integerValue]);
                         }
+                    } else {
+                        WARN_IF(instr, "Only fragment lists can be indexed",
+                            Error_t::LL_WARNING);
+                        cVal = FragVal_t();
                     }
-                    break;
-                case FragVal_t::FRAGMENT:
-                case FragVal_t::FRAGMENT_NULL:
-                    WARN_IF(instr, "Only fragment lists can be indexed",
+                } else {
+                    WARN_IF(instr, "Invalid combination of index and entity type",
                         Error_t::LL_WARNING);
                     cVal = FragVal_t();
                 }
-                break;
-            case ParserValue_t::TYPE_REAL:
-                WARN_IF(instr, "Invalid combination of index and entity type",
-                    Error_t::LL_WARNING);
-                cVal = FragVal_t();
             }
             fragmentValueStack.push(cVal);
             break;
 
         case Instruction_t::GETATTR:
-            if (instr.value.stringValue == "@(root)") {
+            if ( instr.value.stringValue == "@(root)" ) {
                 fragmentValueStack.push(FragVal_t(&data));
-                break;
-            }
-            if (instr.value.stringValue == "@(this)") {
+            } else if ( instr.value.stringValue == "@(this)" ) {
                 fragmentValueStack.push(FragVal_t(fragmentStack.getCurrentFragment()));
-                break;
-            }
-            if (fragmentValueStack.empty()) {
-                logErr(instr, "Fragment value stack underflow",
-                        Error_t::LL_FATAL);
-                goto flushReturn;
-            }
-
-            cVal = fragmentValueStack.top();
-            fragmentValueStack.pop();
-
-            switch (cVal.type) {
-            case FragVal_t::FRAGMENT: {
-                const std::string &member = instr.value.stringValue;
-                Fragment_t::const_iterator it = cVal.frag->find(member);
-                if (it == cVal.frag->end()) {
-                    WARN_IF(instr, "Unable to locate member (3) '"
-                                   + member + "'", Error_t::LL_WARNING);
-                    cVal = FragVal_t();
-                } else {
-                    cVal = FragVal_t(it->second.get());
+            } else {
+                if (fragmentValueStack.empty()) {
+                    logErr(instr, "Fragment value stack underflow",
+                            Error_t::LL_FATAL);
+                    goto flushReturn;
                 }
-                break;
-            }
-            case FragVal_t::FRAGMENT_VALUE: {
+
                 const std::string &member = instr.value.stringValue;
-                if (auto *nested = cVal.value->getNestedFragments()) {
-                    if (nested->size() == 1) {
-                        const Fragment_t *frag = (*nested)[0];
-                        Fragment_t::const_iterator it = frag->find(member);
-                        if (it == frag->end()) {
-                            WARN_IF(instr, "Unable to locate member (5) '"
-                                           + member + "'", Error_t::LL_WARNING);
-                            cVal = FragVal_t();
-                        } else {
-                            cVal = FragVal_t(it->second.get());
-                        }
+                cVal = fragmentValueStack.top();
+                fragmentValueStack.pop();
+
+                if ( cVal.type == FragVal_t::FRAGMENT ) {
+                    Fragment_t::const_iterator it = cVal.frag->find(member);
+                    if ( it == cVal.frag->end() ) {
+                        WARN_IF(instr, "Unable to locate member (3) '" + member + "'",
+                            Error_t::LL_WARNING);
+                        cVal = FragVal_t();
                     } else {
-                        cVal = FragVal_t(nested);
+                        cVal = FragVal_t(it->second);
                     }
-                } else {
-                    WARN_IF(instr, "Unable to locate member (4) '"
-                                   + member + "' in value",
+                } else if ( cVal.type == FragVal_t::FRAGMENT_VALUE ) {
+                    if ( cVal.value->nestedFragments == 0 ) {
+                        WARN_IF(instr, "Unable to locate member (4) '" + member + "'"
+                            " in value",
+                            Error_t::LL_WARNING);
+                        cVal = FragVal_t();
+                    } else {
+                        if ( cVal.value->nestedFragments->size() == 1 ) {
+                            const Fragment_t *frag = (*cVal.value->nestedFragments)[0];
+                            Fragment_t::const_iterator it = frag->find(member);
+                            if ( it == frag->end() ) {
+                                WARN_IF(instr, "Unable to locate member (5) '" + member + "'",
+                                    Error_t::LL_WARNING);
+                                cVal = FragVal_t();
+                            } else {
+                                cVal = FragVal_t(it->second);
+                            }
+                        } else {
+                            cVal = FragVal_t(cVal.value->nestedFragments);
+                        }
+                    }
+                } else if ( cVal.type != FragVal_t::FRAGMENT_NULL ) {
+                    WARN_IF(instr, "Unable to locate member (6) '" + member + "'"
+                        " in fragment list",
                         Error_t::LL_WARNING);
                     cVal = FragVal_t();
                 }
-                break;
+                fragmentValueStack.push(cVal);
             }
-            case FragVal_t::FRAGMENT_LIST: {
-                const std::string &member = instr.value.stringValue;
-                WARN_IF(instr, "Unable to locate member (6) '" + member + "'"
-                               " in fragment list", Error_t::LL_WARNING);
-                cVal = FragVal_t();
-                break;
-            }
-            case FragVal_t::FRAGMENT_NULL:
-                break;
-            }
-            fragmentValueStack.push(cVal);
             break;
 
         case Instruction_t::REPR:
@@ -1376,9 +1352,9 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
             cVal = fragmentValueStack.top();
             fragmentValueStack.pop();
 
-            if (instr.value.stringValue == "json") {
+            if ( instr.value.stringValue == "json" ) {
                 std::stringstream os;
-                switch (cVal.type) {
+                switch ( cVal.type ) {
                     case FragVal_t::FRAGMENT:
                         cVal.frag->json(os);
                         break;
@@ -1392,8 +1368,8 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                         break;
                 }
                 a.setString(os.str());
-            } else if (instr.value.stringValue == "type") {
-                switch (cVal.type) {
+            } else if ( instr.value.stringValue == "type" ) {
+                switch ( cVal.type ) {
                     case FragVal_t::FRAGMENT:
                         a.setString("frag");
                         break;
@@ -1403,7 +1379,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                         break;
 
                     case FragVal_t::FRAGMENT_VALUE:
-                        if (cVal.value->getNestedFragments())
+                        if ( cVal.value->nestedFragments != 0 )
                             a.setString("valuelist");
                         else
                             a.setString("value");
@@ -1413,8 +1389,8 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                         a.setString("null");
                         break;
                 }
-            } else if (instr.value.stringValue == "count") {
-                switch (cVal.type) {
+            } else if ( instr.value.stringValue == "count" ) {
+                switch ( cVal.type ) {
                     case FragVal_t::FRAGMENT:
                         a.setInteger(1);
                         break;
@@ -1424,8 +1400,8 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                         break;
 
                     case FragVal_t::FRAGMENT_VALUE:
-                        if (auto *nested = cVal.value->getNestedFragments())
-                            a.setInteger(nested->size());
+                        if ( cVal.value->nestedFragments != 0 )
+                            a.setInteger(cVal.value->nestedFragments->size());
                         else
                             a.setInteger(1);
                         break;
@@ -1434,9 +1410,9 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                         a.setString("null");
                         break;
                 }
-            } else if (instr.value.stringValue == "exists") {
+            } else if ( instr.value.stringValue == "exists" ) {
                 existMarks--;
-                switch (cVal.type) {
+                switch ( cVal.type ) {
                     case FragVal_t::FRAGMENT:
                     case FragVal_t::FRAGMENT_LIST:
                     case FragVal_t::FRAGMENT_VALUE:
@@ -1448,7 +1424,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                         break;
                 }
             } else {
-                switch (cVal.type) {
+                switch ( cVal.type ) {
                     case FragVal_t::FRAGMENT_NULL:
                         a.setString("$null$");
                         break;
@@ -1462,12 +1438,10 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
                         break;
 
                     case FragVal_t::FRAGMENT_VALUE:
-                        if (cVal.value->getNestedFragments())
+                        if ( cVal.value->nestedFragments != 0 )
                             a.setString("$fraglist$");
                         else
-                            a.setString(
-                                fParam.escaper.escape(*cVal.value->getValue())
-                            );
+                            a.setString(fParam.escaper.escape(cVal.value->value));
                         break;
 
                     default:
@@ -1611,7 +1585,7 @@ int Processor_t::eval(ParserValue_t &result, int startAddress,
                 Function_t p = tengFindFunction(instr.value.stringValue, false);
                 ///TODO: UDF const optimizations
                 //UDF_t *udf = p == 0 ? findUDF(instr.value.stringValue) : 0;
-                if (p /*|| udf*/) {
+                if ( p /*|| udf*/ ) {
                     std::string errmsg;
                     fParam.logger.setInstruction(&instr);
                     //int res = p == 0 ? callUdf(v, a, udf, errmsg) : p(v, fParam, a);

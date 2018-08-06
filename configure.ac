@@ -73,7 +73,7 @@ AC_PROG_LIBTOOL
 # This version number needs to be changed in several different ways for each
 # release. Please read the libtool documentation (info libtool 'Updating
 # version info') before touching this. (this is *.so version number).
-TENG_MAJOR=4
+TENG_MAJOR=3
 TENG_MINOR=0
 VERSION_INFO="-version-info $TENG_MAJOR:$TENG_MINOR:1"
 AC_SUBST(TENG_MAJOR)
@@ -81,8 +81,8 @@ AC_SUBST(TENG_MINOR)
 AC_SUBST(VERSION_INFO)
 
 
-CPPFLAGS="-std=c++14"
-CXXFLAGS="-std=c++14"
+CPPFLAGS=""
+CXXFLAGS=""
 CFLAGS=""
 LDFLAGS=""
 

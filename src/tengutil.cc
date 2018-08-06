@@ -115,7 +115,7 @@ namespace {
         for (Fragment_t::const_iterator i = root->begin();
              i != root->end(); i++) {
 
-            if (!i->second->getNestedFragments()){
+            if (!i->second->nestedFragments){
 
                 if (i -> first.size() &&
                     i -> first[0] == '_' &&
@@ -154,8 +154,11 @@ namespace {
                     }
                 }
 
-                for (auto &nested: *i->second->getNestedFragments()) {
-                    checkDataRecursion(nested.get(), dataDefinition, error,
+                for (FragmentList_t::const_iterator
+                         inf = i->second->nestedFragments->begin();
+                     inf != i->second->nestedFragments->end();
+                     ++inf) {
+                    checkDataRecursion(*inf, dataDefinition, error,
                                        path + "." + i->first,
                                        0);
                 }
