@@ -35,6 +35,8 @@
  */
 
 
+#include "tengutil.h"
+#include "tenglogging.h"
 #include "tengwriter.h"
 
 namespace Teng {
@@ -43,43 +45,34 @@ StringWriter_t::StringWriter_t(std::string &str)
     : str(str)
 {}
 
-int StringWriter_t::write(const std::string &str)
-{
+int StringWriter_t::write(const std::string &str) {
     this->str.append(str);
     return 0;
 }
 
-int StringWriter_t::write(const char *str)
-{
+int StringWriter_t::write(const char *str) {
     this->str.append(str);
     return 0;
 }
 
-
-int StringWriter_t::
-write(const std::string &str,
-      std::pair<std::string::const_iterator, std::string::const_iterator> interval)
-{
+int StringWriter_t::write(const std::string &str, StringSpan_t interval) {
     this->str.append(interval.first, interval.second);
     return 0;
 }
-
 
 FileWriter_t::FileWriter_t(const std::string &filename)
     : Writer_t(), file(0), borrowed(false)
 {
     file = fopen(filename.c_str(), "w");
     if (!file)
-        err.logSyscallError(Error_t::LL_FATAL, Error_t::Position_t(),
-                            "Cannot open file '" + filename + "'");
+        logFatal(err, "Cannot open file '" + filename + "' (" + strerr() + ")");
 }
 
 FileWriter_t::FileWriter_t(FILE *file)
     : Writer_t(), file(file), borrowed(true)
 {
     if (!file)
-        err.logSyscallError(Error_t::LL_FATAL, Error_t::Position_t(),
-                            "Got invalid file");
+        logFatal(err, "Got invalid file handle (nullptr)");
 }
 
 FileWriter_t::~FileWriter_t() {
@@ -87,41 +80,33 @@ FileWriter_t::~FileWriter_t() {
         fclose(file);
 }
 
-int FileWriter_t::write(const std::string &str)
-{
+int FileWriter_t::write(const std::string &str) {
     if (!file) return -1;
     fwrite(str.data(), 1, str.length(), file);
     if (feof(file) || ferror(file)) {
-        err.logSyscallError(Error_t::LL_FATAL, Error_t::Position_t(),
-                            "Error writing to output");
+        logFatal(err, "Error writing to output (" + strerr() + ")");
         return -1;
     }
     return 0;
 }
 
-int FileWriter_t::write(const char *str)
-{
+int FileWriter_t::write(const char *str) {
     if (!file) return -1;
     size_t len = strlen(str);
     fwrite(str, 1, len, file);
     if (feof(file) || ferror(file)) {
-        err.logSyscallError(Error_t::LL_FATAL, Error_t::Position_t(),
-                            "Error writing to output");
+        logFatal(err, "Error writing to output (" + strerr() + ")");
         return -1;
     }
     return 0;
 }
 
-int FileWriter_t::
-write(const std::string &str,
-      std::pair<std::string::const_iterator, std::string::const_iterator> interval)
-{
-    const char *cstr = str.data() + distance(str.begin(), interval.first);
-    size_t len = distance(interval.first, interval.second);
+int FileWriter_t::write(const std::string &str, StringSpan_t interval) {
+    const char *cstr = str.data() + std::distance(str.begin(), interval.first);
+    size_t len = std::distance(interval.first, interval.second);
     fwrite(cstr, 1, len, file);
     if (feof(file) || ferror(file)) {
-        err.logSyscallError(Error_t::LL_FATAL, Error_t::Position_t(),
-                            "Error writing to output");
+        logFatal(err, "Error writing to output (" + strerr() + ")");
         return -1;
     }
     return 0;

@@ -35,18 +35,23 @@
  */
 
 #include <cstdio>
+#include <iomanip>
 
+#include "tengfilestream.h"
 #include "tengprogram.h"
 
 namespace Teng {
 
-/** Print whole program into file stream.
-  * @param fp File stream for output. */
 void Program_t::dump(FILE *fp) const {
-    Program_t::const_iterator i;
-    for (i = begin(); i != end(); ++i) {
-        fprintf(fp, "%td\t", i - begin());
-        (*i).dump(fp);
+    FileStream_t stream(fp);
+    dump(stream);
+}
+
+void Program_t::dump(std::ostream &out) const {
+    for (auto &instr: instrs) {
+        out << std::setw(3) << std::setfill('0') << std::noshowpos
+            << std::distance(instrs.data(), &instr) << '\t';
+        instr.dump(out);
     }
 }
 

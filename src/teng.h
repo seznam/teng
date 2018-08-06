@@ -41,6 +41,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <memory>
 
 #include <tengstructs.h>
 #include <tengwriter.h>
@@ -49,41 +50,28 @@
 
 namespace Teng {
 
+// forwards
 class TemplateCache_t;
 
 /** @short Templating engine.
  */
 class Teng_t {
 public:
-    /** @short Templating engine.
+    /** @short Templating engine settings.
      */
     struct Settings_t {
-        inline Settings_t(unsigned int programCacheSize = 0,
-                          unsigned int dictCacheSize = 0)
-            : programCacheSize(programCacheSize),
-              dictCacheSize(dictCacheSize)
-        {
-            // no-op
-        }
-
-        inline Settings_t(int, bool,
-                          unsigned int programCacheSize = 0,
-                          unsigned int dictCacheSize = 0)
-            : programCacheSize(programCacheSize),
-              dictCacheSize(dictCacheSize)
-        {
-            // no-op
-        }
-
-        unsigned int programCacheSize;
-        unsigned int dictCacheSize;
+        Settings_t(uint32_t programCacheSize = 0, uint32_t dictCacheSize = 0)
+            : programCacheSize(programCacheSize), dictCacheSize(dictCacheSize)
+        {}
+        uint32_t programCacheSize;
+        uint32_t dictCacheSize;
     };
 
     /** @short Create new engine.
      *  @param root root of relative paths
      *  @param settings teng options
      */
-    Teng_t(const std::string &root, const Settings_t &settings);
+    Teng_t(const std::string &root = {}, const Settings_t &settings = {});
 
     /** @short Destroy engine.
      */
@@ -104,10 +92,14 @@ public:
      */
     int generatePage(const std::string &templateFilename,
                      const std::string &skin,
-                     const std::string &dict, const std::string &lang,
-                     const std::string &param, const std::string &contentType,
-                     const std::string &encoding, const Fragment_t &data,
-                     Writer_t &writer, Error_t &err);
+                     const std::string &dict,
+                     const std::string &lang,
+                     const std::string &param,
+                     const std::string &contentType,
+                     const std::string &encoding,
+                     const Fragment_t &data,
+                     Writer_t &writer,
+                     Error_t &err);
 
     /** @short Generate page from string template.
      *  @param templateString main template
@@ -122,10 +114,14 @@ public:
      *  @return 0 OK, !0 error
      */
     int generatePage(const std::string &templateString,
-                     const std::string &dict, const std::string &lang,
-                     const std::string &param, const std::string &contentType,
-                     const std::string &encoding, const Fragment_t &data,
-                     Writer_t &writer, Error_t &err);
+                     const std::string &dict,
+                     const std::string &lang,
+                     const std::string &param,
+                     const std::string &contentType,
+                     const std::string &encoding,
+                     const Fragment_t &data,
+                     Writer_t &writer,
+                     Error_t &err);
 
     /** @short Find entry in dictionary.
      *  @param config config dictionary path
@@ -135,17 +131,22 @@ public:
      *  @param value found entry
      *  @return 0 entry found, !0 entry not found
      */
-    int dictionaryLookup(const std::string &config, const std::string &dict,
-                         const std::string &lang, const std::string &key,
+    int dictionaryLookup(const std::string &config,
+                         const std::string &dict,
+                         const std::string &lang,
+                         const std::string &key,
                          std::string &value);
 
     /**
      * @short Lists supported content types.
      * @param supported list of supported content types.
      */
-    static void listSupportedContentTypes(std::vector<std::pair<std::string,
-                                          std::string> > &supported);
+    static std::vector<std::pair<std::string, std::string>>
+    listSupportedContentTypes();
 
+    [[deprecated]] static void listSupportedContentTypes(
+        std::vector<std::pair<std::string, std::string>> &s
+    ) {for (auto &e: listSupportedContentTypes()) s.push_back(e);};
 
     enum {
         /** @short Appends error log in the output when set.
@@ -159,17 +160,9 @@ public:
     };
 
 private:
-    /** @short Copy constructor intentionaly private -- copying
-     *         disabled.
-     */
-    Teng_t(const Teng_t&);
-
-    /** @short Assignment operator intentionally private -- assignment
-     *         disabled.
-     */
-    Teng_t operator=(const Teng_t&);
-
-    void init(const Settings_t &settings);
+    // don't copy
+    Teng_t(const Teng_t &) = delete;
+    Teng_t &operator=(const Teng_t &) = delete;
 
     /** @short Root of relative paths.
      */
@@ -177,7 +170,7 @@ private:
 
     /** @short Cache of templates.
      */
-    TemplateCache_t *templateCache;
+    std::unique_ptr<TemplateCache_t> templateCache;
 
     /** @short Error log.
      */

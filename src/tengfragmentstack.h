@@ -54,8 +54,6 @@ const std::string ERROR_FRAG_NAME("_error");
 
 const std::string FILENAME("filename");
 
-const std::string NO_FILE("(no file)");
-
 const std::string LINE("line");
 
 const std::string COLUMN("column");
@@ -79,15 +77,13 @@ public:
     inline FragmentFrame_t() {
     }
 
-    inline virtual ~FragmentFrame_t() {
-        // no-op
-    }
+    virtual ~FragmentFrame_t() {}
 
-    virtual const FragmentList_t *findSubFragment(const std::string &name)
-        const = 0;
+    virtual const FragmentList_t *
+    findSubFragment(const std::string &name) const = 0;
 
-    virtual Status_t findVariable(const std::string &name,
-                                  ParserValue_t &var) const = 0;
+    virtual Status_t
+    findVariable(const std::string &name, Parser::Value_t &var) const = 0;
 
     virtual bool nextIteration() = 0;
 
@@ -97,8 +93,8 @@ public:
 
     virtual unsigned int iteration() const = 0;
 
-    virtual bool exists(const std::string &name,
-                        bool onlyData = false) const = 0;
+    virtual bool
+    exists(const std::string &name, bool onlyData = false) const = 0;
 
     virtual const Fragment_t *getCurrentFragment() const = 0;
 
@@ -106,12 +102,13 @@ public:
         return (locals.find(name) != locals.end());
     }
 
-    inline Status_t findLocalVariable(const std::string &name, ParserValue_t &var,
+    Status_t
+    findLocalVariable(const std::string &name, Parser::Value_t &var,
                                       bool testExistence = false)
         const
     {
         // try to find variable
-        std::map<std::string, ParserValue_t>::const_iterator flocals
+        std::map<std::string, Parser::Value_t>::const_iterator flocals
             = locals.find(name);
         if (flocals == locals.end()) return S_NOT_FOUND;
 
@@ -125,16 +122,14 @@ public:
         return S_OK;
     }
 
-    inline Status_t setVariable(const std::string &name,
-                                const ParserValue_t &var)
-    {
+    Status_t
+    setVariable(const std::string &name, const Parser::Value_t &var) {
         // check whether there is non-local variable with given name
         // -- we are not allowed to override data from template
         if (exists(name, true)) return S_ALREADY_DEFINED;
 
         // try to insert value to local variables
-        std::pair<std::map<std::string, ParserValue_t>::iterator, bool>
-            insertResult = locals.insert(make_pair(name, var));
+        auto insertResult = locals.insert(make_pair(name, var));
         if (!insertResult.second) {
             // unsuccesful (already set) -- change its value
             insertResult.first->second = var;
@@ -147,11 +142,11 @@ public:
     inline void resetLocals() {
         // remove all local variables (only when non empty)
         if (!locals.empty())
-            locals = std::map<std::string, ParserValue_t>();
+            locals = std::map<std::string, Parser::Value_t>();
     }
 
 private:
-    std::map<std::string, ParserValue_t> locals;
+    std::map<std::string, Parser::Value_t> locals;
 };
 
 class RegularFragmentFrame_t : public FragmentFrame_t {
@@ -163,36 +158,23 @@ public:
                       ? nullptr
                       : fragmentList->begin()->get())
                    : nullptr),
-#ifndef WIN32
-          data(fragmentList ? fragmentList->begin()
+          data(fragmentList
+               ? fragmentList->begin()
                : FragmentList_t::const_iterator()),
-          dataEnd(fragmentList ? fragmentList->end()
+          dataEnd(fragmentList
+                  ? fragmentList->end()
                   : FragmentList_t::const_iterator()),
-#endif //WIN32
           dataSize(fragmentList ? fragmentList->size() : 0),
           index(0)
-    {
-#ifdef WIN32
-        if (fragmentList)
-        {
-            data = fragmentList->begin();
-            dataEnd = fragmentList->end();
-        }
-#endif //WIN32
-        // no-op
-    }
+    {}
 
     RegularFragmentFrame_t(const Fragment_t *fragment)
         : FragmentFrame_t(),
           fragment(fragment),
-#ifndef WIN32
           data(FragmentList_t::const_iterator()),
           dataEnd(FragmentList_t::const_iterator()),
-#endif //WIN32
           dataSize(1), index(0)
-    {
-        // no-op
-    }
+    {}
 
     virtual bool exists(const std::string &name, bool onlyData = false) const {
         Fragment_t::const_iterator ffragment = fragment->find(name);
@@ -217,9 +199,8 @@ public:
              : subFragment->second->getNestedFragments();
     }
 
-    virtual Status_t findVariable(const std::string &name, ParserValue_t &var)
-        const
-    {
+    virtual Status_t
+    findVariable(const std::string &name, Parser::Value_t &var) const {
         // try to find variable in the associated fragment
         auto ielement = fragment->find(name);
 
@@ -232,7 +213,7 @@ public:
             return S_TYPE_MISMATCH;
 
         // OK we have variable's value from data tree!
-        var.setString(*ielement->second->getValue());
+        var = *ielement->second;
         return S_OK;
     }
 
@@ -287,10 +268,7 @@ public:
     inline ErrorFragmentFrame_t(const Error_t &error)
         : FragmentFrame_t(), errors(error.getEntries()),
           errorSize(error.count()), index(0)
-
-    {
-        // no-op
-    }
+    {}
 
     virtual bool exists(const std::string &name, bool onlyData = false) const {
         if ((name == FILENAME) || (name == LINE)
@@ -305,25 +283,23 @@ public:
         return 0;
     }
 
-    virtual Status_t findVariable(const std::string &name, ParserValue_t &var)
-        const
-    {
+    virtual Status_t
+    findVariable(const std::string &name, Parser::Value_t &var) const {
         // try to match variable names
         if (name == FILENAME) {
-            const std::string &filename = errors[index].pos.filename;
-            var.setString(filename.empty() ? NO_FILE : filename);
+            var = *errors[index].pos.filename;;
             return S_OK;
         } else if (name == LINE) {
-            var.setInteger(errors[index].pos.lineno);
+            var = errors[index].pos.lineno;
             return S_OK;
         } else if (name == COLUMN) {
-            var.setInteger(errors[index].pos.col);
+            var = errors[index].pos.colno;
             return S_OK;
         } else if (name == LEVEL) {
-            var.setInteger(errors[index].level);
+            var = static_cast<int>(errors[index].level);
             return S_OK;
         } else if (name == MESSAGE) {
-            var.setString(errors[index].message);
+            var = errors[index].msg;
             return S_OK;
         }
 
@@ -380,6 +356,13 @@ public:
                 delete *iframes;
     }
 
+    std::string getPath() const {
+        std::string result;
+        for (auto segment: path)
+            result += "." + segment;
+        return result;
+    }
+
     void pushFrame(const std::string &name, FragmentFrame_t *frame) {
         path.push_back(name);
         frames.push_back(frame);
@@ -405,63 +388,57 @@ public:
         return frames.back()->findSubFragment(name);
     }
 
-    Status_t findVariable(const Identifier_t &name, ParserValue_t &var)
-        const
-    {
+    Status_t
+    findVariable(const Identifier_t &name, Parser::Value_t &var) const {
         // check for range
-        if (name.depth > frames.size()) return S_OUT_OF_CONTEXT;
+        if (name.depth >= frames.size()) return S_OUT_OF_CONTEXT;
         return (*(frames.begin() + name.depth))->findVariable(name.name, var);
     }
 
-    Status_t setVariable(const Identifier_t &name,
-                                const ParserValue_t &var)
-    {
+    Status_t
+    setVariable(const Identifier_t &name, const Parser::Value_t &var) {
         // check for range
-        if (name.depth > frames.size()) return S_OUT_OF_CONTEXT;
+        if (name.depth >= frames.size()) return S_OUT_OF_CONTEXT;
         return (*(frames.begin() + name.depth))->setVariable(name.name, var);
     }
 
-    Status_t getFragmentSize(const Identifier_t &name,
-                               unsigned int &fragmentSize)
-        const
-    {
+    Status_t
+    getFragmentSize(const Identifier_t &name, unsigned int &fragSize) const {
         // check for range
-        if (name.depth > path.size()) return S_OUT_OF_CONTEXT;
+        if (name.depth >= frames.size()) return S_OUT_OF_CONTEXT;
 
         // get size
-        fragmentSize = (*(frames.begin() + name.depth))->size();
+        fragSize = (*(frames.begin() + name.depth))->size();
         return S_OK;
     }
 
-    Status_t getSubFragmentSize(const Identifier_t &name,
-                                       unsigned int &fragmentSize)
-        const
-    {
+    Status_t
+    getSubFragmentSize(const Identifier_t &name, unsigned int &fragSize) const {
         // check for range
-        if (name.depth > path.size()) return S_OUT_OF_CONTEXT;
+        if (name.depth >= frames.size()) return S_OUT_OF_CONTEXT;
 
         // find subfragment by name
         const FragmentList_t *subFragment
             = (*(frames.begin() + name.depth))->findSubFragment(name.name);
         if (subFragment) {
             // get size
-            fragmentSize = subFragment->size();
+            fragSize = subFragment->size();
         } else {
             // subfragment not present, treating as zero size
-            fragmentSize = 0;
+            fragSize = 0;
         }
 
         // OK
         return S_OK;
     }
 
-    Status_t getFragmentIteration(const Identifier_t &name,
-                                         unsigned int &fragmentIteration,
-                                         unsigned int *fragmentSize = 0)
+    Status_t getFragmentIndex(const Identifier_t &name,
+                              unsigned int &fragmentIteration,
+                              unsigned int *fragmentSize = 0)
         const
     {
         // check for range
-        if (name.depth > path.size()) return S_OUT_OF_CONTEXT;
+        if (name.depth >= frames.size()) return S_OUT_OF_CONTEXT;
 
         FragmentFrame_t &frame = *(*(frames.begin() + name.depth));
 
@@ -473,7 +450,7 @@ public:
 
     bool exists(const Identifier_t &name) const {
         // check for range
-        if (name.depth > path.size()) return false;
+        if (name.depth >= frames.size()) return false;
 
         // test for existence
         return (*(frames.begin() + name.depth))->exists(name.name);
@@ -503,7 +480,6 @@ public:
 
 private:
     std::vector<std::string> path;
-
     std::vector<FragmentFrame_t*> frames;
 };
 
@@ -521,10 +497,9 @@ public:
         chains.push_back(&root);
     }
 
-    ~FragmentStack_t() {
-    }
+    std::size_t chainSize() const {return chains.size();}
 
-    inline Status_t pushFrame(const Identifier_t &name) {
+    Status_t pushFrame(const Identifier_t &name) {
         if (name.context) {
             // check whether context has been changed
             chains.push_back(&root);
@@ -584,9 +559,8 @@ public:
         return S_OK;
     }
 
-    inline Status_t findVariable(const Identifier_t &name, ParserValue_t &var)
-        const
-    {
+    Status_t
+    findVariable(const Identifier_t &name, Parser::Value_t &var) const {
         // test whether we are in range
         if (chains.size() > name.context) {
             // get context's chain and try to find variable in it
@@ -597,9 +571,7 @@ public:
         return S_OUT_OF_CONTEXT;
     };
 
-    inline Status_t setVariable(const Identifier_t &name,
-                                const ParserValue_t &var)
-    {
+    Status_t setVariable(const Identifier_t &name, const Parser::Value_t &var) {
         // test whether we are in range
         if (chains.size() > name.context) {
             // get context's chain and try to set variable in it
@@ -611,60 +583,56 @@ public:
         return S_OUT_OF_CONTEXT;
     };
 
-    inline Status_t getFragmentSize(const Identifier_t &name,
-                                    unsigned int &fragmentSize)
-        const
-    {
+    Status_t
+    getFragmentSize(const Identifier_t &name, unsigned int &fragSize) const {
         // test whether we are in range
         if (chains.size() > name.context) {
             // get context's chain and try to find variable in it
             return (chains.begin() + name.context)->
-                getFragmentSize(name, fragmentSize);
+                getFragmentSize(name, fragSize);
         }
         // not found (invalid context position) => probably badly composed
         // bytecode
         return S_OUT_OF_CONTEXT;
     }
 
-    inline Status_t getSubFragmentSize(const Identifier_t &name,
-                                       unsigned int &fragmentSize)
-        const
-    {
+    Status_t
+    getSubFragmentSize(const Identifier_t &name, unsigned int &fragSize) const {
         // test whether we are in range
         if (chains.size() > name.context) {
             // check for error fragment;
             if (enableErrorFragment && !name.depth
                 && (name.name == ERROR_FRAG_NAME)) {
-                fragmentSize = error.count();
+                fragSize = error.count();
                 return S_OK;
             }
 
             // get context's chain and try to find variable in it
-            return (chains.begin() + name.context)->
-                getSubFragmentSize(name, fragmentSize);
+            return (chains.begin() + name.context)
+                ->getSubFragmentSize(name, fragSize);
         }
         // not found (invalid context position) => probably badly composed
         // bytecode
         return S_OUT_OF_CONTEXT;
     }
 
-    inline Status_t getFragmentIteration(const Identifier_t &name,
-                                         unsigned int &fragmentIteration,
-                                         unsigned int *fragmentSize = 0)
+    inline Status_t getFragmentIndex(const Identifier_t &name,
+                                     unsigned int &fragmentIteration,
+                                     unsigned int *fragmentSize = 0)
         const
     {
         // test whether we are in range
         if (chains.size() > name.context) {
             // get context's chain and try to find variable in it
             return (chains.begin() + name.context)->
-                getFragmentIteration(name, fragmentIteration, fragmentSize);
+                getFragmentIndex(name, fragmentIteration, fragmentSize);
         }
         // not found (invalid context position) => probably badly composed
         // bytecode
         return S_OUT_OF_CONTEXT;
     }
 
-    inline Status_t exists(const Identifier_t &name) const {
+    Status_t exists(const Identifier_t &name) const {
         // test whether we are in range
         if (chains.size() > name.context) {
             // get context's chain and try to find variable in it
@@ -682,12 +650,14 @@ public:
      * @param name of fragment to repeat
      * @param returnAddress return address
      */
-    inline Status_t repeatFragment(const Identifier_t &name,
-                                   int returnAddress)
-    {
-        std::cerr << "repeating " << name.name << " [" << std::hex
-             << returnAddress << "]" << std::endl;
+    Status_t repeatFragment(const Identifier_t &name, int returnAddress) {
         return S_NO_ITERATIONS;
+    }
+
+    /** Returns current path from root fragment to current one.
+     */
+    std::string currentPath() const {
+        return chains.back().getPath();
     }
 
 private:

@@ -41,92 +41,87 @@
 #include <algorithm>
 
 #include "tengsourcelist.h"
+#include "tenglogging.h"
 #include "tengutil.h"
 
 namespace Teng {
+namespace {
 
-int FileStat_t::stat(const Error_t::Position_t &pos,
-                     Error_t &err)
-{
-    // invalidate data;
-    valid = false;
-
+/**
+ * @short Stat file.
+ * @param pos position in current file
+ * @param err error logger
+ */
+FileStat_t::Stat_t
+stat(const std::string &filename, const Pos_t *pos, Error_t *err) {
     // stat given file
     struct stat buf;
     if (::stat(filename.c_str(), &buf)) {
-        err.logSyscallError(Error_t::LL_ERROR, pos, "Cannot stat file '" +
-                            filename +"'");
-        return -1;
+        if (err && pos) {
+            std::string sys = "(" + strerr() + ")";
+            logError(*err, *pos, "Cannot stat file '" + filename + "' " + sys);
+        }
+        return {};
     }
 
     // check if not dir
     if (S_ISDIR(buf.st_mode)) {
-        err.logError(Error_t::LL_ERROR, pos, "File '" + filename +
-                     "' is a directory");
-        return -1;
+        if (err && pos)
+            logError(*err, *pos, "File '" + filename + "' is a directory");
+        return {};
     }
 
-    // populate members of fileInfo from stat
-    inode = buf.st_ino;
-    size = buf.st_size;
-    mtime = buf.st_mtime;
-    ctime = buf.st_ctime;
-
-    // validate data
-    valid = true;
-    // OK
-    return 0;
+    // populate members of stat struct
+    return {buf.st_ino, buf.st_size, buf.st_mtime, buf.st_ctime, true};
 }
 
-unsigned int SourceList_t::addSource(const std::string &_source,
-                                     const Error_t::Position_t &pos,
-                                     Error_t &err)
-{
-    // normalize filename
-    std::string source = _source;
-    tengNormalizeFilename(source);
+} // namespace
 
-    // create source info
-    FileStat_t fs(source);
+/** @short Returns true if lhs equals to rhs.
+ */
+bool operator==(const FileStat_t::Stat_t &lhs, const FileStat_t::Stat_t &rhs) {
+    return (lhs.inode == rhs.inode)
+        && (lhs.size == rhs.size)
+        && (lhs.mtime == rhs.mtime)
+        && (lhs.ctime == rhs.ctime);
+}
+
+/** @short Returns true if lhs does not equal to rhs.
+ */
+bool operator!=(const FileStat_t::Stat_t &lhs, const FileStat_t::Stat_t &rhs) {
+    return !(lhs == rhs);
+}
+
+std::pair<const std::string *, std::size_t>
+SourceList_t::push(std::string filename, const Pos_t &pos, Error_t &err) {
+    // normalize filename
+    normalizeFilename(filename);
 
     // try to find existing entry
-    std::vector<FileStat_t>::const_iterator fsources =
-        std::find(sources.begin(), sources.end(), fs);
-    if (fsources != sources.end()) {
-        // entry already present => just return its position
-        return static_cast<unsigned int>(fsources - sources.begin());
-    }
+    for (std::size_t i = 0; i < sources.size(); ++i)
+        if (sources[i]->filename == filename)
+            return {&sources[i]->filename, i};
 
     // stat file
-    fs.stat(pos, err);
-
-    // push info into source list
-    sources.push_back(fs);
-    return sources.size() - 1;
+    using ptr_t = std::unique_ptr<FileStat_t>;
+    auto new_stat = stat(filename, &pos, &err);
+    sources.emplace_back(ptr_t(new FileStat_t{filename, new_stat}));
+    return {&sources.back()->filename, sources.size() - 1};
 }
 
 bool SourceList_t::isChanged() const {
-    Error_t err;
-    Error_t::Position_t pos;
-    // run through source list
-    for (std::vector<FileStat_t>::const_iterator isources = sources.begin();
-         isources != sources.end(); ++isources) {
-        // stat file
-        FileStat_t fs(isources->filename);
-        if (fs.stat(pos, err) && isources->valid)
-            return true;
-        // compare with cached value
-        if (fs != *isources) return true;
+    for (auto &source: sources) {
+        auto new_stat = stat(source->filename, nullptr, nullptr);
+        if (new_stat != source->stat) return true;
     }
-
-    // nothing changed
     return false;
 }
 
-std::string SourceList_t::getSource(unsigned int position) const {
-    if (position < sources.size())
-        return sources[position].filename;
-    return std::string();
+const std::string *SourceList_t::operator[](std::size_t i) const {
+    static const std::string empty;
+    if (i < sources.size())
+        return &sources[i]->filename;
+    return &empty;
 }
 
 } // namespace Teng

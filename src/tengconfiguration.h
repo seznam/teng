@@ -39,16 +39,16 @@
 #define TENGCONFIGURATION_H
 
 #include <iosfwd>
+#include <string>
 
 #include "tengdictionary.h"
 
 namespace Teng {
 
 /**
- * @short Configuration -- language independed dictionary and
- *        configuration placeholder.
+ * @short Language independed dictionary and configuration placeholder.
  */
-class Configuration_t : public Dictionary_t {
+class Configuration_t: public Dictionary_t {
 public:
     /**
      * @short Creates configuration object.
@@ -58,65 +58,35 @@ public:
     Configuration_t(const std::string &root = std::string());
 
     /**
-     * @short Destroy dictionary object.
-     */
-    virtual ~Configuration_t();
-
-    /**
      * @short Parses and processes processing directive.
      *
      * @param directive whole directive string
      * @param param parameter to directive
-     * @param pos position in current file
+     *
      * @return 0 OK !0 error
      */
-    virtual int processDirective(const std::string &directive,
-                                 const std::string &param,
-                                 Error_t::Position_t &pos);
+    int processDirective(string_view_t directive, string_view_t param) override;
 
-    inline bool isDebugEnabled() const {
-        return debug;
-    }
+    // @{ shortcuts to query configuration
+    bool isDebugEnabled() const {return debug;}
+    bool isErrorFragmentEnabled() const {return errorFragment;}
+    bool isLogToOutputEnabled() const {return logToOutput;}
+    bool isBytecodeEnabled() const {return bytecode;}
+    bool isWatchFilesEnabled() const {return watchFiles;}
+    unsigned int getMaxIncludeDepth() const {return maxIncludeDepth;}
+    unsigned int getMaxDebugValLength() const {return maxDebugValLength;}
+    bool isFormatEnabled() const {return format;}
+    bool isAlwaysEscapeEnabled() const {return alwaysEscape;}
+    bool isShortTagEnabled() const {return shortTag;}
+    // @}
 
-    inline bool isErrorFragmentEnabled() const {
-        return errorFragment;
-    }
-
-    inline bool isLogToOutputEnabled() const {
-        return logToOutput;
-    }
-
-    inline bool isBytecodeEnabled() const {
-        return bytecode;
-    }
-
-    inline bool isWatchFilesEnabled() const {
-        return watchFiles;
-    }
-
-    inline unsigned int getMaxIncludeDepth() const {
-        return maxIncludeDepth;
-    }
-
-    inline unsigned int getMaxDebugValLength() const {
-        return maxDebugValLength;
-    }
-
-    inline bool isFormatEnabled() const {
-        return format;
-    }
-
-    inline bool isAlwaysEscapeEnabled() const {
-        return alwaysEscape;
-    }
-
-    inline bool isShortTagEnabled() const {
-        return shortTag;
-    }
-
+    /** Sets enabled to true if feature is enabled.
+     */
     int isEnabled(const std::string &feature, bool &enabled) const;
 
-    friend std::ostream& operator<<(std::ostream &o, const Configuration_t &c);
+    /** Dumps configuration to stream.
+     */
+    friend std::ostream &operator<<(std::ostream &o, const Configuration_t &c);
 
 private:
     bool debug;           //!< <?teng debug?> works. (false)
@@ -125,14 +95,13 @@ private:
     bool bytecode;        //!< <?teng bytecode?> works. (false)
     bool watchFiles;      //!< Cached templates are checked for change. (true)
     bool alwaysEscape;    //!< Escape always (true)
-    bool shortTag;         //!< Short tags <? ?> enabled (false)
-
-    unsigned int maxIncludeDepth; //!< Maximal template include depth.
-
+    bool shortTag;        //!< Short tags <? ?> enabled (false)
     bool format;          //!< enabled <?tenf formag ...?> (true)
-    unsigned short int maxDebugValLength; //!< Maximal length of variable value length
+    uint32_t maxIncludeDepth;   //!< Maximal template include depth.
+    uint16_t maxDebugValLength; //!< Maximal length of variable value length
 };
 
 } // namespace Teng
 
 #endif // TENGCONFIGURATION_H
+

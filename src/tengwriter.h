@@ -39,7 +39,7 @@
 #define TENGWRITER_H
 
 #include <string>
-#include <stdio.h>
+#include <cstdio>
 
 #include <tengerror.h>
 
@@ -49,15 +49,22 @@ namespace Teng {
  */
 class Writer_t {
 public:
+    // don't copy
+    Writer_t(const Writer_t &) = delete;
+    Writer_t &operator=(const Writer_t &) = delete;
+
+    // types
+    using StringSpan_t = std::pair<
+        std::string::const_iterator, std::string::const_iterator
+    >;
+
     /** @short Create new writer.
      */
-    inline Writer_t()
-        : err()
-    {}
+    Writer_t(): err() {}
 
     /** @short Destroy writer.
      */
-    inline virtual ~Writer_t() {}
+    virtual ~Writer_t() = default;
 
     /** @short Write given string to output.
      *  Abstract, must be overloaded in subclass.
@@ -80,9 +87,7 @@ public:
      *                  shall be written
      *  @return 0 OK, !0 error
      */
-    virtual int write(const std::string &str,
-                      std::pair<std::string::const_iterator,
-                      std::string::const_iterator> interval) = 0;
+    virtual int write(const std::string &str, StringSpan_t interval) = 0;
 
     /** @short Flush buffered data to the output.
      *  Abstract, must be overloaded in subclass.
@@ -93,27 +98,12 @@ public:
     /** @short Get error log.
      *  @return error log
      */
-    const Error_t& getErrors() const {
-        return err;
-    }
+    const Error_t &getErrors() const {return err;}
 
 protected:
     /** @short Error log.
      */
     Error_t err;
-    
-private:
-    /**
-     * @short Copy constructor intentionally private -- copying
-     *        disabled.
-     */
-    Writer_t(const Writer_t&);
-
-    /**
-     * @short Assignment operator intentionally private -- assignment
-     *        disabled.
-     */
-    Writer_t& operator=(const Writer_t&);
 };
 
 /** @short Output writer. Writes to the associated string.
@@ -124,18 +114,18 @@ public:
      *  @param str output string
      */
     StringWriter_t(std::string &str);
-    
-    /** @short Write given string to output.
-     *  @param str string to be written
-     *  @return 0 OK, !0 error
-     */
-    virtual int write(const std::string &str);
 
     /** @short Write given string to output.
      *  @param str string to be written
      *  @return 0 OK, !0 error
      */
-    virtual int write(const char *str);
+    int write(const std::string &str) override;
+
+    /** @short Write given string to output.
+     *  @param str string to be written
+     *  @return 0 OK, !0 error
+     */
+    int write(const char *str) override;
 
     /** @short Write given string to output.
      *  @param str string to be written
@@ -143,37 +133,21 @@ public:
      *                  shall be written
      *  @return 0 OK, !0 error
      */
-    virtual int write(const std::string &str,
-                      std::pair<std::string::const_iterator,
-                      std::string::const_iterator> interval);
+    int write(const std::string &str, StringSpan_t interval) override;
 
     /** @short Flush buffered data to the output.
      *  No-op.
      *  @return 0 OK, !0 error
      */
-    virtual int flush() { return 0; }
+    int flush() override { return 0; }
 
 private:
-    /**
-     * @short Copy constructor intentionally private -- copying
-     *        disabled.
-     */
-    StringWriter_t(const StringWriter_t&);
-
-    /**
-     * @short Assignment operator intentionally private -- assignment
-     *        disabled.
-     */
-    StringWriter_t& operator=(const StringWriter_t&);
-
     /** @short Associated string.
      */
     std::string &str;
 };
 
-/** @short 
- *  @param 
- *  @return 
+/** @short Output writer. Writes to associated file.
  */
 class FileWriter_t : public Writer_t {
 public:
@@ -187,23 +161,23 @@ public:
      *  @param file open file
      */
     FileWriter_t(FILE *file);
-    
+
     /** @short Destroy writer.
      *  Associated file will be closed unles it's borrowed.
      */
-    virtual ~FileWriter_t();
+    ~FileWriter_t() override;
 
     /** @short Write given string to output.
      *  @param str string to be written
      *  @return 0 OK, !0 error
      */
-    virtual int write(const std::string &str);
+    int write(const std::string &str) override;
 
     /** @short Write given string to output.
      *  @param str string to be written
      *  @return 0 OK, !0 error
      */
-    virtual int write(const char *str);
+    int write(const char *str) override;
 
     /** @short Write given string to output.
      *  @param str string to be written
@@ -211,29 +185,14 @@ public:
      *                  shall be written
      *  @return 0 OK, !0 error
      */
-    virtual int write(const std::string &str,
-                      std::pair<std::string::const_iterator,
-                      std::string::const_iterator> interval);
-
+    int write(const std::string &str, StringSpan_t interval) override;
 
     /** @short Flush buffered data to the output.
      *  @return 0 OK, !0 error
      */
-    virtual int flush();
+    int flush() override;
 
 private:
-    /**
-     * @short Copy constructor intentionally private -- copying
-     *        disabled.
-     */
-    FileWriter_t(const FileWriter_t&);
-
-    /**
-     * @short Assignment operator intentionally private -- assignment
-     *        disabled.
-     */
-    FileWriter_t& operator=(const FileWriter_t&);
-
     /** @short Output file.
      */
     FILE *file;
@@ -246,3 +205,4 @@ private:
 } // namespace Teng
 
 #endif // TENGWRITER_H
+

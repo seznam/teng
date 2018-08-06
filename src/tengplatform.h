@@ -58,12 +58,12 @@
 
 #ifdef WIN32
 #define CONVERTNAMEBYPLATFORM(path)\
-	string::size_type CNBP_slash = 0; \
-	string::size_type CNBP_nextslash = 0; \
-	static const basic_string <char>::size_type CNBP_npos = -1; \
-		while((CNBP_nextslash = (path).find('\\', CNBP_slash)) != CNBP_npos) { \
-			(path).replace(CNBP_nextslash, 1, string("/")); CNBP_slash = CNBP_nextslash; \
-		}
+    string::size_type CNBP_slash = 0; \
+    string::size_type CNBP_nextslash = 0; \
+    static const basic_string <char>::size_type CNBP_npos = -1; \
+        while((CNBP_nextslash = (path).find('\\', CNBP_slash)) != CNBP_npos) { \
+            (path).replace(CNBP_nextslash, 1, string("/")); CNBP_slash = CNBP_nextslash; \
+        }
 #else
 #define CONVERTNAMEBYPLATFORM(path)
 #endif //WIN32

@@ -38,469 +38,350 @@
 #include <cstdio>
 #include <string>
 #include <vector>
-#include <iostream>
 #include <iomanip>
+#include <ostream>
+#include <streambuf>
+#include <unistd.h>
 
+#include "tengfilestream.h"
 #include "tenginstruction.h"
 #include "tengparservalue.h"
 #include "tengcontenttype.h"
 
 namespace Teng {
-
-/** Print instruction into file stream.
-  * @param fp File stream for output. */
-void Instruction_t::dump(FILE *fp) const
-{
-    switch (operation) {
-
-        case VAL:
-            fprintf(fp, "VAL\t'%s'\n",
-                    value.stringValue.c_str()); //string version of the value
-            break;
-
-        case VAR:
-            fprintf(fp, "VAR\t%s\t%zd\n",
-                    value.stringValue.c_str(), //rendered 'identifier' vector
-                    value.integerValue); //escape flag
-            break;
-
-        case DICT:
-            fprintf(fp, "DICT\n");
-            break;
-
-        case PUSH:
-            fprintf(fp, "PUSH\n");
-            break;
-
-        case POP:
-            fprintf(fp, "POP\n");
-            break;
-
-        case STACK:
-            fprintf(fp, "STACK\t%zd\n",
-                    value.integerValue); //value offset from stack top
-            break;
-
-        case ADD:
-            fprintf(fp, "ADD\n");
-            break;
-
-        case SUB:
-            fprintf(fp, "SUB\n");
-            break;
-
-        case MUL:
-            fprintf(fp, "MUL\n");
-            break;
-
-        case DIV:
-            fprintf(fp, "DIV\n");
-            break;
-
-        case MOD:
-            fprintf(fp, "MOD\n");
-            break;
-
-        case CONCAT:
-            fprintf(fp, "CONCAT\n");
-            break;
-
-        case REPEAT:
-            fprintf(fp, "REPEAT\n");
-            break;
-
-        case AND:
-            fprintf(fp, "AND\t%zd\n",
-                    value.integerValue); //relative jump added to ip
-            break;
-
-        case OR:
-            fprintf(fp, "OR\t%zd\n",
-                    value.integerValue); //relative jump added to ip
-            break;
-
-        case BITAND:
-            fprintf(fp, "BITAND\n");
-            break;
-
-        case BITXOR:
-            fprintf(fp, "BITXOR\n");
-            break;
-
-        case BITOR:
-            fprintf(fp, "BITOR\n");
-            break;
-
-        case BITNOT:
-            fprintf(fp, "BITNOT\n");
-            break;
-
-        case NOT:
-            fprintf(fp, "NOT\n");
-            break;
-
-        case NUMEQ:
-            fprintf(fp, "NUMEQ\n");
-            break;
-
-        case NUMGE:
-            fprintf(fp, "NUMGE\n");
-            break;
-
-        case NUMGT:
-            fprintf(fp, "NUMGT\n");
-            break;
-
-        case STREQ:
-            fprintf(fp, "STREQ\n");
-            break;
-
-        case FUNC:
-            fprintf(fp, "FUNC\t%s\t%zd\n",
-                    value.stringValue.c_str(), //function name
-                    value.integerValue); //number of params on stack
-            break;
-
-        case JMPIFNOT:
-            fprintf(fp, "JMPIFNOT\t%zd\n",
-                    value.integerValue); //relative jump added to ip
-            break;
-
-        case JMP:
-            fprintf(fp, "JMP\t%zd\n",
-                    value.integerValue); //relative jump added to ip
-            break;
-
-        case FORM:
-            fprintf(fp, "FORM\t%zd\n",
-                    value.integerValue); //print formatting mode
-            break;
-
-        case ENDFORM:
-            fprintf(fp, "ENDFORM\n");
-            break;
-
-        case FRAG:
-            fprintf(fp, "FRAG\t'%s'\t%zd\n",
-                    value.stringValue.c_str(), //fragment name
-                    value.integerValue); //jump right after the end of frag
-            break;
-
-        case ENDFRAG:
-            fprintf(fp, "ENDFRAG\t%zd\n",
-                    value.integerValue); //jump right after the fragment start
-            break;
-
-        case FRAGCNT:
-            fprintf(fp, "FRAGCNT\t'%s'\n",
-                    value.stringValue.c_str()); //fragment name
-            break;
-
-        case XFRAGCNT:
-            fprintf(fp, "XFRAGCNT\t'%s'\n",
-                    value.stringValue.c_str()); //fragment name
-            break;
-
-        case FRAGITR:
-            fprintf(fp, "FRAGITR\t'%s'\n",
-                    value.stringValue.c_str()); //fragment name
-            break;
-
-        case PRINT:
-            fprintf(fp, "PRINT\n");
-            break;
-
-        case FRAGFIRST:
-            fprintf(fp, "FRAGFIRST\t'%s'\n",
-                    value.stringValue.c_str()); //fragment name
-            break;
-
-        case FRAGLAST:
-            fprintf(fp, "FRAGLAST\t'%s'\n",
-                    value.stringValue.c_str()); //fragment name
-            break;
-
-        case FRAGINNER:
-            fprintf(fp, "FRAGINNER\t'%s'\n",
-                    value.stringValue.c_str()); //fragment name
-            break;
-
-        case SET:
-            fprintf(fp, "SET\t%s\n",
-                    value.stringValue.c_str()); //variable name
-            break;
-
-        case HALT:
-            fprintf(fp, "HALT\n");
-            break;
-
-        case DEBUGING:
-            fprintf(fp, "DEBUG\n");
-            break;
-
-        case DEFINED:
-            fprintf(fp, "DEFINED\t%s\n", value.stringValue.c_str());
-            break;
-
-        case ISEMPTY:
-            fprintf(fp, "ISEMPTY\t%s\n", value.stringValue.c_str());
-            break;
-
-        case EXISTS:
-            fprintf(fp, "EXISTS\t%s\n",
-                    value.stringValue.c_str()); //rendered 'identifier' vector
-            break;
-
-        case GETATTR:
-            fprintf(fp, "GETATTR\t%s\n", value.stringValue.c_str());
-            break;
-
-        case AT:
-            fprintf(fp, "AT\n");
-            break;
-
-        case REPR:
-            fprintf(fp, "REPR\t%s\n",  value.stringValue.c_str());
-            break;
-
-        case EXISTMARK:
-            fprintf(fp, "EXISTMARK\n");
-            break;
-
-        default:
-            fprintf(fp, "??? (%d)\n", operation);
-    }
-}
-
 namespace {
-    class hexaddr {
-    public:
-        hexaddr(int addr, int ip)
-            : addr(addr), ip(ip)
-        {}
 
-        friend std::ostream& operator<<(std::ostream &os, const hexaddr &ha) {
-            os << std::dec << std::setiosflags(std::ios::showpos) << ha.addr;
-            if (ha.ip >= 0)
-                os << " [abs 0x" << std::hex << std::setw(8)
-                   << std::setfill('0') << (ha.addr + 1 + ha.ip) << ']';
-
-            return os;
-        }
-
-    private:
-        int addr;
-        int ip;
-    };
+/** Replaces new lines with "\n".
+ */
+std::string escapenl(const std::string &str) {
+    std::string result;
+    result.reserve(str.size() * 1.3);
+    for (auto ch: str)
+        if (ch == '\n') result.append("\\n");
+        else result.push_back(ch);
+    return result;
 }
 
-void Instruction_t::dump(std::ostream &os, int ip) const {
-    switch (operation) {
+/** Pads name up to 32 characters width.
+ */
+std::string pad(std::string name) {
+    return name.append(32 - name.size(), ' ');
+}
+
+/** Returns name of content type.
+ */
+std::string ct_name(int64_t id) {
+    if (auto *ct = ContentType_t::getContentType(id))
+        return ct->name;
+    return ContentType_t::getDefault()->name;
+}
+
+} // namespace
+
+void Instruction_t::dump(FILE *fp) const {
+    FileStream_t stream(fp);
+    dump(stream);
+}
+
+void Instruction_t::dump(std::ostream &os) const {
+    switch (opcode) {
     case VAL:
-        os << "VAL             '" << value.stringValue << '\'' << std::endl;
+        os << pad("VAL") << ' '
+           << "<value=" << escapenl(value.str())
+           << '>';
         break;
 
     case VAR:
-        os << "VAR             <" << value.stringValue << "> ("
-           << identifier.context << ":" << identifier.depth << ")";
-        if (value.integerValue) os << " [escaped]";
-        os << std::endl;
+        os << pad("VAR")
+           << "<ident=" << identifier.name
+           << ",escape=" << value.integral()
+           << ",context=" << identifier.context
+           << ",depth=" << identifier.depth
+           << '>';
         break;
 
     case DICT:
-        os << "DICT" << std::endl;
+        os << pad("DICT");
         break;
 
     case PUSH:
-        os << "PUSH" << std::endl;
+        os << pad("PUSH");
         break;
 
     case POP:
-        os << "POP" << std::endl;
+        os << pad("POP");
         break;
 
     case STACK:
-        os << "STACK           " << value.integerValue << std::endl;
+        os << pad("STACK") << ' '
+           << "<index=" << value.integral()
+           << '>';
         break;
 
     case ADD:
-        os << "ADD" << std::endl;
+        os << pad("ADD");
         break;
 
     case SUB:
-        os << "SUB" << std::endl;
+        os << pad("SUB");
         break;
 
     case MUL:
-        os << "MUL" << std::endl;
+        os << pad("MUL");
         break;
 
     case DIV:
-        os << "DIV" << std::endl;
+        os << pad("DIV");
         break;
 
     case MOD:
-        os << "MOD" << std::endl;
+        os << pad("MOD");
         break;
 
     case CONCAT:
-        os << "CONCAT" << std::endl;
+        os << pad("CONCAT");
         break;
 
     case REPEAT:
-        os << "REPEAT" << std::endl;
-        break;
-
-    case AND:
-        os << "AND             " << hexaddr(value.integerValue, ip) << std::endl;
-        break;
-
-    case OR:
-        os << "OR              " << hexaddr(value.integerValue, ip) << std::endl;
+        os << pad("REPEAT");
         break;
 
     case BITAND:
-        os << "BITAND" << std::endl;
+        os << pad("BITAND");
         break;
 
     case BITXOR:
-        os << "BITXOR" << std::endl;
+        os << pad("BITXOR");
         break;
 
     case BITOR:
-        os << "BITOR" << std::endl;
+        os << pad("BITOR");
         break;
 
     case BITNOT:
-        os << "BITNOT" << std::endl;
+        os << pad("BITNOT");
         break;
 
     case NOT:
-        os << "NOT" << std::endl;
+        os << pad("NOT");
         break;
 
     case NUMEQ:
-        os << "NUMEQ" << std::endl;
+        os << pad("NUMEQ");
         break;
 
     case NUMGE:
-        os << "NUMGE" << std::endl;
+        os << pad("NUMGE");
         break;
 
     case NUMGT:
-        os << "NUMGT" << std::endl;
+        os << pad("NUMGT");
         break;
 
     case STREQ:
-        os << "STREQ" << std::endl;
-        break;
-
-    case FUNC:
-        os << "FUNC            " << value.stringValue << "() "
-           << value.integerValue << std::endl;
-        break;
-
-    case JMPIFNOT:
-        os << "JMPIFNOT        '" << hexaddr(value.integerValue, ip) << std::endl;
-        break;
-
-    case JMP:
-        os << "JMP             '" << hexaddr(value.integerValue, ip) << std::endl;
-        break;
-
-    case FORM:
-        os << "FORM            '" << value.integerValue << std::endl;
-        break;
-
-    case ENDFORM:
-        os << "ENDFORM" << std::endl;
-        break;
-
-    case FRAG:
-        os << "FRAG            <" << value.stringValue << "> "
-           << hexaddr(value.integerValue, ip) << std::endl;
-        break;
-
-    case ENDFRAG:
-        os << "ENDFRAG         " << hexaddr(value.integerValue, ip) << std::endl;
-        break;
-
-    case FRAGCNT:
-        os << "FRAGCNT         <" << value.stringValue << "> ("
-           << identifier.context << ":" << identifier.depth << ")"
-           << std::endl;
-        break;
-
-    case XFRAGCNT:
-        os << "XFRAGCNT        <" << value.stringValue << "> ("
-           << identifier.context << ":" << identifier.depth << ")"
-           << std::endl;
-        break;
-
-    case FRAGITR:
-        os << "FRAGITR         <" << value.stringValue << '>' << std::endl;
-        break;
-
-    case PRINT:
-        os << "PRINT" << std::endl;
-        break;
-
-    case SET:
-        os << "SET             <" << value.stringValue << '>' << std::endl;
+        os << pad("STREQ");
         break;
 
     case HALT:
-        os << "HALT" << std::endl;
+        os << pad("HALT");
         break;
 
-    case DEBUGING:
-        os << "DEBUG" << std::endl;
+    case DEBUG_FRAG:
+        os << pad("DEBUG_FRAG");
         break;
 
-    case BYTECODE:
-        os << "BYTECODE" << std::endl;
+    case BYTECODE_FRAG:
+        os << pad("BYTECODE_FRAG");
+        break;
+
+    case SUPRESS_LOG:
+        os << pad("SUPRESS_LOG");
+        break;
+
+    case FRAGFIRST:
+        os << pad("FRAGFIRST");
+        break;
+
+    case FRAGINNER:
+        os << pad("FRAGINNER");
+        break;
+
+    case FRAGLAST:
+        os << pad("FRAGLAST");
+        break;
+
+    case DEFINED:
+        os << pad("DEFINED");
         break;
 
     case EXISTS:
-        os << "EXISTS           <" << value.stringValue << '>' << std::endl;
+        os << pad("EXISTS")
+           << "<ident=" << value.str()
+           << '>';
+        break;
+
+    case ISEMPTY:
+        os << pad("ISEMPTY");
+        break;
+
+    case PRINT:
+        os << pad("PRINT");
+        break;
+
+    case AND:
+        os << pad("AND")
+           << "<jump=" << std::showpos << value.integral()
+           << '>';
+        break;
+
+    case OR:
+        os << pad("OR")
+           << "<jump=" << std::showpos << value.integral()
+           << '>';
+        break;
+
+    case FUNC:
+        os << pad("FUNC")
+           << "<name=" << value.as_str()
+           << ",#args=" << opt_value.integral()
+           << '>';
+        break;
+
+    case JMPIFNOT:
+        os << pad("JMPIFNOT")
+           << "<jump=" << std::showpos << value.integral()
+           << '>';
+        break;
+
+    case JMP:
+        os << pad("JMP")
+           << "<jump=" << std::showpos << value.integral()
+           << '>';
+        break;
+
+    case FORM:
+        os << pad("FORM")
+           << "<format-id=" << value.integral()
+           << '>';
+        break;
+
+    case ENDFORM:
+        os << pad("ENDFORM");
+        break;
+
+    case FRAG:
+        os << pad("FRAG")
+           << "<name=" << identifier.name
+           << ",jump=" << std::showpos << value.integral()
+           << '>';
+        break;
+
+    case ENDFRAG:
+        os << pad("ENDFRAG")
+           << "<jump=" << std::showpos << value.integral()
+           << '>';
+        break;
+
+    case FRAGCNT:
+        os << pad("FRAGCNT")
+           << "<name=" << identifier.name
+           << ",context=" << identifier.context
+           << ",depth=" << identifier.depth
+           << '>';
+        break;
+
+    case NESTED_FRAGCNT:
+        os << pad("NESTED_XFRAGCNT")
+           << "<name=" << identifier.name
+           << ",context=" << identifier.context
+           << ",depth=" << identifier.depth
+           << '>';
+        break;
+
+    case FRAGINDEX:
+        os << pad("FRAGINDEX")
+           << "<index=" << identifier.name
+           << ",context=" << identifier.context
+           << ",depth=" << identifier.depth
+           << '>';
+        break;
+
+    case SET:
+        os << pad("SET")
+           << "<name=" << value.as_str()
+           << '>';
         break;
 
     case CTYPE:
-        if (const ContentType_t::Descriptor_t *ct
-            = ContentType_t::getContentType(value.integerValue)) {
-            os << "CTYPE           <" << ct->name << '>' << std::endl;
-        } else {
-            os << "CTYPE           <unknown>" << std::endl;
-        }
+        os << pad("ctype")
+           << "<mime-type=" << ct_name(value.integral())
+           << '>';
         break;
 
     case ENDCTYPE:
-        os << "ENDCTYPE" << std::endl;
+        os << pad("ENDCTYPE");
         break;
 
-    case REPEATFRAG:
-        os << "REPEATFRAG      <" << value.stringValue << "> "
-           << hexaddr(value.integerValue, ip) << std::endl;
+    case PUSH_ATTR:
+        os << pad("PUSH_ATTR")
+           << "<name=" << value.str()
+           << '>';
         break;
 
-    case GETATTR:
-        os << "GETATTR         <" << value.stringValue << '>' << std::endl;
+    case PUSH_THIS_FRAG:
+        os << pad("PUSH_THIS_FRAG");
         break;
 
-    case AT:
-        os << "AT" << std::endl;
+    case PUSH_ROOT_FRAG:
+        os << pad("PUSH_ROOT_FRAG");
+        break;
+
+    case PUSH_ATTR_AT:
+        os << pad("PUSH_ATTR_AT")
+           << "<at=" << value.str()
+           << '>';
         break;
 
     case REPR:
-        os << "REPR         " << value.stringValue << std::endl;
+        os << pad("REPR")
+           << "<ident=" << value.as_str()
+           << '>';
         break;
 
-    case EXISTMARK:
-        os << "EXISTMARK" << std::endl;
+    case REPR_JSONIFY:
+        os << pad("REPR_JSONIFY")
+           << "<ident=" << value.str()
+           << '>';
         break;
 
-    default:
-        os << "<ILLEGAL>       opcode == " << operation << std::endl;
+    case REPR_COUNT:
+        os << pad("REPR_COUNT")
+           << "<ident=" << value.str()
+           << '>';
+        break;
+
+    case REPR_TYPE:
+        os << pad("REPR_TYPE")
+           << "<ident=" << value.str()
+           << '>';
+        break;
+
+    case REPR_DEFINED:
+        os << pad("REPR_DEFINED")
+           << "<ident=" << value.str()
+           << '>';
+        break;
+
+    case REPR_EXISTS:
+        os << pad("REPR_EXISTS")
+           << "<ident=" << value.str()
+           << '>';
+        break;
+
+    case REPR_ISEMPTY:
+        os << pad("REPR_ISEMPTY")
+           << "<ident=" << value.str()
+           << '>';
         break;
     }
 }

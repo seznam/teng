@@ -136,6 +136,10 @@ private:
     std::string buffer;
 };
 
+/** Returns format enum from format name.
+ */
+Formatter_t::Mode_t resolveFormat(const std::string &name);
+
 } // namespace Teng
 
 #endif // TENGFORMATTER_H
