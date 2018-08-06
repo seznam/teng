@@ -48,7 +48,7 @@ int main(int argc, char * argv[]) {
     Teng::Error_t err;
 
     // Generate page
-    auto res = teng.generatePage(
+    return teng.generatePage(
         templ, // Template
         "", // Dictionary (none)
         "", // Language (none)
@@ -59,9 +59,4 @@ int main(int argc, char * argv[]) {
         writer, // Writer
         err // Error log
     );
-
-    for (auto &line: err.getEntries())
-        std::cerr << line.getLogLine() << std::endl;
-
-    return res;
 }

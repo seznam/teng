@@ -46,9 +46,9 @@ namespace Teng {
   * @param context A parser context.
   * @param code Instruction code.
   * @param value Optional instruction parameter value(s). */
-void generateCode(ParserContext_t *context,
-                  Instruction_t::OpCode_t code,
-                  const ParserValue_t &value /*= ParserValue_t()*/)
+void tengCode_generate(ParserContext_t *context,
+        Instruction_t::OpCode_t code,
+        const ParserValue_t &value /*= ParserValue_t()*/)
 {
     // get source index (instead of full filename)
     int srcidx = -1; //may be undefined
@@ -72,7 +72,7 @@ void generateCode(ParserContext_t *context,
   * @param name The function name.
   * @param nparams Number of params in the call. */
 void tengCode_generateFunctionCall(ParserContext_t *context,
-                                   const std::string &name, int nparams)
+        const std::string &name, int nparams)
 {
     // be optimal for unescape($variable)
     if ((name == "unescape")
@@ -80,7 +80,7 @@ void tengCode_generateFunctionCall(ParserContext_t *context,
         && (context->program->back().operation // if last instr. is VAR
             == Instruction_t::VAR)             // and should be escaped
         && context->program->back().value.integerValue) {
-        // unescaping a single variable --
+        // unescaping a single variable -- 
         // change escaping status of that variable
         context->program->back().value.integerValue = 0; //noescape
     } else {
@@ -88,14 +88,15 @@ void tengCode_generateFunctionCall(ParserContext_t *context,
         ParserValue_t val;
         val.stringValue = name; //function name
         val.integerValue = nparams; //number of args
-        generateCode(context, Instruction_t::FUNC, val);
+        tengCode_generate(context, Instruction_t::FUNC, val);
     }
 }
 
 
 /** Generate byte-code for printing a value.
   * @param context A parser context. */
-void generatePrint(ParserContext_t *context) {
+void tengCode_generatePrint(ParserContext_t *context)
+{
     // get actual program size
     unsigned int prgsize = context->program->size();
     // if optimalization does not step across opt limit address
@@ -115,7 +116,7 @@ void generatePrint(ParserContext_t *context) {
         context->program->pop_back(); //delete last VAL instruction
     } else {
         // no way, simply add print instruction
-        generateCode(context, Instruction_t::PRINT);
+        tengCode_generate(context, Instruction_t::PRINT);
     }
 }
 
@@ -125,7 +126,9 @@ void generatePrint(ParserContext_t *context) {
   * and on success result is substituted instead of tested expression code.
   * @param context A parser context.
   * @param start Expressions starting address within program. */
-void optimizeExpression(ParserContext_t *context, unsigned int start) {
+void tengCode_optimizeExpression(ParserContext_t *context,
+        unsigned int start)
+{
     // try to evaluate given part of prog
     ParserValue_t val;
     int rc = context->evalProcessor->eval(
@@ -137,7 +140,7 @@ void optimizeExpression(ParserContext_t *context, unsigned int start) {
                 context->program->begin() + start,
                 context->program->end());
         // code value
-        generateCode(context, Instruction_t::VAL, val);
+        tengCode_generate(context, Instruction_t::VAL, val);
     }
 }
 

@@ -48,29 +48,29 @@ namespace Teng {
   * @param context A parser context.
   * @param code Instruction code.
   * @param value Optional instruction parameter value(s). */
-void generateCode(ParserContext_t *context,
-                  Instruction_t::OpCode_t code,
-                  const ParserValue_t &value = ParserValue_t());
+void tengCode_generate(ParserContext_t *context,
+        Instruction_t::OpCode_t code,
+        const ParserValue_t &value = ParserValue_t());
 
 /** Generate byte-code for a function call.
   * Also optimize 'unescape($variable)' call.
   * @param context A parser context.
   * @param name The function name.
   * @param narams Number of params in the call. */
-void generateFunctionCall(ParserContext_t *context,
-                          const std::string &name, int nparams);
+void tengCode_generateFunctionCall(ParserContext_t *context,
+        const std::string &name, int nparams);
 
 /** Generate byte-code for printing a value.
   * @param context A parser context. */
-void generatePrint(ParserContext_t *context);
+void tengCode_generatePrint(ParserContext_t *context);
 
 /** Optimize byte code for static expressions.
   * Expressions are examined for evaluation (from given start to end of prog)
   * and on success result is substituted instead of tested expression code.
   * @param context A parser context.
   * @param start Expressions starting address within program. */
-void optimizeExpression(ParserContext_t *context,
-                        unsigned int start);
+void tengCode_optimizeExpression(ParserContext_t *context,
+        unsigned int start);
 
 } // namespace Teng
 

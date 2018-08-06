@@ -52,10 +52,9 @@ namespace Teng {
 
 /** Parser context contains all necessary parsing-time data. */
 struct ParserContext_t {
+
     /** Var/frag identifier. */
-    using IdentifierName_t = std::vector<std::string>;
-    /** Position_t in template. */
-    using Position_t = Error_t::Position_t;
+    typedef std::vector<std::string> IdentifierName_t;
 
     /** Initialize.
      * @param langDictionary Language-dependent dictionary.
@@ -78,7 +77,7 @@ struct ParserContext_t {
       * @param str Whole template is stored in this string. */
     Program_t* createProgramFromString(const std::string &str);
 
-    bool pushFragment(const Position_t &pos,
+    bool pushFragment(const Error_t::Position_t &pos,
                       const IdentifierName_t &name, const std::string &fullName,
                       Identifier_t &id);
 
@@ -86,7 +85,7 @@ struct ParserContext_t {
 
     void cropCode(unsigned int size);
 
-    bool findFragmentForVariable(const Position_t &pos,
+    bool findFragmentForVariable(const Error_t::Position_t &pos,
                                  const IdentifierName_t &name,
                                  const std::string &fullName,
                                  Identifier_t &id) const;
@@ -97,7 +96,7 @@ struct ParserContext_t {
         FR_PARENT_FOUND = 2,
     };
 
-    FragmentResolution_t findFragment(const Position_t *pos,
+    FragmentResolution_t findFragment(const Error_t::Position_t *pos,
                                       const IdentifierName_t &name,
                                       const std::string &fullName,
                                       Identifier_t &id,
@@ -109,12 +108,12 @@ struct ParserContext_t {
         ER_RUNTIME,
     };
 
-    ExistResolution_t exists(const Position_t &pos,
+    ExistResolution_t exists(const Error_t::Position_t &pos,
                              const IdentifierName_t &name,
                              const std::string &fullName, Identifier_t &id,
                              bool mustBeOpen = false) const;
 
-    int getFragmentAddress(const Position_t &pos,
+    int getFragmentAddress(const Error_t::Position_t &pos,
                            const IdentifierName_t &name,
                            const std::string &fullName,
                            Identifier_t &id) const;
@@ -134,11 +133,11 @@ struct ParserContext_t {
     std::stack<int> sourceIndex;
 
     /** Flag of using lexical analyzer (level2). */
-    bool lex2InUse;
+    int lex2;
 
     /** Actual position in input stream.
      * Value is periodicaly updated by yylex(). */
-    Position_t position;
+    Error_t::Position_t position;
 
     struct FragmentContext_t {
         void reserve(unsigned int n) {
@@ -200,27 +199,11 @@ struct ParserContext_t {
     Processor_t *evalProcessor;
 
     /** lex2 scanner instance */
-    Lex2_t lex2;
+    Lex2_t tengLex2;
 
     // for error handling positions
-    Position_t lex1Pos; //start pos of current lex1 element
-    Position_t lex2Pos; //actual position in lex2 stream
-
-
-
-    void logWarning(const Position_t &pos, const std::string &msg) const {
-        program->getErrors().logError(Error_t::LL_WARNING, pos, msg);
-    }
-
-    void logError(const Position_t &pos, const std::string &msg) const {
-        program->getErrors().logError(Error_t::LL_ERROR, pos, msg);
-    }
-
-    void logFatal(const Position_t &pos, const std::string &msg) const {
-        program->getErrors().logError(Error_t::LL_FATAL, pos, msg);
-    }
-
-    std::string lastErrorMessage; // last error message of the parser
+    Error_t::Position_t lex1Pos; //start pos of current lex1 element
+    Error_t::Position_t lex2Pos; //actual position in lex2 stream
 };
 
 } // namespace Teng

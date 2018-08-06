@@ -45,7 +45,12 @@
 #include "tengprogram.h"
 #include "tengplatform.h"
 
+
 namespace Teng {
+
+extern int tengSyntax_debug;
+extern int tengSyntax_parse(void *context);
+extern std::string tengSyntax_lastErrorMessage;
 
 /** Initialize.
   * Also creates some dynamic objects (fragment stack and error-log). */
@@ -53,13 +58,15 @@ ParserContext_t::ParserContext_t(const Dictionary_t *langDictionary,
                                  const Configuration_t *paramDictionary,
                                  const std::string &root)
     : langDictionary(langDictionary), paramDictionary(paramDictionary),
-      root(root), lex2InUse(false), program(0),
+      root(root), lex2(0), program(0),
       lowestValPrintAddress(0), evalProcessor(0)
-{}
+{
+}
 
 
 /** Delete lexical analyzer objects left on the stack. */
-ParserContext_t::~ParserContext_t() {
+ParserContext_t::~ParserContext_t()
+{
     // delete lex1 objects
     while (!lex1.empty()) {
         delete lex1.top();
@@ -73,7 +80,9 @@ ParserContext_t::~ParserContext_t() {
 /** Compile file template into a program.
   * @return Pointer to program compiled within this context.
   * @param filename Template's filename. */
-Program_t *ParserContext_t::createProgramFromFile(const std::string &filename) {
+Program_t* ParserContext_t::createProgramFromFile(
+        const std::string &filename)
+{
     // empty previous stacked values
     fragContext.clear(); // delete all fragment contexts
     fragContext.reserve(20);
@@ -107,9 +116,10 @@ Program_t *ParserContext_t::createProgramFromFile(const std::string &filename) {
     sourceIndex.push(program->addSource(path, Error_t::Position_t()));
 
     // create first level-1 lexical analyzer (from file)
-    lex1.push(new Lex1_t(path, Position_t(), program->getErrors()));
-    // stop using lex2
-    lex2InUse = false;
+    lex1.push(new Lex1_t(path, Error_t::Position_t("", 0, 0),
+                         program->getErrors()));
+    // reset lex2
+    lex2 = 0;
 
     // create first (empty) fragment context
     fragContext.push_back(ParserContext_t::FragmentContext_t());
@@ -119,15 +129,16 @@ Program_t *ParserContext_t::createProgramFromFile(const std::string &filename) {
     lowestValPrintAddress = 0;
 
     // parse input and create program
-    Parser::parser parser(this);
-    if (parser.parse()) {
+    if (tengSyntax_parse(this)) {
         // compilation error, destroy whole code
         program->erase(program->begin(), program->end());
         // if some uncaught error
-        if (lastErrorMessage.length() > 0) {
+        if (tengSyntax_lastErrorMessage.length() > 0) {
             // append message into error log post-mortem
-            logFatal({}, "Parser crash: " + lastErrorMessage);
-            lastErrorMessage.erase(); //clear error
+            program->getErrors().logError(Error_t::LL_FATAL,
+                                        Error_t::Position_t(),
+                    "Parser crash: " + tengSyntax_lastErrorMessage);
+            tengSyntax_lastErrorMessage.erase(); //clear error
         }
     }
 
@@ -139,7 +150,8 @@ Program_t *ParserContext_t::createProgramFromFile(const std::string &filename) {
 /** Compile string template into a program.
   * @return Pointer to program compiled within this context.
   * @param str Whole template is stored in this string. */
-Program_t *ParserContext_t::createProgramFromString(const std::string &str) {
+Program_t* ParserContext_t::createProgramFromString(const std::string &str)
+{
     // empty previous stacked values
     fragContext.clear(); //delete all fragment contexts
     fragContext.reserve(20);
@@ -165,9 +177,8 @@ Program_t *ParserContext_t::createProgramFromString(const std::string &str) {
     // create first level-1 lexical analyzer (from file)
     sourceIndex.push(-1);
     lex1.push(new Lex1_t(str, "")); //no filename spec
-
-    // stop using lex2
-    lex2InUse = false;
+    // reset lex2
+    lex2 = 0;
 
     // create first (empty) fragment context
     fragContext.push_back(ParserContext_t::FragmentContext_t());
@@ -177,15 +188,16 @@ Program_t *ParserContext_t::createProgramFromString(const std::string &str) {
     lowestValPrintAddress = 0;
 
     // parse input and create program
-    Parser::parser parser(this);
-    if (parser.parse()) {
+    if (tengSyntax_parse(this)) {
         // compilation error, destroy whole code
         program->erase(program->begin(), program->end());
         // if some uncaught error
-        if (lastErrorMessage.length() > 0) {
+        if (tengSyntax_lastErrorMessage.length() > 0) {
             // append message into error log post-mortem
-            logFatal({}, "Parser crash: " + lastErrorMessage);
-            lastErrorMessage.erase(); //clear error
+            program->getErrors().logError(Error_t::LL_FATAL,
+                                        Error_t::Position_t(),
+                    "Parser crash: " + tengSyntax_lastErrorMessage);
+            tengSyntax_lastErrorMessage.erase(); //clear error
         }
     }
 
@@ -200,14 +212,31 @@ bool ParserContext_t::pushFragment(const Error_t::Position_t &pos,
 {
     // check for bad name
     if (name.empty()) {
-        logError(pos,
-                 "Invalid fragment identifier; "
-                 "discarding fragment block content");
+        program->getErrors().
+            logError(Error_t::LL_ERROR, pos,
+                     ("Invalid fragment identifier; "
+                      "discarding fragment block content"));
         return false;
     }
 
     if (name.size() == 1) {
         // top-level fragment -- context change
+
+//         // check for duplicity -- NOT USED
+//         for (vector<FragmentContext_t>::reverse_iterator
+//                  ifragContext = fragContext.rbegin();
+//              ifragContext != fragContext.rend(); ++ifragContext) {
+//             if (!ifragContext->empty()
+//                 && (ifragContext->front() == name.back())) {
+//                 program->getErrors().
+//                     logError(Error_t::LL_ERROR, pos,
+//                              ("Fragment context '" + fullName +
+//                               "' already opened, "
+//                               "you cannot open it more than once; "
+//                               "discarding fragment block content"));
+//                 return false;
+//             }
+//         }
 
         // push new fragment context
         fragContext.push_back(FragmentContext_t());
@@ -219,10 +248,11 @@ bool ParserContext_t::pushFragment(const Error_t::Position_t &pos,
         // check for name prefix match
         if ((name.size() != (fc.name.size() + 1))
             || !std::equal(name.begin(), name.end() - 1, fc.name.begin())) {
-            logError(pos,
-                     "Fragment '" + fullName +
-                     "' badly nested into context '" + fc.fullname() +
-                     "'; discarding fragment block content");
+            program->getErrors().
+                logError(Error_t::LL_ERROR, pos,
+                         ("Fragment '" + fullName +
+                          "' badly nested into context '" + fc.fullname() +
+                          "'; discarding fragment block content"));
             return false;
         }
 
@@ -294,10 +324,11 @@ bool ParserContext_t::findFragmentForVariable(const Error_t::Position_t &pos,
     }
 
     // log error
-    logError(pos,
-             "Variable '" + fullName +
-             "' doesn't match any fragment in any context; "
-             "replacing variable with undefined value.");
+    program->getErrors().
+        logError(Error_t::LL_ERROR, pos,
+                 ("Variable '" + fullName +
+                  "' doesn't match any fragment in any context; "
+                  "replacing variable with undefined value."));
 
     // not found
     return false;
@@ -323,11 +354,11 @@ ParserContext_t::findFragment(const Error_t::Position_t *pos,
         return FR_FOUND;
     }
 
-    // process all contexts and try to find varible's prefix (fragment name)
+    // process all contexts and try to find varible's prefix (fragment
+    // name)
     for (std::vector<FragmentContext_t>::const_reverse_iterator
              ifragContext = fragContext.rbegin();
-             ifragContext != fragContext.rend(); ++ifragContext)
-    {
+         ifragContext != fragContext.rend(); ++ifragContext) {
         if ((name.size() <= ifragContext->size())
             && std::equal(name.begin(), name.end(),
                           ifragContext->name.begin())) {
@@ -338,7 +369,6 @@ ParserContext_t::findFragment(const Error_t::Position_t *pos,
             // set fragment depth
             id.depth = name.size();
             return FR_FOUND;
-
         } else if (parentIsOK // fragment name cannot be empty!
                    && ((name.size() - 1) <= ifragContext->size())
                    && std::equal(name.begin(), name.end() - 1,
@@ -355,9 +385,11 @@ ParserContext_t::findFragment(const Error_t::Position_t *pos,
         }
     }
 
-    // log error (only when we are allowed to do so)
+    // log error (only when we are allowed to do so
     if (pos)
-        logError(*pos, "Fragment '" + fullName + "' not found in any context.");
+        program->getErrors().
+            logError(Error_t::LL_ERROR, *pos,
+                     ("Fragment '" + fullName + "' not found in any context."));
 
     // not found
     return FR_NOT_FOUND;
@@ -386,6 +418,12 @@ ParserContext_t::exists(const Error_t::Position_t &pos,
         // not found => this object couldn't exist
         break;
     }
+
+    // log error
+    /*program->getErrors().
+        logError(Error_t::LL_ERROR, pos,
+                 ("Object '" + fullName + "' not found in any context."));*/
+
     return ER_NOT_FOUND;
 }
 
@@ -397,8 +435,9 @@ int ParserContext_t::getFragmentAddress(const Error_t::Position_t &pos,
     int address = fragContext.back().getAddress(name);
     if (address < 0) {
         // not found => log error and return bad address
-        logError(pos,
-                 "Fragment '" + fullName + "' not found in current context.");
+        program->getErrors().logError
+            (Error_t::LL_ERROR, pos, ("Fragment '" + fullName +
+                                      "' not found in current contenxt."));
         return -1;
     }
 
@@ -412,27 +451,20 @@ int ParserContext_t::getFragmentAddress(const Error_t::Position_t &pos,
     return address;
 }
 
-int
-ParserContext_t
-::FragmentContext_t::getAddress(const IdentifierName_t &id) const {
+int ParserContext_t::FragmentContext_t::
+getAddress(const IdentifierName_t &id) const
+{
     // match id in name and return associated address
-    if (id.size() <= name.size())
-        if (std::equal(id.begin(), id.end(), name.begin()))
-            return addresses[id.size() - 1];
+    if ((id.size() <= name.size())
+        && std::equal(id.begin(), id.end(), name.begin())) {
+
+        // return address
+        return addresses[id.size() - 1];
+    }
+
+    // not found
     return -1;
 }
 
-namespace Parser {
-
-void parser::error(const std::string &msg) {
-#if YYDEBUG
-    // if debug enabled
-    if (debug_level())
-        debug_stream() << "\n*** " << msg << " ***\n" << std::endl;
-#endif
-    ctx->lastErrorMessage = msg;
-}
-
-} // namespace Parser
 } // namespace Teng
 

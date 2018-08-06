@@ -118,8 +118,7 @@ struct Instruction_t {
         HALT, /**< End of program. Relax. */
         DEBUGING, /**< Print data tree (vars & vals) to output. */
         DEFINED, /**< Test if variable/fargment exists and has non-zero/non-empty value. */
-        ISEMPTY, /**< Test if fargment is empty. */
-        EXISTS, /**< Test if exists variable/fragment. */
+        EXIST, /**< Test if exists variable/fragment. */
         BYTECODE, /**< Print bytecode -- disassembled program. */
         CTYPE, /**< Change content type (push new). */
         ENDCTYPE, /**< Change content type (pop). */

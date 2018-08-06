@@ -76,6 +76,9 @@ struct LeftValue_t {
     unsigned int prgsize;
 };
 
+// left value type
+#define YYSTYPE ::Teng::LeftValue_t
+
 } // namespace Teng
 
 #endif // TENGYYSTYPE_H
