@@ -48,131 +48,84 @@ namespace Teng {
 
 /** Program is an instruction flow. Whole template is
   * compiled into single program that can interpret it. */
-class Program_t {
+class Program_t : private std::vector<Instruction_t> {
 public:
-    // types
-    using value_type = Instruction_t;
-    using const_iterator = std::vector<value_type>::const_iterator;
-    using iterator = std::vector<value_type>::iterator;
 
     /** @short Create new program. */
     Program_t()
-        : sources(), error(), instrs()
+        : sources(), error()
     {}
 
     /** Print whole program into file stream.
      * @param fp File stream for output. */
     void dump(FILE *fp) const;
 
-    /** Print whole program into stream.
-     * @param fp stream for output. */
-    void dump(std::ostream &out) const;
-
     /** @short Check source files for change.
       * @return 0=OK !0=changed. */
-    int isChanged() const {return sources.isChanged();}
+    inline int check() const {
+        return sources.isChanged();
+    }
 
     /** @short Return error log.
       * @return Reference to error log object. */
-    Error_t &getErrors() {return error;}
+    inline Error_t& getErrors() {
+        return error;
+    }
 
     /** @short Return error log.
       * @return Reference to error log object. */
-    const Error_t &getErrors() const {return error;}
+    inline const Error_t& getErrors() const {
+        return error;
+    }
 
     /** @short Adds new source into the list.
-      * @param filename Filename of source.
-      * @param include_pos Position of include directive. */
-    std::pair<const std::string *, std::size_t>
-    addSource(const std::string &filename, const Pos_t &include_pos = {}) {
-        return sources.push(filename, include_pos, error);
+      * @param source Filename of source.
+      * @param pos Position in current file. */
+    inline unsigned int addSource(const std::string &source,
+                           const Error_t::Position_t &pos) {
+        return sources.addSource(source, pos, error);
     }
 
-    /** Returns list of sources.
-      */
-    const SourceList_t &getSources() const {return sources;}
-
-    /** Returns true if program does not contain any instruction.
-     */
-    bool empty() const {return instrs.empty();}
-
-    /** Returns the number of instructions of the program.
-     */
-    std::size_t size() const {return instrs.size();}
-
-    /** Truncates whole program.
-     */
-    void clear() {instrs.clear();}
-
-    /** Returns iterator to the first instruction.
-     */
-    const_iterator begin() const {return instrs.begin();}
-
-    /** Returns iterator to the first instruction.
-     */
-    iterator begin() {return instrs.begin();}
-
-    /** Returns iterator one past the last instruction.
-     */
-    const_iterator end() const {return instrs.end();}
-
-    /** Returns iterator one past the last instruction.
-     */
-    iterator end() {return instrs.end();}
-
-    /** Removes specified instruction from program.
-     */
-    iterator erase(const_iterator pos) {return instrs.erase(pos);}
-
-    /** Removes specified instruction from program.
-     */
-    iterator erase(const_iterator ipos, const_iterator epos) {
-        return instrs.erase(ipos, epos);
+    /** Get source's filename based on index in source list.
+      * @return Absolute filename string.
+      * @param position Index into program's source list. */
+    inline std::string getSource(unsigned int position) const {
+        return sources.getSource(position);
     }
 
-    /** Returns instruction at the specified index.
-     */
-    const value_type &operator[](std::size_t i) const {return instrs[i];}
-
-    /** Returns instruction at the specified index.
-     */
-    value_type &operator[](std::size_t i) {return instrs[i];}
-
-    /** Returns the last instruction of the program.
-     */
-    const value_type &back() const {return instrs.back();}
-
-    /** Returns the last instruction of the program.
-     */
-    value_type &back() {return instrs.back();}
-
-    /** Appends new instruction at the end of the program.
-     */
-    void push_back(value_type &&instr) {instrs.push_back(std::move(instr));}
-
-    /** Appends new instruction at the end of the program.
-     */
-    template <typename... args_t>
-    void emplace_back(args_t &&...args) {
-        instrs.emplace_back(std::forward<args_t>(args)...);
+    inline const SourceList_t& getSources() const {
+        return sources;
     }
 
-    /** Pops the last instruction from the program.
-     */
-    void pop_back() {instrs.pop_back();}
+    using std::vector<Instruction_t>::empty;
+
+    using std::vector<Instruction_t>::begin;
+
+    using std::vector<Instruction_t>::end;
+
+    using std::vector<Instruction_t>::erase;
+
+    using std::vector<Instruction_t>::size;
+
+    using std::vector<Instruction_t>::operator[];
+
+    using std::vector<Instruction_t>::back;
+
+    using std::vector<Instruction_t>::push_back;
+
+    using std::vector<Instruction_t>::pop_back;
+
+    using std::vector<Instruction_t>::const_iterator;
 
 private:
+
     /** @short All source files for this program. */
     SourceList_t sources;
 
     /** @short Error logger. */
     Error_t error;
-
-    /** @short List of program instructions. */
-    std::vector<value_type> instrs;
 };
 
 } // namespace Teng
 
 #endif // TENGPROGRAM_H
-

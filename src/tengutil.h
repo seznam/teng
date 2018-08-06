@@ -39,23 +39,42 @@
 #define TENGUTIL_H
 
 #include <string>
+#include <map>
+
+#include "tengstructs.h"
+#include "tengerror.h"
+#include "tengdictionary.h"
 
 namespace Teng {
 
-/** @short Normalizes filename.
+/**
+ * @short Normalizes filename.
  *
  * Removes multiple '/', removes '.', resolves '..'.  Path must be
  * absolute.
  *
  * @param filename normalized file (result)
+ * @return 0 OK !0 error
  */
-void normalizeFilename(std::string &filename);
+int tengNormalizeFilename(std::string &filename);
 
 /** @short Compute MD5 hexdigest of data;
  *  @param data input data
- *  @return resulting hex digest
+ *  @param hexdigest resulting hex digest
+ *  @return 0 OK, !0 error
  */
-std::string MD5Hexdigest(const std::string &data);
+int tengMD5Hexdigest(const std::string &data, std::string &hexdigest);
+
+/** @short Reads all data from application and checks if it is in
+ *         data definition (slow -> for debug only)
+ *  @param root application data
+ *  @param dataDefinition dictionary
+ *  @param error log
+ */
+void tengCheckData(const Fragment_t &root,
+                   const Dictionary_t &dataDefinition,
+                   Error_t &error);
+
 
 /** @short Clip string to specified length and append "..." string
  *         to end of clipped string (utf-8 safe)
@@ -64,14 +83,6 @@ std::string MD5Hexdigest(const std::string &data);
  *  @param error log
  */
 void clipString(std::string &str, unsigned int len);
-
-/** @short Converts ASCII string to lowercase ASCII string.
- */
-std::string tolower(std::string str);
-
-/** Reentrant version of strerror(3).
- */
-std::string strerr();
 
 } // namespace Teng
 

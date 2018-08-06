@@ -36,9 +36,15 @@
 
 #include <math.h>
 
+
 /**
   * This function round x to the nearest integer not larger in absolute value.
   * @return The rounded integer value.
   */
-double trunc(double x) {return x >= 0.0? floor(x): ceil(x);}
-
+double trunc(double x)
+{
+    if (x >= 0.0)
+        return floor(x);
+    else
+        return ceil(x);
+}

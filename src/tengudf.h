@@ -23,18 +23,15 @@
  *
  *
  * DESCRIPTION
- * User defined functions.
+ * Teng processor funcction (like len, round or formatDate)
  *
  * AUTHORS
  * Jan Nemec <jan.nemec@firma.seznam.cz>
  * Vaclav Blazek <blazek@firma.seznam.cz>
- * Michal Bukovsky <michal.bukovsky@firma.seznam.cz>
  *
  * HISTORY
  * 2003-09-26  (jan)
  *             Created.
- * 2018-06-07  (burlog)
- *             Rewrite to C++.
  */
 
 #ifndef TENGUDF_H
@@ -42,37 +39,108 @@
 
 #include <vector>
 #include <string>
-#include <functional>
+#include <tr1/functional>
 
-#include <tengconfig.h>
-#include <tenginvoke.h>
-#include <tengparservalue.h>
+#include "tengconfig.h"
 
 namespace Teng {
-namespace udf {
 
-// List of values are udf arguments.
-using Args_t = FunctionArgs_t;
-using Result_t = FunctionResult_t;
+/**
+ * Class for passing argument to/from user definbed functions
+ */
+class UDFValue_t {
+    public:
+        enum  UDFType_t {
+            Integer, ///< Integer type
+            Real, ///< Real type
+            String ///< String type
+        };
 
-// Type for user defined functions.
-using Function_t = std::function<Result_t(const Args_t &)>;
+        /// Constructs value as integer
+        UDFValue_t(IntType_t i)
+        : m_type(Integer), m_iValue(i) {};
+
+        /// Constructs value as double
+        UDFValue_t(double d)
+        : m_type(Real), m_fValue(d) {};
+
+        /// Constructs value as string
+        UDFValue_t(const std::string &s)
+        : m_type(String), m_sValue(s) {};
+
+        /**
+         * @returns integer value
+        */
+        IntType_t getInt() const {
+            return m_iValue;
+        }
+
+        /**
+         * @returns real value
+        */
+        double getReal() const {
+            return m_fValue;
+        }
+
+        /**
+         * @returns string value
+        */
+        const std::string &getString() const {
+            return m_sValue;
+        }
+
+        /**
+         * @returns value type @see UDFType_t
+        */
+        int getType() const {
+            return m_type;
+        }
+
+        /// sets integer value
+        void setInt(IntType_t i) {
+            m_type = Integer;
+            m_iValue = i;
+        }
+
+        /// sets real value
+        void setReal(double d) {
+            m_type = Real;
+            m_fValue = d;
+        }
+
+        /// sets string value
+        void setString(const std::string &s) {
+            m_type = String;
+            m_sValue = s;
+        }
+    protected:
+        int m_type;
+        std::string m_sValue;
+        union {
+            double m_fValue;
+            IntType_t m_iValue;
+        };
+
+        UDFValue_t()
+        : m_type(Integer), m_iValue(0) {};
+};
+
+typedef enum {E_OK = 0, E_ARGS = -1, E_OTHER = -2} UDF_Status_t;
+typedef std::tr1::function<UDFValue_t (const std::vector<UDFValue_t> &)> UDFCallback_t;
 
 /**
  * @short registers user-defined function
  * @param name name of the function
  * @param udf user-defined callable object
  */
-void registerFunction(const std::string &name, Function_t udf);
+void registerUDF(const std::string &name, UDFCallback_t udf);
 
 /**
  * @short finds function in global UDF list, returns pointer or 0
  * @param name name of the function
  */
-Invoker_t<Function_t> findFunction(const std::string &name);
+UDFCallback_t findUDF(const std::string &name);
 
-} // namespace udf
-} // namespace Teng
+}
 
-#endif /* TENGUDF_H */
-
+#endif

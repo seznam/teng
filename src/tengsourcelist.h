@@ -38,29 +38,103 @@
 #ifndef TENGSOURCELIST_H
 #define TENGSOURCELIST_H
 
-#include <ctime>
 #include <string>
 #include <vector>
-#include <memory>
+#include <ctime>
+#include <sys/types.h>
 
 #include "tengerror.h"
 
 namespace Teng {
 
 /**
- * @short Holds statistic about file (see stat(2)).
+ * @short Holds statistic about file.
  *
  * Used for detection of content change.
  */
 struct FileStat_t {
-    std::string filename;   //!< name of associated file
-    struct Stat_t {
-        ino_t inode = 0;    //!< inode of file
-        off_t size = 0;     //!< size of file
-        time_t mtime = 0;   //!< last modification of file
-        time_t ctime = 0;   //!< last attribute modification of file
-        bool valid = false; //!< indicates that data came from stat(2)
-    } stat;
+    /**
+     * @short Creates new file statistics.
+     *
+     * @param filename associated file name.
+     */
+    FileStat_t(const std::string &filename = std::string())
+        : filename(filename), inode(0), size(0),
+          mtime(0), ctime(0), valid(false)
+    {}
+
+
+    /**
+     * @short Stat file.
+     *
+     * @param pos position in current file
+     * @param err error logger
+     * @return 0 OK !0 error
+     */
+    int stat(const Error_t::Position_t &pos,
+             Error_t &err);
+
+    /**
+     * @short Compares two statistics
+     *
+     * @param fs compared value
+     * @return true if values are the same false otherwise
+     */
+    bool operator==(const FileStat_t &fs) const {
+        return ((filename == fs.filename) && (inode == fs.inode) &&
+                (size == fs.size) && (mtime == fs.mtime) &&
+                (ctime == fs.ctime));
+    }
+
+    /**
+     * @short Compares two statistics
+     *
+     * @param fs compared value
+     * @return true if values are different false otherwise
+     */
+    bool operator!=(const FileStat_t &fs) const {
+        return !operator==(fs);
+    }
+
+    /**
+     * @short Compares filenames
+     *
+     * @param fs compared value
+     * @return true if values are different false otherwise
+     */
+    bool operator<(const FileStat_t &fs) const {
+        return filename < fs.filename;
+    }
+
+    /**
+     * @short Name of associated file.
+     */
+    std::string filename;
+
+    /**
+     * @short Inode of file.
+     */
+    ino_t inode;
+
+    /**
+     * @short Size of file.
+     */
+    off_t size;
+
+    /**
+     * @short Last modification of file.
+     */
+    time_t mtime;
+
+    /**
+     * @short Last attribute modification of file.
+     */
+    time_t ctime;
+
+    /**
+     * @short Indicates that data came from stat(2).
+     */
+    bool valid;
 };
 
 /**
@@ -68,20 +142,22 @@ struct FileStat_t {
  */
 class SourceList_t {
 public:
-    /** @short Creates new (empty) source list.
+    /** @short Crrates new (empty) source list.
      */
-    SourceList_t(): sources() {}
+    SourceList_t()
+        : sources()
+    {}
 
-    /** @short Adds new source into the list.
+    /**@short Adds new source into the list.
      *
      * @param source filename of source
-     * @param pos position of include directive
+     * @param pos position in current file
      * @param err error logger
-     *
-     * @return index of added source in list
+     * @return position of added source in list
      */
-    std::pair<const std::string *, std::size_t>
-    push(std::string filename, const Pos_t &pos, Error_t &err);
+    unsigned int addSource(const std::string &source,
+                           const Error_t::Position_t &pos,
+                           Error_t &err);
 
     /** @short Check validity of all sources.
      *
@@ -96,18 +172,26 @@ public:
      * @param position index in the source list
      * @return filename or empty string on error
      */
-    const std::string *operator[](std::size_t i) const;
+    std::string getSource(unsigned int position) const;
 
-    /** @short Returns the number of sources.
-     */
-    std::size_t size() const {return sources.size();}
+    inline unsigned int size() const {
+        return sources.size();
+    }
 
 private:
-    // don't copy
-    SourceList_t(const SourceList_t &) = delete;
-    SourceList_t &operator=(const SourceList_t &) = delete;
+    /** @short Copy constructor intentionally private -- copying
+     *        disabled.
+     */
+    SourceList_t(const SourceList_t&);
 
-    std::vector<std::unique_ptr<FileStat_t>> sources; //!< list of sources/files
+    /** @short Assignment operator intentionally private -- assignment
+     *        disabled.
+     */
+    SourceList_t operator=(const SourceList_t&);
+
+    /** @short List of source files.
+     */
+    std::vector<FileStat_t> sources;
 };
 
 } // namespace Teng

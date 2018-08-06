@@ -39,11 +39,12 @@
 #ifndef TENGCONTENTTYPE_H
 #define TENGCONTENTTYPE_H
 
+#include <string>
+#include <utility>
+#include <vector>
+#include <map>
 #include <stack>
 #include <memory>
-#include <string>
-#include <vector>
-#include <utility>
 
 #include "tengerror.h"
 
@@ -63,7 +64,15 @@ public:
 
     /** @short Destroy descriptor.
      */
-    virtual ~ContentType_t() = default;
+    inline virtual ~ContentType_t() {}
+
+    /** @short String used for commenting out line.
+     */
+    std::string lineComment;
+
+    /** @short Start of commend and end of comment.
+     */
+    std::pair<std::string, std::string> blockComment;
 
     /** @short Add escape mapping into escaping table.
      * @param c character
@@ -92,11 +101,23 @@ public:
     /** @short Descriptor of content type.
      */
     struct Descriptor_t {
-        using ptr_t = std::unique_ptr<ContentType_t>;
-        ptr_t contentType;       //!< the content type escaper
-        unsigned int index;      //!< index in list of content types
-        std::string name;        //!< the content type name
-        std::string description; //!< the description text
+        Descriptor_t(unsigned int index,
+                     const std::string &name,
+                     const std::string &description)
+            : contentType(std::make_unique<ContentType_t>()),
+              index(index), name(name), description(description)
+        {}
+
+        template <typename Creator_t>
+        Descriptor_t(Creator_t &&creator, unsigned int index)
+            : contentType(creator.creator()),
+              index(index), name(creator.name), description(creator.comment)
+        {}
+
+        std::unique_ptr<ContentType_t> contentType;
+        unsigned int index;
+        std::string name;
+        std::string description;
     };
 
     /**
@@ -107,33 +128,25 @@ public:
      *                    otherwise return default (no-op) desriptor
      * @return descriptor od 0 on error
      */
-    static const Descriptor_t *
-    findContentType(const std::string &name,
-                    Error_t &err,
-                    const Pos_t &pos = {},
+    static const Descriptor_t*
+    findContentType(const std::string &name, Error_t &err,
+                    const Error_t::Position_t &pos = Error_t::Position_t(),
                     bool failOnError = false);
 
-    static const Descriptor_t *getContentType(unsigned int index);
+    static const Descriptor_t* getContentType(unsigned int index);
 
     /**
      * @short Get default content type.
      * @return default content type descriptor
      */
-    static const Descriptor_t *getDefault();
+    static const Descriptor_t* getDefault();
 
     /**
      * @short Lists supported content types.
      * @param supported list of supported content types.
      */
-    static std::vector<std::pair<std::string, std::string>> listSupported();
-
-    /** @short String used for commenting out line.
-     */
-    std::string lineComment;
-
-    /** @short Start of commend and end of comment.
-     */
-    std::pair<std::string, std::string> blockComment;
+    static void listSupported(
+            std::vector<std::pair<std::string, std::string> > &supported);
 
 private:
     /**
@@ -166,10 +179,10 @@ public:
      *
      * @param ct first content type
      */
-    inline Escaper_t(const ContentType_t *ct = nullptr)
+    inline Escaper_t(const ContentType_t *ct = 0)
         : escapers()
     {
-        topLevel = (ct? ct : ContentType_t::getDefault()->contentType.get());
+        topLevel = (ct ? ct : ContentType_t::getDefault()->contentType.get());
         escapers.push(topLevel);
     }
 
@@ -177,7 +190,7 @@ public:
      *
      * @short ct content type
      */
-    void push(ContentType_t *ct) {escapers.push(ct);}
+    void push(ContentType_t *ct);
 
     /** @short Push new content type.
      *
@@ -185,14 +198,16 @@ public:
      * @short index err error log
      * @short index pos position in source file
      */
-    void push(unsigned int index, Error_t &err, const Pos_t &pos = {});
+    void push(unsigned int index, Error_t &err,
+              const Error_t::Position_t &pos = Error_t::Position_t());
 
     /** @short Pop content type from the top.
      *
      * @short index err error log
      * @short index pos position in source file
      */
-    void pop(Error_t &err, const Pos_t &pos = {});
+    void pop(Error_t &err,
+             const Error_t::Position_t &pos = Error_t::Position_t());
 
     /** @short Escape given string.
      *
@@ -201,7 +216,7 @@ public:
      * @param src string to escape
      * @return escaped string
      */
-    std::string escape(const std::string &src) const {
+    inline std::string escape(const std::string &src) const {
         return escapers.top()->escape(src);
     }
 
@@ -212,18 +227,18 @@ public:
      * @param src string to unescape
      * @return unescaped string
      */
-    std::string unescape(const std::string &src) const {
+    inline std::string unescape(const std::string &src) const {
         return escapers.top()->unescape(src);
     }
 
-    /** @short Returns the top level content type.
-     */
-    const ContentType_t *getTopLevel() const {return topLevel;}
+    inline const ContentType_t* getTopLevel() const {
+        return topLevel;
+    }
 
 private:
     /** @short Stack of un/escaperers.
      */
-    std::stack<const ContentType_t *> escapers;
+    std::stack<const ContentType_t*> escapers;
 
     /** @short Toplevel escapert.
      */
@@ -233,4 +248,3 @@ private:
 } // namespace Teng
 
 #endif // TENGCONTENTTYPE_H
-

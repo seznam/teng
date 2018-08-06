@@ -1,2 +1,0 @@
-hello_world	Ahoj svete!
-hello_europe	Ahoj Evropo!

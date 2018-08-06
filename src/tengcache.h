@@ -38,16 +38,17 @@
 #ifndef TENGCACHE_H
 #define TENGCACHE_H
 
-#include <map>
 #include <string>
-#include <memory>
+#include <map>
 #include <algorithm>
 
+#include "tengsourcelist.h"
 #include "tengutil.h"
 #include "tengerror.h"
-#include "tengsourcelist.h"
 
 namespace Teng {
+
+typedef std::vector<std::string> Key_t;
 
 /**
  * @short Creates key for given file.
@@ -56,40 +57,32 @@ namespace Teng {
  *
  * @param root root for relative paths
  * @param filename filename
- * @return key key vector
+ * @param key key vector (result)
+ * @return 0 OK !0 error
  */
-std::string
-createCacheKeyForFilename(const std::string &root, std::string filename);
+int tengCreateKey(const std::string &root,
+                  const std::string &filename, std::vector<std::string> &key);
 
 /**
- * @short Creates key for given string.
+ * @short
  *
  * @param data processed string
- * @return key vector
+ * @param key key vector (result)
+ * @return 0 OK !0 error
  */
-std::string
-createCacheKeyForString(const std::string &data);
+int tengCreateStringKey(const std::string &data, std::vector<std::string> &key);
 
 /**
  * @short Maps key from source list to cached value.
  */
-template <typename Data_t>
+template <typename DataType_t>
 class Cache_t {
 public:
-    /**
-     * @short Key type for entries in cache.
-     */
-    using Key_t = std::vector<std::string>;
-
     /**
      * @short Entry in the cache.
      */
     struct Entry_t {
     public:
-        // don't copy
-        Entry_t(const Entry_t &) = delete;
-        Entry_t &operator=(const Entry_t &) = delete;
-
         /**
          * @short Creates entry with given data.
          * Pointer is stolen!
@@ -98,18 +91,24 @@ public:
          * @param serial serial number of data
          * @param dependSerial serial number of data this entry depends on.
          */
-        Entry_t(const Key_t &key,
-                Data_t *data,
-                uint64_t serial,
-                uint64_t dependSerial)
-            : data(data), refCount(1), serial(serial),
-              dependSerial(dependSerial), valid(true), key(key)
+        Entry_t(const Key_t &key, DataType_t *data,
+                unsigned long int serial,
+                unsigned long int dependSerial)
+            : data(data), refCount(1), serial(serial), dependSerial(dependSerial),
+              valid(true), key(key)
         {}
+
+        /**
+         * @short Delete assoicated data.
+         */
+        ~Entry_t() {
+            delete data;
+        }
 
         /**
          * @short Associated value.
          */
-        std::unique_ptr<Data_t> data;
+        DataType_t *data;
 
         /** @short Number of referrers owning reference to this entry.
          */
@@ -117,11 +116,11 @@ public:
 
         /** @short Serial number of data.
          */
-        uint64_t serial;
+        unsigned long int serial;
 
         /** @short Serial number of data this entry depends on.
          */
-        uint64_t dependSerial;
+        unsigned long int dependSerial;
 
         /** @short Indicates data validity.
          *  Invalidated on insertion of other data under same key
@@ -131,84 +130,35 @@ public:
         /** @short Key under which this key is in the cache.
          */
         const Key_t key;
-    };
 
-    /**
-     * @short LRU.
-     */
-    class LRU_t {
-    public:
+   private:
         /**
-         * @short Touches entry -> moves entry at begin of vector
+         * @short Copy constructor intentionally private -- copying
+         *        disabled.
          */
-        void hit(Entry_t *entry) {
-            auto ilru = std::find(lru.begin(), lru.end(), entry);
-            if (ilru != lru.end()) {
-                // ok, entry found in the LRU
-                if (ilru != lru.begin()) {
-                    // move entries one place to the right
-                    for (; ilru != lru.begin(); --ilru)
-                        *ilru = *(ilru - 1);
-                    // move found entry to the beginning
-                    *ilru = entry;
-                }
-            } else {
-                // if entry not found (strange...) push it to the front
-                // of the LRU
-                lru.insert(lru.begin(), entry);
-            }
-        }
+        Entry_t(const Entry_t&);
 
         /**
-         * @short Erases least recently used entry from lru and returns it.
-         *
-         * @return least recently used entry that has been removed or nullptr.
+         * @short Assignment operator intentionally private -- assignment
+         *        disabled.
          */
-        Entry_t *popLeastRecentlyUsed() {
-            for (auto ilru = lru.rbegin(); ilru != lru.rend(); ++ilru) {
-                if ((*ilru)->refCount <= 0) {
-                    Entry_t *entry = *ilru;
-                    lru.erase(std::prev(ilru.base()));
-                    return entry;
-                }
-            }
-            return nullptr;
-        }
-
-        /**
-         * @short Erases entry from lru if present.
-         */
-        Entry_t *popEntry(Entry_t *entry) {
-            auto ilru = std::remove(lru.begin(), lru.end(), entry);
-            if (ilru == lru.end())
-                return nullptr;
-            lru.erase(ilru, lru.end());
-            return entry;
-        }
-
-        /**
-         * @short Adds new entry to the lru.
-         */
-        void insert(Entry_t *entry) {
-            lru.insert(lru.begin(), entry);
-        }
-
-    private:
-        /**
-         * @short the lru storage.
-         */
-        std::vector<Entry_t *> lru;
+        Entry_t operator=(const Entry_t&);
     };
 
     /**
      * @short Mapping keys to entries.
      */
-    using EntryCache_t = std::map<Key_t, Entry_t *>;
+    typedef std::map<Key_t, Entry_t*> EntryCache_t;
 
     /**
      * @short Mapping data to entries.
      */
-    using EntryBackCache_t = std::map<const Data_t *, std::unique_ptr<Entry_t>>;
+    typedef std::map<const DataType_t*, Entry_t*> EntryBackCache_t;
+
+    /**
+     * @short LRU.
+     */
+    typedef std::vector<Entry_t*> LRU_t;
 
     /**
      * @short Creates empty cache.
@@ -223,6 +173,18 @@ public:
     static const unsigned int DEFAULT_MAXIMAL_SIZE = 50;
 
     /**
+     * @short Destroy cache.
+     */
+    ~Cache_t() {
+        // run through back-mapping-cache and delete all associated
+        // data
+        for (typename EntryBackCache_t::iterator
+                 ibackcache = backcache.begin();
+             ibackcache != backcache.end(); ++ibackcache)
+            delete ibackcache->second;
+    }
+
+    /**
      * @short Finds entry in the cache.
      *
      * @param key searched key
@@ -230,24 +192,44 @@ public:
      * @param serial serial number of cached data (output)
      * @return found data or 0 when not found
      */
-    const Data_t *
-    find(const Key_t &key, uint64_t &dependSerial, uint64_t *serial = 0) const {
+    const DataType_t* find(const Key_t &key, unsigned long int &dependSerial,
+                           unsigned long int *serial = 0)
+        const
+    {
         // search for entry
-        auto fcache = cache.find(key);
+        typename EntryCache_t::const_iterator fcache = cache.find(key);
         // if not found, report it
         if (fcache == cache.end())
-            return nullptr;
+            return 0;
 
         // assign result
-        const Data_t *data = fcache->second->data.get();
+        const DataType_t *data = fcache->second->data;
         dependSerial = fcache->second->dependSerial;
         if (serial) *serial = fcache->second->serial;
 
         // increment reference count to this data
         ++fcache->second->refCount;
 
-        // touch entry
-        lru.hit(fcache->second);
+        // get entry
+        Entry_t *entry = fcache->second;
+
+        // find entry in the LRU
+        typename LRU_t::iterator ilru = std::find(lru.begin(),
+                                                  lru.end(), entry);
+        if (ilru != lru.end()) {
+            // ok, entry found in the LRU
+            if (ilru != lru.begin()) {
+                // move entries one place to the right
+                for (; ilru != lru.begin(); --ilru)
+                    *ilru = *(ilru - 1);
+                // move found entry to the beginning
+                *ilru = entry;
+            }
+        } else {
+            // if entry not found (strange...) push it to the front
+            // of the LRU
+            lru.insert(lru.begin(), entry);
+        }
 
         // OK
         return data;
@@ -269,22 +251,21 @@ public:
      * @param data pointer to data
      * @param dependSerial serial number of data this data depends on
      * @param serial serial number of this data (output)
-     * @return !0 OK nullptr error
+     * @return 0 OK !0 error
      */
-    const Data_t *
-    add(const Key_t &key, Data_t *data,
-        uint64_t dependSerial = 0, uint64_t *serial = 0)
+    const DataType_t* add(const Key_t &key, DataType_t *data,
+                          unsigned long int dependSerial = 0,
+                          unsigned long int *serial = 0)
     {
         // NULL pointer is not allowed
-        if (!data) return nullptr;
-
+        if (!data) return 0;
         // try to find data in cache
-        auto fbackcache = backcache.find(data);
+        typename EntryBackCache_t::iterator fbackcache = backcache.find(data);
         if (fbackcache != backcache.end()) {
             // data already present
             if (fbackcache->second->key != key) {
                 // attempt to insert data under different key
-                return nullptr;
+                return 0;
             }
         }
 
@@ -292,9 +273,9 @@ public:
         int newSerial = 0;
 
         // search for entry
-        auto fcache = cache.find(key);
+        typename EntryCache_t::iterator fcache = cache.find(key);
         if (fcache != cache.end()) {
-            if (fcache->second->data.get() == data) {
+            if (fcache->second->data == data) {
                 // attempt to insert same data
                 // increment reference
                 ++fcache->second->refCount;
@@ -306,7 +287,7 @@ public:
             }
             // invalidate entry
             fcache->second->valid = false;
-            remove(lru.popEntry(fcache->second));
+            remove(fcache->second);
 
             // increase serial number
             newSerial = fcache->second->serial + 1;
@@ -314,23 +295,29 @@ public:
 
         // if size is greater than limit kill some entry
         if (cache.size() >= maximalSize) {
-            // remove least recently used
-            remove(lru.popLeastRecentlyUsed());
+            // find entry with no references
+            for (typename LRU_t::reverse_iterator ilru = lru.rbegin();
+                 ilru != lru.rend(); ++ilru) {
+                if ((*ilru)->refCount <= 0) {
+                    // remove it
+                    remove(ilru.base() - 1);
+                    break;
+                }
+            }
         }
 
         // create new entry (defaults to have one reference)
-        auto entry
-            = std::make_unique<Entry_t>(key, data, newSerial, dependSerial);
+        Entry_t *entry = new Entry_t(key, data, newSerial, dependSerial);
 
         // set serial if asked
         if (serial) *serial = newSerial;
 
-        // insert new entry into the LRU
-        lru.insert(entry.get());
         // insert new entry into the cache
-        cache.insert({key, entry.get()});
+        cache.insert(typename EntryCache_t::value_type(key, entry));
         // insert new entry into the backcache
-        backcache.emplace(data, std::move(entry));
+        backcache.insert(typename EntryBackCache_t::value_type(data, entry));
+        // insert new entry into the LRU
+        lru.insert(lru.begin(), entry);
         // return data;
         return data;
     }
@@ -345,16 +332,16 @@ public:
      * @param data pointer to data
      * @return 0 OK !0 error
      */
-    int release(const Data_t *data) {
+    int release(const DataType_t *data) {
         // try to find data in back mapping cache
-        auto fbackcache = backcache.find(data);
+        typename EntryBackCache_t::iterator fbackcache = backcache.find(data);
         if (fbackcache == backcache.end()) {
             // not found
             return -1;
         }
 
         // get entry
-        Entry_t *entry = fbackcache->second.get();
+        Entry_t *entry = fbackcache->second;
         // decremente reference count if positive
         if (entry->refCount > 0) --entry->refCount;
         if ((entry->refCount <= 0) && !entry->valid) {
@@ -362,23 +349,46 @@ public:
             backcache.erase(fbackcache);
             delete entry;
         }
+        // OK
         return 0;
     }
 
 private:
-    // don't copy
-    Cache_t(const Cache_t &) = delete;
-    Cache_t &operator=(const Cache_t &) = delete;
+    /**
+     * @short Copy constructor intentionally private -- copying
+     *        disabled.
+     */
+    Cache_t(const Cache_t&);
 
-    /** @short Remove entry from cache.
-     *  If entry has no referrers data are deleted.
+    /**
+     * @short Assignment operator intentionally private -- assignment
+     *        disabled.
+     */
+    Cache_t operator=(const Cache_t&);
+
+    /** @short Remove entry from cache and lru.
+     *  @param entry removed entry
      */
     void remove(Entry_t *entry) {
-        // nullptr can't be removed
-        if (!entry) return;
+        // find entry in the LRU
+        typename LRU_t::iterator ilru = std::find(lru.begin(),
+                                                  lru.end(), entry);
+        remove(ilru);
+    }
+
+    /** @short Remove entry from cache and lru.
+     *  If entry has no referrers data are deleted.
+     *  @param lruEntry removed entry (iterator to the LRU)
+     */
+    void remove(typename LRU_t::iterator lruEntry) {
+        Entry_t *entry = *lruEntry;
+        // remove entry from LRU
+        if (lruEntry != lru.end())
+            lru.erase(lruEntry);
 
         // remove entry from cache
-        for (auto icache = cache.begin(); icache != cache.end(); ++icache) {
+        for (typename EntryCache_t::iterator icache = cache.begin();
+             icache != cache.end(); ++icache) {
             if (icache->second == entry) {
                 cache.erase(icache);
                 break;
@@ -388,11 +398,14 @@ private:
         // if there are no referrers and entry is invalid => terminate it
         if ((entry->refCount <= 0) && !entry->valid) {
             // try to find data in back mapping cache
-            auto fbackcache = backcache.find(entry->data.get());
+            typename EntryBackCache_t::iterator fbackcache =
+                backcache.find(entry->data);
             if (fbackcache != backcache.end())
                 backcache.erase(fbackcache);
             delete entry;
         }
+        // OK
+        return;
     }
 
     /**
@@ -417,4 +430,3 @@ private:
 } // namespace Teng
 
 #endif // TENGCACHE_H
-

@@ -30,13 +30,10 @@
  *
  * AUTHORS
  * Vasek Blazek <blazek@firma.seznam.cz>
- * Michal Bukovsky <michal.bukovsky@firma.seznam.cz>
  *
  * HISTORY
  * 2003-09-18  (vasek)
  *             Created.
- * 2018-07-07  (burlog)
- *             Cleaned.
  */
 
 /* flex generator settings */
@@ -48,636 +45,792 @@
 %option nodefault
 %option full
 %option reentrant
+%option bison-bridge
 %option prefix="teng_"
-%option noyylineno
 %option outfile="lex.yy.c"
 
-/* additional lexer contexes */
-%x quoted_string
-%x bad_number
-%x multiline_comment
-%x oneline_comment
+%x qstr
+%x badnumber
+%x comment
+%x one_line_comment
 %x xml_tag
 
 %{
 
 #include <string>
+#include <stdio.h>
 
 #include "tengyystype.h"
 #include "tengsyntax.hh"
-#include "tenglogging.h"
-#include "tenglex2.h"
+#include "tengparsercontext.h"
+#include "tengerror.h"
 
-// hide yyinput(yyscan_t) declaration
+#ifdef DEBUG_LEX
+#define RETURN(LEX_TOKEN)                                                       \
+    cout << #LEX_TOKEN << " '" << yytext << "', sval == '" << value.stringValue \
+         << " nval == '" << value.integerValue << "' rval == '"                 \
+         << value.realValue << "'" << std::endl;                                \
+    return Parser::parser::token::LEX_TOKEN;
+#else
+#define RETURN(LEX_TOKEN) return Parser::parser::token::LEX_TOKEN;
+#endif
+
 #define YY_NO_INPUT
-// singature of lexer get-next-symbol method
-#define YY_DECL Teng::Parser::Symbol_t Teng::Parser::Lex2_t::next()
-// at the end of input execute following stuff
-#define yyterminate() return Teng::Parser::Symbol_t{symbol_pos, 0, {}}
+
+#define YYSTYPE ::Teng::LeftValue_t
+
+#define YY_DECL int Teng::Lex2_t::getElement( \
+            YYSTYPE *yylval_param,            \
+            ParserValue_t &value,             \
+            Error_t::Position_t               \
+            &bufferPos,                       \
+            Error_t &err)
 
 %}
 
-INTEGER     [[:digit:]]+
+ // integer value
+INTEGER [[:digit:]]+
+
 HEX_INTEGER "0x"[[:xdigit:]]+
 BIN_INTEGER "0b"[01]+
-REAL        [[:digit:]]+"."[[:digit:]]+([eE][+-]?[[:digit:]]+)?
-IDENT       [_[:alpha:]][_[:alnum:]]*
+
+ // real value
+REAL    [[:digit:]]+"."[[:digit:]]+([eE][+-]?[[:digit:]]+)?
+
+ // identifier
+IDENT   [_[:alpha:]][_[:alnum:]]*
 
 %%
-    // quote used to delimit string single or double quote
-    char string_quoting_char = 0;
+    // temporary string value
+    std::string tmpSval;
+    // quote used to delimit string (" or ')
+    char stringOpener = 0;
 
 "<?teng"[[:space:]\0]+"debug" {
     // match '<?teng debug'
-    return make_symbol(LEX2::DEBUG_FRAG, yytext, yytext + yyleng);
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_DEBUG);
 }
 
 "<?teng"[[:space:]\0]+"bytecode" {
-    // match '<?teng bytecode'
-    return make_symbol(LEX2::BYTECODE_FRAG, yytext, yytext + yyleng);
+    // match '<?teng debug'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_BYTECODE);
 }
 
 "<?teng"[[:space:]\0]+"include" {
     // match '<?teng include'
-    return make_symbol(LEX2::INCLUDE, yytext, yytext + yyleng);
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_INCLUDE);
 }
 
 "<?teng"[[:space:]\0]+"format" {
     // match '<?teng format'
-    return make_symbol(LEX2::FORMAT, yytext, yytext + yyleng);
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_FORMAT);
 }
 
 "<?teng"[[:space:]\0]+"endformat" {
     // match '<?teng endformat'
-    return make_symbol(LEX2::ENDFORMAT, yytext, yytext + yyleng);
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_ENDFORMAT);
 }
 
 "<?teng"[[:space:]\0]+"frag" {
     // match '<?teng frag'
-    return make_symbol(LEX2::FRAGMENT, yytext, yytext + yyleng);
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_FRAGMENT);
 }
 
 "<?teng"[[:space:]\0]+"endfrag" {
     // match '<?teng endfrag'
-    return make_symbol(LEX2::ENDFRAGMENT, yytext, yytext + yyleng);
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_ENDFRAGMENT);
 }
 
 "<?teng"[[:space:]\0]+"if" {
     // match '<?teng if'
-    return make_symbol(LEX2::IF, yytext, yytext + yyleng);
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_IF);
 }
 
 "<?teng"[[:space:]\0]+"endif" {
     // match '<?teng endif'
-    return make_symbol(LEX2::ENDIF, yytext, yytext + yyleng);
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_ENDIF);
 }
 
 "<?teng"[[:space:]\0]+"elseif" {
     // match '<?teng elseif'
-    return make_symbol(LEX2::ELSEIF, yytext, yytext + yyleng);
-}
-
-"<?teng"[[:space:]\0]+"elif" {
-    // match '<?teng elif'
-    return make_symbol(LEX2::ELSEIF, yytext, yytext + yyleng);
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_ELSEIF);
 }
 
 "<?teng"[[:space:]\0]+"else" {
     // match '<?teng else'
-    return make_symbol(LEX2::ELSE, yytext, yytext + yyleng);
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_ELSE);
 }
 
 "<?teng"[[:space:]\0]+"set" {
     // match '<?teng set'
-    return make_symbol(LEX2::SET, yytext, yytext + yyleng);
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_SET);
 }
 
 "<?teng"[[:space:]\0]+"expr" {
     // match '<?teng expr'
-    return make_symbol(LEX2::EXPR, yytext, yytext + yyleng);
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_EXPR);
 }
 
 "<?teng"[[:space:]\0]+"ctype" {
     // match '<?teng ctype'
-    return make_symbol(LEX2::CTYPE, yytext, yytext + yyleng);
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_CTYPE);
 }
 
 "<?teng"[[:space:]\0]+"endctype" {
     // match '<?teng endctype'
-    return make_symbol(LEX2::ENDCTYPE, yytext, yytext + yyleng);
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_ENDCTYPE);
+}
+
+"<?teng"[[:space:]\0]+"repeatfrag" {
+    // match '<?teng repeat'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_REPEATFRAG);
 }
 
 "<?teng"[[:space:]\0]*[[:alnum:]]* {
     // match '<?teng???'
-    return make_symbol(LEX2::TENG, yytext, yytext + yyleng);
+    value.stringValue = std::string(yytext + 6, yyleng - 6);
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_TENG);
 }
 
 "<?"[[:space:]\0]*"debug" {
-    // match '<?debug'
-    return make_symbol(LEX2::DEBUG_FRAG, yytext, yytext + yyleng);
+    // match '<?teng debug'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_DEBUG);
 }
 
 "<?"[[:space:]\0]*"bytecode" {
-    // match '<?bytecode'
-    return make_symbol(LEX2::BYTECODE_FRAG, yytext, yytext + yyleng);
+    // match '<?teng debug'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_BYTECODE);
 }
 
 "<?"[[:space:]\0]*"include" {
-    // match '<?include'
-    return make_symbol(LEX2::INCLUDE, yytext, yytext + yyleng);
+    // match '<?teng include'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_INCLUDE);
 }
 
 "<?"[[:space:]\0]*"format" {
-    // match '<?format'
-    return make_symbol(LEX2::FORMAT, yytext, yytext + yyleng);
+    // match '<?teng format'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_FORMAT);
 }
 
 "<?"[[:space:]\0]*"endformat" {
-    // match '<?endformat'
-    return make_symbol(LEX2::ENDFORMAT, yytext, yytext + yyleng);
+    // match '<?teng endformat'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_ENDFORMAT);
 }
 
 "<?"[[:space:]\0]*"frag" {
-    // match '<?frag'
-    return make_symbol(LEX2::FRAGMENT, yytext, yytext + yyleng);
+    // match '<?teng frag'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_FRAGMENT);
 }
 
 "<?"[[:space:]\0]*"endfrag" {
-    // match '<?endfrag'
-    return make_symbol(LEX2::ENDFRAGMENT, yytext, yytext + yyleng);
+    // match '<?teng endfrag'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_ENDFRAGMENT);
 }
 
 "<?"[[:space:]\0]*"if" {
-    // match '<?if'
-    return make_symbol(LEX2::IF, yytext, yytext + yyleng);
+    // match '<?teng if'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_IF);
 }
 
 "<?"[[:space:]\0]*"endif" {
-    // match '<?endif'
-    return make_symbol(LEX2::ENDIF, yytext, yytext + yyleng);
+    // match '<?teng endif'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_ENDIF);
 }
 
 "<?"[[:space:]\0]*"elseif" {
-    // match '<?elseif'
-    return make_symbol(LEX2::ELSEIF, yytext, yytext + yyleng);
-}
-
-"<?"[[:space:]\0]*"elif" {
-    // match '<?elif'
-    return make_symbol(LEX2::ELSEIF, yytext, yytext + yyleng);
+    // match '<?teng elseif'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_ELSEIF);
 }
 
 "<?"[[:space:]\0]*"else" {
-    // match '<?else'
-    return make_symbol(LEX2::ELSE, yytext, yytext + yyleng);
+    // match '<?teng else'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_ELSE);
 }
 
 "<?"[[:space:]\0]*"set" {
-    // match '<?set'
-    return make_symbol(LEX2::SET, yytext, yytext + yyleng);
+    // match '<?teng set'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_SET);
 }
 
 "<?"[[:space:]\0]*"expr" {
-    // match '<?expr'
-    return make_symbol(LEX2::EXPR, yytext, yytext + yyleng);
+    // match '<?teng expr'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_EXPR);
 }
 
 "<?"[[:space:]\0]*"ctype" {
-    // match '<?ctype'
-    return make_symbol(LEX2::CTYPE, yytext, yytext + yyleng);
+    // match '<?teng ctype'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_CTYPE);
 }
 
 "<?"[[:space:]\0]*"endctype" {
-    // match '<?endctype'
-    return make_symbol(LEX2::ENDCTYPE, yytext, yytext + yyleng);
+    // match '<?teng endctype'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_ENDCTYPE);
+}
+
+"<?"[[:space:]\0]*"repeatfrag" {
+    // match '<?teng repeat'
+    bufferPos.advance(yytext, yyleng);
+    RETURN(LEX_REPEATFRAG);
 }
 
 "<?" {
     // xml tag start
-    make_symbol_start(yytext);
+    bufferPos.advanceColumn(yyleng);
+
     // change context to parse (ehm, ignore) xml tag's content
     BEGIN(xml_tag);
+
+    tmpSval = "<?";
 }
 
 <xml_tag>{
     "?>" {
         // end of xml tag
-        pos.advanceColumn(yyleng);
-        // leave this context
+        bufferPos.advanceColumn(yyleng);
         BEGIN(INITIAL);
-        return make_symbol(LEX2::TEXT, yytext + yyleng);
+        value.stringValue = tmpSval + "?>";
+        RETURN(LEX_TEXT);
     }
+
     <<EOF>> {
         // end of input => bad token
-        logError(err, pos, "Unterminated xml tag");
+        err.logError(Error_t::LL_ERROR, bufferPos, "Unterminated xml tag");
         // leave this context
         BEGIN(INITIAL);
-        return make_symbol(LEX2::INVALID, yytext + yyleng);
+        RETURN(LEX_INVALID);
     }
+
     .|"\n" {
-        // do nothing
+        // ignore
+        bufferPos.advanceColumn(yyleng);
+        tmpSval.push_back(*yytext);
     }
 }
 
+
 "?>" {
     // match '?>'
-    return make_oneline_symbol(LEX2::END, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_END);
 }
 
 "${" {
     // match '${' -- inline variable lookup
-    return make_oneline_symbol(LEX2::SHORT_EXPR, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_SHORT_EXPR);
 }
 
 "#{" {
     // match '#{' -- inline dictionary lookup
-    return make_oneline_symbol(LEX2::SHORT_DICT, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_SHORT_DICT);
 }
 
 "}" {
     // match '}'
-    return make_oneline_symbol(LEX2::SHORT_END, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_SHORT_END);
 }
 
 "(" {
     // match left parenthesis
-    return make_oneline_symbol(LEX2::L_PAREN, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_L_PAREN);
 }
 
 ")" {
     // match right parenthesis
-    return make_oneline_symbol(LEX2::R_PAREN, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_R_PAREN);
 }
 
 "[" {
     // match left bracket
-    return make_oneline_symbol(LEX2::L_BRACKET, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_L_BRACKET);
 }
 
 "]" {
     // match right bracket
-    return make_oneline_symbol(LEX2::R_BRACKET, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_R_BRACKET);
 }
 
 "." {
     // match selector
-    return make_oneline_symbol(LEX2::SELECTOR, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_SELECTOR);
 }
 
 "#" {
     // match dictionary lookup
-    return make_oneline_symbol(LEX2::DICT, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_DICT);
 }
 
 "$" {
     // match variable lookup
-    return make_oneline_symbol(LEX2::VAR, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_VAR);
 }
 
 "@" {
     // match dictionary indirect lookup
-    return make_oneline_symbol(LEX2::DICT_INDIRECT, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_DICT_INDIRECT);
 }
 
 "++" {
     // match concatenation operator
-    return make_oneline_symbol(LEX2::CONCAT, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_CONCAT);
 }
 
 "**" {
     // match repeat a pattern operator
-    return make_oneline_symbol(LEX2::REPEAT, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_REPEAT);
 }
 
 "," {
     // match comma
-    return make_oneline_symbol(LEX2::COMMA, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_COMMA);
 }
 
 "?" {
     // match conditional expression operator
-    return make_oneline_symbol(LEX2::COND_EXPR, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_COND_EXPR);
 }
 
 ":" {
     // match colon
-    return make_oneline_symbol(LEX2::COLON, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_COLON);
 }
 
 "=" {
     // match assignment operator
-    return make_oneline_symbol(LEX2::ASSIGN, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_ASSIGN);
 }
 
 "==" {
     // match numeric eqaul operator
-    return make_oneline_symbol(LEX2::EQ, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_EQ);
 }
 
 "!=" {
     // match numeric not eqaul operator
-    return make_oneline_symbol(LEX2::NE, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_NE);
 }
 
 ">=" {
     // match greater or queal operator
-    return make_oneline_symbol(LEX2::GE, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_GE);
 }
 
 "<=" {
     // match less or queal operator
-    return make_oneline_symbol(LEX2::LE, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_LE);
 }
 
 ">" {
     // match greater than operator
-    return make_oneline_symbol(LEX2::GT, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_GT);
 }
 
 "<" {
     // match less than operator
-    return make_oneline_symbol(LEX2::LT, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_LT);
 }
 
 "eq" {
     // match eqaul operator
-    return make_oneline_symbol(LEX2::EQ, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_EQ);
 }
 
 "ne" {
     // match not eqaul operator
-    return make_oneline_symbol(LEX2::NE, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_NE);
 }
 
 "ge" {
     // match greater or queal operator
-    return make_oneline_symbol(LEX2::GE, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_GE);
 }
 
 "le" {
     // match less or queal operator
-    return make_oneline_symbol(LEX2::LE, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_LE);
 }
 
 "gt" {
     // match greater than operator
-    return make_oneline_symbol(LEX2::GT, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_GT);
 }
 
 "lt" {
     // match less than operator
-    return make_oneline_symbol(LEX2::LT, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_LT);
 }
 
 "=~" {
     // match string equal operator
-    return make_oneline_symbol(LEX2::STR_EQ, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_STR_EQ);
 }
 
 "!~" {
     // match string not equal operator
-    return make_oneline_symbol(LEX2::STR_NE, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_STR_NE);
 }
 
 "+" {
     // match numeric add operator
-    return make_oneline_symbol(LEX2::ADD, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_ADD);
 }
 
 "-" {
     // match numeric sub operator
-    return make_oneline_symbol(LEX2::SUB, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_SUB);
 }
 
 "*" {
     // match numeric mul operator
-    return make_oneline_symbol(LEX2::MUL, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_MUL);
 }
 
 "/" {
     // match numeric div operator
-    return make_oneline_symbol(LEX2::DIV, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_DIV);
 }
 
 "%" {
     // match numeric mod operator
-    return make_oneline_symbol(LEX2::MOD, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_MOD);
 }
 
 "!" {
     // match not operator
-    return make_oneline_symbol(LEX2::NOT, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_NOT);
 }
 
 "&" {
     // match bitwise and operator
-    return make_oneline_symbol(LEX2::BITAND, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_BITAND);
 }
 
 "^" {
     // match bitwise xor operator
-    return make_oneline_symbol(LEX2::BITXOR, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_BITXOR);
 }
 
 "|" {
     // match bitwise or operator
-    return make_oneline_symbol(LEX2::BITOR, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_BITOR);
 }
 
 "~" {
     // match bitwise not operator
-    return make_oneline_symbol(LEX2::BITNOT, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_BITNOT);
 }
 
 "&&" {
     // match and operator
-    return make_oneline_symbol(LEX2::AND, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_AND);
 }
 
 "||" {
     // match or operator
-    return make_oneline_symbol(LEX2::OR, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_OR);
 }
 
 "case" {
     // match case operator
-    return make_oneline_symbol(LEX2::CASE, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_CASE);
 }
 
 "defined" {
     // match defined operator
-    return make_oneline_symbol(LEX2::DEFINED, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_DEFINED);
 }
 
 "isempty" {
     // match exist operator
-    return make_oneline_symbol(LEX2::ISEMPTY, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_ISEMPTY);
 }
 
 "exists" {
     // match exist operator
-    return make_oneline_symbol(LEX2::EXISTS, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_EXISTS);
 }
 
-"_first" {
-    // match builtin variable name
-    return make_oneline_symbol(LEX2::BUILTIN_FIRST, yytext, yytext + yyleng);
+"jsonify" {
+    // match jsonify operator
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_JSONIFY);
 }
 
-"_inner" {
-    // match builtin variable name
-    return make_oneline_symbol(LEX2::BUILTIN_INNER, yytext, yytext + yyleng);
+"type" {
+    // match type operator
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_TYPE);
 }
 
-"_last" {
-    // match builtin variable name
-    return make_oneline_symbol(LEX2::BUILTIN_LAST, yytext, yytext + yyleng);
+"count" {
+    // match count operator
+    bufferPos.advanceColumn(yyleng);
+    RETURN(LEX_COUNT);
 }
 
-"_number" {
-    // match builtin variable name
-    return make_oneline_symbol(LEX2::BUILTIN_INDEX, yytext, yytext + yyleng);
-}
-
-"_index" {
-    // match builtin variable name
-    return make_oneline_symbol(LEX2::BUILTIN_INDEX, yytext, yytext + yyleng);
-}
-
-"_count" {
-    // match builtin variable name
-    return make_oneline_symbol(LEX2::BUILTIN_COUNT, yytext, yytext + yyleng);
-}
-
-"_this" {
-    // match builtin variable name
-    return make_oneline_symbol(LEX2::BUILTIN_THIS, yytext, yytext + yyleng);
-}
-
-"_parent" {
-    // match builtin variable name
-    return make_oneline_symbol(LEX2::BUILTIN_PARENT, yytext, yytext + yyleng);
+"udf."{IDENT}(\.{IDENT})* {
+    // match udf
+    bufferPos.advanceColumn(yyleng);
+    value.stringValue = std::string(yytext, yyleng);
+    value.type = ParserValue_t::TYPE_STRING;
+    RETURN(LEX_UDF_IDENT);
 }
 
 [\"\'] {
     // opening quote of string
-    string_quoting_char = *yytext;
-    make_symbol_start(yytext);
+    bufferPos.advanceColumn(yyleng);
+    // prepare temporary string
+    tmpSval.erase();
+
+    stringOpener = *yytext;
+
     // change context to parse string content
-    BEGIN(quoted_string);
+    BEGIN(qstr);
 }
 
-<quoted_string>{
+<qstr>{
     [\"\'] {
-        if (*yytext == string_quoting_char) {
+        if (*yytext == stringOpener) {
             // regular end-of-string
+            bufferPos.advanceColumn(yyleng);
+            value.stringValue = tmpSval;
             // leave this context
             BEGIN(INITIAL);
-            return make_symbol(LEX2::STRING, yytext + yyleng);
+            RETURN(LEX_STRING);
         }
+        bufferPos.advanceColumn(yyleng);
+        tmpSval.push_back(*yytext);
     }
     "\n" {
         // newline in string => bad token
-        logError(err, pos, "Bare newline cannot be part of string");
+        bufferPos.advanceColumn(yyleng);
         // leave this context
         BEGIN(INITIAL);
-        return make_symbol(LEX2::INVALID, yytext + yyleng);
+        RETURN(LEX_INVALID);
     }
     "\\\n" {
         // newline escaped => bad token
-        logError(err, pos, "Newline cannot be escaped");
+        err.logError(Error_t::LL_ERROR, bufferPos,
+            "Newline cannot be escaped");
+        bufferPos.newLine();
         // leave this context
         BEGIN(INITIAL);
-        return make_symbol(LEX2::INVALID, yytext + yyleng);
+        RETURN(LEX_INVALID);
     }
     <<EOF>> {
         // end of input => bad token
-        logError(err, pos, "Unterminated string");
+        err.logError(Error_t::LL_ERROR, bufferPos, "Unterminated string");
         // leave this context
         BEGIN(INITIAL);
-        return make_symbol(LEX2::INVALID, yytext + yyleng);
+        RETURN(LEX_INVALID);
     }
     "\\n" {
         // escape for <LF>
+        bufferPos.advanceColumn(yyleng);
+        tmpSval.push_back('\n');
     }
     "\\r" {
         // escape for <CR>
+        bufferPos.advanceColumn(yyleng);
+        tmpSval.push_back('\r');
     }
     "\\t" {
         // escape for <TAB>
+        bufferPos.advanceColumn(yyleng);
+        tmpSval.push_back('\t');
     }
     "\\f" {
         // escape for <FF>
+        bufferPos.advanceColumn(yyleng);
+        tmpSval.push_back('\f');
     }
     "\\b" {
         // escape for <BEL>
+        bufferPos.advanceColumn(yyleng);
+        tmpSval.push_back('\b');
     }
     "\\". {
         // escape for other escape => put escaped char verbatim into token
+        bufferPos.advance(yytext);
+        tmpSval.push_back(yytext[1]);
     }
     [^\"\'\\\n]+ {
         // run of regular string characters => copy verbatim into token
+        bufferPos.advance(yytext, yyleng);
+        tmpSval.append(yytext, yyleng);
     }
     "\\" {
         // escape itself =>
-        logError(err, pos, "Invalid escape at end of string");
+        err.logError(Error_t::LL_ERROR, bufferPos, "Invalid escape at end of input");
+        bufferPos.advanceColumn();
         // leave this context
         BEGIN(INITIAL);
-        return make_symbol(LEX2::INVALID, yytext + yyleng);
+        RETURN(LEX_INVALID);
     }
 }
 
 {INTEGER} {
     // match integral number
-    return make_oneline_symbol(LEX2::INT, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    value.integerValue = strtoul(yytext, 0, 10);
+    value.realValue = value.integerValue;
+    value.stringValue = std::string(yytext, yyleng);
+    value.type = ParserValue_t::TYPE_INT;
+    RETURN(LEX_INT);
 }
 
 {HEX_INTEGER} {
     // match integral number
-    return make_oneline_symbol(LEX2::INT, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    value.integerValue = strtoul(yytext + 2, 0, 16);
+    value.realValue = value.integerValue;
+    char buff[100];
+    snprintf(buff, sizeof(buff), "%zd", size_t(value.integerValue));
+    value.stringValue = std::string(buff);
+    value.type = ParserValue_t::TYPE_INT;
+    RETURN(LEX_INT);
 }
 
 {BIN_INTEGER} {
     // match integral number
-    return make_oneline_symbol(LEX2::INT, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    value.integerValue = strtoul(yytext + 2, 0, 2);
+    value.realValue = value.integerValue;
+    char buff[100];
+    snprintf(buff, sizeof(buff), "%zd", size_t(value.integerValue));
+    value.stringValue = std::string(buff);
+    value.type = ParserValue_t::TYPE_INT;
+    RETURN(LEX_INT);
 }
 
 {REAL} {
     // match real number
-    return make_oneline_symbol(LEX2::REAL, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    value.integerValue = ParserValue_t::int_t(value.realValue = atof(yytext));
+    value.stringValue = std::string(yytext, yyleng);
+    value.type = ParserValue_t::TYPE_REAL;
+    RETURN(LEX_REAL);
 }
 
 {INTEGER}|{REAL}/[._[:alpha:]] {
-    // match number (integer or real) followed by possible indentifier or dot
-    make_symbol_start(yytext);
+    // match number (integer or real) followed by possible indentifier
+    // or dot
+
+    // copy number into tmp value
+    tmpSval = std::string(yytext, yyleng);
     // start parsing of trailing characters
-    BEGIN(bad_number);
+    BEGIN(badnumber);
 }
 
 {HEX_INTEGER}/[._] {
     // match hexa number followed by possible indentifier or dot
-    make_symbol_start(yytext);
+
+    // copy number into tmp value
+    tmpSval = std::string(yytext, yyleng);
     // start parsing of trailing characters
-    BEGIN(bad_number);
+    BEGIN(badnumber);
 }
 
 {BIN_INTEGER}/[2-9._[:alpha:]] {
     // match bin number followed by possible indentifier or dot
-    make_symbol_start(yytext);
+
+    // copy number into tmp value
+    tmpSval = std::string(yytext, yyleng);
     // start parsing of trailing characters
-    BEGIN(bad_number);
+    BEGIN(badnumber);
 }
 
-<bad_number>{
+<badnumber>{
     [._[:alnum:]]+ {
-        // run of number, dot or identifier characters composing bad token
-        auto symbol_len = (yytext - symbol_ipos) + yyleng;
-        std::string tmp(symbol_ipos, symbol_ipos + symbol_len);
-        logError(err, pos, "Invalid token '" + tmp + "' after number");
+        // run of number, dot or identifier characters composing
+        // bad token
+        value.stringValue = tmpSval + std::string(yytext, yyleng);
+        err.logError(Error_t::LL_ERROR, bufferPos, "Invalid token '" +
+            value.stringValue + "'");
+        bufferPos.advance(value.stringValue);
         // leave this context
         BEGIN(INITIAL);
-        return make_symbol(LEX2::INVALID, yytext + yyleng);
+        RETURN(LEX_INVALID);
     }
+
     [^._[:alnum:]]+ {
         // match any other sequence of characters
         // return them back to the input
@@ -686,122 +839,119 @@ IDENT       [_[:alpha:]][_[:alnum:]]*
     }
 }
 
-"udf."{IDENT}(\.{IDENT})* {
-    // match identifier of the user defined functions
-    return make_oneline_symbol(LEX2::UDF_IDENT, yytext, yytext + yyleng);
-}
-
 {IDENT} {
     // match identifier
-    return make_oneline_symbol(LEX2::IDENT, yytext, yytext + yyleng);
+    bufferPos.advanceColumn(yyleng);
+    value.stringValue = std::string(yytext, yyleng);
+    value.type = ParserValue_t::TYPE_STRING;
+    RETURN(LEX_IDENT);
 }
 
 [[:space:]\0] {
     // match spaces -- spaces are ignored
+    bufferPos.advance(*yytext);
 }
 
 . {
     // default rule
-    std::string tmp(yytext, yyleng);
-    logError(err, pos, "Unexpected character '" + tmp + "'");
-    return make_symbol(LEX2::INVALID, yytext, yytext + yyleng);
+    value.stringValue = std::string(yytext, yyleng);
+    err.logError(Error_t::LL_ERROR, bufferPos, "Unexpected character '"
+                 + value.stringValue + "'");
+    bufferPos.advance(yytext, yyleng);
+    value.type = ParserValue_t::TYPE_STRING;
+    RETURN(LEX_INVALID); //ERROR
 }
 
 "/*" {
     // comment start
-    make_symbol_start(yytext);
+    bufferPos.advanceColumn(yyleng);
+
     // change context to parse (ehm, ignore) comment's content
-    BEGIN(multiline_comment);
+    BEGIN(comment);
 }
 
-<multiline_comment>{
+<comment>{
     "*/" {
         // end of comment
-        pos.advanceColumn(yyleng);
+        bufferPos.advanceColumn(yyleng);
         BEGIN(INITIAL);
     }
+
     <<EOF>> {
         // end of input => bad token
-        logError(err, pos, "Unterminated comment");
+        err.logError(Error_t::LL_ERROR, bufferPos, "Unterminated comment");
         // leave this context
         BEGIN(INITIAL);
-        return make_symbol(LEX2::INVALID, yytext + yyleng);
+        RETURN(LEX_INVALID);
     }
+
     .|"\n" {
         // ignore
+        bufferPos.advanceColumn(yyleng);
     }
 }
 
 "//" {
     // comment start
-    make_symbol_start(yytext);
+    bufferPos.advanceColumn(yyleng);
+
     // change context to parse (ehm, ignore) comment's content
-    BEGIN(oneline_comment);
+    BEGIN(one_line_comment);
 }
 
-<oneline_comment>{
+<one_line_comment>{
     "\n" {
         // end of comment
-        pos.advanceColumn(yyleng);
+        bufferPos.advanceColumn(yyleng);
         BEGIN(INITIAL);
     }
+
     <<EOF>> {
         // end of input => bad token
-        logError(err, pos, "Unterminated comment");
+        err.logError(Error_t::LL_ERROR, bufferPos, "Unterminated comment");
         // leave this context
         BEGIN(INITIAL);
-        return make_symbol(LEX2::INVALID, yytext + yyleng);
+        RETURN(LEX_INVALID);
     }
+
     . {
         // ignore
+        bufferPos.advanceColumn(yyleng);
     }
 }
 
 %%
 
 namespace Teng {
-namespace Parser {
-namespace {flex_string_value_t empty_directive(0);}
 
-Lex2_t::Lex2_t(Error_t &err)
-  : yyscanner(nullptr), buffer(nullptr),
-    err(err), pos(), symbol_pos(), symbol_ipos(nullptr), directive(empty_directive)
-{
-    if (yylex_init(&yyscanner)) {
-        char error[1024];
-        error[0] = '\0';
-        strerror_r(errno, error, sizeof(error));
-        throw std::runtime_error("can't initalize lex2: " + std::string(error));
-    }
+Lex2_t::Lex2_t() : stackTop(0), yyscanner(0) {
+    yylex_init((yyscan_t*)&yyscanner);
 }
 
 Lex2_t::~Lex2_t() {
-    if (buffer) finish_scanning();
     yylex_destroy((yyscan_t)yyscanner);
 }
 
-void Lex2_t::start_scanning(flex_string_view_t &&new_directive, const Pos_t &init_pos) {
-    if (buffer != nullptr)
-        throw std::runtime_error("another buffer in lex2 not finished yet");
-    pos = init_pos;
-    directive = std::move(new_directive);
-    // std::cerr << "LEX2::DIRECTIVE ptr=" << (void *)directive.data()
-    //           << ", #" << directive.size()
-    //           << ", [" << (int)directive[directive.size() + 0] << "/" << (int)directive.saved_eob()[0] << "]"
-    //           << ", [" << (int)directive[directive.size() + 1]  << "/" << (int)directive.saved_eob()[1] << "]"
-    //           << std::endl
-    //           << "LEX2::DATA " << directive.str()
-    //           << std::endl;
-    if (!(buffer = yy_scan_buffer(directive.data(), directive.flex_size(), yyscanner)))
-        throw std::runtime_error("can't allocate flex buffer in lex2");
+int Lex2_t::init(const std::string &src) {
+    // test for stack overflow
+    if (stackTop >= MAX_LEX_STACK_DEPTH)
+        return -1;
+    // create new flex buffer and push onto the stack
+    bufferStack[stackTop++] = yy_scan_bytes(src.data(),
+                                            src.length(),
+                                            (yyscan_t*)yyscanner);
+
+    // OK
+    return 0;
 }
 
-void Lex2_t::finish_scanning() {
-    directive.reset();
-    yy_delete_buffer((YY_BUFFER_STATE)buffer, yyscanner);
-    buffer = nullptr;
+int  Lex2_t::finish() {
+    // destroy top buffer
+    if (stackTop > 0)
+        yy_delete_buffer((YY_BUFFER_STATE)bufferStack[--stackTop], yyscanner);
+    // OK
+    return 0;
 }
 
-} // namespace Parser
 } // namespace Teng
 

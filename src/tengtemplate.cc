@@ -70,8 +70,8 @@ TemplateCache_t::~TemplateCache_t() {
     delete configCache;
 }
 
-Template_t *
-TemplateCache_t::createTemplate(const std::string &source,
+Template_t*
+TemplateCache_t::createTemplate(const std::string &templateSource,
                                 const std::string &langFilename,
                                 const std::string &configFilename,
                                 SourceType_t sourceType)
@@ -79,43 +79,48 @@ TemplateCache_t::createTemplate(const std::string &source,
     unsigned long int configSerial;
 
     // get configuration and dictionary from cache
-    const Dictionary_t *dict = nullptr;
-    const Configuration_t *params = nullptr;
-    std::tie(params, dict)
-        = getConfigAndDict(configFilename, langFilename, &configSerial);
+    ConfigAndDict_t configAndDict
+        = getConfigAndDict(configFilename, langFilename,
+                           &configSerial);
 
     // create key from source file names
     std::vector<std::string> key;
-    if (sourceType == SRC_STRING)
-        key.push_back(createCacheKeyForString(source));
-    else key.push_back(createCacheKeyForFilename(root, source));
-    key.push_back(createCacheKeyForFilename(root, langFilename));
-    key.push_back(createCacheKeyForFilename(root, configFilename));
+    if (sourceType == SRC_STRING) tengCreateStringKey(templateSource, key);
+    else tengCreateKey(root, templateSource, key);
+    tengCreateKey(root, langFilename, key);
+    tengCreateKey(root, configFilename, key);
 
     // cached program
     unsigned long int programSerial;
-    unsigned long int dataSerial;
-    const Program_t *cached
-        = programCache->find(key, dataSerial, &programSerial);
+    unsigned long int programDependSerial;
+    const Program_t *cachedProgram
+        = programCache->find(key, programDependSerial, &programSerial);
 
     // determine whether we have to reload program
-    bool reload = !cached
-        || (configSerial != dataSerial)
-        || (params->isWatchFilesEnabled() && cached->isChanged());
+    bool reload = (!cachedProgram
+                   || (configSerial != programDependSerial)
+                   || (configAndDict.first->isWatchFilesEnabled()
+                       && cachedProgram->check()));
 
     if (reload) {
         // create new program
-        auto program = (sourceType == SRC_STRING)
-            ? compile_string(dict, params, root, std::string{source})
-            : compile_file(dict, params, root, source);
+        Program_t *program = (sourceType == SRC_STRING)
+            ?
+            ParserContext_t(configAndDict.second, configAndDict.first, root)
+            .createProgramFromString(templateSource)
+            :
+            ParserContext_t(configAndDict.second, configAndDict.first, root)
+            .createProgramFromFile(templateSource);
 
         // add program into cache
-        // TODO(burlog): cached = programCache->add(key, std::move(program), configSerial);
-        cached = programCache->add(key, program.release(), configSerial);
+        cachedProgram = programCache->add(key, program, configSerial);
     }
 
     // create template with cached sources
-    return new Template_t(cached, dict, params, this);
+    // cannot return value directly, because of g++ 2.95 warnings
+    Template_t *retval = new Template_t(cachedProgram,
+            configAndDict.second, configAndDict.first, this);
+    return retval;
 }
 
 TemplateCache_t::ConfigAndDict_t
@@ -125,14 +130,14 @@ TemplateCache_t::getConfigAndDict(const std::string &configFilename,
 {
     // find or create configuration
     std::vector<std::string> key;
-    key.push_back(createCacheKeyForFilename(root, configFilename));
+    tengCreateKey(root, configFilename, key);
 
     unsigned long int configSerial = 0;
     unsigned long int configDependSerial = 0;
     const Configuration_t *cachedConfig
         = configCache->find(key, configDependSerial, &configSerial);
     if (!cachedConfig
-        || (cachedConfig->isWatchFilesEnabled() && cachedConfig->isChanged())) {
+        || (cachedConfig->isWatchFilesEnabled() && cachedConfig->check())) {
         // not found or changed -> create new configionary
         Configuration_t *config = new Configuration_t(root);
         // parse file
@@ -142,7 +147,7 @@ TemplateCache_t::getConfigAndDict(const std::string &configFilename,
     }
 
     // reuse key for dictionary
-    key.push_back(createCacheKeyForFilename(root, dictFilename));
+    tengCreateKey(root, dictFilename, key);
 
     // find or create dictionary
     unsigned long int dictSerial = 0;
@@ -151,7 +156,7 @@ TemplateCache_t::getConfigAndDict(const std::string &configFilename,
                                                      &dictSerial);
 
     if (!cachedDict || (dictDependSerial != configSerial)
-        || (cachedConfig->isWatchFilesEnabled() && cachedDict->isChanged())) {
+        || (cachedConfig->isWatchFilesEnabled() && cachedDict->check())) {
         // not found or changed -> create new dictionary
         Dictionary_t *dict = new Dictionary_t(root);
         // parse file

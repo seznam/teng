@@ -38,24 +38,22 @@
 #define TENGYYLEX_H
 
 namespace Teng {
-namespace Parser {
 
-class Symbol_t;
-struct Context_t;
+struct LeftValue_t;
+struct ParserContext_t;
 
 /** Lexical analyzer.
  *
   * Calls preprocessor (lex level #1) and then lexical analyzer (lex level #2)
   * for some level #1 tokens.
   *
-  * @param result Pointer to the token's left-value.
-  * @param ctx Pointer to the parser's control structure.
+  * @param leftValue Pointer to the token's left-value.
+  * @param context Pointer to the parser's control structure.
   *
-  * @return 0=EOF, >0=token identificator.
+  * @return 0=EOF, >0=element identificator.
   */
-int yylex(Symbol_t *result, Context_t *ctx);
+int yylex(LeftValue_t *leftValue, ParserContext_t *context);
 
-} // namespace Parser
 } // namespace Teng
 
 #endif // TENGYYLEX_H

@@ -1,2 +1,0 @@
-hello_world	hello world
-hello_europe	hello europe

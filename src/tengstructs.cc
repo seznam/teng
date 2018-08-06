@@ -115,7 +115,7 @@ void Fragment_t::json(std::ostream &o) const {
    for (const_iterator i = begin(); i != end(); ++i) {
         if (i != begin()) o << ", ";
         quote_json_string(o, i->first);
-        o << ": ";
+        o << " : ";
         i->second->json(o);
     }
     o << '}';
@@ -136,11 +136,11 @@ Fragment_t::addVariable(const std::string &name, const std::string &value) {
     replace_item(items, name, value);
 }
 
-void Fragment_t::addIntVariable(const std::string &name, IntType_t value) {
+void Fragment_t::addVariable(const std::string &name, IntType_t value) {
     replace_item(items, name, value);
 }
 
-void Fragment_t::addRealVariable(const std::string &name, double value) {
+void Fragment_t::addVariable(const std::string &name, double value) {
     replace_item(items, name, value);
 }
 
@@ -153,8 +153,11 @@ Fragment_t::addFragmentList(const std::string &name) {
     auto iitem = items.find(name);
     if (iitem != items.end())
         return iitem->second->ensureFragmentList();
-    return items.emplace_hint(iitem, name, std::make_unique<FragmentValue_t>())
-           ->second->ensureFragmentList();
+    return items.emplace_hint(
+        iitem,
+        name,
+        std::make_unique<FragmentValue_t>(std::make_unique<FragmentList_t>())
+    )->second->ensureFragmentList();
 }
 
 void FragmentList_t::json(std::ostream &o) const {
@@ -176,139 +179,84 @@ void FragmentList_t::dump(std::ostream &o) const {
 }
 
 FragmentValue_t::FragmentValue_t()
-    : tag_value(tag::fragments), nestedFragments()
+    : held_type(type::string), value()
 {}
 
 FragmentValue_t::FragmentValue_t(const std::string &value)
-    : tag_value(tag::string), string_value(value)
+    : held_type(type::string), value(value)
 {}
 
 FragmentValue_t::FragmentValue_t(IntType_t value)
-    : tag_value(tag::integral), integral_value(value)
+    : held_type(type::integer), value(stringify(value))
 {}
 
 FragmentValue_t::FragmentValue_t(double value)
-    : tag_value(tag::real), real_value(value)
+    : held_type(type::floating), value(stringify(value))
+{}
+
+FragmentValue_t::FragmentValue_t(std::unique_ptr<FragmentList_t> fragment_list)
+    : held_type(type::fragments), nestedFragments(std::move(fragment_list))
 {}
 
 FragmentValue_t::~FragmentValue_t() {
-    switch (tag_value) {
-    case tag::fragments: dispose(&nestedFragments); break;
-    case tag::string: dispose(&string_value); break;
-    case tag::integral: break;
-    case tag::real: break;
+    switch (held_type) {
+    case type::fragments: dispose(&nestedFragments); break;
+    case type::string: dispose(&value); break;
+    case type::integer: dispose(&value); break;
+    case type::floating: dispose(&value); break;
     }
 }
 
 void FragmentValue_t::setValue(const std::string &new_value) {
-    switch (tag_value) {
-    case tag::fragments:
+    if (held_type == type::fragments) {
         dispose(&nestedFragments);
-        new (&string_value) std::string(new_value);
-        break;
-    case tag::string:
-        string_value = new_value;
-        break;
-    case tag::integral:
-        new (&string_value) std::string(new_value);
-        break;
-    case tag::real:
-        new (&string_value) std::string(new_value);
-        break;
-    }
-    tag_value = tag::string;
+        new (&value) std::string(new_value);
+    } else value = new_value;
+    held_type = type::string;
 }
 
-void FragmentValue_t::setInt(const IntType_t new_value) {
-    switch (tag_value) {
-    case tag::fragments:
+void FragmentValue_t::setValue(const IntType_t new_value) {
+    if (held_type == type::fragments) {
         dispose(&nestedFragments);
-        integral_value = new_value;
-        break;
-    case tag::string:
-        dispose(&string_value);
-        integral_value = new_value;
-        break;
-    case tag::integral:
-        integral_value = new_value;
-        break;
-    case tag::real:
-        integral_value = new_value;
-        break;
-    }
-    tag_value = tag::integral;
+        new (&value) std::string(stringify(new_value));
+    } else value = stringify(new_value);;
+    held_type = type::integer;
 }
 
-void FragmentValue_t::setDouble(double new_value) {
-    switch (tag_value) {
-    case tag::fragments:
+void FragmentValue_t::setValue(const double new_value) {
+    if (held_type == type::fragments) {
         dispose(&nestedFragments);
-        real_value = new_value;
-        break;
-    case tag::string:
-        dispose(&string_value);
-        real_value = new_value;
-        break;
-    case tag::integral:
-        real_value = new_value;
-        break;
-    case tag::real:
-        real_value = new_value;
-        break;
-    }
-    tag_value = tag::real;
+        new (&value) std::string(stringify(new_value));
+    } else value = stringify(new_value);
+    held_type = type::floating;
 }
 
 FragmentList_t &FragmentValue_t::ensureFragmentList() {
-    switch (tag_value) {
-    case tag::fragments:
-        break;
-    case tag::string:
-        dispose(&string_value);
-        new (&nestedFragments) FragmentList_t();
-        tag_value = tag::fragments;
-        break;
-    case tag::integral:
-        new (&nestedFragments) FragmentList_t();
-        tag_value = tag::fragments;
-        break;
-    case tag::real:
-        new (&nestedFragments) FragmentList_t();
-        tag_value = tag::fragments;
-        break;
+    if (held_type != type::fragments) {
+        dispose(&value);
+        new (&nestedFragments)
+            std::unique_ptr<FragmentList_t>(new FragmentList_t());
     }
-    return nestedFragments;
+    return *nestedFragments;
 }
 
 Fragment_t &FragmentValue_t::addFragment() {
-    return ensureFragmentList().addFragment();
-}
-
-std::string FragmentValue_t::getValue() const {
-    switch (tag_value) {
-    case tag::fragments: return "";
-    case tag::string: return string_value;
-    case tag::integral: return stringify(integral_value);
-    case tag::real: return stringify(real_value);
-    }
+    ensureFragmentList().addFragment();
+    return nestedFragments->addFragment();
 }
 
 void FragmentValue_t::json(std::ostream &o) const {
-    switch (tag_value) {
-    case tag::fragments: nestedFragments.json(o); break;
-    case tag::string: quote_json_string(o, string_value); break;
-    case tag::integral: o << integral_value; break;
-    case tag::real: o << real_value; break;
+    switch (held_type) {
+    case type::fragments: nestedFragments->json(o); break;
+    case type::string: quote_json_string(o, value); break;
+    case type::integer: o << value; break;
+    case type::floating: o << value; break;
     }
 }
 
 void FragmentValue_t::dump(std::ostream &o) const {
-    switch (tag_value) {
-    case tag::fragments: nestedFragments.json(o); break;
-    case tag::string: o << '\'' << string_value << '\''; break;
-    case tag::integral: o << '\'' << stringify(integral_value) << '\''; break;
-    case tag::real: o << '\'' << stringify(real_value) << '\''; break;
-    }
+    if (held_type == type::fragments) nestedFragments->dump(o);
+    else o << '\'' << value << '\'';
 }
 
 } // namespace Teng

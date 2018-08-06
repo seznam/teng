@@ -23,78 +23,86 @@
  *
  *
  * DESCRIPTION
- * Teng processor function (like len, round or formatDate)
+ * Teng processor funcction (like len, round or formatDate)
  *
  * AUTHORS
  * Jan Nemec <jan.nemec@firma.seznam.cz>
  * Vaclav Blazek <blazek@firma.seznam.cz>
- * Michal Bukovsky <michal.bukovsky@firma.seznam.cz>
  *
  * HISTORY
  * 2003-09-26  (jan)
  *             Created.
- * 2018-06-07  (burlog)
- *             Rewrite to C++.
  */
-
-#include <mutex>
-#include <unordered_map>
 
 #include "tengplatform.h"
 #include "tengudf.h"
 
+#include <map>
+
 namespace Teng {
-namespace udf {
-namespace {
 
-/** Functions registry.
- */
-class Registry_t {
-public:
-    /** Returns registered function for given name if any or empty function.
-     */
-    Function_t find(std::string name) {
 #ifndef NO_UDF_LOCKS
-        std::lock_guard<std::mutex> locked(mutex);
-#endif /* NO_UDF_LOCKS */
-        auto ifunction = registry.find("udf." + name);
-        return ifunction == registry.end()
-             ? Function_t{}
-             : ifunction->second;
-    }
+#include <pthread.h>
+pthread_rwlock_t udfLock = PTHREAD_RWLOCK_INITIALIZER;
+#endif
 
-    /** Inserts new value to registry.
-     */
-    void insert(const std::string &name, Function_t function) {
+#pragma GCC visibility push(hidden)
+std::map<std::string, UDFCallback_t> userDefinedFunction;
+#pragma GCC visibility pop
+
+void registerUDF(const std::string &name, UDFCallback_t udf) {
+
+std::string qId = "udf." + name;
 #ifndef NO_UDF_LOCKS
-        std::lock_guard<std::mutex> locked(mutex);
-#endif /* NO_UDF_LOCKS */
-        registry.emplace("udf." + name, std::move(function));
-    }
+    pthread_rwlock_wrlock(&udfLock);
+#endif
 
-    /** D'tor
-     */
-    ~Registry_t() {
+    userDefinedFunction[qId] = udf;
+
 #ifndef NO_UDF_LOCKS
-        std::lock_guard<std::mutex> locked(mutex);
-#endif /* NO_UDF_LOCKS */
-        registry.clear();
-    }
+    pthread_rwlock_unlock(&udfLock);
+#endif
 
-    std::mutex mutex;
-    std::unordered_map<std::string, Function_t> registry;
-} registered_functions;
-
-} // namespace
-
-void registerFunction(const std::string &name, Function_t function) {
-    registered_functions.insert(name, std::move(function));
+    return;
 }
 
-Invoker_t<Function_t> findFunction(const std::string &name) {
-    return {name, registered_functions.find(name)};
+UDFCallback_t findUDF(const std::string &name) {
+UDFCallback_t res;
+
+#ifndef NO_UDF_LOCKS
+    pthread_rwlock_rdlock(&udfLock);
+#endif
+
+    if ( userDefinedFunction.find(name) != userDefinedFunction.end() )
+        res = userDefinedFunction[name];
+
+#ifndef NO_UDF_LOCKS
+    pthread_rwlock_unlock(&udfLock);
+#endif
+    return res;
 }
 
-} // namespace udf
+#pragma GCC visibility push(hidden)
+
+class UDFCleanup_t {
+    protected:
+    public:
+        UDFCleanup_t() {
+        }
+
+        ~UDFCleanup_t() {
+            #ifndef NO_UDF_LOCKS
+                pthread_rwlock_wrlock(&udfLock);
+            #endif
+                userDefinedFunction.clear();
+            #ifndef NO_UDF_LOCKS
+                pthread_rwlock_unlock(&udfLock);
+            #endif
+        }
+};
+
+static UDFCleanup_t __cleanupUDF;
+#pragma GCC visibility pop
+
 } // namespace Teng
 

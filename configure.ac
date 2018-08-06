@@ -45,9 +45,8 @@ AM_INIT_AUTOMAKE(-Wall -Wno-portability color-tests)
 
 AC_PREREQ(2.50)
 
-# Enable silent builds (disable with --disable-silent-rules)
-# or simply do "make V=1"
-AM_SILENT_RULES([yes])
+#
+AM_SILENT_RULES
 
 # tell autoconf where to find sources
 AC_CONFIG_SRCDIR([src/teng.cc])

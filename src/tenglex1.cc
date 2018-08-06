@@ -36,448 +36,438 @@
 
 #include <cstdio>
 #include <cctype>
-#include <fstream>
 
-#include "tenglogging.h"
 #include "tengerror.h"
 #include "tenglex1.h"
 #include "tengutil.h"
 
 namespace Teng {
-namespace Parser {
-namespace {
 
-/** Unescape substring of input string variable.
- *
- * Transformations:
- *     $\{ -> ${
- *     #\{ -> #{
- *     ?\> -> ?>
- *     \}  -> {
- *     <\? -> <?
- *
- * It never allocates any memory because it writes unescaped string into given
- * interval.
- */
-string_view_t
-unescape(flex_string_value_t &str, std::size_t start, std::size_t end) {
-    enum {
-        initial,
-        dollar_expected_backslash_lcurly,
-        dollar_backslash_expected_lcurly,
-        backslash_expected_rcurly,
-        lt_expected_backslash_question,
-        lt_backslash_expected_question,
-        hash_expected_backslash_lcurly,
-        hash_backslash_expected_lcurly,
-        question_expected_backslash_gt,
-        question_backslash_expected_gt,
-    } state = initial;
+/** Initialize lexical analyzer from string.
+  * @param input Input string.
+  * @param filename File name identifying the original input source. */
+Lex1_t::Lex1_t(const std::string &input, const std::string &fname)
+        : input(input), position(0), filename(fname), line(1), column(0)
+{}
 
-    char *istr = str.data() + start;
-    char *estr = str.data() + end;
-    const char *ires = istr;
-    char *eres = estr;
-    const char *elast_seq = istr;
-    const char *icur_seq = istr;
 
-    auto do_unescape = [&] (const char *ipos, string_view_t seq) {
-        eres = eres == estr
-            ? istr + std::distance(elast_seq, icur_seq)
-            : std::copy(elast_seq, icur_seq, eres);
-        eres = std::copy(seq.begin(), seq.end(), eres);
-        elast_seq = ++ipos;
-    };
+/** Initialize lexical analyzer from file.
+  * @param input Input file to read. */
+Lex1_t::Lex1_t(const std::string &fname,
+        const Error_t::Position_t &position,
+        Error_t &error)
+        : position(0), filename(fname), line(1), column(0)
+{
+    // normalize filename
+    tengNormalizeFilename(filename);
 
-    for (auto ipos = istr; ipos != estr; ++ipos) {
-        switch (*ipos) {
-        case '$':
-            //!< .$\{ -> $.\{
-            state = dollar_expected_backslash_lcurly;
-            icur_seq = ipos;
-            break;
-
-        case '#':
-            //!< .#<\{ -> #.\{
-            state = hash_expected_backslash_lcurly;
-            icur_seq = ipos;
-            break;
-
-        case '<':
-            //!< .<\? -> <.\?
-            state = lt_expected_backslash_question;
-            icur_seq = ipos;
-            break;
-
-        case '\\':
-            switch (state) {
-            // $.\{ -> $\.{
-            case dollar_expected_backslash_lcurly:
-                state = dollar_backslash_expected_lcurly;
-                break;
-            // <.\? -> <\.?
-            case lt_expected_backslash_question:
-                state = lt_backslash_expected_question;
-                break;
-            // #.\{ -> #\.{
-            case hash_expected_backslash_lcurly:
-                state = hash_backslash_expected_lcurly;
-                break;
-            // ?.\> -> ?\.>
-            case question_expected_backslash_gt:
-                state = question_backslash_expected_gt;
-                break;
-            // .\{ -> \.{
-            default:
-                state = backslash_expected_rcurly;
-                icur_seq = ipos;
-                break;
-            }
-            break;
-
-        case '?':
-            switch (state) {
-            // <\.? -> <\?.
-            case lt_backslash_expected_question:
-                do_unescape(ipos, "<?");
-                state = initial;
-                break;
-            // .?\> -> ?.\>
-            default:
-                state = question_expected_backslash_gt;
-                icur_seq = ipos;
-                break;
-            }
-            break;
-
-        case '>':
-            switch (state) {
-            // ?\.> -> ?\>.
-            case question_backslash_expected_gt:
-                do_unescape(ipos, "?>");
-                break;
-            // X.> -> X>.
-            default:
-                break;
-            }
-            state = initial;
-            break;
-
-        case '{':
-            switch (state) {
-            //!< $\.{ -> $\{.
-            case dollar_backslash_expected_lcurly:
-                do_unescape(ipos, "${");
-                break;
-            //!< #\.{ -> #\{.
-            case hash_backslash_expected_lcurly:
-                do_unescape(ipos, "#{");
-                break;
-            // X.{ -> X{.
-            default:
-                break;
-            }
-            state = initial;
-            break;
-
-        case '}':
-            switch (state) {
-            // X\.} -> X\}.
-            case dollar_backslash_expected_lcurly:
-            case lt_backslash_expected_question:
-            case hash_backslash_expected_lcurly:
-            case question_backslash_expected_gt:
-                // remove first char from escape sequence
-                ++icur_seq;
-                [[fallthrough]];
-            // \.} -> \}.
-            case backslash_expected_rcurly:
-                do_unescape(ipos, "}");
-                break;
-            // \.X -> \X.
-            default:
-                break;
-            }
-            state = initial;
-            break;
-        default:
-            state = initial;
-            break;
-        };
+    // open file
+    FILE *fp = fopen(filename.c_str(), "rb");
+    if (fp == 0) {
+        // error
+        error.logSyscallError(Error_t::LL_ERROR, position,
+                "Cannot open input file '" + filename + "'");
     }
-    if (eres != estr)
-        eres = std::copy<const char *>(elast_seq, estr, eres);
-    return {ires, eres};
+    else {
+        // read content from file
+        char buf[1024];
+        int i;
+        while ((i = fread(buf, 1, sizeof(buf), fp)) > 0) {
+            input.append(buf, i);
+        }
+        // close the file
+        fclose(fp);
+    }
 }
 
-} // namespace
 
-Lex1_t::Token_t Lex1_t::next(bool accept_short_directive) {
-    // backup start values
-    std::size_t start_pos = offset;
-    int32_t start_line = pos.lineno;
-    int32_t start_column = pos.colno;
+/** Starts possible escape sequence, used by Lex1_t::unescapeInputSubstr.
+  * @param state State of finine automaton.
+  * @param s Output string.
+  * @param c Next input char. */
+inline static void newSequence(int &state, std::string &s, char c) {
+    switch (c) {
+        case '$': state = 1; break;  // $\{
+        case '\\': state = 3; break; // \}
+        case '<': state = 4; break;  // <\?
+        case '#': state = 6; break;  // #\{
+        case '?': state = 8; break;  // ?\>
+        default:
+            state = 0;
+            s.push_back(c);
+            break;
+    }
+}
 
-    auto incrementPosition = [&] (int num) {
-        while (num-- > 0) {
-            if (offset < source_code.size()) {
-                pos.advance(source_code[offset]);
-                ++offset;
-            }
+
+/** Unescape substring of input string variable.
+ * changes only $\{, \}, <\?, #\{, ?\> to ${, }, <?, #{, ?>
+ * @param begin start position in string input.
+ * @param end final position in string input + 1.
+ * @return unescaped substring */
+std::string Lex1_t::unescapeInputSubstr(unsigned int begin, unsigned int end) {
+    int state = 0;
+    /*
+      state
+      1 $
+      2 $\
+      3 \ (and not $\, <\, #\, ?\ )
+      4 <
+      5 <\
+      6 #
+      7 #\
+      8 ?
+      9 ?\
+      0 other
+    */
+    std::string s;
+    s.reserve(end - begin);
+    if (end >= input.size()) end = input.size();
+    for (; begin < end; begin++) {
+        switch (state) {
+            case 1: // $
+                if (input[begin] == '\\') {
+                    state = 2;
+                } else {
+                    s.push_back('$');
+                    newSequence(state, s, input[begin]);
+                }
+                break;
+
+            case 2: /* $\ */
+                if (input[begin] == '{') {
+                    s.append("${");
+                    state = 0;
+                } else {
+                    s.push_back('$');
+                    state = 3;
+                    goto state3;
+                }
+                break;
+
+            case 3: /* \ (and not $\, <\, #\, ?\ ) */
+            state3:;
+                if (input[begin] == '}') {
+                    s.push_back('}');
+                    state = 0;
+                } else {
+                    s.push_back('\\');
+                    newSequence(state, s, input[begin]);
+                }
+                break;
+
+            case 4: // <
+                if (input[begin] == '\\') {
+                    state = 5;
+                } else {
+                    s.push_back('<');
+                    newSequence(state, s, input[begin]);
+                }
+                break;
+
+            case 5: /* <\ */
+                if (input[begin] == '?') {
+                    s.append("<?");
+                    state = 0;
+                } else {
+                    s.push_back('<');
+                    state = 3;
+                    goto state3;
+                }
+                break;
+
+            case 6: // #
+                if (input[begin] == '\\') {
+                    state = 7;
+                } else {
+                    s.push_back('#');
+                    newSequence(state, s, input[begin]);
+                }
+                break;
+
+            case 7: /* #\ */
+                if (input[begin] == '{') {
+                    s.append("#{");
+                    state = 0;
+                } else {
+                    s.push_back('#');
+                    state = 3;
+                    goto state3;
+                }
+                break;
+
+            case 8: // ?
+                if (input[begin] == '\\') {
+                    state = 9;
+                } else {
+                    s.push_back('?');
+                    newSequence(state, s, input[begin]);
+                }
+                break;
+
+            case 9: /* ?\ */
+                if (input[begin] == '>') {
+                    s.append("?>");
+                    state = 0;
+                } else {
+                    s.push_back('?');
+                    state = 3;
+                    goto state3;
+                }
+                break;
+
+            default:
+                newSequence(state, s, input[begin]);
+                break;
         }
-    };
+    }
+
+    //  do not forget flush the buffer at the end
+    switch (state) {
+        case 1: s.push_back('$'); break;
+        case 2: s.append("$\\"); break;
+        case 3: s.push_back('\\'); break;
+        case 4: s.push_back('<'); break;
+        case 5: s.append("<\\"); break;
+        case 6: s.push_back('#'); break;
+        case 7: s.append("#\\"); break;
+        case 8: s.push_back('?'); break;
+        case 9: s.append("?\\"); break;
+    }
+
+    return s;
+}
+
+/** Get next token.
+  * @return Token struct of next token. */
+Lex1_t::Token_t Lex1_t::getElement(bool shortTag) {
+    // backup start values
+    size_t start_pos = position;
+    size_t start_line = line;
+    size_t start_column = column;
 
     // go up to element start
-    while (offset < source_code.size()) {
+    while (position < input.length()) {
 
         // test for elements
-        if (offset + 4 < source_code.size()
-                && source_code[offset] == '<'
-                && source_code[offset + 1] == '!'
-                && source_code[offset + 2] == '-'
-                && source_code[offset + 3] == '-'
-                && source_code[offset + 4] == '-') {
+        if (position + 4 < input.length()
+                && input[position] == '<'
+                && input[position + 1] == '!'
+                && input[position + 2] == '-'
+                && input[position + 3] == '-'
+                && input[position + 4] == '-') {
             // comment
             // test for end of text token
-            if (offset > start_pos) {
-                return {
-                    LEX1::TEXT,
-                    {pos.filename, start_line, start_column},
-                    unescape(source_code, start_pos, offset)
-                };
-            }
+            if (position > start_pos)
+                return Token_t(TYPE_TEXT,
+                        unescapeInputSubstr(start_pos, position),
+                        start_line, start_column);
             // skip "<!---"
             incrementPosition(5);
 
             // skip input until "--->"
-            while (offset < source_code.size()) {
+            while (position < input.length()) {
                 // test for comment end
-                if (offset + 3 < source_code.size()
-                        && source_code[offset] == '-'
-                        && source_code[offset + 1] == '-'
-                        && source_code[offset + 2] == '-'
-                        && source_code[offset + 3] == '>') {
+                if (position + 3 < input.length()
+                        && input[position] == '-'
+                        && input[position + 1] == '-'
+                        && input[position + 2] == '-'
+                        && input[position + 3] == '>') {
                     break; //comment end
                 }
                 incrementPosition(1); //next char
             }
             // if comment end not found
-            if (offset >= source_code.size()) {
-                return {
-                    LEX1::ERROR,
-                    {pos.filename, start_line, start_column},
-                    "Unterminated comment"
-                };
+            if (position >= input.length()) {
+                return Token_t(TYPE_ERROR,
+                        "Unterminated comment",
+                        start_line, start_column);
             }
             // skip "--->"
             incrementPosition(4);
             // reset start pointers
-            start_pos = offset;
-            start_line = pos.lineno;
-            start_column = pos.colno;
+            start_pos = position;
+            start_line = line;
+            start_column = column;
             // continue with next token
             continue;
 
         }
-        else if (offset + 6 < source_code.size()
-                && source_code[offset] == '<'
-                && source_code[offset + 1] == '?'
-                && source_code[offset + 2] == 't'
-                && source_code[offset + 3] == 'e'
-                && source_code[offset + 4] == 'n'
-                && source_code[offset + 5] == 'g'
-                && (isspace(source_code[offset + 6]) //accept "<?teng "
-                || (offset + 7 < source_code.size()
-                && source_code[offset + 6] == '?'
-                && source_code[offset + 7] == '>'))) { //accept "<?teng?>"
+        else if (position + 6 < input.length()
+                && input[position] == '<'
+                && input[position + 1] == '?'
+                && input[position + 2] == 't'
+                && input[position + 3] == 'e'
+                && input[position + 4] == 'n'
+                && input[position + 5] == 'g'
+                && (isspace(input[position + 6]) //accept "<?teng "
+                || (position + 7 < input.length()
+                && input[position + 6] == '?'
+                && input[position + 7] == '>'))) { //accept "<?teng?>"
             // "<?teng" directive
             // test for end of text token
-            if (offset > start_pos)
-                return {
-                    LEX1::TEXT,
-                    {pos.filename, start_line, start_column},
-                    unescape(source_code, start_pos, offset)
-                };
+            if (position > start_pos)
+                return Token_t(TYPE_TEXT,
+                        unescapeInputSubstr(start_pos, position),
+                        start_line, start_column);
             // skip "<?teng"
             incrementPosition(6);
 
             // skip input until "?>"
             int escape = 0, inString = 0;
-            while (offset < source_code.size()) {
+            while (position < input.length()) {
                 if (inString) {
-                    if (source_code[offset] == '"')
+                    if (input[position] == '"')
                        if (!escape) inString = 0;
-                    if (source_code[offset] == '\\') escape = !escape;
+                    if (input[position] == '\\') escape = !escape;
                     else escape = 0;
                 }
                 else {
-                    if (offset + 1 < source_code.size()
-                        && source_code[offset] == '?'
-                        && source_code[offset + 1] == '>') break;
-                    if (source_code[offset] == '"') inString = 1;
+                    if (position + 1 < input.length()
+                        && input[position] == '?'
+                        && input[position + 1] == '>') break;
+                    if (input[position] == '"') inString = 1;
                 }
                 incrementPosition(1); //next char
             }
             // if directive end not found
-            if (offset >= source_code.size()) {
-                return {
-                    LEX1::ERROR,
-                    {pos.filename, start_line, start_column},
-                    "Unterminated <?teng ...?> directive"
-                };
+            if (position >= input.length()) {
+                return Token_t(TYPE_ERROR,
+                        "Unterminated <?teng ...?> directive",
+                        start_line, start_column);
             }
             // skip "?>"
             incrementPosition(2);
             // return teng token
-            return {
-                LEX1::TENG,
-                {pos.filename, start_line, start_column},
-                {source_code, start_pos, offset - start_pos}
-            };
+            return Token_t(TYPE_TENG,
+                    input.substr(start_pos, position - start_pos),
+                    start_line, start_column);
 
         }
-        else if (accept_short_directive == true
-                && offset + 1 < source_code.size()
-                && source_code[offset] == '<'
-                && source_code[offset + 1] == '?') {
+        else if ( shortTag == true
+                && position + 1 < input.length()
+                && input[position] == '<'
+                && input[position + 1] == '?') {
             // "<?teng" directive
             // test for end of text token
-            if (offset > start_pos)
-                return {
-                    LEX1::TEXT,
-                    {pos.filename, start_line, start_column},
-                    unescape(source_code, start_pos, offset)
-                };
+            if (position > start_pos)
+                return Token_t(TYPE_TEXT,
+                        unescapeInputSubstr(start_pos, position),
+                        start_line, start_column);
             // skip "<?teng"
             incrementPosition(2);
 
             // skip input until "?>"
             int escape = 0, inString = 0;
-            while (offset < source_code.size()) {
+            while (position < input.length()) {
                 if (inString) {
-                    if (source_code[offset] == '"')
+                    if (input[position] == '"')
                        if (!escape) inString = 0;
-                    if (source_code[offset] == '\\') escape = !escape;
+                    if (input[position] == '\\') escape = !escape;
                     else escape = 0;
                 }
                 else {
-                    if (offset + 1 < source_code.size()
-                        && source_code[offset] == '?'
-                        && source_code[offset + 1] == '>') break;
-                    if (source_code[offset] == '"') inString = 1;
+                    if (position + 1 < input.length()
+                        && input[position] == '?'
+                        && input[position + 1] == '>') break;
+                    if (input[position] == '"') inString = 1;
                 }
                 incrementPosition(1); //next char
             }
             // if directive end not found
-            if (offset >= source_code.size()) {
-                return {
-                    LEX1::ERROR,
-                    {pos.filename, start_line, start_column},
-                    "Unterminated <? ...?> directive"
-                };
+            if (position >= input.length()) {
+                return Token_t(TYPE_ERROR,
+                        "Unterminated <? ...?> directive",
+                        start_line, start_column);
             }
             // skip "?>"
             incrementPosition(2);
             // return teng token
-            return {
-                LEX1::TENG_SHORT,
-                {pos.filename, start_line, start_column},
-                {source_code, start_pos, offset - start_pos}
-            };
+            return Token_t(TYPE_TENG_SHORT,
+                    input.substr(start_pos, position - start_pos),
+                    start_line, start_column);
 
         }
-        else if (offset + 1 < source_code.size()
-                && source_code[offset] == '$'
-                && source_code[offset + 1] == '{') {
+        else if (position + 1 < input.length()
+                && input[position] == '$'
+                && input[position + 1] == '{') {
             // shorted expression form
             // test for end of text token
-            if (offset > start_pos)
-                return {
-                    LEX1::TEXT,
-                    {pos.filename, start_line, start_column},
-                    unescape(source_code, start_pos, offset),
-                };
+            if (position > start_pos)
+                return Token_t(TYPE_TEXT,
+                        unescapeInputSubstr(start_pos, position),
+                        start_line, start_column);
             // skip "${"
             incrementPosition(2);
 
             // skip input until "}", except escaped "\}"
             int escape = 0, inString = 0;
-            while (offset < source_code.size()) {
+            while (position < input.length()) {
                 if (inString) {
-                    if (source_code[offset] == '"')
+                    if (input[position] == '"')
                        if (!escape) inString = 0;
-                    if (source_code[offset] == '\\') escape = !escape;
+                    if (input[position] == '\\') escape = !escape;
                     else escape = 0;
                 }
                 else {
-                    if (source_code[offset] == '}') break;
-                    if (source_code[offset] == '"') inString = 1;
+                    if (input[position] == '}') break;
+                    if (input[position] == '"') inString = 1;
                 }
                 incrementPosition(1); //next char
             }
             // if directive end not found
-            if (offset >= source_code.size()) {
-                return {
-                    LEX1::ERROR,
-                    {pos.filename, start_line, start_column},
-                    "Unterminated ${...} directive"
-                };
+            if (position >= input.length()) {
+                return Token_t(TYPE_ERROR,
+                        "Unterminated ${...} directive",
+                        start_line, start_column);
             }
             // skip "}"
             incrementPosition(1);
             // return expression token
-            return {
-                LEX1::EXPR,
-                {pos.filename, start_line, start_column},
-                {source_code, start_pos, offset - start_pos}
-            };
+            return Token_t(TYPE_EXPR,
+                    input.substr(start_pos, position - start_pos),
+                    start_line, start_column);
 
         }
-        else if (offset + 1 < source_code.size()
-                && source_code[offset] == '#'
-                && source_code[offset + 1] == '{') {
+        else if (position + 1 < input.length()
+                && input[position] == '#'
+                && input[position + 1] == '{') {
             // shorted dictionary item form
             // test for end of text token
-            if (offset > start_pos)
-                return {
-                    LEX1::TEXT,
-                    {pos.filename, start_line, start_column},
-                    unescape(source_code, start_pos, offset),
-                };
+            if (position > start_pos)
+                return Token_t(TYPE_TEXT,
+                        unescapeInputSubstr(start_pos, position),
+                        start_line, start_column);
             // skip "#{"
             incrementPosition(2);
 
             // skip input until "}", except escaped \}
             int escape = 0;
-            while (offset < source_code.size()) {
+            while (position < input.length()) {
                 // test for directive end
                 if (escape) {
                     escape = 0;
                     incrementPosition(1); //skip next char
                     continue;
-                } else if (source_code[offset] == '}') {
+                } else if (input[position] == '}') {
                     break; //directive end
-                } else if (source_code[offset] == '\\') {
+                } else if (input[position] == '\\') {
                     escape = 1;
                 }
                 incrementPosition(1); //next char
             }
             // if directive end not found
-            if (offset >= source_code.size()) {
-                return {
-                    LEX1::ERROR,
-                    {pos.filename, start_line, start_column},
-                    "Unterminated #{...} directive"
-                };
+            if (position >= input.length()) {
+                return Token_t(TYPE_ERROR,
+                        "Unterminated #{...} directive",
+                        start_line, start_column);
             }
             // skip "}"
             incrementPosition(1);
             // return dict item token
-            return {
-                LEX1::DICT,
-                {pos.filename, start_line, start_column},
-                {source_code, start_pos, offset - start_pos}
-            };
+            return Token_t(TYPE_DICT,
+                    input.substr(start_pos, position - start_pos),
+                    start_line, start_column);
 
         }
         else {
@@ -488,22 +478,49 @@ Lex1_t::Token_t Lex1_t::next(bool accept_short_directive) {
     } //end while
 
     // test for end of text token
-    if (offset > start_pos) {
-        return {
-            LEX1::TEXT,
-            {pos.filename, start_line, start_column},
-            unescape(source_code, start_pos, offset)
-        };
-    }
+    if (position > start_pos)
+        return Token_t(TYPE_TEXT,
+                unescapeInputSubstr(start_pos, position),
+                start_line, start_column);
 
     // return end token
-    return {
-        LEX1::END_OF_INPUT,
-        {pos.filename, start_line, start_column},
-        "End of input stream"
-    };
+    return Token_t(TYPE_EOF,
+            "End of input stream",
+            start_line, start_column);
 }
 
-} // namespace Parser
+
+/** Get error position.
+  * @return Error position. */
+Error_t::Position_t Lex1_t::getPosition() const {
+    return Error_t::Position_t(filename, line, column);
+}
+
+
+/** Advance actual position by one char
+  * and also update line and column pointers.
+  * @param num Increment position by this number of chars. */
+void Lex1_t::incrementPosition(int num) {
+    // repeat num-times
+    while (num -- > 0) {
+
+        // check end
+        if (position < input.length()) {
+
+            // advance line & column pointers
+            if (input[position] == '\n') {
+                ++ line; //inc line
+                column = 0; //reset column
+            } else if (input[position] == '\t') {
+                column = ((column / 8) + 1) * 8; //skip to next tab
+            } else
+                ++ column;
+
+            // next char in input
+            ++ position;
+        }
+    }
+}
+
 } // namespace Teng
 

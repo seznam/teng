@@ -41,134 +41,274 @@
 
 #include <string>
 #include <vector>
+#include <cerrno>
 #include <cstring>
-
-#include <tengposition.h>
-
-// TODO(burlog): remove it
+#include <sstream>
 #include <iostream>
 
 namespace Teng {
 
-/** Storage of error messages of template parsing, processing and generation.
- */
+/** @short Error handling class -- logs errors. */
 class Error_t {
+	
 public:
     /** @short Level of message */
     enum Level_t {
-        DEBUGING = 0, //!< level for debug messages
-        WARNING  = 1, //!< level for warnings
-        ERROR    = 2, //!< level for error messages
-        FATAL    = 3  //!< level for fatal messages
+        LL_DEBUGING = 0, /** < Level for debug messages. */
+        LL_WARNING = 1, /** < Level for warnings. */
+        LL_ERROR =   2, /** < Level for error messages. */
+        LL_FATAL =   3  /** < Level for fatal messages. */
     };
 
-    /** Creates new error logger.
-     */
-    Error_t(): max_level(DEBUGING), entries() {}
+    /** @short Creates new error logger. */
+    Error_t()
+        : level(LL_DEBUGING), entries()
+    {};
 
-    /** Entry in error log.
-     */
-    struct Entry_t {
-        /** @short Composes log line.
-          * @return composed log line
-          */
-        std::string getLogLine() const;
+    /** @short Holds position in file. */
+    struct Position_t {
+        /** @short Creates new position object.
+         *  If lineno<=0 or col<0, then position within file is not printed.
+         *  @param filename Name of the associated file.
+         *  @param lineno Line number (starting with 1).
+         *  @param col Column on line (starting with 0). */
+        Position_t(const std::string &filename = "",
+                   int lineno = 0, int col = 0)
+            : filename(filename), lineno(lineno), col(col)
+        {}
 
-        /** @short Dumps entry into stream.
-         * @param out output stream
+        /** @short Advances to the beginning of new line. */
+        void newLine() {
+            ++lineno;
+            col = 0;
+        }
+
+        /** @short Advances column by given offset.
+          * @param offset column offset */
+        void advanceColumn(int offset = 1) {
+            col += offset;
+        }
+
+        /** @short Advances column to the next tab position
+          *        assuming that <TAB> is 8 chars */
+        void advanceToTab() {
+            col = 8 * (col / 8 + 1);
+        }
+
+        /** @short Advances position by given char.
+         *  <LF> advances line, <TAB> advances to next tab
+         *  and other char advances to nex column.
+         *  @param c character
          */
-        void dump(std::ostream &out) const;
+        void advance(char c) {
+            switch (c) {
+            case '\n':
+                newLine();
+                break;
+            case '\t':
+                advanceToTab();
+                break;
+            default:
+                ++col;
+                break;
+            }
+        }
 
-        Level_t level;   //!< level of message
-        Pos_t pos;       //!< position in file
-        std::string msg; //!< additional message
+        /** @short Advances position to the end of given string.
+         *  @param str string
+         */
+        void advance(const std::string &str) {
+            for (std::string::const_iterator istr = str.begin();
+                 istr != str.end(); )
+                advance(*istr++);
+        }
+        
+        /** @short Advances position to the end of given string.
+         *  @param str string
+         *  @param length length of string
+         */
+        void advance(const char *str, int length) {
+            const char *end = str + length;
+            for (const char *istr = str; istr != end; )
+                advance(*istr++);
+        }
+
+        /** @short Explicitly sets column value.
+          * @param col new column value */
+        void setColumn(int col) {
+            this->col = col;
+        }
+
+        /** @short Associated filename. */
+        std::string filename;
+
+        /** @short Line number. */
+        int lineno;
+
+        /** @short Column position in file. */
+        int col;
+    };
+    
+   /** Max level of messages (or LL_DEBUGING if no message) */
+    Level_t level;
+
+    /** @short Entry in error log. */
+    struct Entry_t {
+
+        /** @short Creates new entry.
+          * @param filename associated file
+          * @param lineno line number
+          * @param col column position in file
+          * @param message additional message  */
+        Entry_t(Level_t level, const std::string &filename, int lineno,
+                int col, const std::string &message)
+            : level(level), pos(filename, lineno, col), message(message)
+        {}
+
+        /** @short Creates new entry.
+          * @param pos position in file
+          * @param message column position in file */
+        Entry_t(Level_t level, const Position_t &pos,
+                const std::string &message)
+            : level(level), pos(pos), message(message)
+        {}
+
+        /** @short Composes log line.
+          * @return composed log line */
+        std::string getLogLine() const {
+            /** @short description of level*/
+            static const std::string levelString[] =
+                {"Debug", "Warning", "Error", "Fatal"};
+            std::ostringstream out;
+            // if 'filename' not given
+            if (pos.filename.length() > 0)
+                out << pos.filename;
+            else
+                out << "(no file)";
+            // if 'lineno' and 'col' are positive
+            if (pos.lineno > 0 && pos.col >= 0)
+                out << "(" << pos.lineno << "," << pos.col << ")";
+            out << " " << levelString[level];
+            // add message and EOL
+            out << ": " << message << std::endl;
+            return out.str();
+        }
+       /** @short Level of message. */
+        Level_t level;
+        
+        /** @short Position in file. */
+        Position_t pos;
+        
+        /** @short Additional message. */
+        std::string message;
     };
 
-    /** Returns number of errors in log.
-     * @return number of errors
-     */
-    std::size_t count() const {return entries.size();}
+    /** @short Logs new error.
+      * @param pos position in file
+      * @param message additional message */
+    void logError(Level_t level, const Position_t &pos,
+                  const std::string &message) {
+        for(unsigned int i = 0; i < entries.size(); i++) {
+            if(entries[i].level == level && entries[i].pos.filename == pos.filename && entries[i].pos.lineno == pos.lineno && entries[i].pos.col == pos.col && entries[i].message == message) {
+                return;
+            }
+        }
+        entries.push_back(Entry_t(level, pos, message));
+        if (level > this->level) this->level = level;
+    }
 
-    /** Returns whether any error occurred.
-     * @return true if any error occurred, false otherwise
-     */
-    explicit operator bool() const {return !entries.empty();}
+    /** @short Log syscall error, no file associated. */
+    void logSyscallError(Level_t level) {
+        std::string strerr(strerror(errno));
+        logError(level, Position_t("", -1, -1), "System call error: " + strerr);
+    }
 
-    /** Clears error log.
-     */
-    void clear() {entries.clear();}
+    /** @short Logs syscall error for given file/position.
+      * @param pos position in file  */
+    void logSyscallError(Level_t level, const Position_t &pos) {
+        std::string strerr(strerror(errno));
+        logError(level, pos, "System call error: " + strerr);
+    }
 
-    /** Get raw error log.
-      * @return error log
+    /** @short Logs syscall error for given file/position.
+      * @param pos position in file
+      * @param message additional message  */
+    void logSyscallError(Level_t level, const Position_t &pos,
+                         const std::string &message) {
+        std::string strerr(strerror(errno));
+        logError(level, pos, message + " (" + strerr + ")");
+    }
+
+    /** @short Logs syscall error for given file/position.
+      * @param pos position in file
+      * @param message additional message */
+    void logRuntimeError(Level_t level, const Position_t &pos,
+                         const std::string &message) {
+        logError(level, pos, "Runtime: " + message);
+    }
+    
+    /** @short Returns number of errors in log.
+      * @return number of errors */
+    int count() const {
+        return entries.size();
+    }
+    /** @short Returns level variable.
       */
-    const std::vector<Entry_t> &getEntries() const {return entries;}
+    int getLevel() const {
+        return level;
+    }
+    /** @short Returns whether any error occurred.
+      * @return true if any error occurred, false otherwise */
+    operator bool() const {
+        return !entries.empty();
+    }
 
-    /** Appends content of another error log.
-     * @param err appended log
-     */
+    /** @short Clears error log. */
+    void clear() {
+        entries.clear();
+    }
+
+    /** @short Appends content of another error log.
+      * @param err appended log */
     void append(const Error_t &err) {
         // increase level if lower than that of err
-        if (err.max_level > max_level) max_level = err.max_level;
+        if (err.level > level) level = err.level;
         // append error log
-        entries.insert(entries.end(), err.entries.begin(), err.entries.end());
+        entries.insert(entries.end(), err.entries.begin(),
+                       err.entries.end());
     }
 
-    /** Appends new entry.
-     * @param entry new entry to append
-     */
-    void append(const Entry_t &entry) {
-        // increase level if lower than that of err
-        if (entry.level > max_level) max_level = entry.level;
-        // append error log
-        entries.push_back(entry);
+    /** @short Get raw error log.
+      * @return error log */
+    const std::vector<Entry_t>& getEntries() const {
+        return entries;
     }
 
-    /** Dumps log into stream.
-     * @param out output stream
-     */
-    void dump(std::ostream &out) const;
+    /** @short Dumps log into stream.
+      * @param out output stream */
+    void dump(std::ostream &out) const {
+        for (std::vector<Entry_t>::const_iterator
+                 ientries = entries.begin();
+             ientries != entries.end(); ++ientries) {
+            out << ientries->getLogLine();
+        }
+    }
 
-    Level_t max_level; //!< Max level of messages (or DEBUGING if no message)
 
 private:
-    // don't copy
-    Error_t(const Error_t &) = delete;
-    Error_t &operator=(const Error_t &) = delete;
+		
+    /** @short Copy constructor intentionally private -- copying
+     *         disabled. */
+    Error_t(const Error_t&);
 
-    std::vector<Entry_t> entries; //!< List of error entries
+    /** @short Assignment operator intentionally private -- assignment
+     *         disabled. */
+    Error_t operator=(const Error_t&);
+
+    /** @short Log of error entries. */
+    std::vector<Entry_t> entries;
 };
-
-/** Dumps the entry to given stream.
- */
-inline std::ostream &operator<<(std::ostream &o, const Error_t::Entry_t &e) {
-    e.dump(o);
-    return o;
-}
-
-/** Dumps all errors to given stream.
- */
-inline std::ostream &operator<<(std::ostream &o, const Error_t &e) {
-    e.dump(o);
-    return o;
-}
-
-/** Comparison operator.
- */
-inline bool
-operator==(const Error_t::Entry_t &lhs, const Error_t::Entry_t &rhs) {
-    return lhs.level == rhs.level
-        && lhs.pos == rhs.pos
-        && lhs.msg == rhs.msg;
-}
-
-/** Comparison operator.
- */
-inline bool
-operator!=(const Error_t::Entry_t &lhs, const Error_t::Entry_t &rhs) {
-    return !(lhs == rhs);
-}
 
 } // namespace Teng
 
 #endif // TENGERROR_H
-

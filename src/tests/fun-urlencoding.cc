@@ -41,9 +41,9 @@
 
 SCENARIO(
     "Escaping string with urlencoding",
-    "[function][urlencode]"
+    "[old]"
 ) {
-    WHEN("String with special characters") {
+    WHEN("String with special characters is escaped") {
         THEN("Some of them are escaped") {
             auto t = "${urlescape(\"'asdf!@#$%^&*\(\\\"\")}";
             REQUIRE(g(t) == "'asdf!@%23$%^&*(%22");
@@ -53,7 +53,7 @@ SCENARIO(
 
 SCENARIO(
     "Unescaping urlencoding",
-    "[function][urlencode]"
+    "[old]"
 ) {
     WHEN("Urlescaped string") {
         THEN("Urlescape sequencies are decoded") {

@@ -38,14 +38,13 @@
 #ifndef TENGDICTIONARY_H
 #define TENGDICTIONARY_H
 
-#include <map>
-#include <iosfwd>
 #include <string>
 #include <vector>
+#include <cstdio>
+#include <map>
 
 #include "tengerror.h"
 #include "tengsourcelist.h"
-#include "tengstringview.h"
 
 namespace Teng {
 
@@ -59,34 +58,35 @@ public:
     /**
      * @short Creates new dictionary object.
      *
-     * @param fs_root path of root for locating files
+     * @param root path of root for locating files
      */
-    Dictionary_t(const std::string &fs_root)
-        : fs_root(fs_root), level(0), sources(), err(),
-          expandValue(false), replaceValue(false)
+    Dictionary_t(const std::string &root)
+        : root(root), level(0), sources(), err(), expandValue(false),
+        replaceValue(false)
     {}
 
     /**
      * @short Destroy dictionary object.
      */
-    virtual ~Dictionary_t() = default;
+    virtual ~Dictionary_t();
 
     /**
      * @short Parses dicionary from given file.
      *
      * @param filename name of file to parse
-     * @param include_pos the position of include directive if any
      * @return 0 OK !0 error
      */
-    int parse(const std::string &filename, const Pos_t &include_pos = {});
+    int parse(const std::string &filename);
 
     /**
-     * @short Adds new entry into dictionary. Doesn't replace existing entry.
+     * @short Adds new entry into dictionary. Doesn't replace
+     *        existing entry.
      *
      * @param name name of entry
      * @param value value of entry
+     * @return 0 OK !0 error
      */
-    virtual void add(const std::string &name, const std::string &value);
+    virtual int add(const std::string &name, const std::string &value);
 
     /**
      * @short Searches for key in dictionary.
@@ -94,95 +94,110 @@ public:
      * @param key the key
      * @return found value or 0 when key not found
      */
-    virtual const std::string *lookup(const std::string &key) const;
+    virtual const std::string* lookup(const std::string &key) const;
 
     /**
      * @short Check source files for change.
      *
      * @return 0 OK !0 changed
      */
-    int isChanged() const {return sources.isChanged();}
+    inline int check() const {
+        return sources.isChanged();
+    }
 
     /**
      * @short Dumps dictionary into string. For debugging purposes.
      *
      * @param out output string
+     * @return 0 OK !0 error
      */
-    virtual void dump(std::string &out) const;
-
-    /**
-     * @short Dumps dictionary into stream. For debugging purposes.
-     *
-     * @param out output stream
-     */
-    virtual void dump(std::ostream &out) const;
+    virtual int dump(std::string &out) const;
 
     /**
      * @short Return source list.
      *
      * @return source list
      */
-    const SourceList_t &getSources() const {return sources;}
+    inline const SourceList_t& getSources() const {
+        return sources;
+    }
 
     /**
      * @short Get error logger.
      *
      * @return error logger
      */
-    const Error_t &getErrors() const {return err;}
+    inline const Error_t& getErrors() const {
+        return err;
+    }
 
 protected:
     /**
      * @short Parses dictionary from given string. Worker function.
      *
-     * @param data the input data.
+     * @param data
+     * @param pos position in current file
      * @return 0 OK !0 error
      */
-    virtual int parseString(string_view_t data);
+    virtual int parseString(const std::string &data, Error_t::Position_t &pos);
 
     /**
      * @short Parses value line.
      *
      * @param line parsed line
+     * @param value returend value
+     * @param pos position in current file
+     * @return 0 OK !0 error
      */
-    virtual std::string parseValueLine(string_view_t line);
+    int parseValueLine(const std::string &line, std::string &value,
+                       Error_t::Position_t &pos);
 
     /**
      * @short Parses line beginning with identifier.
      *
      * @param line parsed line
+     * @param name name of identifier
+     * @param value value of ifentifier
+     * @param pos position in current file
+     * @return 0 OK !0 error
      */
-    virtual std::string *addIdent(string_view_t line);
+    virtual int parseIdentLine(const std::string &line,
+                               std::string &name,
+                               std::string &value,
+                               Error_t::Position_t &pos);
 
     /**
      * @short Parses and processes processing directive.
      *
      * @param directive whole directive string
      * @param param parameter to directive
-     *
+     * @param pos position in current file
      * @return 0 OK !0 error
      */
-    virtual int processDirective(string_view_t directive, string_view_t param);
+    virtual int processDirective(const std::string &directive,
+                                 const std::string &param,
+                                 Error_t::Position_t &pos);
 
     /**
-     * @short Parses and processes processing directive.
-     *
-     * @param directive whole directive string
-     * @param param parameter to directive
-     *
-     * @return 0 OK !0 error
-     */
-    virtual int processDirective(string_view_t line);
-
-    /**
-     * @short Adds new entry into dictionary.
+     * @short Adds new entry into dictionary. Doesn't replace
+     *        existing entry.
      *
      * @param name name of entry
      * @param value value of entry
-     *
-     * @return pointer to inserted value.
+     * @param pos position in current file
+     * @return 0 OK !0 error
      */
-    virtual std::string *add(string_view_t name, string_view_t value);
+    virtual int add(const std::string &name, const std::string &value,
+                    Error_t::Position_t &pos);
+
+    /**
+     * @short Parses dicionary from given file. Worker function.
+     *
+     * @param filename name of file to parse
+     * @param pos position in current file
+     * @return 0 OK !0 error
+     */
+    int parse(const std::string &filename, Error_t::Position_t &pos);
 
     /**
      * @short Maximal number of dictionary file inclusion.
@@ -192,7 +207,7 @@ protected:
     /**
      * @short Root directory for file lookup.
      */
-    std::string fs_root;
+    std::string root;
 
     /**
      * @short Current level of recursion. Valid only when parsing.
@@ -209,65 +224,40 @@ protected:
      */
     Error_t err;
 
-    /** Position in source file.
-     *
-     * Valid only during parse.
-     */
-    Pos_t pos;
-
 private:
-    // don't copy
-    Dictionary_t(const Dictionary_t &) = delete;
-    Dictionary_t &operator=(const Dictionary_t &) = delete;
-
-    /** Parses bool value and sets it if parsing succeeds.
-     *
-     * @param name name of entry
-     * @param param value of entry
-     * @param value value to set
-     *
-     * @return 0 OK !0 error
+    /**
+     * @short Copy constructor intentionally private -- copying
+     *        disabled.
      */
-    int setBool(string_view_t name, string_view_t param, bool &value);
-
-    /** Includes file given by directive into dict.
-     *
-     * @param filename name of entry
-     *
-     * @return 0 OK !0 error
-     */
-    int includeFile(string_view_t filename);
+    Dictionary_t(const Dictionary_t&);
 
     /**
-     * @short Adds new entry into dictionary.
-     *
-     * @param name name of entry
-     * @param value value of entry
-     *
-     * @return pointer to inserted value.
+     * @short Assignment operator intentionally private -- assignment
+     *        disabled.
      */
-    std::string *addImpl(string_view_t name, std::string value);
+    Dictionary_t operator=(const Dictionary_t&);
 
-    /** Parses dicionary from given file. Worker function.
+    /**
+     * @short Parses dicionary from given file. Worker function.
      *
      * @param file file open for reading
-     * @param filename the name of the file
-     *
+     * @param pos position in current file
      * @return 0 OK !0 error
      */
-    int parse(std::ifstream &file, const std::string &filename);
+    int parse(FILE *file, Error_t::Position_t &pos);
 
-    /** The dictionary itself.
+    /**
+     * @short The dictionary itself.
      */
     std::map<std::string, std::string> dict;
 
-    /** Flags whether #{name} is expanded in values.
+    /** @short Flags whether #{name} is expanded in values.
      *
      * Valid only during parse.
      */
     bool expandValue;
 
-    /** Flags whether replace values of already defined names.
+    /** @short Flags whether replace values of already defined names.
      *
      * Valid only during parse.
      */

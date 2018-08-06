@@ -36,13 +36,8 @@
 
 #include <teng.h>
 
-#ifndef SRC_DIR
-#define SRC_DIR "."
-#endif /* SRC_DIR */
-
-#define TEST_ROOT SRC_DIR "/src/tests/"
-
-inline std::string g(
+inline std::string
+g(
     const std::string &templ,
     const Teng::Fragment_t &data = {},
     const std::string &ct = "text/html",
@@ -52,35 +47,9 @@ inline std::string g(
     Teng::StringWriter_t writer(result);
 
     Teng::Error_t err;
-    Teng::Teng_t teng(TEST_ROOT, Teng::Teng_t::LM_LOG_TO_OUTPUT);
+    Teng::Teng_t teng("", Teng::Teng_t::LM_LOG_TO_OUTPUT);
     teng.generatePage(templ, "", "", "", ct, encoding, data, writer, err);
 
-    return result;
-}
-
-
-inline std::string g(
-    Teng::Error_t &err,
-    const std::string &templ,
-    const Teng::Fragment_t &data = {},
-    const std::string &lang = "",
-    const std::string &ct = "text/html",
-    const std::string &encoding = "utf-8"
-) {
-    std::string result;
-    Teng::StringWriter_t writer(result);
-    Teng::Teng_t teng(TEST_ROOT, Teng::Teng_t::LM_LOG_TO_OUTPUT);
-    teng.generatePage(
-        templ,
-        TEST_ROOT "dict.txt",
-        lang,
-        "",
-        ct,
-        encoding,
-        data,
-        writer,
-        err
-    );
     return result;
 }
 

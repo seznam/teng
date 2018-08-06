@@ -40,15 +40,13 @@ AUTOMAKE_OPTIONS = subdir-objects
 AM_CXXFLAGS = -Wall
 
 # extra compiler options
-AM_CPPFLAGS = -D_ISOC99_SOURCE -fPIC ${DEPENS_CFLAGS} \
-			  -DSRC_DIR="\"$(realpath @abs_top_srcdir@)\""
+AM_CPPFLAGS = -D_ISOC99_SOURCE -fPIC ${DEPENS_CFLAGS}
 
 # these are generated and thus ought to be prepared before anything else
-BUILT_SOURCES = tenglex2.cc tengsyntax.cc tengsyntax.hh
+BUILT_SOURCES = tenglex2.cc tengsyntax.cc
 
 # install these headers
-include_HEADERS = teng.h tengstructs.h tengwriter.h tengerror.h tengconfig.h \
-				  tengudf.h tengposition.h
+include_HEADERS = teng.h tengstructs.h tengwriter.h tengerror.h tengconfig.h tengudf.h
 
 noinst_HEADERS = tengcache.h tengcode.h tengcontenttype.h \
                  tengdictionary.h tengformatter.h tengfragmentstack.h \
@@ -66,30 +64,24 @@ libteng_la_SOURCES = teng.cc tengstructs.cc tengutil.cc tengcache.cc \
                      tengsourcelist.cc tengdictionary.cc tenginstruction.cc \
                      tengparservalue.cc tengparsercontext.cc tengprogram.cc \
                      tengfunction.cc tengprocessor.cc tengwriter.cc \
-                     tengformatter.cc tengcontenttype.cc tengerror.cc \
-                     tengtemplate.cc tenglex1.cc tengsyntax.yy tengposition.cc \
-                     tenglex2.ll tengcode.cc tengudf.cc tengyystype.cc \
-                     tengmd5.cc tengconfiguration.cc tengaux.cc tengyylex.cc \
-					 tenglogging.cc tengsemantic.cc tenghex.cc tengutf8.cc \
-					 tengstringview.cc
+                     tengformatter.cc tengcontenttype.cc \
+                     tengtemplate.cc tenglex1.cc tengsyntax.yy \
+                     tenglex2.ll tengcode.cc tengudf.cc \
+                     tengmd5.cc tengconfiguration.cc tengaux.cc tengyylex.cc
 
 # with these flags (version info etc.)
 libteng_la_LDFLAGS = @VERSION_INFO@
 libteng_la_LIBADD = $(LTLIBOBJS) ${DEPENS_LIBS}
 
 # explicit rules for proper flex & bison sources compilation
-tengyystype.lo: tengsyntax.cc tenglex2.cc
-tengyylex.lo: tengsyntax.cc tenglex2.cc
-tengsemantic.lo: tengsyntax.cc tenglex2.cc
-tengparsercontext.lo: tengsyntax.cc tenglex2.cc
 tenglex2.cc: tenglex2.ll tengsyntax.hh tengsyntax.cc
 tengsyntax.hh: tengsyntax.yy
 tengsyntax.cc: tengsyntax.yy
 
 # test program
-EXTRA_PROGRAMS = teng-example test-teng
-teng_example_SOURCES = example/example.cc
-teng_example_LDADD = libteng.la
+EXTRA_PROGRAMS = example test-teng
+example_SOURCES = example/example.cc
+example_LDADD = libteng.la
 
 CLEANFILES = @top_builddir@/src/tengsyntax.hh \
 			 @top_builddir@/src/tengsyntax.cc \
@@ -99,10 +91,7 @@ doc:
 	doxygen
 
 test_teng_LDADD = libteng.la
-test_teng_SOURCES = tests/main.cc tests/old.cc tests/fun-urlencoding.cc        \
-					tests/frag.cc tests/vars.cc tests/simple.cc tests/incl.cc  \
-					tests/format.cc tests/expr-string.cc tests/expr-int.cc     \
-					tests/expr-real.cc tests/expr-other.cc tests/dict.cc
+test_teng_SOURCES = tests/main.cc tests/old.cc tests/fun-urlencoding.cc
 
 AM_COLOR_TESTS = always
 TESTS = test-teng

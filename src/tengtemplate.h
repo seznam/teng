@@ -50,15 +50,15 @@ namespace Teng {
 
 /** @short Cache of dictionaries.
  */
-using DictionaryCache_t = Cache_t<Dictionary_t>;
+typedef Cache_t<Dictionary_t> DictionaryCache_t;
 
 /** @short Cache of configurations.
  */
-using ConfigurationCache_t = Cache_t<Configuration_t>;
+typedef Cache_t<Configuration_t> ConfigurationCache_t;
 
 /** @short Cache of dictionaries.
  */
-using ProgramCache_t = Cache_t<Program_t>;
+typedef Cache_t<Program_t> ProgramCache_t;
 
 class TemplateCache_t;
 
@@ -134,7 +134,7 @@ public:
      *  @param sourceType type of template source
      *  @return created template (borrowed pointer!!!)
      */
-    Template_t* createTemplate(const std::string &source,
+    Template_t* createTemplate(const std::string &templateSource,
                                const std::string &langFilename,
                                const std::string &paramFilename,
                                SourceType_t sourceType);
