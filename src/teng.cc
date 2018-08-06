@@ -150,7 +150,7 @@ int Teng_t::generatePage(const std::string &templateFilename,
 {
     // find contentType desciptor for given contentType
     const ContentType_t *contentType
-        = ContentType_t::findContentType(scontentType, err)->contentType.get();
+        = ContentType_t::findContentType(scontentType, err)->contentType;
 
     // make proper filename for language dictionary
     std::string langDictFilename = prependBeforeExt(_dict, lang);
@@ -201,7 +201,7 @@ int Teng_t::generatePage(const std::string &templateString,
 {
     // find contentType desciptor for given contentType
     const ContentType_t *contentType
-        = ContentType_t::findContentType(scontentType, err)->contentType.get();
+        = ContentType_t::findContentType(scontentType, err)->contentType;
 
     // make proper filename for language dictionary
     std::string langDictFilename = prependBeforeExt(dict, lang);

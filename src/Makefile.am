@@ -34,7 +34,6 @@
 #             Created.
 #
 
-AUTOMAKE_OPTIONS = subdir-objects
 
 # warn on all
 AM_CXXFLAGS = -Wall
@@ -79,16 +78,10 @@ tengsyntax.hh: tengsyntax.yy
 tengsyntax.cc: tengsyntax.yy
 
 # test program
-EXTRA_PROGRAMS = example test-teng
-example_SOURCES = @top_srcdir@/example/example.cc
+EXTRA_PROGRAMS = example
+example_SOURCES = @top_srcdir@/tests/example.cc
 example_LDADD = libteng.la
 
 doc:
 	doxygen
-
-test_teng_LDADD = libteng.la
-test_teng_SOURCES = tests/main.cc tests/old.cc tests/fun-urlencoding.cc
-
-AM_COLOR_TESTS = always
-TESTS = test-teng
 

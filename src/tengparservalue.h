@@ -80,7 +80,7 @@ public:
     ParserValue_t validate() const;
     void validateThis();
 
-    explicit operator bool() const {
+    inline operator bool() const {
         switch (type) {
         case TYPE_INT:
             return integerValue;

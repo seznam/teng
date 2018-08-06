@@ -58,6 +58,7 @@
 #include <algorithm>
 
 #include <glib.h>
+#include <curl/curl.h>
 
 #include <pcre++.h>
 
@@ -75,48 +76,8 @@ double round(double x);
 #endif
 
 namespace Teng {
+
 namespace {
-
-const uint8_t hex_values[256] = {
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //   0 -   7
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //   8 -  15
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //  16 -  23
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //  24 -  31
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //  32 -  39
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //  40 -  47
-    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, //  48 -  55
-    0x08, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //  56 -  63
-    0x00, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x00, //  64 -  71
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //  72 -  79
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //  80 -  87
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //  88 -  95
-    0x00, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x00, //  96 - 103
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 104 - 111
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 112 - 119
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 120 - 127
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 128 - 135
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 136 - 143
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 144 - 151
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 152 - 159
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 160 - 167
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 168 - 175
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 176 - 183
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 184 - 191
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 192 - 199
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 200 - 207
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 208 - 215
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 216 - 223
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 224 - 231
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 232 - 239
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 240 - 247
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 248 - 255
-};
-
-/** Decodes hex encoded byte.
- */
-inline char unhex(uint8_t first, uint8_t second) {
-    return uint8_t((hex_values[first] << 4) | hex_values[second]);
-}
 
 /** strlen for UTF-8 string.
  * @param str string
@@ -1612,31 +1573,28 @@ static int tengFunctionUrlEscape(const std::vector<ParserValue_t> &args,
                                  const Processor_t::FunctionParam_t &setting,
                                  ParserValue_t &result)
 {
+    // check params
+    result.setString("undefined");
     if (args.size() != 1)
-        return -1;
+        return -1; //bad args
+    ParserValue_t a(args[0]); //take 1st arg
 
-    ParserValue_t arg(args[0]);
-
-    std::string escaped;
-    static const auto hex = "0123456789ABCDEF";
-    for (auto ch: arg.stringValue) {
-        switch (ch) {
-        case 0x21:
-        case 0x3d:
-        case 0x24 ... 0x3b:
-        case 0x3e ... 0x7e:
-            escaped.push_back(ch);
-            break;
-        default:
-            escaped.push_back('%');
-            escaped.push_back(hex[ch >> 4]);
-            escaped.push_back(hex[ch & 0x0f]);
-            break;
+    // quote
+    std::string res;
+    std::string::const_iterator i;
+    for (i = a.stringValue.begin(); i != a.stringValue.end(); ++i) {
+        if (isalnum((unsigned char)*i) || (*i == '_') || (*i == '-')
+            || (*i == '.') || *i == '/') {
+            res += *i;
+        } else {
+            char buf[16];
+            snprintf(buf, sizeof(buf), "%%%02X",
+                     static_cast<unsigned char>(*i));
+            res += buf;
         }
     }
-
     // success
-    result.setString(escaped);
+    result.setString(res);
     return 0;
 }
 
@@ -1646,39 +1604,25 @@ static int tengFunctionUrlEscape(const std::vector<ParserValue_t> &args,
  * @param setting Teng function setting.
  * @param result Function's result value. */
 static int tengFunctionUrlUnescape(const std::vector<ParserValue_t> &args,
-                                   const Processor_t::FunctionParam_t &setting,
-                                   ParserValue_t &result)
+                                 const Processor_t::FunctionParam_t &setting,
+                                 ParserValue_t &result)
 {
     if (args.size() != 1)
        return -1;
 
+#warning remove dependecy on curl
+
     ParserValue_t argument(args[0]);
     argument.validateThis();
     if (argument.type != ParserValue_t::TYPE_STRING)
-        return -2; // not a string
+        return -2; //not a string
 
-    std::string unescaped;
-    auto &arg = argument.stringValue;
-    for (auto ipos = arg.begin(), epos = arg.end(); ipos != epos;) {
-        if (*ipos == '%') {
-            auto itmp = ipos;
-            if (++itmp != epos) {
-                auto first = *itmp;
-                if (++itmp != epos) {
-                    auto second = *itmp;
-                    if (isxdigit(first) && isxdigit(second)) {
-                        auto byte = unhex(uint8_t(first), uint8_t(second));
-                        unescaped.push_back(byte);
-                        ipos = ++itmp;
-                        continue;
-                    }
-                }
-            }
-        }
-        unescaped.push_back(*ipos++);
-    }
+    const std::string& unescaped_string = argument.stringValue;
+    std::string escaped_string;
 
-    result.setString(unescaped);
+    char *escaped_char = curl_easy_unescape(NULL, unescaped_string.c_str(), unescaped_string.size(), NULL);
+    result.setString(escaped_char);
+    curl_free(escaped_char);
     return 0;
 }
 
@@ -1985,48 +1929,46 @@ static int tengFunctionStrToUpper(const std::vector<ParserValue_t> &args,
 }
 
 namespace {
-
 struct FunctionStub_t {
     const char *name;  // teng name
-    bool eval;         // use for preevaluation (false for rand(), time() etc)
-    Function_t func;   // C++ function addr
-};
+        bool eval;         // use for preevaluation (false for rand(), time() etc)
+        Function_t func;   // C++ function addr
+    };
 
-static FunctionStub_t tengFunctions[] = {
-    {"len", false, tengFunctionLen},          // like strlen in C
-    {"random", false, tengFunctionRandom},    // random integer
-    {"round", true, tengFunctionRound},       // round(number, precision)
-    {"numformat", true, tengFunctionNumFormat}, // format number for display
-    {"date", true, tengFunctionFormatDate},   // like strftime
-    {"now", false, tengFunctionNow},          // like gettimeofday (returns real)
-    {"substr", false, tengFunctionSubstr},    // like str[a:b] in Python
-    {"wordsubstr", false, tengFunctionWordSubstr}, // like str[a:b] in Python
-                                                    // but does not split words
-    {"escape", false, tengFunctionEscape},    // for example "<" => "&lt;"
-    {"unescape", false, tengFunctionUnescape},// for example "&lt;" => "<"
-    {"reorder", true, tengFunctionReorder},   // like sprintf with %s changing
-                                              // order
-    {"int", true, tengFunctionInt},           // like (int) in C
-    {"urlescape", true, tengFunctionUrlEscape}, // escape strange chars in urls
-    {"urlunescape", true, tengFunctionUrlUnescape}, // escape strange chars in urls
-    {"nl2br", true, tengFunctionNL2BR},       // convert '\n' => <br />
-    {"isnumber", true, tengFunctionIsNumber}, // checks whether argument is s number
-    {"sectotime", true, tengFunctionSecToTime}, // convert seconds to HH:MM:SS
-    {"isenabled", true, tengFunctionIsEnabled}, // isenabled(feature)
-    {"dictexist", true, tengFunctionDictExist}, // dictexist(key)
-    {"getdict", true, tengFunctionGetDict},     // getdict(key, default)
-    {"replace", true, tengFunctionReplace},   // replace all occurences of a substring
-                                              // with another one
-    {"quoteescape", true, tengFunctionQuoteEscape}, // escape strange chars
-                                                    // in quoted string
-    {"timestamp", true, tengFunctionTimestamp},
-    {"regex_replace", true, tengFunctionPregReplace},
-    {"strtolower", true, tengFunctionStrToLower},
-    {"strtoupper", true, tengFunctionStrToUpper},
-    { 0, false, 0}                            // end of list
-};
-
-} // namespace
+    static FunctionStub_t tengFunctions[] = {
+        {"len", false, tengFunctionLen},          // like strlen in C
+        {"random", false, tengFunctionRandom},    // random integer
+        {"round", true, tengFunctionRound},       // round(number, precision)
+        {"numformat", true, tengFunctionNumFormat}, // format number for display
+        {"date", true, tengFunctionFormatDate},   // like strftime
+        {"now", false, tengFunctionNow},          // like gettimeofday (returns real)
+        {"substr", false, tengFunctionSubstr},    // like str[a:b] in Python
+        {"wordsubstr", false, tengFunctionWordSubstr}, // like str[a:b] in Python
+                                                        // but does not split words
+        {"escape", false, tengFunctionEscape},    // for example "<" => "&lt;"
+        {"unescape", false, tengFunctionUnescape},// for example "&lt;" => "<"
+        {"reorder", true, tengFunctionReorder},   // like sprintf with %s changing
+                                                  // order
+        {"int", true, tengFunctionInt},           // like (int) in C
+        {"urlescape", true, tengFunctionUrlEscape}, // escape strange chars in urls
+        {"urlunescape", true, tengFunctionUrlUnescape}, // escape strange chars in urls
+        {"nl2br", true, tengFunctionNL2BR},       // convert '\n' => <br />
+        {"isnumber", true, tengFunctionIsNumber}, // checks whether argument is s number
+        {"sectotime", true, tengFunctionSecToTime}, // convert seconds to HH:MM:SS
+        {"isenabled", true, tengFunctionIsEnabled}, // isenabled(feature)
+        {"dictexist", true, tengFunctionDictExist}, // dictexist(key)
+        {"getdict", true, tengFunctionGetDict},     // getdict(key, default)
+        {"replace", true, tengFunctionReplace},   // replace all occurences of a substring
+                                                  // with another one
+        {"quoteescape", true, tengFunctionQuoteEscape}, // escape strange chars
+                                                        // in quoted string
+        {"timestamp", true, tengFunctionTimestamp},
+        {"regex_replace", true, tengFunctionPregReplace},
+        {"strtolower", true, tengFunctionStrToLower},
+        {"strtoupper", true, tengFunctionStrToUpper},
+        { 0, false, 0}                            // end of list
+    };
+}
 
 /** Find C++ function for Teng function.
  * @param name name of Teng function
