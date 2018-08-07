@@ -912,7 +912,7 @@ void Processor_t::run(const Fragment_t &data, Formatter_t &output,
 
                 Function_t p = tengFindFunction(instr.value.stringValue);
                 UDFCallback_t udf;
-                if (p) findUDF(instr.value.stringValue);
+                if (!p) udf = findUDF(instr.value.stringValue);
 
                 if (p || udf) {
                     std::string errmsg;
