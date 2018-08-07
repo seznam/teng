@@ -1,3 +1,44 @@
+libteng (2.3.22) stable; urgency=low
+
+  * fix calling udf
+  * Revert "modernize some part of teng"
+  * 
+  * This reverts commit 6f1b9215d5d54c27aa0bb7bbe13f3198921197aa.
+  * Revert "fix unicode format"
+  * 
+  * This reverts commit 21192e3fba7f5fe7f14a51a30bf3883e3b36d823.
+  * Revert "sec_to_time and substr_word function removed"
+  * 
+  * This reverts commit 393c8b4d293125f36e697b06e4f4dac2bb98b637.
+  * Revert "tests, memory leak fix, remove curl dependency"
+  * 
+  * This reverts commit 72cfa2912d70b5724c1bbdef752d375493e3fe88.
+  * Revert "tests"
+  * 
+  * This reverts commit a45f29a78fdb34468f66eb08da3f6d5de91b34bf.
+  * Revert "bison parser cleaning in progress"
+  * 
+  * This reverts commit e053c065eb5bf745a670ce1d4ed3d8f461c49969.
+  * Revert "revert"
+  * 
+  * This reverts commit ffbb8fe35bbe0e18a7b78dcef77b3e7226e19f67.
+  * revert
+  * bison parser cleaning in progress
+  * tests
+  * tests, memory leak fix, remove curl dependency
+  * sec_to_time and substr_word function removed
+  * fix unicode format
+  * modernize some part of teng
+  * 
+  * * c++14
+  * * make some parts more readable (I hope)
+  * * use smart pointers instead of raw pointers
+  * * fix jsonify function (quoting)
+  * more useable warning text
+  * #! python2.3.10
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Tue, 07 Aug 2018 10:46:09 +0100
+
 libteng (2.3.21) stable; urgency=low
 
   * _tld can be set by env var
