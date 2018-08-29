@@ -42,18 +42,19 @@
 #include <ctype.h>
 #include <errno.h>
 
-#include <stdio.h>
-
 #include "tengdictionary.h"
+#include "tengfilesystem.h"
 #include "tengplatform.h"
 #include "tengaux.h"
 
 namespace Teng {
 
-int Dictionary_t::parse(const std::string &filename) {
+int Dictionary_t::parse(const FilesystemInterface_t *filesystem,
+                        const std::string &filename)
+{
     level = MAX_RECURSION_LEVEL;
     Error_t::Position_t pos(filename);
-    return parse(filename, pos);
+    return parse(filesystem, filename, pos);
 }
 
 Dictionary_t::~Dictionary_t() {
@@ -315,7 +316,8 @@ const std::string *Dictionary_t::lookup(const std::string &key) const {
     return &f->second;
 }
 
-int Dictionary_t::parseString(const std::string &data,
+int Dictionary_t::parseString(const FilesystemInterface_t *filesystem,
+                              const std::string &data,
                               Error_t::Position_t &pos)
 {
     // position of newline
@@ -349,7 +351,8 @@ int Dictionary_t::parseString(const std::string &data,
                 }
                 // split directive to name and value
                 std::string::size_type sep = line.find_first_of(" \t\v", 1);
-                if (processDirective(line.substr(1, ((sep == std::string::npos)
+                if (processDirective(filesystem,
+                                     line.substr(1, ((sep == std::string::npos)
                                                      ? sep : (sep - 1))),
                                      ((sep == std::string::npos)
                                       ? std::string()
@@ -412,7 +415,8 @@ int Dictionary_t::parseString(const std::string &data,
     return ret;
 }
 
-int Dictionary_t::parse(const std::string &infilename,
+int Dictionary_t::parse(const FilesystemInterface_t *filesystem,
+                        const std::string &infilename,
                         Error_t::Position_t &pos)
 {
     // if relative path => prepend root
@@ -423,47 +427,18 @@ int Dictionary_t::parse(const std::string &infilename,
     // insert source into source list
     sources.addSource(filename, pos, err);
 
-    // open file
-    FILE *file = fopen(filename.c_str(), "r");
-    if (!file) {
-        // on error, log it
-        err.logSyscallError(Error_t::LL_ERROR, pos,
-                            "Cannot open file '" + filename + "'");
+    try {
+        Error_t::Position_t newPos(filename, 1);
+        return parseString(filesystem, filesystem->read(filename), newPos);
+    }
+    catch (const std::exception &e) {
+        err.logSyscallError(Error_t::LL_ERROR, pos, e.what());
         return -1;
     }
-
-    // create new positioner
-    Error_t::Position_t newPos(filename, 1);
-    // parse file
-    int status = parse(file, newPos);
-    // close file
-    fclose(file);
-    // return status
-    return status;
 }
 
-int Dictionary_t::parse(FILE *file, Error_t::Position_t &pos) {
-    // loaded string
-    std::string str;
-    // read whole file into memory
-    while (!(feof(file) || ferror(file))) {
-        char buff[1024];
-        size_t r = fread(buff, 1, 1024, file);
-        if (r)
-            str.append(buff, r);
-    }
-
-    // on error report it and terminate processing
-    if (ferror(file)) {
-        err.logSyscallError(Error_t::LL_ERROR, pos, "Error reading file");
-        return -1;
-    }
-
-    // parse loaded string
-    return parseString(str, pos);
-}
-
-int Dictionary_t::processDirective(const std::string &directive,
+int Dictionary_t::processDirective(const FilesystemInterface_t *filesystem,
+                                   const std::string &directive,
                                    const std::string &param,
                                    Error_t::Position_t &pos)
 {
@@ -497,7 +472,7 @@ int Dictionary_t::processDirective(const std::string &directive,
         // decrement recursion level
         --level;
         // parse given file
-        int ret = parse(filename, pos);
+        int ret = parse(filesystem, filename, pos);
         // indecrement recursion level
         ++level;
         return ret;

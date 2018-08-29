@@ -34,10 +34,10 @@
  *             Created.
  */
 
-#include <stdio.h>
 #include <ctype.h>
 
 #include "tengerror.h"
+#include "tengfilesystem.h"
 #include "tenglex1.h"
 #include "tengutil.h"
 
@@ -53,32 +53,18 @@ Lex1_t::Lex1_t(const std::string &input, const std::string &fname)
 
 
 /** Initialize lexical analyzer from file.
+  * @param filesystem Filesystem to use.
   * @param input Input file to read. */
-Lex1_t::Lex1_t(const std::string &fname,
+Lex1_t::Lex1_t(const FilesystemInterface_t *filesystem,
+        const std::string &fname,
         const Error_t::Position_t &position,
         Error_t &error)
-        : position(0), filename(fname), line(1), column(0)
+try
+    : input(filesystem->read(fname)), position(0), filename(fname), line(1), column(0)
 {
-    // normalize filename
-    tengNormalizeFilename(filename);
-
-    // open file
-    FILE *fp = fopen(filename.c_str(), "rb");
-    if (fp == 0) {
-        // error
-        error.logSyscallError(Error_t::LL_ERROR, position,
-                "Cannot open input file '" + filename + "'");
-    }
-    else {
-        // read content from file
-        char buf[1024];
-        int i;
-        while ((i = fread(buf, 1, sizeof(buf), fp)) > 0) {
-            input.append(buf, i);
-        }
-        // close the file
-        fclose(fp);
-    }
+}
+catch (const std::exception &e) {
+    error.logSyscallError(Error_t::LL_ERROR, position, e.what());
 }
 
 

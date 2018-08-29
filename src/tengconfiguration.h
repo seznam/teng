@@ -70,7 +70,8 @@ public:
      * @param pos position in current file
      * @return 0 OK !0 error
      */
-    virtual int processDirective(const std::string &directive,
+    virtual int processDirective(const FilesystemInterface_t *filesystem,
+                                 const std::string &directive,
                                  const std::string &param,
                                  Error_t::Position_t &pos);
 

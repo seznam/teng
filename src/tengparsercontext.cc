@@ -56,9 +56,10 @@ extern std::string tengSyntax_lastErrorMessage;
   * Also creates some dynamic objects (fragment stack and error-log). */
 ParserContext_t::ParserContext_t(const Dictionary_t *langDictionary,
                                  const Configuration_t *paramDictionary,
+                                 const FilesystemInterface_t *filesystem,
                                  const std::string &root)
     : langDictionary(langDictionary), paramDictionary(paramDictionary),
-      root(root), lex2(0), program(0),
+      filesystem(filesystem), root(root), lex2(0), program(0),
       lowestValPrintAddress(0), evalProcessor(0)
 {
 }
@@ -116,7 +117,7 @@ Program_t* ParserContext_t::createProgramFromFile(
     sourceIndex.push(program->addSource(path, Error_t::Position_t()));
 
     // create first level-1 lexical analyzer (from file)
-    lex1.push(new Lex1_t(path, Error_t::Position_t("", 0, 0),
+    lex1.push(new Lex1_t(filesystem, path, Error_t::Position_t("", 0, 0),
                          program->getErrors()));
     // reset lex2
     lex2 = 0;

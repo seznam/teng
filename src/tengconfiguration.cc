@@ -66,7 +66,8 @@ std::string strip(const std::string &str) {
 
 } // namespace
 
-int Configuration_t::processDirective(const std::string &directive,
+int Configuration_t::processDirective(const FilesystemInterface_t *filesystem,
+                                      const std::string &directive,
                                       const std::string &param,
                                       Error_t::Position_t &pos)
 {
@@ -125,7 +126,7 @@ int Configuration_t::processDirective(const std::string &directive,
     else if (directive == "disable") value = false;
     else {
         // other directive
-        return Dictionary_t::processDirective(directive, param, pos);
+        return Dictionary_t::processDirective(filesystem, directive, param, pos);
     }
 
     if (argument == "debug") debug = value;
