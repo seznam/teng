@@ -53,18 +53,22 @@ public:
     {}
 
 protected:
+    /** Called when the one char should be writen.
+     */
     int_type overflow(int_type ch) override {
         return (ch == EOF) || (fwrite(&ch, 1, 1, file) != 1)
              ? EOF
              : ch;
     }
 
+    /** Called when the char sequence should be writen.
+     */
     std::streamsize xsputn(const char *s, std::streamsize size) override {
         auto written = fwrite(s, 1, size, file);
         return (written != size) && ferror(file)? 0: written;
     }
 
-    FILE *file;
+    FILE *file; //!< the C stream
 };
 
 /** C++ stream that writes to FILE *.
@@ -74,7 +78,7 @@ public:
     FileStream_t(FILE *file): fileBuf(file) {rdbuf(&fileBuf);}
 
 protected:
-    FileBuf_t fileBuf;
+    FileBuf_t fileBuf; //!< the streambuf instance
 };
 
 } // namespace Teng

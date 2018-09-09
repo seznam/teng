@@ -38,9 +38,135 @@
 #include <cctype>
 #include <unordered_map>
 
+#include "tengstringview.h"
 #include "tengformatter.h"
 
 namespace Teng {
+namespace {
+
+/** @short Process sequence of spaces.
+ *  @param str white string
+ *  @return 0 OK, !0 error
+ */
+int
+process(
+    const std::stack<Formatter_t::Mode_t> &modeStack,
+    std::string &str,
+    Writer_t &writer
+) {
+    // ignore empty space block
+    if (str.empty()) return 0;
+
+    // process spaces according to current mode
+    switch (modeStack.top()) {
+    case Formatter_t::MODE_COPY_PREV:
+    case Formatter_t::MODE_INVALID:
+        // silently ignore invalid mode and pass it to the next
+        // rule
+        // NO BREAK!!!
+    case Formatter_t::MODE_PASSWHITE:
+        // pass whole string to the writer
+        if (writer.write(str))
+            return -1;
+        break;
+    case Formatter_t::MODE_NOWHITE:
+        // no space to output
+        break;
+    case Formatter_t::MODE_ONESPACE:
+        // pass just one space
+        if (writer.write(" ", 1))
+            return -1;
+        break;
+    case Formatter_t::MODE_STRIPLINES:
+        {
+            // find newline
+            std::string::size_type nl = str.find('\n');
+            if (nl == std::string::npos) {
+                // no newline found => pass whole string
+                if (writer.write(str))
+                    return -1;
+            } else {
+                // newline found => pass just one newline
+                if (writer.write("\n", 1))
+                    return -1;
+            }
+        }
+        break;
+    case Formatter_t::MODE_JOINLINES:
+        {
+            // find newline
+            std::string::size_type nl = str.find('\n');
+            if (nl == std::string::npos) {
+                // no newline found => pass whole string
+                if (writer.write(str))
+                    return -1;
+            } else {
+                // newline found => pass leading whitespaces upto the
+                // newline
+                if (writer.write(str.data(), nl))
+                    return -1;
+            }
+        }
+        break;
+    case Formatter_t::MODE_NOWHITELINES:
+        {
+            // find newline
+            std::string::size_type fnl = str.find('\n');
+            if (fnl == std::string::npos) {
+                // no newline found => pass whole string
+                if (writer.write(str))
+                    return -1;
+                break;
+            }
+            // find newline from the end of string
+            std::string::size_type lnl = str.rfind('\n');
+            if (fnl == lnl) {
+                // indices are the same => single newline
+                // => pass whole string
+                if (writer.write(str))
+                    return -1;
+                break;
+            }
+            // more newlines => pass leading whitespaces upto then
+            // first newline and trailing whitespaces from the last
+            // newline
+            if (writer.write(str.data(), fnl + 1))
+                return -1;
+            if (writer.write(str.data() + lnl + 1, str.size() - lnl - 1))
+                return -1;
+        }
+        break;
+    }
+    // erase buffer
+    str.erase();
+    return 0;
+}
+
+/** @short Process sequence of spaces.
+ *  @param spaceBlock block of spaces
+ *  @return 0 OK, !0 error
+ */
+int
+process(
+    const std::stack<Formatter_t::Mode_t> &modeStack,
+    std::pair<const char *, const char *> spaceBlock,
+    std::string &buffer,
+    Writer_t &writer
+) {
+    if (modeStack.top() == Formatter_t::MODE_NOWHITE) {
+        // output of spaces disabled
+        buffer.erase();
+        return 0;
+    }
+    // append buffer by space list
+    buffer.append(spaceBlock.first, spaceBlock.second);
+    // process buffer
+    int ret = process(modeStack, buffer, writer);
+    buffer.erase();
+    return ret;
+}
+
+} // namespace
 
 Formatter_t::Formatter_t(Writer_t &writer, Formatter_t::Mode_t initialMode)
     : writer(writer), modeStack(), buffer()
@@ -49,27 +175,26 @@ Formatter_t::Formatter_t(Writer_t &writer, Formatter_t::Mode_t initialMode)
     modeStack.push(initialMode);
 }
 
-int Formatter_t::write(const std::string &str) {
+int Formatter_t::write(string_view_t str) {
     // pass whole string when passing mode active
     if (modeStack.top() == MODE_PASSWHITE)
-        return writer.write(str);
+        return writer.write(str.data(), str.size());
 
     // indicates that we are in block of spaces
     bool spaces = false;
     // block of spaces
-    auto spaceblock = make_pair(str.begin(), str.begin());
+    auto spaceblock = std::make_pair(str.begin(), str.begin());
     // block of other characters
-    auto charblock = make_pair(str.begin(), str.begin());
+    auto charblock = std::make_pair(str.begin(), str.begin());
     // run through input string
-    for (std::string::const_iterator istr = str.begin();
-         istr != str.end(); ++istr) {
+    for (auto istr = str.begin(); istr != str.end(); ++istr) {
         if (isspace(*istr)) {
             // current character is white space
             if (!spaces) {
                 // we were in block of characters when some characters
                 // are to be flushed flush them
                 if (charblock.first != charblock.second)
-                    if (writer.write(str, charblock))
+                    if (writer.write(charblock.first, charblock.second))
                         return -1;
                 // initialize space block
                 spaceblock.first = istr;
@@ -83,7 +208,7 @@ int Formatter_t::write(const std::string &str) {
         } else {
             if (istr == str.begin()) {
                 // string begins with text => process buffer
-                int ret = process(buffer);
+                int ret = process(modeStack, buffer, writer);
                 buffer.erase();
                 if (ret) return ret;
             }
@@ -91,7 +216,7 @@ int Formatter_t::write(const std::string &str) {
                 // we were in block of spaces when some characters are
                 // to be processed process them
                 if ((spaceblock.first != spaceblock.second) || !buffer.empty())
-                    if (process(spaceblock))
+                    if (process(modeStack, spaceblock, buffer, writer))
                         return -1;
                 // initialize character block
                 charblock.first = istr;
@@ -118,7 +243,7 @@ int Formatter_t::write(const std::string &str) {
         // we were in block of characters when some characters are to
         // be flushed flush them
         if (charblock.first != charblock.second)
-            if (writer.write(str, charblock))
+            if (writer.write(charblock.first, charblock.second))
                 return -1;
     }
 
@@ -129,7 +254,8 @@ int Formatter_t::write(const std::string &str) {
 int Formatter_t::flush() {
     // flush buffer
     if (!buffer.empty())
-        if (process(buffer)) return -1;
+        if (process(modeStack, buffer, writer))
+            return -1;
     // flush writer
     return writer.flush();
 }
@@ -137,7 +263,8 @@ int Formatter_t::flush() {
 int Formatter_t::push(Mode_t mode) {
     // flush buffer
     if (!buffer.empty())
-        if (process(buffer)) return -1;
+        if (process(modeStack, buffer, writer))
+            return -1;
     // push new mode
     modeStack.push(mode);
     // OK
@@ -146,10 +273,12 @@ int Formatter_t::push(Mode_t mode) {
 
 Formatter_t::Mode_t Formatter_t::pop() {
     // on attempt of removind last element return MODE_INVALID
-    if (modeStack.size() <= 1) return MODE_INVALID;
+    if (modeStack.size() <= 1)
+        return MODE_INVALID;
     // flush buffer
     if (!buffer.empty())
-        if (process(buffer)) return MODE_INVALID;
+        if (process(modeStack, buffer, writer))
+            return MODE_INVALID;
     // get old mode
     Mode_t oldMode = modeStack.top();
     // remove old mode
@@ -158,104 +287,7 @@ Formatter_t::Mode_t Formatter_t::pop() {
     return oldMode;
 }
 
-int Formatter_t::
-process(std::pair<std::string::const_iterator,
-        std::string::const_iterator> spaceBlock)
-{
-    if (modeStack.top() == MODE_NOWHITE) {
-        // output of spaces disabled
-        buffer.erase();
-        return 0;
-    }
-    // append buffer by space list
-    buffer.append(spaceBlock.first, spaceBlock.second);
-    // process buffer
-    int ret = process(buffer);
-    buffer.erase();
-    return ret;
-}
-
-int Formatter_t::process(std::string &str) {
-    // ignore empty space block
-    if (str.empty()) return 0;
-
-    // process spaces according to current mode
-    switch (modeStack.top()) {
-    case MODE_INVALID:
-        // silently ignore invalid mode and pass it to the next
-        // rule
-        // NO BREAK!!!
-    case MODE_PASSWHITE:
-        // pass whole string to the writer
-        if (writer.write(str))
-            return -1;
-        break;
-    case MODE_NOWHITE:
-        // no space to output
-        break;
-    case MODE_ONESPACE:
-        // pass just one space
-        if (writer.write(" "))
-            return -1;
-        break;
-    case MODE_STRIPLINES:
-        {
-            // find newline
-            std::string::size_type nl = str.find('\n');
-            if (nl == std::string::npos) {
-                // no newline found => pass whole string
-                if (writer.write(str)) return -1;
-            } else {
-                // newline found => pass just one newline
-                if (writer.write("\n"))  return -1;
-            }
-        }
-        break;
-    case MODE_JOINLINES:
-        {
-            // find newline
-            std::string::size_type nl = str.find('\n');
-            if (nl == std::string::npos) {
-                // no newline found => pass whole string
-                if (writer.write(str)) return -1;
-            } else {
-                // newline found => pass leading whitespaces upto the
-                // newline
-                if (writer.write(str.substr(0, nl))) return -1;
-            }
-        }
-        break;
-    case MODE_NOWHITELINES:
-        {
-            // find newline
-            std::string::size_type fnl = str.find('\n');
-            if (fnl == std::string::npos) {
-                // no newline found => pass whole string
-                if (writer.write(str)) return -1;
-                break;
-            }
-            // find newline from the end of string
-            std::string::size_type lnl = str.rfind('\n');
-            if (fnl == lnl) {
-                // indices are the same => single newline
-                // => pass whole string
-                if (writer.write(str)) return -1;
-                break;
-            }
-            // more newlines => pass leading whitespaces upto then
-            // first newline and trailing whitespaces from the last
-            // newline
-            if (writer.write(str.substr(0, fnl + 1))) return -1;
-            if (writer.write(str.substr(lnl + 1))) return -1;
-        }
-        break;
-    }
-    // erase buffer
-    buffer.erase();
-    return 0;
-}
-
-Formatter_t::Mode_t resolveFormat(const std::string &name) {
+Formatter_t::Mode_t resolveFormat(const string_view_t &name) {
     static const std::unordered_map<std::string, Formatter_t::Mode_t> modes = {
         {"nowhite", Formatter_t::MODE_NOWHITE},
         {"onespace", Formatter_t::MODE_ONESPACE},
@@ -264,7 +296,7 @@ Formatter_t::Mode_t resolveFormat(const std::string &name) {
         {"nowhitelines", Formatter_t::MODE_NOWHITELINES},
         {"noformat", Formatter_t::MODE_PASSWHITE},
     };
-    auto imode = modes.find(name);
+    auto imode = modes.find(name.str());
     return imode == modes.end()
         ? Formatter_t::MODE_INVALID
         : imode->second;

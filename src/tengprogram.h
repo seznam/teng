@@ -28,10 +28,13 @@
  *
  * AUTHORS
  * Stepan Skrob <stepan@firma.seznam.cz>
+ * Michal Bukovsky <michal.bukovsky@firma.seznam.cz
  *
  * HISTORY
  * 2003-09-24  (stepan)
  *             Created.
+ * 2018-07-07  (burlog)
+ *             Cleaned.
  */
 
 #ifndef TENGPROGRAM_H
@@ -46,12 +49,13 @@
 
 namespace Teng {
 
-/** Program is an instruction flow. Whole template is
-  * compiled into single program that can interpret it. */
+/** Program is an instruction flow. Whole template is compiled into single
+ * program that can interpret it.
+ */
 class Program_t {
 public:
     // types
-    using value_type = Instruction_t;
+    using value_type = InstrBox_t;
     using const_iterator = std::vector<value_type>::const_iterator;
     using iterator = std::vector<value_type>::iterator;
 
@@ -59,6 +63,7 @@ public:
     Program_t()
         : sources(), error(), instrs()
     {}
+    // TODO(burlog): {instrs.reserve(1024);}
 
     /** Print whole program into file stream.
      * @param fp File stream for output. */
@@ -122,12 +127,8 @@ public:
 
     /** Removes specified instruction from program.
      */
-    iterator erase(const_iterator pos) {return instrs.erase(pos);}
-
-    /** Removes specified instruction from program.
-     */
-    iterator erase(const_iterator ipos, const_iterator epos) {
-        return instrs.erase(ipos, epos);
+    iterator erase_from(int32_t pos) {
+        return instrs.erase(instrs.begin() + pos, instrs.end());
     }
 
     /** Returns instruction at the specified index.
@@ -148,28 +149,24 @@ public:
 
     /** Appends new instruction at the end of the program.
      */
-    void push_back(value_type &&instr) {instrs.push_back(std::move(instr));}
+    void push_back(value_type &&instr) {instrs.emplace_back(std::move(instr));}
 
     /** Appends new instruction at the end of the program.
      */
-    template <typename... args_t>
+    template <typename Instr_t, typename... args_t>
     void emplace_back(args_t &&...args) {
-        instrs.emplace_back(std::forward<args_t>(args)...);
+        InstrType_t<Instr_t> type_tag; // c'tor explicit template param fixture
+        instrs.emplace_back(type_tag, std::forward<args_t>(args)...);
     }
 
     /** Pops the last instruction from the program.
      */
     void pop_back() {instrs.pop_back();}
 
-private:
-    /** @short All source files for this program. */
-    SourceList_t sources;
-
-    /** @short Error logger. */
-    Error_t error;
-
-    /** @short List of program instructions. */
-    std::vector<value_type> instrs;
+protected:
+    SourceList_t sources;           //!< all source files for this program
+    Error_t error;                  //!< error logger
+    std::vector<value_type> instrs; //!< list of program instructions
 };
 
 } // namespace Teng

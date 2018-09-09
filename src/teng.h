@@ -43,7 +43,7 @@
 #include <utility>
 #include <memory>
 
-#include <tengstructs.h>
+#include <tengnaturaldatastructs.h>
 #include <tengwriter.h>
 #include <tengerror.h>
 #include <tengconfig.h>
@@ -60,29 +60,35 @@ public:
     /** @short Templating engine settings.
      */
     struct Settings_t {
-        Settings_t(uint32_t programCacheSize = 0, uint32_t dictCacheSize = 0)
-            : programCacheSize(programCacheSize), dictCacheSize(dictCacheSize)
+        explicit Settings_t(uint32_t prgCSize = 0, uint32_t dictCSize = 0)
+            : programCacheSize(prgCSize), dictCacheSize(dictCSize)
         {}
-        uint32_t programCacheSize;
-        uint32_t dictCacheSize;
+        uint32_t programCacheSize; //!< the max number of cached templates
+        uint32_t dictCacheSize;    //!< the max number of cached dicts
     };
+
+    // don't copy
+    Teng_t(const Teng_t &) = delete;
+    Teng_t &operator=(const Teng_t &) = delete;
 
     /** @short Create new engine.
      *  @param root root of relative paths
      *  @param settings teng options
      */
-    Teng_t(const std::string &root = {}, const Settings_t &settings = {});
+    Teng_t(const std::string &root = {}, const Settings_t &sets = Settings_t());
 
     /** @short Destroy engine.
      */
     ~Teng_t();
+
+    // TODO(burlog): neslo by udelat nejake jednodussi genpage
 
     /** @short Generate page from file template.
      *  @param templateFilename file with main template
      *  @param skin skin of template
      *  @param dict language dictionary
      *  @param lang language
-     *  @param param config (dictionary with non language data)
+     *  @param params config (dictionary with non language data)
      *  @param contentType content type of page
      *  @param encoding encoding of page
      *  @param data data tree
@@ -94,18 +100,18 @@ public:
                      const std::string &skin,
                      const std::string &dict,
                      const std::string &lang,
-                     const std::string &param,
+                     const std::string &params,
                      const std::string &contentType,
                      const std::string &encoding,
                      const Fragment_t &data,
                      Writer_t &writer,
-                     Error_t &err);
+                     Error_t &err) const;
 
     /** @short Generate page from string template.
      *  @param templateString main template
      *  @param dict language dictionary
      *  @param lang language
-     *  @param param config (dictionary with non language data)
+     *  @param params config (dictionary with non language data)
      *  @param contentType content type of page
      *  @param encoding encoding of page
      *  @param data data tree
@@ -116,12 +122,12 @@ public:
     int generatePage(const std::string &templateString,
                      const std::string &dict,
                      const std::string &lang,
-                     const std::string &param,
+                     const std::string &params,
                      const std::string &contentType,
                      const std::string &encoding,
                      const Fragment_t &data,
                      Writer_t &writer,
-                     Error_t &err);
+                     Error_t &err) const;
 
     /** @short Find entry in dictionary.
      *  @param config config dictionary path
@@ -135,7 +141,7 @@ public:
                          const std::string &dict,
                          const std::string &lang,
                          const std::string &key,
-                         std::string &value);
+                         std::string &value) const;
 
     /**
      * @short Lists supported content types.
@@ -144,37 +150,17 @@ public:
     static std::vector<std::pair<std::string, std::string>>
     listSupportedContentTypes();
 
-    [[deprecated]] static void listSupportedContentTypes(
+    /** Deprecated version of listSupportedContentTypes().
+     */
+    [[deprecated]] static void
+    listSupportedContentTypes(
         std::vector<std::pair<std::string, std::string>> &s
     ) {for (auto &e: listSupportedContentTypes()) s.push_back(e);};
 
-    enum {
-        /** @short Appends error log in the output when set.
-         */
-        LM_LOG_TO_OUTPUT         = 0x0001,
-
-        /** @short Enables acces to error fragment from templete.
-         *  When not set error fragment seems to have always no element.
-         */
-        LM_ERROR_FRAGMENT        = 0x0002,
-    };
-
 private:
-    // don't copy
-    Teng_t(const Teng_t &) = delete;
-    Teng_t &operator=(const Teng_t &) = delete;
-
-    /** @short Root of relative paths.
-     */
-    std::string root;
-
-    /** @short Cache of templates.
-     */
-    std::unique_ptr<TemplateCache_t> templateCache;
-
-    /** @short Error log.
-     */
-    Error_t err;
+    using CachePtr_t = std::unique_ptr<TemplateCache_t>;
+    std::string root;         //!< root of relative paths
+    CachePtr_t templateCache; //!< cache of dicts and templates
 };
 
 } // namespace Teng

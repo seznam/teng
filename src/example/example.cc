@@ -26,7 +26,7 @@ int main(int argc, char * argv[]) {
 // </html>\n";
 
     // Create Teng engine
-    Teng::Teng_t teng("", Teng::Teng_t::LM_LOG_TO_OUTPUT);
+    Teng::Teng_t teng("");
 
     // Root data fragment
     Teng::Fragment_t root;

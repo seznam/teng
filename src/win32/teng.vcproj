@@ -112,9 +112,6 @@
 				RelativePath="..\tengcache.cc">
 			</File>
 			<File
-				RelativePath="..\tengcode.cc">
-			</File>
-			<File
 				RelativePath="..\tengconfiguration.cc">
 			</File>
 			<File
@@ -178,9 +175,6 @@
 			</File>
 			<File
 				RelativePath="..\tengcache.h">
-			</File>
-			<File
-				RelativePath="..\tengcode.h">
 			</File>
 			<File
 				RelativePath="..\tengconfiguration.h">

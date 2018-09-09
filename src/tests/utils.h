@@ -52,9 +52,8 @@ inline std::string g(
     Teng::StringWriter_t writer(result);
 
     Teng::Error_t err;
-    Teng::Teng_t teng(TEST_ROOT, Teng::Teng_t::LM_LOG_TO_OUTPUT);
+    Teng::Teng_t teng(TEST_ROOT);
     teng.generatePage(templ, "", "", "", ct, encoding, data, writer, err);
-
     return result;
 }
 
@@ -69,12 +68,12 @@ inline std::string g(
 ) {
     std::string result;
     Teng::StringWriter_t writer(result);
-    Teng::Teng_t teng(TEST_ROOT, Teng::Teng_t::LM_LOG_TO_OUTPUT);
+    Teng::Teng_t teng(TEST_ROOT);
     teng.generatePage(
         templ,
         TEST_ROOT "dict.txt",
         lang,
-        "",
+        TEST_ROOT "teng.conf",
         ct,
         encoding,
         data,

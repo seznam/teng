@@ -60,4 +60,5 @@ typedef intmax_t IntType_t;
 
 } // namespace Teng
 
-#endif // TENGVERSION_H
+#endif /* TENGVERSION_H */
+

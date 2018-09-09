@@ -54,7 +54,7 @@ SCENARIO(
             THEN("It is undefined string") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
-                    {1, 6},
+                    {1, 2},
                     "Runtime: Variable '.var' is undefined"
                 }};
                 REQUIRE(err.getEntries() == errs);
@@ -84,7 +84,7 @@ SCENARIO(
             THEN("It is undefined string") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
-                    {1, 6},
+                    {1, 2},
                     "Runtime: Variable '.var' is undefined"
                 }};
                 REQUIRE(err.getEntries() == errs);
@@ -98,14 +98,14 @@ SCENARIO(
             root.addFragment("var");
             auto result = g(err, t, root);
 
-            THEN("It is undefined string") {
+            THEN("It is $list$ string") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 6},
-                    "Runtime: Variable '.var' is undefined"
+                    "Runtime: Variable is a fragment list, not a scalar value"
                 }};
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "undefined");
+                REQUIRE(result == "$list$");
             }
         }
     }
@@ -127,7 +127,7 @@ SCENARIO(
             THEN("It is undefined string") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
-                    {1, 26},
+                    {1, 22},
                     "Runtime: Variable '.sample.var' is undefined"
                 }};
                 REQUIRE(err.getEntries() == errs);
@@ -159,7 +159,7 @@ SCENARIO(
             THEN("It is undefined string") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
-                    {1, 26},
+                    {1, 22},
                     "Runtime: Variable '.sample.var' is undefined"
                 }};
                 REQUIRE(err.getEntries() == errs);
@@ -177,7 +177,7 @@ SCENARIO(
             THEN("It is undefined string") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
-                    {1, 26},
+                    {1, 22},
                     "Runtime: Variable '.sample.var' is undefined"
                 }};
                 REQUIRE(err.getEntries() == errs);
@@ -196,10 +196,10 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 26},
-                    "Runtime: Variable '.sample.var' is undefined"
+                    "Runtime: Variable is a fragment list, not a scalar value"
                 }};
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "undefined");
+                REQUIRE(result == "$list$");
             }
         }
     }
@@ -259,6 +259,8 @@ SCENARIO(
                 REQUIRE(result == "0");
             }
         }
+
+        // TODO(burlog): nested fragment count
 
         WHEN("The _count variable is used in root fragment") {
             Teng::Error_t err;
@@ -601,8 +603,9 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
-                    "The variable names starting with underscore are "
-                    "reserved"
+                    "The variable names starting with an underscore are "
+                    "reserved, and might cause undefined behaviour in future: "
+                    "var=_underscore"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "___");

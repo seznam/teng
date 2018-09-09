@@ -197,7 +197,6 @@ private:
      *  @param configFilename file with configuration
      *  @param dictFilename file with dictionary
      *  @param serial serial number of cached data (output)
-     *  @param dependSerial serial number of data this data depends on (output)
      *  @return configuration and dictionary (borrowed pointers!!!)
      */
     ConfigAndDict_t getConfigAndDict(const std::string &configFilename,

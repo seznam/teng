@@ -41,12 +41,6 @@
 
 #include <string>
 #include <vector>
-#include <cstring>
-
-#include <tengposition.h>
-
-// TODO(burlog): remove it
-#include <iostream>
 
 namespace Teng {
 
@@ -58,8 +52,9 @@ public:
     enum Level_t {
         DEBUGING = 0, //!< level for debug messages
         WARNING  = 1, //!< level for warnings
-        ERROR    = 2, //!< level for error messages
-        FATAL    = 3  //!< level for fatal messages
+        DIAG     = 2, //!< level for diagnostic messages
+        ERROR    = 3, //!< level for error messages
+        FATAL    = 4  //!< level for fatal messages
     };
 
     /** Creates new error logger.
@@ -70,18 +65,36 @@ public:
      */
     struct Entry_t {
         /** @short Composes log line.
-          * @return composed log line
-          */
+         *
+         * @return Composed log line that ends with '\n'.
+         */
         std::string getLogLine() const;
 
-        /** @short Dumps entry into stream.
-         * @param out output stream
+        /** @short Writes string representation of entry into stream.
          */
         void dump(std::ostream &out) const;
 
-        Level_t level;   //!< level of message
-        Pos_t pos;       //!< position in file
-        std::string msg; //!< additional message
+        /** The Pos_t class isn't intentionally used because it contains pointer
+         * to string stored in Teng_t structure that can be destroyed idependly
+         * on Error_t structure. The destruction of Teng_t structures
+         * invalidates all pos structures. Since the Error_t is public API and
+         * we want to provide safe API we translate pos structure to ErrorPos_t.
+         */
+        struct ErrorPos_t {
+            ErrorPos_t(std::string filename, int32_t lineno, int32_t colno)
+                : filename(filename), lineno(lineno), colno(colno)
+            {}
+            ErrorPos_t(int32_t lineno, int32_t colno)
+                : lineno(lineno), colno(colno)
+            {}
+            std::string filename; //!< file path
+            int32_t lineno;       //!< the line number (starting with 1)
+            int32_t colno;        //!< the column number (starting with 0)
+        };
+
+        Level_t level;    //!< level of message
+        ErrorPos_t pos;   //!< the error pos
+        std::string msg;  //!< additional message
     };
 
     /** Returns number of errors in log.
@@ -108,19 +121,24 @@ public:
      */
     void append(const Error_t &err) {
         // increase level if lower than that of err
-        if (err.max_level > max_level) max_level = err.max_level;
+        if (err.max_level > max_level)
+            max_level = err.max_level;
+
         // append error log
-        entries.insert(entries.end(), err.entries.begin(), err.entries.end());
+        for (auto entry: err.entries)
+            append_sorted(entry);
     }
 
     /** Appends new entry.
      * @param entry new entry to append
      */
-    void append(const Entry_t &entry) {
+    void append(Entry_t entry) {
         // increase level if lower than that of err
-        if (entry.level > max_level) max_level = entry.level;
+        if (entry.level > max_level)
+            max_level = entry.level;
+
         // append error log
-        entries.push_back(entry);
+        append_sorted(std::move(entry));
     }
 
     /** Dumps log into stream.
@@ -134,6 +152,31 @@ private:
     // don't copy
     Error_t(const Error_t &) = delete;
     Error_t &operator=(const Error_t &) = delete;
+
+    /** Inserts entry to errors vector according to its position in source code.
+     */
+    void append_sorted(Entry_t entry) {
+        entries.push_back(std::move(entry));
+        for (int64_t i = entries.size() - 2; i >= 0; --i) {
+            auto &lhs = entries[i];
+            auto &rhs = entries[i + 1];
+            if (lhs.pos.lineno && rhs.pos.lineno) {
+                if (lhs.pos.filename == rhs.pos.filename) {
+                    if (lhs.pos.lineno < rhs.pos.lineno)
+                        break;
+                    if (lhs.pos.lineno == rhs.pos.lineno) {
+                        if (lhs.pos.colno < rhs.pos.colno)
+                            break;
+                        if (lhs.pos.colno == rhs.pos.colno) {
+                            if (lhs.level <= rhs.level)
+                                break;
+                        }
+                    }
+                    std::swap(lhs, rhs);
+                }
+            }
+        }
+    }
 
     std::vector<Entry_t> entries; //!< List of error entries
 };
@@ -157,7 +200,9 @@ inline std::ostream &operator<<(std::ostream &o, const Error_t &e) {
 inline bool
 operator==(const Error_t::Entry_t &lhs, const Error_t::Entry_t &rhs) {
     return lhs.level == rhs.level
-        && lhs.pos == rhs.pos
+        && lhs.pos.lineno == rhs.pos.lineno
+        && lhs.pos.colno == rhs.pos.colno
+        && lhs.pos.filename == rhs.pos.filename
         && lhs.msg == rhs.msg;
 }
 

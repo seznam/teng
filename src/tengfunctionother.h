@@ -50,7 +50,6 @@
 #include <tengplatform.h>
 #include <tengconfiguration.h>
 #include <tengfunctionutil.h>
-#include <tengfragmentstack.h>
 #include <tengfunction.h>
 
 namespace Teng {
@@ -67,17 +66,19 @@ Result_t isenabled(Ctx_t &ctx, const Args_t &args) {
         return wrongNumberOfArgs(ctx, "isenabled", 1);
 
     auto &arg = args.back();
-    if (!arg.is_string())
+    if (!arg.is_string_like())
         return failed(ctx, "isenabled", "Arg must be a string");
-    auto &feature = arg.as_str();
+    auto feature = arg.string();
 
-    bool enabled = false;
-    if (ctx.configuration.isEnabled(feature, enabled)) {
-        auto msg = "Unknown feature '" + feature + "'";
-        return failed(ctx, "isenabled", msg);
+    switch (ctx.params.isEnabled(feature)) {
+    case teng_feature::disabled:
+        return Result_t(false);
+    case teng_feature::enabled:
+        return Result_t(true);
+    case teng_feature::unknown:
+        return failed(ctx, "isenabled", "Unknown feature '" + feature + "'");
     }
-
-    return Result_t(enabled);
+    throw std::runtime_error(__PRETTY_FUNCTION__);
 }
 
 /** Check whether given key is present in dictionaries.
@@ -91,13 +92,11 @@ Result_t dictexist(Ctx_t &ctx, const Args_t &args) {
         return wrongNumberOfArgs(ctx, "dictexist", 1);
 
     auto &arg = args.back();
-    if (!arg.is_string())
+    if (!arg.is_string_like())
         return failed(ctx, "dictexist", "Arg must be a string");
-    auto &key = arg.as_str();
+    auto key = arg.string();
 
-    return Result_t(
-        ctx.langDictionary.lookup(key) || ctx.configuration.lookup(key)
-    );
+    return Result_t(ctx.dict.lookup(key) || ctx.params.lookup(key));
 }
 
 /** Check whether given key is present in dictionaries.
@@ -111,32 +110,30 @@ Result_t getdict(Ctx_t &ctx, const Args_t &args) {
         return wrongNumberOfArgs(ctx, "getdict", 2);
 
     auto &arg0 = args[1];
-    if (!arg0.is_string())
+    if (!arg0.is_string_like())
         return failed(ctx, "getdict", "First must be a string");
-    auto &key = arg0.as_str();
+    auto key = arg0.string();
 
     auto &arg1 = args[0];
-    if (!arg1.is_string())
+    if (!arg1.is_string_like())
         return failed(ctx, "getdict", "Second must be a string");
-    auto &def = arg1.as_str();
+    auto def = arg1.string();
 
     // set result value
-    if (auto *val = ctx.langDictionary.lookup(key))
+    if (auto *val = ctx.dict.lookup(key))
         return Result_t(*val);
-    if (auto *val = ctx.configuration.lookup(key))
+    if (auto *val = ctx.params.lookup(key))
         return Result_t(*val);
     return Result_t(def);
 }
 
 Result_t exists(Ctx_t &ctx, const Args_t &args) {
-    for (auto &a: args) {
-        std::cerr << a << std::endl;
-    }
+    throw std::runtime_error("AAAAAAAA");
 
-    std::cerr << "FRAGSTACK " << ctx.fragStack->currentPath() << std::endl;
-    std::cerr << ctx.fragStack->chainSize() << std::endl;
-
-    Identifier_t id;
+    // std::cerr << "FRAGSTACK " << ctx.fragStack->currentPath() << std::endl;
+    // std::cerr << ctx.fragStack->chainSize() << std::endl;
+    //
+    // Identifier_t ident;
 //     // handle root fragment
 //     if (name.empty()) {
 //         // name is empty

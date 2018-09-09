@@ -34,9 +34,8 @@
  *             Created.
  */
 
-#include <cstdio>
-#include <cctype>
-#include <fstream>
+#include <stdexcept>
+#include <iostream>
 
 #include "tenglogging.h"
 #include "tengerror.h"
@@ -60,7 +59,7 @@ namespace {
  * interval.
  */
 string_view_t
-unescape(flex_string_value_t &str, std::size_t start, std::size_t end) {
+unescape(flex_string_view_t &str, std::size_t start, std::size_t end) {
     enum {
         initial,
         dollar_expected_backslash_lcurly,
@@ -401,19 +400,37 @@ Lex1_t::Token_t Lex1_t::next(bool accept_short_directive) {
             incrementPosition(2);
 
             // skip input until "}", except escaped "\}"
-            int escape = 0, inString = 0;
-            while (offset < source_code.size()) {
-                if (inString) {
-                    if (source_code[offset] == '"')
-                       if (!escape) inString = 0;
-                    if (source_code[offset] == '\\') escape = !escape;
-                    else escape = 0;
+            bool escape = false;
+            char quoting_char = 0;
+            for (; offset < source_code.size(); incrementPosition(1)) {
+                if (quoting_char) {
+                    switch (source_code[offset]) {
+                    case '\\':
+                        escape = !escape;
+                        break;
+                    case '"':
+                    case '\'':
+                        if (source_code[offset] == quoting_char) {
+                            if (!escape) {
+                                quoting_char = 0;
+                                break;
+                            }
+                        }
+                        // pass
+                    default:
+                        escape = false;
+                        break;
+                    }
+
+                } else {
+                    switch (source_code[offset]) {
+                    case '}': break;
+                    case '\'': quoting_char = '\''; continue;
+                    case '"': quoting_char = '"'; continue;
+                    default: continue;
+                    }
+                    break;
                 }
-                else {
-                    if (source_code[offset] == '}') break;
-                    if (source_code[offset] == '"') inString = 1;
-                }
-                incrementPosition(1); //next char
             }
             // if directive end not found
             if (offset >= source_code.size()) {
@@ -502,6 +519,28 @@ Lex1_t::Token_t Lex1_t::next(bool accept_short_directive) {
         {pos.filename, start_line, start_column},
         "End of input stream"
     };
+}
+
+const char *Lex1_t::Token_t::name() const {
+    switch (token_id) {
+    case LEX1::END_OF_INPUT: return "<EOF>";
+    case LEX1::ERROR: return "ERROR";
+    case LEX1::TEXT: return "TEXT";
+    case LEX1::TENG: return "TENG";
+    case LEX1::TENG_SHORT: return "TENG_SHORT";
+    case LEX1::EXPR: return "EXPR";
+    case LEX1::DICT: return "DICT";
+    }
+    throw std::runtime_error(__PRETTY_FUNCTION__);
+}
+
+std::ostream &operator<<(std::ostream &os, const Lex1_t::Token_t &token) {
+    os << "(level=1"
+       << ", id=" << static_cast<int>(token.token_id)
+       << ", name=" << token.name()
+       << ", view='" << token.view() << "'"
+       << ", at=" << token.pos << "')";
+    return os;
 }
 
 } // namespace Parser

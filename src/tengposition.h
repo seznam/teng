@@ -28,12 +28,15 @@
  *
  * AUTHORS
  * Vaclav Blazek <blazek@firma.seznam.cz>
+ * Michal Bukovsky <michal.bukovsky@firma.seznam.cz
  *
  * HISTORY
  * 2003-09-22  (vasek)
  *             Created.
  * 2006-06-21  (sten__)
  *             Removed error duplicities.
+ * 2018-07-07  (burlog)
+ *             Cleaned.
  */
 
 #ifndef TENGPOSITION_H
@@ -49,6 +52,10 @@ class Error_t;
 /** @short Holds position in file.
  */
 struct Pos_t {
+    /** @short Lefts position object uninitialized.
+     */
+    Pos_t(std::nullptr_t) {}
+
     /** @short Creates new position object.
      *
      * If lineno <= 0 or col < 0, then position within file is not printed.
@@ -75,6 +82,11 @@ struct Pos_t {
     Pos_t(int32_t lineno = 0, int32_t colno = 0)
         : filename(no_filename()), lineno(lineno), colno(colno)
     {}
+
+    /** Returns true if position points anywhere -> it
+     * isn't default constructed. (lineno == 0 is invalid)
+     */
+    explicit operator bool() const {return lineno;}
 
     /** Returns filename for positions without given filename.
      */
@@ -166,6 +178,38 @@ inline bool operator==(const Pos_t &lhs, const Pos_t &rhs) {
  */
 inline bool operator!=(const Pos_t &lhs, const Pos_t &rhs) {
     return !(lhs == rhs);
+}
+
+/** Comparison operator.
+ */
+inline bool operator<(const Pos_t &lhs, const Pos_t &rhs) {
+    if (*lhs.filename < *rhs.filename) return true;
+    if (*lhs.filename > *rhs.filename) return false;
+    if (lhs.lineno < rhs.lineno) return true;
+    if (lhs.lineno > rhs.lineno) return false;
+    return lhs.colno < rhs.colno;
+}
+
+/** Comparison operator.
+ */
+inline bool operator>(const Pos_t &lhs, const Pos_t &rhs) {
+    if (*lhs.filename > *rhs.filename) return true;
+    if (*lhs.filename < *rhs.filename) return false;
+    if (lhs.lineno > rhs.lineno) return true;
+    if (lhs.lineno < rhs.lineno) return false;
+    return lhs.colno > rhs.colno;
+}
+
+/** Comparison operator.
+ */
+inline bool operator>=(const Pos_t &lhs, const Pos_t &rhs) {
+    return !(lhs < rhs);
+}
+
+/** Comparison operator.
+ */
+inline bool operator<=(const Pos_t &lhs, const Pos_t &rhs) {
+    return !(lhs > rhs);
 }
 
 } // namespace Teng

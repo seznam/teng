@@ -38,7 +38,6 @@
 
 #include <memory>
 #include <glib.h>
-#include <pcre++.h>
 
 #include "tengutf8.h"
 
@@ -51,7 +50,7 @@ using g_char_ptr_t = std::unique_ptr<gchar, decltype(::free) *>;
 
 } // namespace
 
-std::size_t strlen(const std::string &str) {
+std::size_t strlen(const string_view_t &str) {
     int chars = 0;
     for (auto istr = str.begin(), estr = str.end(); istr != estr;) {
         int bytes = 0;
@@ -96,7 +95,7 @@ std::size_t strlen(const std::string &str) {
 }
 
 std::string
-substr(const std::string &str, int s, int e, std::string p1, std::string p2) {
+substr(const string_view_t &str, int s, int e, std::string p1, std::string p2) {
     std::string result;
     int l = strlen(str);
     if (s < 0) s = l + s;
@@ -165,7 +164,7 @@ substr(const std::string &str, int s, int e, std::string p1, std::string p2) {
     return p1 + result + p2;
 }
 
-void substr(const std::string &str, int &s, int &e) {
+void substr(const string_view_t &str, int &s, int &e) {
     int l = strlen(str), index, end = str.size(),
         sset = 0, chars = 0;
     if (!l) {
@@ -240,23 +239,14 @@ void substr(const std::string &str, int &s, int &e) {
     }
 }
 
-std::string tolower(const std::string &str) {
+std::string tolower(const string_view_t &str) {
     g_char_ptr_t ptr(g_utf8_strdown(str.data(), str.size()), ::free);
     return {ptr.get()};
 }
 
-std::string toupper(const std::string &str) {
+std::string toupper(const string_view_t &str) {
     g_char_ptr_t ptr(g_utf8_strup(str.data(), str.size()), ::free);
     return {ptr.get()};
-}
-
-std::string
-regex_replace(
-    const std::string &where,
-    const std::string &pattern,
-    const std::string &repl
-) {
-    return pcrepp::Pcre(pattern, PCRE_GLOBAL | PCRE_UTF8).replace(where, repl);
 }
 
 } // namespace utf8

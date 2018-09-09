@@ -41,21 +41,29 @@
 
 #include "tengprogram.h"
 #include "tengparsercontext.h"
+#include "tengyystype.h"
 #include "tenglogging.h"
 
 namespace Teng {
 
 void
-logError(Error_t &err,
-         Error_t::Level_t level,
-         const Pos_t &pos,
-         const string_view_t &msg)
-{
-    Error_t::Entry_t new_entry = {level, pos, msg.str()};
+logError(
+    Error_t &err,
+    Error_t::Level_t level,
+    const Pos_t &pos,
+    const string_view_t &msg
+) {
+    Error_t::Entry_t new_entry = {
+        level, {
+            pos.filename == pos.no_filename()? "": *pos.filename,
+            pos.lineno,
+            pos.colno
+        }, msg.str()
+    };
     for (auto &entry: err.getEntries())
         if (entry == new_entry)
             return;
-    err.append(new_entry);
+    err.append(std::move(new_entry));
 }
 
 void
@@ -106,6 +114,11 @@ logWarning(Context_t *ctx, const Pos_t &pos, const string_view_t &msg) {
 }
 
 void
+logDiag(Context_t *ctx, const Pos_t &pos, const string_view_t &msg) {
+    logError(ctx->program->getErrors(), Error_t::DIAG, pos, msg);
+}
+
+void
 logError(Context_t *ctx, const Pos_t &pos, const string_view_t &msg) {
     logError(ctx->program->getErrors(), Error_t::ERROR, pos, msg);
 }
@@ -113,25 +126,6 @@ logError(Context_t *ctx, const Pos_t &pos, const string_view_t &msg) {
 void
 logFatal(Context_t *ctx, const Pos_t &pos, const string_view_t &msg) {
     logError(ctx->program->getErrors(), Error_t::FATAL, pos, msg);
-}
-
-void logWarning(Context_t *ctx, const string_view_t &msg) {
-    logError(ctx->program->getErrors(), Error_t::WARNING, ctx->position(), msg);
-}
-
-void logError(Context_t *ctx, const string_view_t &msg) {
-    logError(ctx->program->getErrors(), Error_t::ERROR, ctx->position(), msg);
-}
-
-void logFatal(Context_t *ctx, const string_view_t &msg) {
-    logError(ctx->program->getErrors(), Error_t::FATAL, ctx->position(), msg);
-}
-
-void
-syntaxError(Context_t *ctx, const Symbol_t &symbol, const string_view_t &msg) {
-    auto unexp = symbol.name() + (" [" + std::to_string(symbol.id)) + "]";
-    logError(ctx, symbol.pos, "Unexpected token: " + unexp);
-    logFatal(ctx, symbol.pos, msg.str() + " (syntax error)");
 }
 
 } // namespace Parser

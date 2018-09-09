@@ -41,14 +41,20 @@
 
 #include <string>
 
+#include "tengstringview.h"
+
 namespace Teng {
+
+// forwards
+struct Regex_t;
+
 namespace utf8 {
 
 /** Strlen for UTF-8 string.
  * @param str string
  * @return length of str
  */
-std::size_t strlen(const std::string &str);
+std::size_t strlen(const string_view_t &str);
 
 /** Python-like substr for UTF-8 string.
  * @param str source string
@@ -56,31 +62,22 @@ std::size_t strlen(const std::string &str);
  * @param e end index
  */
 std::string
-substr(const std::string &str, int s, int e, std::string p1, std::string p2);
+substr(const string_view_t &str, int s, int e, std::string p1, std::string p2);
 
 /** Find real indexes into string for UTF-8 substr.
  * @param str source string
  * @param s start index
  * @param e end index
  */
-void substr(const std::string &str, int &s, int &e);
+void substr(const string_view_t &str, int &s, int &e);
 
 /** Converts utf-8 string to lowercase.S
  */
-std::string tolower(const std::string &str);
+std::string tolower(const string_view_t &str);
 
 /** Converts utf-8 string to uppercase.
  */
-std::string toupper(const std::string &str);
-
-/** Replace regex groups of pattern in where by repl.
- */
-std::string
-regex_replace(
-    const std::string &where,
-    const std::string &pattern,
-    const std::string &repl
-);
+std::string toupper(const string_view_t &str);
 
 } // namespace utf8
 } // namespace Teng

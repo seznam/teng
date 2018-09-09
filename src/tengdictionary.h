@@ -28,12 +28,14 @@
  *
  * AUTHORS
  * Vaclav Blazek <blazek@firma.seznam.cz>
+ * Michal Bukovsky <michal.bukovsky@firma.seznam.cz>
  *
  * HISTORY
  * 2003-09-18  (vasek)
  *             Created.
+ * 2018-06-14  (burlog)
+ *             Cleaned.
  */
-
 
 #ifndef TENGDICTIONARY_H
 #define TENGDICTIONARY_H
@@ -62,8 +64,7 @@ public:
      * @param fs_root path of root for locating files
      */
     Dictionary_t(const std::string &fs_root)
-        : fs_root(fs_root), level(0), sources(), err(),
-          expandValue(false), replaceValue(false)
+        : sources(), err(), fs_root(fs_root)
     {}
 
     /**
@@ -72,43 +73,19 @@ public:
     virtual ~Dictionary_t() = default;
 
     /**
-     * @short Parses dicionary from given file.
-     *
-     * @param filename name of file to parse
-     * @param include_pos the position of include directive if any
-     * @return 0 OK !0 error
-     */
-    int parse(const std::string &filename, const Pos_t &include_pos = {});
-
-    /**
-     * @short Adds new entry into dictionary. Doesn't replace existing entry.
-     *
-     * @param name name of entry
-     * @param value value of entry
-     */
-    virtual void add(const std::string &name, const std::string &value);
-
-    /**
      * @short Searches for key in dictionary.
      *
      * @param key the key
      * @return found value or 0 when key not found
      */
-    virtual const std::string *lookup(const std::string &key) const;
-
-    /**
-     * @short Check source files for change.
-     *
-     * @return 0 OK !0 changed
-     */
-    int isChanged() const {return sources.isChanged();}
+    virtual const std::string *lookup(const string_view_t &key) const;
 
     /**
      * @short Dumps dictionary into string. For debugging purposes.
      *
      * @param out output string
      */
-    virtual void dump(std::string &out) const;
+    void dump(std::string &out) const;
 
     /**
      * @short Dumps dictionary into stream. For debugging purposes.
@@ -131,149 +108,63 @@ public:
      */
     const Error_t &getErrors() const {return err;}
 
+    /**
+     * @short Check source files for change.
+     *
+     * @return 0 OK !0 changed
+     */
+    int isChanged() const {return sources.isChanged();}
+
+    /**
+     * @short Fills dictionary with data parsed from filename.
+     *
+     * @param filename name of file to parse
+     * @return 0 OK !0 error
+     */
+    void parse(const std::string &filename);
+
 protected:
-    /**
-     * @short Parses dictionary from given string. Worker function.
-     *
-     * @param data the input data.
-     * @return 0 OK !0 error
-     */
-    virtual int parseString(string_view_t data);
-
-    /**
-     * @short Parses value line.
-     *
-     * @param line parsed line
-     */
-    virtual std::string parseValueLine(string_view_t line);
-
-    /**
-     * @short Parses line beginning with identifier.
-     *
-     * @param line parsed line
-     */
-    virtual std::string *addIdent(string_view_t line);
-
-    /**
-     * @short Parses and processes processing directive.
-     *
-     * @param directive whole directive string
-     * @param param parameter to directive
-     *
-     * @return 0 OK !0 error
-     */
-    virtual int processDirective(string_view_t directive, string_view_t param);
-
-    /**
-     * @short Parses and processes processing directive.
-     *
-     * @param directive whole directive string
-     * @param param parameter to directive
-     *
-     * @return 0 OK !0 error
-     */
-    virtual int processDirective(string_view_t line);
-
-    /**
-     * @short Adds new entry into dictionary.
-     *
-     * @param name name of entry
-     * @param value value of entry
-     *
-     * @return pointer to inserted value.
-     */
-    virtual std::string *add(string_view_t name, string_view_t value);
-
-    /**
-     * @short Maximal number of dictionary file inclusion.
-     */
-    static const unsigned int MAX_RECURSION_LEVEL = 10;
-
-    /**
-     * @short Root directory for file lookup.
-     */
-    std::string fs_root;
-
-    /**
-     * @short Current level of recursion. Valid only when parsing.
-     */
-    unsigned int level;
-
-    /**
-     * @short Sources of this dictionary.
-     */
-    SourceList_t sources;
-
-    /**
-     * @short Error logger.
-     */
-    Error_t err;
-
-    /** Position in source file.
-     *
-     * Valid only during parse.
-     */
-    Pos_t pos;
-
-private:
     // don't copy
     Dictionary_t(const Dictionary_t &) = delete;
     Dictionary_t &operator=(const Dictionary_t &) = delete;
 
-    /** Parses bool value and sets it if parsing succeeds.
-     *
-     * @param name name of entry
-     * @param param value of entry
-     * @param value value to set
-     *
-     * @return 0 OK !0 error
+    /** The result type for inserting parsed entry or directive.
      */
-    int setBool(string_view_t name, string_view_t param, bool &value);
+    enum class error_code {
+        none,
+        unknown_directive,
+        invalid_bool,
+        invalid_number,
+        invalid_enable,
+        invalid_disable,
+    };
 
-    /** Includes file given by directive into dict.
+    /** Called when new entry parsed.
      *
-     * @param filename name of entry
-     *
-     * @return 0 OK !0 error
+     * Doesn't replace existing entry unless replaceEntries is set to true.
      */
-    int includeFile(string_view_t filename);
+    virtual std::string *new_entry(std::string name, std::string value);
 
-    /**
-     * @short Adds new entry into dictionary.
-     *
-     * @param name name of entry
-     * @param value value of entry
-     *
-     * @return pointer to inserted value.
+    /** Called when new directive parsed.
      */
-    std::string *addImpl(string_view_t name, std::string value);
+    virtual error_code
+    new_directive(
+        const char *name_ptr, std::size_t name_len,
+        const char *value_ptr, std::size_t value_len
+    );
 
-    /** Parses dicionary from given file. Worker function.
-     *
-     * @param file file open for reading
-     * @param filename the name of the file
-     *
-     * @return 0 OK !0 error
-     */
-    int parse(std::ifstream &file, const std::string &filename);
+    // type for dictionary entries
+    using Entries_t = std::map<std::string, std::string>;
 
-    /** The dictionary itself.
-     */
-    std::map<std::string, std::string> dict;
-
-    /** Flags whether #{name} is expanded in values.
-     *
-     * Valid only during parse.
-     */
-    bool expandValue;
-
-    /** Flags whether replace values of already defined names.
-     *
-     * Valid only during parse.
-     */
-    bool replaceValue;
+    Entries_t entries;    //!< the dictionary entries
+    SourceList_t sources; //!< source files of dictionary entries
+    Error_t err;          //!< the error log
+    std::string fs_root;  //!< the filesystem root for all relative paths
+    bool expandVars;      //!< expand variables in dict values
+    bool replaceEntries;  //!< replace already present entries in dict
 };
 
 } // namespace Teng
 
-#endif // TENGDICTIONARY_H
+#endif /* TENGDICTIONARY_H */
+

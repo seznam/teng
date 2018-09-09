@@ -40,44 +40,31 @@
 #include <stack>
 
 #include "tengerror.h"
+#include "tengvalue.h"
 #include "tenglogging.h"
 #include "tengprogram.h"
 #include "tengformatter.h"
-#include "tengfragmentstack.h"
-#include "tengcontenttype.h"
-#include "tengparservalue.h"
 #include "tengconfiguration.h"
+#include "tengopenframes.h"
 
 namespace Teng {
 
 // types
-using Value_t = Parser::Value_t;
 namespace exec {using Result_t = Value_t;}
-
-/** 
- */
-struct FragStackMimic_t {
-    virtual const Value_t *findVariable(const Identifier_t &name) const = 0;
-    virtual const Fragment_t *findFragment(const Identifier_t &name) const = 0;
-};
-
-/** Used for recognizing type of pointer stored on value stack for PUSH_ATTR,
- * PUSH_ATTR_AT, PUSH_ROOT_FRAG, PUSH_THIS_FRAG and REPR instructions.
- */
-enum class FRAG_PTR {NULLPTR = 0, FRAGMENT, LIST, VALUE};
 
 /** Processor context variables that does not depend on runtime data and can be
  * used for evaluation during compile time.
  */
 struct EvalCtx_t {
-    Error_t &err;                   //!< error log
-    const Program_t &program;       //!< program (translated template)
-    const Dictionary_t &dict;       //!< language specific dictionary
-    const Configuration_t &cfg;     //!< param dictionary
-    const std::string &encoding;    //!< the template charset
-    uint32_t log_suppressed = 0;    //!< if errors should be written
-    const Instruction_t *instr = nullptr; //!< current instruction or nullptr
-    const FragStackMimic_t *frag_mimic = nullptr; //!< mimics frag stack
+    Error_t &err;                           //!< error log
+    const Program_t &program;               //!< program (translated template)
+    const Dictionary_t &dict;               //!< language specific dictionary
+    const Configuration_t &cfg;             //!< param dictionary
+    const string_view_t &encoding;          //!< the template charset
+    const OFFApi_t *frames_ptr = nullptr;   //!< open fragments frames accessor
+    const Instruction_t *instr = nullptr;   //!< current instruction or nullptr
+    const Escaper_t *escaper_ptr = nullptr; //!< current string escaping machine
+    uint32_t log_suppressed = 0;            //!< enables errors log
 };
 
 /** Processor context variables that depends on runtime data and can't be
@@ -91,31 +78,22 @@ struct RunCtx_t: public EvalCtx_t {
         const Program_t &program,
         const Dictionary_t &dict,
         const Configuration_t &cfg,
-        const std::string &encoding,
+        const string_view_t &encoding,
         const ContentType_t *contentType,
-        const Fragment_t &root,
+        const FragmentValue_t &root,
         Formatter_t &output
     ): EvalCtx_t{err, program, dict, cfg, encoding},
-       escaper(contentType), contentType(contentType), root(root),
-       output(output), frag_stack(&root, err, cfg.isErrorFragmentEnabled())
-    {}
+       output(output), frames(&root), escaper(contentType)
+    {EvalCtx_t::frames_ptr = &frames; EvalCtx_t::escaper_ptr = &escaper;}
 
     /** D'tor.
      */
-    ~RunCtx_t();
+    ~RunCtx_t() {output.flush();}
 
-    Escaper_t escaper;                 //!< stack of escapers
-    const ContentType_t *contentType;  //!< the template content/mime type
-    const Fragment_t &root;            //!< the fragment root
-    Formatter_t &output;               //!< where write processor output
-    FragmentStack_t frag_stack;        //!< create fragment stack
+    Formatter_t &output; //!< where write processor output
+    OpenFrames_t frames; //!< list of frames of open fragments
+    Escaper_t escaper;   //!< stack of escapers
 };
-
-/** This structure is control flow exception, that is used when some
- * instruction implementation encounters the situation that can't be processed
- * with instance of EvalCtx_t and it needs the RunCtx_t to continue.
- */
-struct runtime_ctx_needed_t {};
 
 /** It's supposed to use as default argument of function that need RunCtx_t.
  */
@@ -163,10 +141,29 @@ Value_t move_back(std::vector<Value_t> &stack) {
     return value;
 }
 
-/** Returns position of instr in template source.
+/** Because of undefined order of function arguments evaluation, you can't use
+ * somehing like: some_function(move_back(stack), move_back(stack)).
+ *
+ * This class solves the issue by postponing poping of args to function body.
+ */
+struct GetArg_t {
+public:
+    /** C'tor.
+     */
+    GetArg_t(std::stack<Value_t> &stack): stack(stack) {}
+
+    /** Returns the most recent arg.
+     */
+    Value_t operator()() const {return move_back(stack);};
+
+protected:
+    std::stack<Value_t> &stack; //!< where are arguments stored
+};
+
+/** Returns position of instruction in template source.
  */
 Pos_t position(const Instruction_t *instr) {
-    return instr? instr->pos: Pos_t{1, 0};
+    return instr? instr->pos(): Pos_t{1, 0};
 }
 
 /** Writes fatal message to log.
@@ -188,17 +185,6 @@ void logError(EvalCtx_t &ctx, const std::string &msg) {
 void logWarning(EvalCtx_t &ctx, const std::string &msg) {
     if (ctx.log_suppressed) return;
     logWarning(ctx.err, position(ctx.instr), "Runtime: " + msg);
-}
-
-RunCtx_t::~RunCtx_t() {
-    // TODO(burlog): dat to jinde? nebo si na to udelat spec stack?
-    // if (!programStack.empty())
-    //     logWarning(*this, "Program stack is not empty");
-    // if (!stack.empty())
-    //     logWarning(*this, "Value stack is not empty");
-    // if (!fragmentstack.empty())
-    //     logWarning(*this, "Fragment value stack is not empty");
-    output.flush();
 }
 
 } // namespace Teng

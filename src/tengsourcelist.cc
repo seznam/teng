@@ -58,7 +58,7 @@ stat(const std::string &filename, const Pos_t *pos, Error_t *err) {
     struct stat buf;
     if (::stat(filename.c_str(), &buf)) {
         if (err && pos) {
-            std::string sys = "(" + strerr() + ")";
+            std::string sys = "(" + strerr(errno) + ")";
             logError(*err, *pos, "Cannot stat file '" + filename + "' " + sys);
         }
         return {};

@@ -120,11 +120,10 @@ std::string tolower(std::string str) {
     return str;
 }
 
-std::string strerr() {
-    char system_error_string[1024];
-    system_error_string[0] = '\0';
-    strerror_r(errno, system_error_string, sizeof(system_error_string));
-    return system_error_string;
+std::string strerr(int errno_value) {
+    char system_error[1024];
+    system_error[0] = '\0';
+    return strerror_r(errno_value, system_error, sizeof(system_error));
 }
 
 } // namespace Teng

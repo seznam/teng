@@ -53,7 +53,7 @@ SCENARIO(
             auto t = "${#hello_world}";
             auto result = g(err, t, root);
 
-            THEN("It is empty string") {
+            THEN("Replaced with dict entry value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "hello world");
@@ -65,7 +65,7 @@ SCENARIO(
             auto t = "${#hello_world_missing}";
             auto result = g(err, t, root);
 
-            THEN("It is empty string") {
+            THEN("Replaced with dict entry name") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
                     {1, 3},

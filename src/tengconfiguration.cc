@@ -28,12 +28,12 @@
  *
  * AUTHORS
  * Vaclav Blazek <blazek@firma.seznam.cz>
+ * Michal Bukovsky <michal.bukovsky@firma.seznam.cz>
  *
  * HISTORY
  * 2004-09-18  (vasek)
  *             Created.
  */
-
 
 #include <iostream>
 #include <cstring>
@@ -43,107 +43,97 @@
 #include "tengconfiguration.h"
 
 namespace Teng {
-namespace {
 
-string_view_t strip(const string_view_t &str) {
-    const char *begin = str.begin();
-    const char *end = str.end();
-    while ((begin < end) && isspace(*begin)) ++begin;
-    while ((begin < end) && isspace(*(end - 1))) --end;
-    return {begin, end};
-}
-
-} // namespace
-
-Configuration_t::Configuration_t(const std::string &root)
-    : Dictionary_t(root), debug(false), errorFragment(false),
-      logToOutput(false), bytecode(false), watchFiles(true),
-      alwaysEscape(true), shortTag(false), format(true),
+Configuration_t::Configuration_t(const std::string &fs_root)
+    : Dictionary_t(fs_root),
+      debug(false), errorFragment(false), logToOutput(false), bytecode(false),
+      watchFiles(true), alwaysEscape(true), shortTag(false), format(true),
       maxIncludeDepth(10), maxDebugValLength(40)
 {}
 
-int Configuration_t::processDirective(string_view_t directive, string_view_t param) {
-    // strip argument
-    string_view_t arg = strip(param);
+teng_feature
+Configuration_t::isEnabled(const string_view_t &name) const {
+    auto bool2feature = [] (bool value) {
+        return value? teng_feature::enabled: teng_feature::disabled;
+    };
 
-    if (directive == "maxincludedepth") {
-        if (arg) {
-            char *end;
-            auto depth = strtoul(arg.data(), &end, 10);
-            if (*end == '\0') {
-                maxIncludeDepth = depth;
-                return 0;
-            }
-        }
-        logError(err, pos, "Bad maxincludedepth '" + arg.str() + "' value");
-        return -1;
+    // query known features
+    if (name == "debug") return bool2feature(debug);
+    if (name == "errorfragment") return bool2feature(errorFragment);
+    if (name == "logtooutput") return bool2feature(logToOutput);
+    if (name == "bytecode") return bool2feature(bytecode);
+    if (name == "watchfiles") return bool2feature(watchFiles);
+    if (name == "format") return bool2feature(format);
+    if (name == "alwaysescape") return bool2feature(alwaysEscape);
+    if (name == "shorttag") return bool2feature(shortTag);
 
-    }
-
-    if (directive == "maxdebugvallength") {
-        if (arg) {
-            char *end;
-            auto len = strtoul(arg.data(), &end, 10);
-            if (*end == '\0') {
-                maxDebugValLength = len;
-                return 0;
-            }
-        }
-        logError(err, pos, "Bad maxdebugvallength '" + arg.str() + "' value");
-        return -1;
-    }
-
-    // enable/disable
-    bool value = false;
-    if (directive == "enable") value = true;
-    else if (directive == "disable") value = false;
-    else return Dictionary_t::processDirective(directive, param);
-
-    if (arg == "debug") debug = value;
-    else if (arg == "errorfragment") errorFragment = value;
-    else if (arg == "logtooutput") logToOutput = value;
-    else if (arg == "bytecode") bytecode = value;
-    else if (arg == "watchfiles") watchFiles = value;
-    else if (arg == "format") format = value;
-    else if (arg == "alwaysescape") alwaysEscape = value;
-    else if (arg == "shorttag") shortTag = value;
-    else {
-        logError(err, pos, "Bad enable/disable argument '" + arg.str() + "'");
-        return -1;
-    }
-
-    // OK
-    return 0;
-}
-
-int
-Configuration_t::isEnabled(const std::string &feature, bool &enabled) const {
-    if (feature == "debug") enabled = debug;
-    else if (feature == "errorfragment") enabled = errorFragment;
-    else if (feature == "logtooutput") enabled = logToOutput;
-    else if (feature == "bytecode") enabled = bytecode;
-    else if (feature == "watchfiles") enabled = watchFiles;
-    else if (feature == "format") enabled = format;
-    else if (feature == "alwaysescape") enabled = alwaysEscape;
-    else if (feature == "shortag") enabled = shortTag;
-    else return -1;
-    return 0;
+    // unknown features
+    return teng_feature::unknown;
 }
 
 std::ostream &operator<<(std::ostream &o, const Configuration_t &c) {
-    auto ENABLED = [] (bool value) {return value? "enabled": "disabled";};
+    auto bool2string = [] (bool value) {return value? "enabled": "disabled";};
     o << "Configuration: " << std::endl
-      << "    debug: " << ENABLED(c.debug) << std::endl
-      << "    errorfragment: " << ENABLED(c.errorFragment) << std::endl
-      << "    logtooutput: " << ENABLED(c.logToOutput) << std::endl
-      << "    bytecode: " << ENABLED(c.bytecode) << std::endl
-      << "    watchfiles: " << ENABLED(c.watchFiles) << std::endl
+      << "    debug: " << bool2string(c.debug) << std::endl
+      << "    errorfragment: " << bool2string(c.errorFragment) << std::endl
+      << "    logtooutput: " << bool2string(c.logToOutput) << std::endl
+      << "    bytecode: " << bool2string(c.bytecode) << std::endl
+      << "    watchfiles: " << bool2string(c.watchFiles) << std::endl
       << "    maxincludedepth: " << c.maxIncludeDepth << std::endl
       << "    maxdebugvallength: " << c.maxDebugValLength << std::endl
-      << "    format: " << ENABLED(c.format) << std::endl
-      << "    alwaysescape: " << ENABLED(c.alwaysEscape) << std::endl
-      << "    shorttag: " << ENABLED(c.shortTag) << std::endl;
+      << "    format: " << bool2string(c.format) << std::endl
+      << "    alwaysescape: " << bool2string(c.alwaysEscape) << std::endl
+      << "    shorttag: " << bool2string(c.shortTag) << std::endl;
     return o;
+}
+
+Configuration_t::error_code
+Configuration_t::new_directive(
+    const char *name_ptr, std::size_t name_len,
+    const char *value_ptr, std::size_t value_len
+) {
+    string_view_t name = {name_ptr, name_len};
+    string_view_t value = {value_ptr, value_len};
+
+    // lambda that converts directive value to number
+    auto to_number = [&] (auto &&result) {
+        if (!value.empty()) {
+            char *end;
+            auto depth = strtoul(value.data(), &end, 10);
+            if (*end == '\0') {
+                result = depth;
+                return error_code::none;
+            }
+        }
+        return error_code::invalid_number;
+    };
+
+    // the numeric directives
+    if (name == "maxincludedepth")
+        return to_number(maxIncludeDepth);
+    if (name == "maxdebugvallength")
+        return to_number(maxDebugValLength);
+
+    // lambda that enables Teng features
+    auto enable_feature = [&] (bool enable) {
+        auto do_enable = [&] (bool &v) {v = enable; return error_code::none;};
+        if (value == "debug") return do_enable(debug);
+        if (value == "errorfragment") return do_enable(errorFragment);
+        if (value == "logtooutput") return do_enable(logToOutput);
+        if (value == "bytecode") return do_enable(bytecode);
+        if (value == "watchfiles") return do_enable(watchFiles);
+        if (value == "format") return do_enable(format);
+        if (value == "alwaysescape") return do_enable(alwaysEscape);
+        if (value == "shorttag") return do_enable(shortTag);
+        return enable? error_code::invalid_enable: error_code::invalid_disable;
+    };
+
+    // enable/disable Teng features
+    return name == "enable"
+        ? enable_feature(true)
+        : name == "disable"
+        ? enable_feature(false)
+        : Dictionary_t::new_directive(name_ptr, name_len, value_ptr, value_len);
 }
 
 } // namespace Teng

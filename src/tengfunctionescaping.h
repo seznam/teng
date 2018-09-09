@@ -65,7 +65,9 @@ namespace builtin {
 Result_t escape(Ctx_t &ctx, const Args_t &args) {
     return args.size() != 1
         ? wrongNumberOfArgs(ctx, "escape", 1)
-        : Result_t(ctx.escaper.escape(str(args[0])));
+        : Result_t(args[0].print([&] (const string_view_t &arg) {
+            return ctx.escaper().escape(arg);
+        }));
 }
 
 /** Unescapes string. Format depends on escaper.
@@ -77,7 +79,9 @@ Result_t escape(Ctx_t &ctx, const Args_t &args) {
 Result_t unescape(Ctx_t &ctx, const Args_t &args) {
     return args.size() != 1
         ? wrongNumberOfArgs(ctx, "unescape", 1)
-        : Result_t(ctx.escaper.unescape(str(args[0])));
+        : Result_t(args[0].print([&] (const string_view_t &arg) {
+            return ctx.escaper().unescape(arg);
+        }));
 }
 
 /** Escape disallowed chars in URL arguments.
@@ -89,27 +93,26 @@ Result_t unescape(Ctx_t &ctx, const Args_t &args) {
 Result_t urlescape(Ctx_t &ctx, const Args_t &args) {
     if (args.size() != 1)
         return wrongNumberOfArgs(ctx, "urlescape", 1);
-
-    std::string escaped;
-    static const auto hex = "0123456789ABCDEF";
-    for (auto ch: *str(args.back())) {
-        switch (ch) {
-        case 0x21:
-        case 0x3d:
-        case 0x24 ... 0x3b:
-        case 0x3e ... 0x7e:
-            escaped.push_back(ch);
-            break;
-        default:
-            escaped.push_back('%');
-            escaped.push_back(hex[ch >> 4]);
-            escaped.push_back(hex[ch & 0x0f]);
-            break;
+    return Result_t(args[0].print([] (const string_view_t &arg) {
+        static const auto hex = "0123456789ABCDEF";
+        std::string escaped;
+        for (auto ch: arg) {
+            switch (ch) {
+            case 0x21:
+            case 0x3d:
+            case 0x24 ... 0x3b:
+            case 0x3e ... 0x7e:
+                escaped.push_back(ch);
+                break;
+            default:
+                escaped.push_back('%');
+                escaped.push_back(hex[ch >> 4]);
+                escaped.push_back(hex[ch & 0x0f]);
+                break;
+            }
         }
-    }
-
-    // success
-    return Result_t(std::move(escaped));
+        return escaped;
+    }));
 }
 
 /** Unescape url - reverse urlescape function
@@ -121,32 +124,28 @@ Result_t urlescape(Ctx_t &ctx, const Args_t &args) {
 Result_t urlunescape(Ctx_t &ctx, const Args_t &args) {
     if (args.size() != 1)
         return wrongNumberOfArgs(ctx, "urlunescape", 1);
-
-    if (!args.back().is_string())
-        return failed(ctx, "urlunescape", "Arg must be string");
-
-    std::string unescaped;
-    auto &arg = args.back().as_str();
-    for (auto ipos = arg.begin(), epos = arg.end(); ipos != epos;) {
-        if (*ipos == '%') {
-            auto itmp = ipos;
-            if (++itmp != epos) {
-                auto first = *itmp;
+    return Result_t(args[0].print([] (const string_view_t &arg) {
+        std::string unescaped;
+        for (auto ipos = arg.begin(), epos = arg.end(); ipos != epos;) {
+            if (*ipos == '%') {
+                auto itmp = ipos;
                 if (++itmp != epos) {
-                    auto second = *itmp;
-                    if (isxdigit(first) && isxdigit(second)) {
-                        auto byte = unhex(uint8_t(first), uint8_t(second));
-                        unescaped.push_back(byte);
-                        ipos = ++itmp;
-                        continue;
+                    auto first = *itmp;
+                    if (++itmp != epos) {
+                        auto second = *itmp;
+                        if (isxdigit(first) && isxdigit(second)) {
+                            auto byte = unhex(uint8_t(first), uint8_t(second));
+                            unescaped.push_back(byte);
+                            ipos = ++itmp;
+                            continue;
+                        }
                     }
                 }
             }
+            unescaped.push_back(*ipos++);
         }
-        unescaped.push_back(*ipos++);
-    }
-
-    return Result_t(std::move(unescaped));
+        return unescaped;
+    }));
 }
 
 /** Create quotable string.
@@ -158,25 +157,23 @@ Result_t urlunescape(Ctx_t &ctx, const Args_t &args) {
 Result_t quoteescape(Ctx_t &ctx, const Args_t &args) {
     if (args.size() != 1)
         return wrongNumberOfArgs(ctx, "quoteescape", 1);
-
-    // quote
-    std::string escaped;
-    for (auto ch: *str(args.back())) {
-        switch (ch) {
-        case '\\': escaped.append("\\\\"); break;
-        case '\n': escaped.append("\\n"); break;
-        case '\r': escaped.append("\\r"); break;
-        case '\a': escaped.append("\\a"); break;
-        case '\0': escaped.append("\\0"); break;
-        case '\v': escaped.append("\\v"); break;
-        case '\'': escaped.append("\\'"); break;
-        case '"': escaped.append("\\\""); break;
-        default: escaped.push_back(ch); break;
+    return Result_t(args[0].print([] (const string_view_t &arg) {
+        std::string escaped;
+        for (auto ch: arg) {
+            switch (ch) {
+            case '\\': escaped.append("\\\\"); break;
+            case '\n': escaped.append("\\n"); break;
+            case '\r': escaped.append("\\r"); break;
+            case '\a': escaped.append("\\a"); break;
+            case '\0': escaped.append("\\0"); break;
+            case '\v': escaped.append("\\v"); break;
+            case '\'': escaped.append("\\'"); break;
+            case '"': escaped.append("\\\""); break;
+            default: escaped.push_back(ch); break;
+            }
         }
-    }
-
-    // success
-    return Result_t(std::move(escaped));
+        return escaped;
+    }));
 }
 
 } // namespace builtin

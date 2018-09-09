@@ -28,37 +28,54 @@
  *
  * AUTHORS
  * Vaclav Blazek <blazek@firma.seznam.cz>
+ * Michal Bukovsky <michal.bukovsky@firma.seznam.cz>
  *
  * HISTORY
  * 2003-09-19  (vasek)
  *             Created.
  * 2005-06-21  (roman)
  *             Win32 support.
+ * 2018-06-14  (burlog)
+ *             Cleaned.
  */
 
-#include <array>
-#include <cstdio>
-#include <utility>
-#include <cctype>
-#include <cerrno>
 #include <sstream>
 #include <fstream>
 #include <algorithm>
 
-#include "tenglogging.h"
-#include "tengdictionary.h"
-#include "tengplatform.h"
 #include "tengaux.h"
+#include "tenglogging.h"
+#include "tengplatform.h"
+#include "tengdictionary.h"
 
 namespace Teng {
 namespace {
 
 /** Compose absolute filename.
  */
-std::string absfile(const std::string &fs_root, const std::string &filename) {
+std::string absfile(const std::string &fs_root, string_view_t filename) {
     return !fs_root.empty() && !filename.empty() && !ISROOT(filename)
          ? fs_root + "/" + filename
-         : filename;
+         : filename.str();
+}
+
+/** Stripts whitespace characters.
+ */
+string_view_t strip(const string_view_t &str) {
+    const char *begin = str.begin();
+    const char *end = str.end();
+    while ((begin < end) && isspace(*begin)) ++begin;
+    while ((begin < end) && isspace(*(end - 1))) --end;
+    return {begin, end};
+}
+
+/** Stripts whitespace characters from left.
+ */
+string_view_t lstrip(const string_view_t &str) {
+    const char *begin = str.begin();
+    const char *end = str.end();
+    while ((begin < end) && isspace(*begin)) ++begin;
+    return {begin, end};
 }
 
 /**
@@ -66,20 +83,23 @@ std::string absfile(const std::string &fs_root, const std::string &filename) {
  *
  * Removes terminating <LF> and (optional) preceding <CR>.
  *
- * @param str input string
- * @param offset pointer to the first char of current line
- *
  * @return line and position of terminating <LF> in input string
  */
 std::pair<string_view_t, const char *>
-getLine(Error_t &err, Pos_t &pos, const string_view_t &str, const char *iline) {
+getLine(
+    Error_t &err,
+    const Pos_t &pos,
+    const string_view_t &str,
+    const char *iline
+) {
     // search for next newline
     auto eline = std::find(iline, str.end(), '\n');
 
     // no new line found
     if (eline == str.end()) {
-        pos.advanceColumn(eline - iline + 1);
-        logWarning(err, pos, "No newline at end of file");
+        Pos_t eol_pos = pos;
+        eol_pos.advanceColumn(eline - iline + 1);
+        logWarning(err, eol_pos, "No newline at end of file");
         return  {{iline, eline}, eline};
     }
 
@@ -91,206 +111,326 @@ getLine(Error_t &err, Pos_t &pos, const string_view_t &str, const char *iline) {
     return  {{iline, eline}, eline};
 }
 
-/** Expands escape characters.
+/** Returns true if given interval contains whitespaces only.
  */
-std::array<char, 3>
-expand_escape(
-    Error_t &err,
-    Pos_t &pos,
-    const char *ivalue,
-    const char *evalue
-) {
-    // escaping of end-of-line is not allowed
-    if (++ivalue == evalue) {
-        logError(err, pos, "Escaping EOL not allowed");
-        pos.advanceColumn();
-        return {{'\\', '\0', '\0'}};
-    }
-
-    // escape -> interpret next char
-    pos.advanceColumn(2);
-    switch (*ivalue) {
-    case 'n':
-        return {{'\n', '\0', '\0'}};
-    case 'r':
-        return {{'\r', '\0', '\0'}};
-    case 't':
-        return {{'\t', '\0', '\0'}};
-    case 'v':
-        return {{'\v', '\0', '\0'}};
-    case '\\':
-        return {{'\\', '\0', '\0'}};
-    case '"':
-        return {{'\"', '\0', '\0'}};
-    default:
-        // other chars are not allowed to be escaped
-        logError(err, pos, "Invalid escape character");
-        return {{'\\', *ivalue, '\0'}};
-    }
-    throw std::runtime_error(__PRETTY_FUNCTION__);
+bool contains_spaces_only(const char *ivalue, const char *evalue) {
+    for (; ivalue != evalue; ++ivalue)
+        if (!isspace(*ivalue))
+            return false;
+    return true;
 }
 
-/** Warns if tail contains no whitespaces.
+/** The dict format parser.
  */
-void
-warn_if_tail_is_not_empty(
-    Error_t &err,
-    Pos_t &pos,
-    const char *ivalue,
-    const char *evalue
-) {
-    for (; ivalue != evalue; ++ivalue) {
-        if (!isspace(*ivalue)) {
-            logError(err, pos, "Text after quoted line");
-            return;
-        }
-        pos.advance(*ivalue);
-    }
-}
+struct DictParser_t {
+    /** C'tor.
+     */
+    DictParser_t(
+        Dictionary_t *dict,
+        Error_t &err,
+        SourceList_t &sources,
+        std::string &fs_root,
+        bool &expandVars,
+        string_view_t filename
+    ): dict(dict), err(err), sources(sources), fs_root(fs_root), pos(),
+       expandVars(expandVars), include_level(0)
+    {load_file(filename);}
 
-} // namespace
+    /** C'tor.
+     */
+    DictParser_t(
+        DictParser_t &parent,
+        string_view_t filename,
+        const Pos_t &include_pos
+    ): dict(parent.dict), err(parent.err), sources(parent.sources),
+       fs_root(parent.fs_root), expandVars(parent.expandVars),
+       include_level(parent.include_level + 1)
+    {load_file(filename, include_pos);}
 
-int
-Dictionary_t::setBool(string_view_t name, string_view_t param, bool &value) {
-    if (param == "yes") {
-        value = true;
-        return 0;
-    }
-    if (param == "no") {
-        value = false;
-        return 0;
-    }
-    logError(
-        err,
-        pos,
-        "Invalid bool value of bool " + name.str()
-        + " directive '" + param.str() + "'"
+    void load_file(string_view_t filename, Pos_t include_pos = {});
+
+    /** Loads dict file data.
+     */
+    void load_file(std::ifstream &file);
+
+    /** Starts parsing the loaded data.
+     */
+    template <typename type1_t, typename type2_t>
+    void parse(type1_t new_directive, type2_t new_entry);
+
+    /** Prepares new directive and call insertion callback.
+     */
+    template <typename type1_t, typename type2_t>
+    void process_directive(
+        type1_t new_directive,
+        type2_t new_entry,
+        string_view_t line
     );
-    return -1;
+
+    /** Prepares new dict entry and call insertion callback.
+     */
+    template <typename type_t>
+    std::string *process_entry(type_t new_entry, string_view_t line);
+
+    /** Parses value and expands any variables.
+     */
+    std::string parse_entry_value(string_view_t value, Pos_t pos);
+
+    /** Expands variables (if any) in given string.
+     */
+    std::string expand_value(string_view_t value, Pos_t value_pos);
+
+    /** Opens file and process it.
+     */
+    template <typename type1_t, typename type2_t>
+    void include_file(
+        type1_t new_directive,
+        type2_t new_entry,
+        string_view_t filename,
+        Pos_t include_pos
+    );
+
+    Dictionary_t *dict;     //!< dict with yet parsed values
+    Error_t &err;           //!< the error log
+    SourceList_t &sources;  //!< source files of dictionary entries
+    std::string &fs_root;   //!< the filesystem root for all relative paths
+    Pos_t pos;              //!< position in the dict file
+    std::string data;       //!< the dict file data
+    bool &expandVars;       //!< expand variables in dict values
+    uint32_t include_level; //!< the include level
+};
+
+void DictParser_t::load_file(string_view_t filename, Pos_t include_pos) {
+    // if relative path => prepend root
+    std::string path = absfile(fs_root, filename);
+
+    // insert source into source list and setup file position
+    auto *source_path = sources.push(path, include_pos, err).first;
+    pos = {source_path, 1, 0};
+
+    try {
+        // read file data
+        std::ifstream file(path);
+        load_file(file);
+
+    } catch (const std::system_error &e) {
+        logError(
+            err,
+            include_pos,
+            "Error reading file '" + filename + "' "
+            + "(" + e.code().message() + ")"
+        );
+    }
 }
 
-int Dictionary_t::includeFile(string_view_t filename) {
-    // include other source
-    if (!level) {
-        logError(err, pos, "Too many includes");
-        return -1;
-    }
+void DictParser_t::load_file(std::ifstream &file) {
+    // restoring file stream exception settings
+    struct exception_restorer_t {
+        exception_restorer_t(std::ifstream *file)
+            : file(file), saved_exceptions(file->exceptions())
+        {file->exceptions(std::ios::failbit | std::ios::badbit);}
+        ~exception_restorer_t() {file->exceptions(saved_exceptions);}
+        std::ifstream *file;
+        std::ios::iostate saved_exceptions;
+    } restorer(&file);
 
-    // strip trailing whitespaces
-    auto efilename = filename.end();
-    for (; efilename > filename.begin(); --efilename)
-        if (!isspace(*(efilename - 1)))
-            break;
-    filename = {filename.begin(), efilename};
-
-    // check filename
-    if (!filename) {
-        logError(err, pos, "Missing file to include");
-        return -1;
-    }
-
-    // include it
-    --level;
-    int ret = parse(filename.str(), pos);
-    ++level;
-    return ret;
+    // read whole file into memory
+    file.seekg(0, std::ios::end);
+    data.resize(file.tellg());
+    file.seekg(0, std::ios::beg);
+    file.read(&data[0], data.size());
 }
 
-std::string Dictionary_t::parseValueLine(string_view_t value) {
-    // trim all leading whitespaces
-    auto ivalue = value.begin();
-    for (auto evalue = value.end(); ivalue != evalue; ++ivalue) {
-        if (isspace(*ivalue)) pos.advance(*ivalue);
-        else break;
-    }
+template <typename type1_t, typename type2_t>
+void DictParser_t::parse(type1_t new_directive, type2_t new_entry) {
+    string_view_t line;
+    std::string *last_inserted_value = nullptr;
+    auto iline = data.data(), eline = data.data() + data.size();
 
-    // reserve necessary space
-    std::string result;
-    result.reserve(value.end() - ivalue);
+    // increments file pos in d'tor
+    struct pos_updater_t {
+        ~pos_updater_t() {pos.advanceColumn(line_size);}
+        std::size_t line_size;
+        Pos_t &pos;
+    };
 
-    // if value is still quoted at its end => quote not closed
-    struct quoted_t {
-        ~quoted_t() {if (v) logError(err, pos, "Missing terminating quote");}
-        quoted_t &operator=(bool nv) {v = nv; return *this;}
-        explicit operator bool() const {return v;}
-        bool v; Error_t &err; Pos_t &pos;
-    } quoted{false, err, pos};
+    // process whole input line by line and skip empty lines
+    for (; iline != eline; pos.newLine(), ++iline) {
+        std::tie(line, iline) = getLine(err, pos, data, iline);
+        pos_updater_t pos_updater{line.size(), pos};
+        if (line.empty()) continue;
 
-    // process whole string char by char
-    for (bool first = true; ivalue != value.end(); ++ivalue) {
-        switch (*ivalue) {
-        case '\\':
-            // escape sequence
-            result.append(expand_escape(err, pos, ivalue, value.end()).data());
+        // what kind of line is it
+        switch (line[0]) {
+        case '#':
+            // skip comments
+            last_inserted_value = nullptr;
+            continue;
+
+        case '%':
+            // it is directive
+            process_directive(new_directive, new_entry, line);
+            last_inserted_value = nullptr;
             break;
-        case '"':
-            // quote
-            pos.advanceColumn();
-            if (first) {
-                quoted = true;
-            } else {
-                if (quoted) {
-                    warn_if_tail_is_not_empty(err, pos, ++ivalue, value.end());
-                    return result;
-                }
-                result.push_back(*ivalue);
-            }
+
+        case ' ': case '\t': case '\v':
+            // continuation of previous dict entry value
+            if (last_inserted_value) {
+                string_view_t value_view = lstrip({line.begin(), line.end()});
+                auto spaces = std::distance(line.begin(), value_view.begin());
+                Pos_t value_pos = pos;
+                pos.advanceColumn(spaces);
+                std::string value = parse_entry_value(value_view, value_pos);
+                last_inserted_value->push_back(' ');
+                last_inserted_value->append(value);
+            } else logError(err, pos, "No dict entry to concatenate with");
             break;
+
+        case '.': case '_':
+        case 'a' ... 'z':
+        case 'A' ... 'Z':
+            // dict entry
+            last_inserted_value = process_entry(new_entry, line);
+            break;
+
         default:
-            // push to value
-            result.push_back(*ivalue);
-            pos.advance(*ivalue);
-            break;
+            last_inserted_value = nullptr;
+            logError(err, pos, "Illegal identifier: line=" + line.str());
         }
-        // indicate that we are not at the first character
-        first = false;
     }
-
-    // done
-    return result;
 }
 
-std::string *Dictionary_t::addIdent(string_view_t line) {
+template <typename type1_t, typename type2_t>
+void DictParser_t::process_directive(
+    type1_t new_directive,
+    type2_t new_entry,
+    string_view_t line
+) {
+    // space splits name and value
+    auto iline = line.begin() + 1; // skip leading '%' character
+    auto ivalue = std::find_if(iline, line.end(), isspace);
+
+    // prepare directive name and value
+    string_view_t name = {iline, ivalue};
+    string_view_t value = strip({ivalue, line.end()});
+    auto name_pos = pos, value_pos = pos;
+    value_pos.advanceColumn(std::distance(iline, value.begin()));
+
+    // call insertion callback
+    if (name != "include)") new_directive(name, value, name_pos, value_pos);
+    else include_file(new_directive, new_entry, value, value_pos);
+}
+
+template <typename type_t>
+std::string *DictParser_t::process_entry(type_t new_entry, string_view_t line) {
     // get all valid chars (assumes that first char is not number)
     auto ivalue = line.begin();
     for (auto eline = line.end(); ivalue != eline; ++ivalue)
         if (!(isalnum(*ivalue) || (*ivalue == '_')))
             break;
-    pos.advanceColumn(ivalue - line.begin());
 
     // if first non-valid char is not white, report it as error
     if ((ivalue != line.end()) && (!isspace(*ivalue))) {
-        logError(err, pos, "Invalid character in identifier");
+        Pos_t tmp_pos = pos;
+        tmp_pos.advanceColumn(std::distance(line.begin(), ivalue));
+        logError(err, tmp_pos, "Invalid character in identifier");
         return nullptr;
     }
 
-    // parse rest of line as value
+    // prepare views to entry identifier and entry value
     string_view_t name = {line.begin(), ivalue};
-    std::string value = parseValueLine({ivalue, line.end()});
+    string_view_t value_view = lstrip({ivalue, line.end()});
+    Pos_t value_pos = pos;
+    value_pos.advanceColumn(std::distance(line.begin(), value_view.begin()));
 
-    // add ident
-    return addImpl(name, std::move(value));
+    // parse rest of line as value and insert new entry to dict
+    return new_entry(name.str(), parse_entry_value(value_view, value_pos));
 }
 
-void Dictionary_t::add(const std::string &name, const std::string &value) {
-    addImpl(name, std::move(value));
+std::string
+DictParser_t::parse_entry_value(string_view_t value, Pos_t value_pos) {
+    // reserve necessary space
+    std::string result;
+    result.reserve(value.size());
+    auto ivalue = value.begin();
+
+    // creates pos from value_pos and given value iterator
+    auto make_pos = [&] (const char *ivalue) {
+        Pos_t tmp_pos = value_pos;
+        tmp_pos.advanceColumn(std::distance(value.begin(), ivalue));
+        return tmp_pos;
+    };
+
+    // process whole string char by char
+    bool quoted = false;
+    for (auto evalue = value.end(); ivalue != evalue; ++ivalue) {
+        switch (*ivalue) {
+
+        // escape sequence
+        case '\\':
+            if (++ivalue == evalue) {
+                logError(err, make_pos(ivalue), "Escaping of EOL not allowed");
+                result.push_back('\\');
+            }
+            // escape -> interpret next char
+            switch (*ivalue) {
+            case 'n':
+                result.push_back('\n');
+            case 'r':
+                result.push_back('\r');
+            case 't':
+                result.push_back('\t');
+            case 'v':
+                result.push_back('\v');
+            case '\\':
+                result.push_back('\\');
+            case '"':
+                result.push_back('"');
+            default:
+                // other chars are not allowed to be escaped
+                logError(err, make_pos(ivalue), "Invalid escape sequence");
+                result.push_back(*ivalue);
+            }
+            break;
+
+        // quote
+        case '"':
+            if (ivalue == value.begin()) {
+                quoted = true;
+                break;
+            } else if (quoted) {
+                if (!contains_spaces_only(++ivalue, evalue))
+                    logError(err, make_pos(ivalue), "Text after closing quote");
+                return expandVars? expand_value(result, value_pos): result;
+            }
+            result.push_back(*ivalue);
+            break;
+
+        // push to value
+        default:
+            result.push_back(*ivalue);
+            break;
+        }
+    }
+
+    // if value is still quoted => quote not closed
+    if (quoted) logError(err, make_pos(value.end()), "Missing closing quote");
+    return expandVars? expand_value(result, value_pos): result;
 }
 
-std::string *Dictionary_t::addImpl(string_view_t name, std::string value) {
-    return replaceValue
-        ? &(dict[name.str()] = std::move(value))
-        : &dict.emplace(name.str(), std::move(value)).first->second;
-}
-
-std::string *Dictionary_t::add(string_view_t name, string_view_t value) {
-    // insert new record into table immediately if expansion is disabled
-    if (!expandValue) return addImpl(name, {value.begin(), value.end()});
-
+std::string DictParser_t::expand_value(string_view_t value, Pos_t value_pos) {
     // expand value
     std::string expanded;
     expanded.reserve(value.size());
 
-    // expand all directives
+    // creates pos from value_pos and given value iterator
+    auto make_pos = [&] (const char *ivalue) {
+        Pos_t tmp_pos = value_pos;
+        tmp_pos.advanceColumn(std::distance(value.begin(), ivalue));
+        return tmp_pos;
+    };
+
+    // expand all variables
     for (const char *ivalue = value.begin(); ivalue != value.end();) {
         // find name openning
         static const std::string O = "#{";
@@ -304,160 +444,63 @@ std::string *Dictionary_t::add(string_view_t name, string_view_t value) {
         // find name closing
         auto iclose = std::find(iopen, value.end(), '}');
         if (iclose == value.end()) {
-            logError(err, pos, "Unterminated #{} directive.");
+            logError(err, make_pos(value.end()), "Unterminated #{} variable");
             expanded.append(iopen, value.end());
-            return addImpl(name, expanded);
+            return expanded;
         }
 
         // compose dict value key
         std::string key = {iopen + 2, iclose - 1};
         ivalue = iclose + 1;
 
-        // try to find key in so far read entries
-        if (const std::string *dict_value = lookup(key)) {
+        // try to find key in so far parsed entries
+        if (const std::string *dict_value = dict->lookup(key)) {
             expanded.append(*dict_value);
 
         } else {
             expanded.append("#{");
             expanded.append(key);
             expanded.push_back('}');
-            logError(err, pos, "Dictionary item '" + key + "' not found");
+            logError(err, make_pos(iopen), "Dict item '" + key + "' not found");
         }
     }
-
-    // just add expanded value
-    return add(name, expanded);
+    return expanded;
 }
 
-int
-Dictionary_t::processDirective(string_view_t directive, string_view_t param) {
-    if (directive == "include")
-        return includeFile(param);
-    else if (directive == "expand")
-        return setBool(directive, param, expandValue);
-    else if (directive == "replace")
-        return setBool(directive, param, replaceValue);
-    logError(err, pos, "Unknown procesing directive");
-    return -1;
-}
-
-int Dictionary_t::processDirective(string_view_t line) {
-    // search for value
-    auto ivalue = std::find_if(line.begin(), line.end(), isspace);
-    pos.advanceColumn(ivalue - line.begin());
-
-    // trim all leading whitespaces
-    for (auto evalue = line.end(); ivalue != evalue; ++ivalue) {
-        if (isspace(*ivalue)) pos.advance(*ivalue);
-        else break;
+template <typename type1_t, typename type2_t>
+void DictParser_t::include_file(
+    type1_t new_directive,
+    type2_t new_entry,
+    string_view_t filename,
+    Pos_t include_pos
+) {
+    // include other source
+    if (include_level > 10) {
+        auto level = std::to_string(include_level);
+        logError(err, include_pos, "Too many includes: " + level);
+        return;
     }
 
-    // process directive
-    return processDirective({line.begin(), ivalue}, {ivalue, line.end()});
+    // strip trailing whitespaces
+    auto filename_view = strip(filename);
+    auto spaces = std::distance(filename.begin(), filename_view.begin());
+    include_pos.advanceColumn(spaces);
+
+    // check filename
+    if (!filename_view.empty()) {
+        DictParser_t parser(*this, filename, include_pos);
+        parser.parse(new_directive, new_entry);
+    } else logError(err, include_pos, "Missing filename to include");
 }
 
-const std::string *Dictionary_t::lookup(const std::string &key) const {
-    auto ientry = dict.find(key);
-    return ientry == dict.end()
+} // namespace
+
+const std::string *Dictionary_t::lookup(const string_view_t &key) const {
+    // TODO(burlog): find bez stringu?
+    auto ientry = entries.find(key.str());
+    return ientry == entries.end()
          ? (key == "_tld"? &get_tld(): nullptr)
          : &ientry->second;
-}
-
-int Dictionary_t::parseString(string_view_t data) {
-    // return value -- default ok
-    int ret = 0;
-
-    // process whole input line by line
-    string_view_t line;
-    auto iline = data.begin(), eline = data.end();
-    std::string *last_inserted_value = nullptr;
-    for (; iline != eline; pos.newLine(), ++iline) {
-
-        // get next line and skip empty lines
-        std::tie(line, iline) = getLine(err, pos, data, iline);
-        if (!line) continue;
-
-        // what kind of line is it
-        switch (line[0]) {
-        case '#':
-            // skip comments
-            last_inserted_value = nullptr;
-            continue;
-
-        case '%':
-            // it is directive
-            if (processDirective({line.begin() + 1, line.end()}))
-                ret = -1;
-            last_inserted_value = nullptr;
-            break;
-
-        case ' ': case '\t': case '\v':
-            // continuation
-            if (last_inserted_value) {
-                std::string value = parseValueLine(line);
-                last_inserted_value->push_back(' ');
-                last_inserted_value->append(value);
-            } else {
-                logError(err, pos, "No line to concatenate with");
-                ret = -1;
-            }
-            break;
-
-        case '.': case '_':
-        case 'a' ... 'z':
-        case 'A' ... 'Z':
-            last_inserted_value = addIdent(line);
-            break;
-
-        default:
-            last_inserted_value = nullptr;
-            logError(err, pos, "Illegal identifier: line=" + line.str());
-            ret = -1;
-        }
-    }
-    return ret;
-}
-
-int Dictionary_t::parse(const std::string &filename, const Pos_t &include_pos) {
-    // if relative path => prepend root
-    std::string path = absfile(fs_root, filename);
-
-    // insert source into source list
-    auto *source_path = sources.push(path, include_pos, err).first;
-
-    // reset pos and parse new file
-    pos = {source_path};
-    std::ifstream file(filename);
-    return parse(file, filename);
-}
-
-int Dictionary_t::parse(std::ifstream &file, const std::string &filename) {
-    try {
-        // restoring file stream exception settings
-        struct exception_restorer_t {
-            exception_restorer_t(std::ifstream *file)
-                : file(file), saved_exceptions(file->exceptions())
-            {file->exceptions(std::ios::failbit | std::ios::badbit);}
-            ~exception_restorer_t() {file->exceptions(saved_exceptions);}
-            std::ifstream *file;
-            std::ios::iostate saved_exceptions;
-        } restorer(&file);
-
-        // read whole file into memory
-        std::string str;
-        file.seekg(0, std::ios::end);
-        str.resize(file.tellg());
-        file.seekg(0, std::ios::beg);
-        file.read(&str[0], str.size());
-
-        // parse loaded string
-        return parseString(str);
-
-    } catch (const std::system_error &e) {
-        std::string sys = std::string("(") + e.code().message() + ")";
-        logError(err, pos, "Error reading file '" + filename + "' " + sys);
-        return -1;
-    }
 }
 
 void Dictionary_t::dump(std::string &out) const {
@@ -467,10 +510,98 @@ void Dictionary_t::dump(std::string &out) const {
 }
 
 void Dictionary_t::dump(std::ostream &out) const {
-    for (auto &item: dict) {
-        out << item.first << ": |" << item.second
+    for (auto &entry: entries) {
+        out << entry.first << ": |" << entry.second
             << "|\n----------------------------------------\n";
     }
+}
+
+std::string *
+Dictionary_t::new_entry(std::string name, std::string value) {
+    return replaceEntries
+        ? &(entries[std::move(name)] = std::move(value))
+        : &entries.emplace(std::move(name), std::move(value))
+          .first->second;
+}
+
+Dictionary_t::error_code
+Dictionary_t::new_directive(
+    const char *name_ptr, std::size_t name_len,
+    const char *value_ptr, std::size_t value_len
+) {
+    string_view_t name = {name_ptr, name_len};
+    string_view_t value = {value_ptr, value_len};
+
+    // turn feature on or off
+    auto enable_feature = [&] (bool &feature_value) {
+        if (value == "yes") {feature_value = true; return error_code::none;}
+        if (value == "no") {feature_value = false; return error_code::none;}
+        if (value == "on") {feature_value = true; return error_code::none;}
+        if (value == "off") {feature_value = false; return error_code::none;}
+        if (value == "true") {feature_value = true; return error_code::none;}
+        if (value == "false") {feature_value = false; return error_code::none;}
+        return error_code::invalid_bool;
+    };
+
+    // set known features
+    if (name == "expand") return enable_feature(expandVars);
+    if (name == "replace") return enable_feature(replaceEntries);
+
+    // report failure (unknown directive/feature)
+    return error_code::unknown_directive;
+}
+
+void Dictionary_t::parse(const std::string &filename) {
+    DictParser_t parser{this, err, sources, fs_root, expandVars, filename};
+    parser.parse(
+        [&] (auto &&name, auto && value, Pos_t name_pos, Pos_t value_pos) {
+            auto result = new_directive(
+                name.data(), name.size(),
+                value.data(), value.size()
+            );
+            switch (result) {
+            case error_code::none:
+                break;
+            case error_code::invalid_number:
+                logError(
+                    err,
+                    value_pos,
+                    "Invalid numeric value of " + name
+                    + " directive '" + value + "'"
+                );
+                break;
+            case error_code::invalid_bool:
+                logError(
+                    err,
+                    value_pos,
+                    "Invalid bool value of " + name
+                    + " directive '" + value + "'; choose one of "
+                    "{yes, no, on, off, true, false}"
+                );
+                break;
+            case error_code::invalid_enable:
+                logError(
+                    err,
+                    value_pos,
+                    "You can't enable unknown '" + value + "' feature"
+                );
+                break;
+            case error_code::invalid_disable:
+                logError(
+                    err,
+                    value_pos,
+                    "You can't disable unknown '" + value + "' feature"
+                );
+                break;
+            case error_code::unknown_directive:
+                logError(err, name_pos, "Unknown procesing directive");
+                break;
+            }
+
+        }, [&] (std::string name, std::string value) {
+            return new_entry(std::move(name), std::move(value));
+        }
+    );
 }
 
 } // namespace Teng

@@ -28,6 +28,7 @@
  *
  * AUTHORS
  * Vaclav Blazek <blazek@firma.seznam.cz>
+ * Michal Bukovsky <michal.bukovsky@firma.seznam.cz
  *
  * HISTORY
  * 2003-09-17  (vasek)
@@ -36,6 +37,8 @@
  *             Win32 support.
  * 2006-06-21  (sten__)
  *             Commented out error reporting of exist function.
+ * 2018-07-07  (burlog)
+ *             Cleaned.
  */
 
 #include <algorithm>
@@ -47,6 +50,7 @@
 #include "tenglogging.h"
 #include "tengsyntax.hh"
 #include "tengcontenttype.h"
+#include "tengconfiguration.h"
 #include "tengparsercontext.h"
 
 namespace Teng {
@@ -54,6 +58,7 @@ namespace {
 
 // forwards
 using flex_string_value_t = Parser::flex_string_value_t;
+using flex_string_view_t = Parser::flex_string_view_t;
 
 /** Compose absolute filename.
  */
@@ -63,23 +68,19 @@ std::string absfile(const std::string &fs_root, const std::string &filename) {
          : filename;
 }
 
-/** Concats name segments into one string.
- */
-std::string fullname(const std::vector<std::string> &id) {
-    std::string fn;
-    for (auto &segment: id)
-        fn.append({'.'}).append(segment);
-    return fn;
-}
-
 /** Reads file content into string.
  */
 flex_string_value_t
-read_file(Parser::Context_t *ctx, const std::string &filename) {
+read_file(
+    Parser::Context_t *ctx,
+    const Pos_t *include_pos,
+    const std::string &filename
+) {
     // open file
     std::ifstream file(filename, std::ios::binary);
     if (!file.is_open()) {
-        logError(ctx, "Cannot open input file '" + filename + "'");
+        Pos_t pos = include_pos? *include_pos: Pos_t();
+        logError(ctx, pos, "Cannot open input file '" + filename + "'");
         return flex_string_value_t(0);
     }
 
@@ -92,43 +93,19 @@ read_file(Parser::Context_t *ctx, const std::string &filename) {
     return source_code;
 }
 
-void
-compile(
-    Parser::Context_t *ctx,
-    flex_string_value_t &source_code,
-    const std::string &path = {},
-    const Pos_t &include_pos = {}
-) {
-    // register source into program sources list
-    // the registration routine returns program lifetime durable pointer to
-    // filename that can be used as pointer to filename in Pos_t instancies
-    auto *source_path = path.empty()
-        ? nullptr
-        : ctx->program->addSource(path, include_pos).first;
-
-    // create level 1 lexer for given file (the level 2 lexer should be off)
-    ctx->lex1_stack.emplace(source_code, source_path);
-
-    // TODO(burlog): vvvvv fragContext musi uz tak vzniknout,
-    // lowestValPrintAddress bude udelany pomoci spec instr, evaluator uvidime
-    // eval processor
-    // Processor_t evaluator(*err, *ctx->program, *ctx->dict, *ctx->params);
-    // // create first (empty) fragment context
-    // fragContext.push_back(Context_t::FragmentContext_t());
-    // fragContext.back().reserve(100);
-    // // create first (empty) fragment context
-    // fragContext.push_back(Context_t::FragmentContext_t());
-    // fragContext.back().reserve(100);
-    // no print-values join below following address
-    // ctx.lowestValPrintAddress = 0;
-    // no print-values join below following address
-    // lowestValPrintAddress = 0;
-
+void compile(Parser::Context_t *ctx) {
     // parse input by bison generated parser and compile program
-    Parser::parser parser(ctx);
+    Parser::Parser_t parser(ctx);
     if (parser.parse() != 0) {
+        // write diagnostic messages if any
+        ctx->expr_diag.unwind(ctx, ctx->unexpected_token);
+        // destroy invalid program and report final fatal message
         ctx->program->clear();
-        logFatal(ctx, "Parser has crashed: syntax error");
+        logFatal(
+            ctx,
+            {/*use default pos, all level 1 lexers might be gone*/},
+            "Unrecoverable syntax error; discarding whole program"
+        );
     }
 }
 
@@ -142,9 +119,8 @@ compile_file(
     const std::string &filename
 ) {
     Parser::Context_t ctx(dict, params, fs_root);
-    std::string path = absfile(ctx.fs_root, filename);
-    ctx.source_codes.push_back(read_file(&ctx, path));
-    compile(&ctx, ctx.source_codes.back(), path);
+    ctx.load_file(filename);
+    compile(&ctx);
     return std::move(ctx.program);
 }
 
@@ -156,10 +132,8 @@ compile_string(
     const std::string &source
 ) {
     Parser::Context_t ctx(dict, params, fs_root);
-    flex_string_value_t source_code(source.size());
-    std::copy(source.begin(), source.end(), source_code.data());
-    ctx.source_codes.push_back(std::move(source_code));
-    compile(&ctx, ctx.source_codes.back());
+    ctx.load_source(source);
+    compile(&ctx);
     return std::move(ctx.program);
 }
 
@@ -170,47 +144,108 @@ Context_t::Context_t(
     const Configuration_t *params,
     const std::string &fs_root
 ): program(std::make_unique<Program_t>()), dict(dict), params(params),
-   fs_root(fs_root), source_codes(), lex1_stack(), lex2(program->getErrors()),
-   coproc_err(), coproc(coproc_err, *program, *dict, *params), ident(),
-   frag_ctxs()
+   fs_root(fs_root), source_codes(), lex1_stack(),
+   lex2_value(program->getErrors()), coproc_err(),
+   coproc(coproc_err, *program, *dict, *params),
+   open_frames(*program), var_sym(), opts_sym(),
+   error_occurred(false), unexpected_token{LEX2::INVALID, {}, {}},
+   expr_start_point{{}, -1}, branch_start_addrs(), optimization_points()
 {}
+// TODO(burlog): zvazit predalokaci stacku na nejakou "velikost" v 2.0 byla na 100
 
-Context_t::~Context_t() {}
+Context_t::~Context_t() = default;
 
-void compile_file(Context_t *ctx, const std::string &filename) {
-    if (ctx->lex2.in_use()) ctx->lex2.finish_scanning();
-    std::string path = absfile(ctx->fs_root, filename);
-    ctx->source_codes.push_back(read_file(ctx, path));
-    compile(ctx, ctx->source_codes.back(), path, ctx->position());
+void
+Context_t::load_file(const std::string &filename, const Pos_t *include_pos) {
+    // load source code from file
+    std::string path = absfile(fs_root, filename);
+    source_codes.push_back(read_file(this, include_pos, path));
+    auto &source_code = source_codes.back();
+
+    // register source into program sources list
+    // the registration routine returns program lifetime durable pointer to
+    // filename that can be used as pointer to filename in Pos_t instancies
+    auto *source_path = program->addSource(path, {}).first;
+
+    // create the level 1 lexer for given source code
+    lex1_stack.emplace(flex_string_view_t(source_code), source_path);
 }
 
-void parser::error(const std::string &msg) {
-#if YYDEBUG
-    // if debug enabled
-    if (debug_level())
-        debug_stream() << "\n*** " << msg << " ***\n" << std::endl;
-#endif /* YYDEBUG */
+void Context_t::load_source(const std::string &source) {
+    // copy source code to flex parsable string
+    flex_string_value_t source_code(source.size());
+    std::copy(source.begin(), source.end(), source_code.data());
+    source_codes.push_back(std::move(source_code));
+
+    // create the level 1 lexer for given source code
+    lex1_stack.emplace(flex_string_view_t(source_codes.back()));
 }
 
-// // TODO(burlog): vvvv these should be removed?
-// // TODO(burlog): lokalni promena?
-// Processor_t *evalProcessor; //!< Processor unit used for evaluation of constant expressions
-//
-// // TODO(burlog): zase do lexeru a vracet jako funkci?
-// Position_t position;                     //!< current position in input stream (updated by parser)
-//
-// // TODO(burlog): should go to lexX
-// Position_t lex1Pos; //!< start pos of current lex1 element
-// Position_t lex2Pos; //!< actual position in lex2 stream
-//
-// // TODO(burlog):  should go to lex1?
-// std::stack<int> sourceIndex;             //!< Source index relevant to the currently processed source by lex1
-//
-// unsigned int lowestValPrintAddress;      //!< Lowest possible address, at which the sequence of VAL, PRINT, VAL, PRINT, ... instructions can be joined into the single VAL, PRINT pair.
-// std::string lastErrorMessage; //!< last error message of the parser
-// // TODO(burlog): there is no helpfull message from bison - it say's "syntax
-// // error" for all cases (can be turned to more descriptive mode, but it can
-// // be wrong)
+#ifdef DEBUG
+#define DBG(...) __VA_ARGS__
+#else /* DEBUG */
+#define DBG()
+#endif /* DEBUG */
+
+Token_t Context_t::next_token() {
+    Pos_t last_valid_pos;
+
+    // until there is some source code to parse
+    while (!lex1_stack.empty()) {
+        // if level 2 lexer is currently in use get next L2 token and process it
+        if (lex2().in_use()) {
+            switch (auto token = lex2().next()) {
+            default:
+                DBG(std::cerr << "**** " << token << std::endl);
+                return token;
+            case LEX2::INVALID:
+                DBG(std::cerr << "---- " << token << std::endl);
+                logError(this, token.pos, "Invalid lexical element");
+                continue;
+            case LEX2_EOF:
+                DBG(std::cerr << "---- " << token << std::endl);
+                lex2().finish_scanning();
+                break;
+            }
+        }
+
+        // get next L1 token and process it
+        using LEX1 = Lex1_t::LEX1;
+        bool accept_short_directives = params->isShortTagEnabled();
+        switch (auto token = lex1().next(accept_short_directives)) {
+        case LEX1::TENG: case LEX1::EXPR:
+        case LEX1::DICT: case LEX1::TENG_SHORT:
+            DBG(std::cerr << "* " << token << std::endl);
+            lex2().start_scanning(std::move(token.flex_view()), token.pos);
+            continue; // parse token value by level 2 lexer in next loop
+
+        case LEX1::TEXT:
+            DBG(std::cerr << "**** " << token << std::endl);
+            return {LEX2::TEXT, token.pos, token.string_view()};
+
+        case LEX1::ERROR:
+            DBG(std::cerr << "- " << token << std::endl);
+            logError(this, token.pos, token.string_view());
+            continue; // ignore bad element
+
+        case LEX1::END_OF_INPUT:
+            DBG(std::cerr << "* " << token << std::endl);
+            // EOF from current level 1 lexer so pop it and try next
+            last_valid_pos = lex1().position();
+            lex1_stack.pop();
+            break;
+        }
+    }
+
+    // there is no work anymore
+    return {LEX2_EOF, last_valid_pos, {}}; // EOF
+}
+
+#undef DBG
+
+void Parser_t::error(const std::string &) {
+    /* ignore all errors from bison parser since they are useless */
+}
 
 } // namespace Parser
 } // namespace Teng

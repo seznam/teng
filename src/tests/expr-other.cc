@@ -679,7 +679,7 @@ SCENARIO(
 
 SCENARIO(
     "aaaaaaaaaa",
-    "[expr][xxx]"
+    "[expr]"
 ) {
     GIVEN("Some variables and fragments") {
         Teng::Fragment_t root;

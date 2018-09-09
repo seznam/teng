@@ -40,10 +40,10 @@
 #include "utils.h"
 
 SCENARIO(
-    "Escaping doubled dolars",
+    "Escaping quote",
     "[old]"
 ) {
-    GIVEN("Fragment with one string variable containing backslash") {
+    GIVEN("Fragment with one string variable containing quote") {
         Teng::Fragment_t data;
         auto &fragment = data.addFragmentList("fff");
         auto &fragment_first = fragment.addFragment();
@@ -247,7 +247,7 @@ SCENARIO(
     "[old]"
 ) {
     GIVEN("The div tag") {
-        std::string templ = "${escape(\"<div>\")}";
+        std::string templ = "${escape('<div>')}";
 
         WHEN("Is escaped") {
             Teng::Error_t err;
@@ -266,7 +266,7 @@ SCENARIO(
     "[old][!mayfail]"
 ) {
     GIVEN("Mysterious template") {
-        std::string templ = "<?teng set $.__q = '\"kaktus&<>\"'?>"
+        std::string templ = "<?teng set $.__q = ''kaktus&<>''?>"
                             "<?teng set $.__r = $.__q?>"
                             "<?teng set $.__s = $.__r?>"
                             "<?teng set $.__t = $.__s?>"
@@ -303,7 +303,7 @@ SCENARIO(
     }
     WHEN("Inplace created floating point number is converted to int") {
         Teng::Error_t err;
-        auto templ = g("${int(\"12\"++\"3.5\")}");
+        auto templ = g("${int('12'++'3.5')}");
         auto res = g(err, templ);
         THEN("The result is integer part") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -313,7 +313,7 @@ SCENARIO(
     }
     WHEN("Floating point number with invalid suffix is converted to int") {
         Teng::Error_t err;
-        auto templ = g("${int(\"12.6er\")}");
+        auto templ = g("${int('12.6er')}");
         auto res = g(err, templ);
         THEN("The result is undefined") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -323,7 +323,7 @@ SCENARIO(
     }
     WHEN("The integer with suffix (pixel units)") {
         Teng::Error_t err;
-        auto templ = g("${int(\"128px\",1)}");
+        auto templ = g("${int('128px',1)}");
         auto res = g(err, templ);
         THEN("The result is the integer") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -349,7 +349,7 @@ SCENARIO(
     }
     WHEN("The string is given to isnumber") {
         Teng::Error_t err;
-        auto templ = g("${isnumber(\"123\")}");
+        auto templ = g("${isnumber('123')}");
         auto res = g(err, templ);
         THEN("The result is false") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -365,7 +365,7 @@ SCENARIO(
 ) {
     WHEN("'jede' is replace with 'leze'") {
         Teng::Error_t err;
-        std::string templ = "${replace(\"jede jede šnek\",\"jede\",\"leze\")}";
+        std::string templ = "${replace('jede jede šnek','jede','leze')}";
         auto res = g(err, templ);
         THEN("'leze' is replaced") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -386,7 +386,7 @@ SCENARIO(
         THEN("The result has two fractional digits") {
             std::vector<Teng::Error_t::Entry_t> errs;
             REQUIRE(err.getEntries() == errs);
-            REQUIRE(res == "123.120000");
+            REQUIRE(res == "123.12");
         }
     }
     WHEN("The floating number is rounded with precision set to 3") {
@@ -396,7 +396,7 @@ SCENARIO(
         THEN("The result has three fractional digits") {
             std::vector<Teng::Error_t::Entry_t> errs;
             REQUIRE(err.getEntries() == errs);
-            REQUIRE(res == "123.125000");
+            REQUIRE(res == "123.125");
         }
     }
 }
@@ -433,7 +433,7 @@ SCENARIO(
 ) {
     WHEN("Substring from some index to end is requested") {
         Teng::Error_t err;
-        auto templ = g("${substr(\"Dlouhý text\",7)}");
+        auto templ = g("${substr('Dlouhý text',7)}");
         auto res = g(err, templ);
         THEN("It is returned") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -443,7 +443,7 @@ SCENARIO(
     }
     WHEN("Substring from some index to end is requested with prefix") {
         Teng::Error_t err;
-        auto templ = g("${substr(\"Dlouhý text\",7,\":\")}");
+        auto templ = g("${substr('Dlouhý text',7,':')}");
         auto res = g(err, templ);
         THEN("It is returned") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -453,7 +453,7 @@ SCENARIO(
     }
     WHEN("Substring from some index to end is requested with prefix & suffix") {
         Teng::Error_t err;
-        auto templ = g("${substr(\"Dlouhý text\",7,\":\",\";\")}");
+        auto templ = g("${substr('Dlouhý text',7,':',';')}");
         auto res = g(err, templ);
         THEN("It is returned without suffix") {
             // prefix resp suffix are used only if left resp right end of the
@@ -465,7 +465,7 @@ SCENARIO(
     }
     WHEN("Substring from some index to some end") {
         Teng::Error_t err;
-        auto templ = g("${substr(\"Dlouhý text\",5,8)}");
+        auto templ = g("${substr('Dlouhý text',5,8)}");
         auto res = g(err, templ);
         THEN("It is returned") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -475,7 +475,7 @@ SCENARIO(
     }
     WHEN("Substring from some index to some end with prefix & auto suffix") {
         Teng::Error_t err;
-        auto templ = g("${substr(\"Dlouhý text\",5,8,\":\")}");
+        auto templ = g("${substr('Dlouhý text',5,8,':')}");
         auto res = g(err, templ);
         THEN("It is returned") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -485,7 +485,7 @@ SCENARIO(
     }
     WHEN("Substring from some index to some end with prefix & expl suffix") {
         Teng::Error_t err;
-        auto templ = g("${substr(\"Dlouhý text\",5,8,\":\",\";\")}");
+        auto templ = g("${substr('Dlouhý text',5,8,':',';')}");
         auto res = g(err, templ);
         THEN("It is returned") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -495,7 +495,7 @@ SCENARIO(
     }
     WHEN("Substring from start to end with prefix & expl suffix") {
         Teng::Error_t err;
-        auto templ = g("${substr(\"ý t\",0,3,\":\",\";\")}");
+        auto templ = g("${substr('ý t',0,3,':',';')}");
         auto res = g(err, templ);
         THEN("It is returned") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -511,7 +511,7 @@ SCENARIO(
 ) {
     WHEN("String with html entities is unescaped") {
         Teng::Error_t err;
-        auto templ = g("${unescape(\"&lt;b&gt;č&lt;/b&gt;\")}");
+        auto templ = g("${unescape('&lt;b&gt;č&lt;/b&gt;')}");
         auto res = g(err, templ);
         THEN("The entities are expanded") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -527,7 +527,7 @@ SCENARIO(
 ) {
     WHEN("Replacing words") {
         Teng::Error_t err;
-        auto templ = "${regex_replace(\"foo bar\", \"\\\\w+\", \"($0)\")}";
+        auto templ = "${regex_replace('foo bar', '\\\\w+', '($0)')}";
         auto res = g(err, templ);
         THEN("They are replaced") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -537,7 +537,7 @@ SCENARIO(
     }
     WHEN("Replacing words") {
         Teng::Error_t err;
-        auto templ = "${regex_replace(\"foo <b>ar\", \"<[^>]*>\", \"\")}";
+        auto templ = "${regex_replace('foo <b>ar', '<[^>]*>', '')}";
         auto res = g(err, templ);
         THEN("They are replaced") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -547,8 +547,8 @@ SCENARIO(
     }
     WHEN("Replacing words") {
         Teng::Error_t err;
-        auto templ = "${regex_replace(\"velmivelkéslovo\", "
-                     "\"([^\\\\s]{5})\", \"$1 \")}";
+        auto templ = "${regex_replace('velmivelkéslovo', "
+                     "'([^\\\\s]{5})', '$1 ')}";
         auto res = g(err, templ);
         THEN("They are replaced") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -558,8 +558,8 @@ SCENARIO(
     }
     WHEN("Replacing words") {
         Teng::Error_t err;
-        auto templ = "${regex_replace(\"velmivelkéslovo\", "
-                     "\"([^\\\\s]{6})\", \"$1 \")}";
+        auto templ = "${regex_replace('velmivelkéslovo', "
+                     "'([^\\\\s]{6})', '$1 ')}";
         auto res = g(err, templ);
         THEN("They are replaced") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -569,8 +569,8 @@ SCENARIO(
     }
     WHEN("Replacing words") {
         Teng::Error_t err;
-        auto templ = "${regex_replace(\"velmivelkéslovo\", "
-                     "\"([^\\\\s]{4})\", \"$1 \")}";
+        auto templ = "${regex_replace('velmivelkéslovo', "
+                     "'([^\\\\s]{4})', '$1 ')}";
         auto res = g(err, templ);
         THEN("They are replaced") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -580,7 +580,7 @@ SCENARIO(
     }
     WHEN("Interleaving characters") {
         Teng::Error_t err;
-        auto templ = "${regex_replace(\"ééé\", \"([^\\\\s]{1})\", \"$1 \")}";
+        auto templ = "${regex_replace('ééé', '([^\\\\s]{1})', '$1 ')}";
         auto res = g(err, templ);
         THEN("They are replaced") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -596,7 +596,7 @@ SCENARIO(
 ) {
     WHEN("String with new lines is passed to nl2br") {
         Teng::Error_t err;
-        auto templ = g("${nl2br(\"jede\\nmašina\")}");
+        auto templ = g("${nl2br('jede\\nmašina')}");
         auto res = g(err, templ);
         THEN("The new lines are replaced with br tags") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -612,7 +612,7 @@ SCENARIO(
 ) {
     WHEN("Formating floating number") {
         Teng::Error_t err;
-        auto templ = g("${numformat(1230.45666,3,\".\",\",\")}");
+        auto templ = g("${numformat(1230.45666,3,'.',',')}");
         auto res = g(err, templ);
         THEN("Is formatted") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -622,7 +622,7 @@ SCENARIO(
     }
     WHEN("Formating integer number") {
         Teng::Error_t err;
-        auto templ = g("${numformat(12304566,0,\".\",\" \")}");
+        auto templ = g("${numformat(12304566,0,'.',' ')}");
         auto res = g(err, templ);
         THEN("Is formatted") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -638,7 +638,7 @@ SCENARIO(
 ) {
     WHEN("Arguments are reordered") {
         Teng::Error_t err;
-        auto templ = g("${reorder(\"%1,%2;%1\",\"c\",\"d\")}");
+        auto templ = g("${reorder('%1,%2;%1','c','d')}");
         auto res = g(err, templ);
         THEN("They are reordered") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -649,16 +649,16 @@ SCENARIO(
 }
 
 SCENARIO(
-    "String concating",
+    "String setting and concating",
     "[old]"
 ) {
-    WHEN("Strings are concated") {
+    WHEN("Concated string is set to variable") {
         Teng::Error_t err;
-        auto templ = "<?teng set .variable = \"a\" ?>"
-                     "<?teng set .variable = $.variable ++ \"b\" ?>"
+        auto templ = "<?teng set .variable = 'a' ?>"
+                     "<?teng set .variable = $.variable ++ 'b' ?>"
                      "${.variable}";
         auto res = g(err, templ);
-        THEN("They are concated") {
+        THEN("The variable contains the right value") {
             std::vector<Teng::Error_t::Entry_t> errs;
             REQUIRE(err.getEntries() == errs);
             REQUIRE(res == "ab");
@@ -672,7 +672,7 @@ SCENARIO(
 ) {
     WHEN("Coverting ascii text to uppercase") {
         Teng::Error_t err;
-        auto templ = g("${strtoupper(\"abc ABC, 123\")}");
+        auto templ = g("${strtoupper('abc ABC, 123')}");
         auto res = g(err, templ);
         THEN("All lowervase letters are converted") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -698,7 +698,7 @@ SCENARIO(
 ) {
     WHEN("Coverting ascii text to lowercase") {
         Teng::Error_t err;
-        auto templ = g("${strtolower(\"abc ABC, 123\")}");
+        auto templ = g("${strtolower('abc ABC, 123')}");
         auto res = g(err, templ);
         THEN("All uppercase letters are converted") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -708,7 +708,7 @@ SCENARIO(
     }
     WHEN("Coverting czech utf-8 text to lowercase") {
         Teng::Error_t err;
-        auto templ = g("${strtolower(\"ĚŠČŘŽÝÁÍÉŮÚÓŤŇ\")}");
+        auto templ = g("${strtolower('ĚŠČŘŽÝÁÍÉŮÚÓŤŇ')}");
         auto res = g(err, templ);
         THEN("All uppercase letters are converted") {
             std::vector<Teng::Error_t::Entry_t> errs;

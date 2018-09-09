@@ -28,7 +28,7 @@
  *
  * AUTHORS
  * Stepan Skrob <stepan@firma.seznam.cz>
- * Michal Bukovsky <michal.bukovsky@firma.seznam.cz
+ * Michal Bukovsky <michal.bukovsky@firma.seznam.cz>
  *
  * HISTORY
  * 2003-09-18  (stepan)
@@ -43,99 +43,10 @@
 #include <string>
 
 #include "tengposition.h"
-#include "tengstringview.h"
+#include "tengflexhelpers.h"
 
 namespace Teng {
 namespace Parser {
-
-/** String values used for flex scanner requiring that buffers must ends
- * with flex end-of-buffer (two) zero bytes.
- */
-struct flex_string_value_t: public string_value_t {
-    /** C'tor: allocates new buffer finished by two zero bytes.
-     */
-    explicit flex_string_value_t(std::size_t length)
-        : string_value_t(new char[length + 2], length)
-    {disposable_ptr[length] = disposable_ptr[length + 1 ] = '\0';}
-
-    /** Returns really allocated size including end-of-buffer bytes.
-     */
-    std::size_t flex_size() const {return size() + 2;}
-};
-
-/** Mutable string view that guaranties availability of the two extra bytes
- * past the string view last byte for flex end-of-buffer zero bytes.
- */
-struct flex_string_view_t: public mutable_string_view_t {
-    /** C'tor: conversion.
-     */
-    explicit flex_string_view_t(flex_string_value_t &value)
-        : mutable_string_view_t(value.data(), value.size()),
-          recover(true)
-    {
-        eob[0] = std::exchange(ptr[len + 0], '\0');
-        eob[1] = std::exchange(ptr[len + 1], '\0');
-    }
-
-    /** C'tor: conversion.
-     */
-    flex_string_view_t(
-        flex_string_value_t &value,
-        std::size_t offset,
-        std::size_t limit
-    ): mutable_string_view_t(
-        value.data() + offset,
-        value.data() + offset + limit
-    ), recover(true) {
-        eob[0] = std::exchange(ptr[len + 0], '\0');
-        eob[1] = std::exchange(ptr[len + 1], '\0');
-    }
-
-    /** C'tor: move.
-     */
-    flex_string_view_t(flex_string_view_t &&other) noexcept
-        : mutable_string_view_t(std::move(other)),
-          recover(other.recover), eob{other.eob[0], other.eob[1]}
-    {other.recover = false;}
-
-    /** Assigment: move.
-     */
-    flex_string_view_t &operator=(flex_string_view_t &&other) noexcept {
-        if (this != &other) {
-            this->~flex_string_view_t();
-            new (this) flex_string_view_t(std::move(other));
-        }
-        return *this;
-    }
-
-    /** D'tor.
-     */
-    ~flex_string_view_t() noexcept {if (recover) reset();}
-
-    /** Brings the string to the original state.
-     */
-    void reset() {
-        recover = false;
-        ptr[len + 0] = eob[0];
-        ptr[len + 1] = eob[1];
-    }
-
-    /** Returns saved eob characters.
-     */
-    const char *saved_eob() const {return eob;}
-
-    /** Returns really allocated size including end-of-buffer bytes.
-     */
-    std::size_t flex_size() const {return size() + 2;}
-
-protected:
-    // don't copy
-    flex_string_view_t(const flex_string_view_t &) = delete;
-    flex_string_view_t &operator=(const flex_string_view_t &) = delete;
-
-    bool recover; //!< recover the last two bytes replaced with flex EOB
-    char eob[2];  //!< two bytes that have been replaced by EOB
-};
 
 /** First level of lexical analyzer that generaly splits input to text tokens
  * that does not contain teng expressions and to tokens candidating to valid
@@ -159,13 +70,13 @@ public:
      */
     struct Token_t {
     public:
-        /** C'tor: init of error, text and eoi tokens.
+        /** C'tor: init of teng, teng_short, expr and dict tokens.
         */
         Token_t(LEX1 token_id, const Pos_t &pos, flex_string_view_t view)
             : token_id(token_id), pos(pos), flex_view_value{std::move(view)}
         {}
 
-        /** C'tor: init of teng, teng_short, expr and dict tokens.
+        /** C'tor: init of error, text and eoi tokens.
         */
         Token_t(LEX1 token_id, const Pos_t &pos, string_view_t view)
             : token_id(token_id), pos(pos), string_view_value{view}
@@ -215,13 +126,22 @@ public:
             }
         }
 
-        /** Returns the original source data from which has been token parsed.
-         */
-        std::string token_string() const;
-
         /** Returns token id.
          */
         operator LEX1() const {return token_id;}
+
+        /** Returns the original source data from which has been token parsed.
+        */
+        string_view_t view() const {
+            switch (token_id) {
+            case LEX1::END_OF_INPUT: case LEX1::ERROR:
+            case LEX1::TEXT:
+                return string_view_value;
+            case LEX1::TENG: case LEX1::TENG_SHORT:
+            case LEX1::EXPR: case LEX1::DICT:
+                return flex_view_value;
+            }
+        }
 
         /** Returns value for error, text and end-of-input tokens.
          */
@@ -231,11 +151,15 @@ public:
          */
         flex_string_view_t &flex_view() {return flex_view_value;}
 
+        /** Returns string representation of the token id.
+        */
+        const char *name() const;
+
         LEX1 token_id; //!< token id
         Pos_t pos;     //!< position of the token in source
 
     protected:
-        union {         //!< value of token
+        union {
             string_view_t string_view_value;
             flex_string_view_t flex_view_value;
         };
@@ -251,8 +175,8 @@ public:
      * @param source_code Input string.
      * @param filename Pointer to filename.
      */
-    Lex1_t(flex_string_value_t &source_code, const std::string *filename)
-        : source_code(source_code), offset(0), pos(filename, 1, 0)
+    Lex1_t(flex_string_view_t source_code, const std::string *filename = {})
+        : source_code(std::move(source_code)), offset(0), pos(filename, 1, 0)
     {}
 
     /** C'tor: move.
@@ -280,13 +204,18 @@ private:
     Lex1_t(const Lex1_t &) = delete;
     Lex1_t &operator=(const Lex1_t &) = delete;
 
-    flex_string_value_t &source_code; //!< source code passed on init
-    std::size_t offset;               //!< position within the source code
-    Pos_t pos;                        //!< position within the "page"
+    flex_string_view_t source_code; //!< source code passed on init
+    std::size_t offset;             //!< position within the source code
+    Pos_t pos;                      //!< position within the "page"
 };
+
+/** Writes token description to the stream.
+ */
+std::ostream &operator<<(std::ostream &os, const Lex1_t::Token_t &token);
 
 } // namespace Parser
 } // namespace Teng
 
-#endif // TENGLEX1_H
+#endif /* TENGLEX1_H */
+
 

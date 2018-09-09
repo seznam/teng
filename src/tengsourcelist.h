@@ -44,6 +44,7 @@
 #include <memory>
 
 #include "tengerror.h"
+#include "tengposition.h"
 
 namespace Teng {
 

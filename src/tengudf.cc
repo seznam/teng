@@ -53,11 +53,11 @@ class Registry_t {
 public:
     /** Returns registered function for given name if any or empty function.
      */
-    Function_t find(std::string name) {
+    Function_t find(const std::string &name) {
 #ifndef NO_UDF_LOCKS
         std::lock_guard<std::mutex> locked(mutex);
 #endif /* NO_UDF_LOCKS */
-        auto ifunction = registry.find("udf." + name);
+        auto ifunction = registry.find(name);
         return ifunction == registry.end()
              ? Function_t{}
              : ifunction->second;

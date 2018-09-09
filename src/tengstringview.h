@@ -81,12 +81,133 @@ public:
 
     /** Returns true if view isn't empty.
      */
-    explicit operator bool() const {return len;}
+    bool empty() const {return !len;}
+
+    /** Returns the first character of view.
+     */
+    char front() const {return ptr[0];}
+
+    /** Returns the last character of view.
+     */
+    char back() const {return ptr[len - 1];}
 
 protected:
     ptr_type ptr;    //!< pointer to first character in view
     std::size_t len; //!< the number of characters in view
 };
+
+/** Returns true if two views represents same strings.
+ */
+template <typename lhs_char_t, typename rhs_char_t>
+bool operator==(
+    const string_view_facade_t<lhs_char_t> &lhs,
+    const string_view_facade_t<rhs_char_t> &rhs
+) {
+    return (lhs.size() == rhs.size())
+        && (strncmp(lhs.data(), rhs.data(), lhs.size()) == 0);
+}
+
+/** Returns true if two views represents other strings.
+ */
+template <typename lhs_char_t, typename rhs_char_t>
+bool operator!=(
+    const string_view_facade_t<lhs_char_t> &lhs,
+    const string_view_facade_t<rhs_char_t> &rhs
+) {
+    return !(lhs == rhs);
+}
+
+/** Returns true if two views represents same strings.
+ */
+template <typename lhs_char_t, typename rhs_char_t>
+bool operator<(
+    const string_view_facade_t<lhs_char_t> &lhs,
+    const string_view_facade_t<rhs_char_t> &rhs
+) {
+    auto min_size = std::min(lhs.size(), rhs.size());
+    if (auto res = strncmp(lhs.data(), rhs.data(), min_size))
+        return res < 0;
+    return lhs.size() < rhs.size();
+}
+
+/** Returns true if two views represents same strings.
+ */
+template <typename lhs_char_t, typename rhs_char_t>
+bool operator<=(
+    const string_view_facade_t<lhs_char_t> &lhs,
+    const string_view_facade_t<rhs_char_t> &rhs
+) {
+    return !(rhs < lhs);
+}
+
+/** Returns true if two views represents same strings.
+ */
+template <typename lhs_char_t, typename rhs_char_t>
+bool operator>(
+    const string_view_facade_t<lhs_char_t> &lhs,
+    const string_view_facade_t<rhs_char_t> &rhs
+) {
+    return rhs < lhs;
+}
+
+/** Returns true if two views represents same strings.
+ */
+template <typename lhs_char_t, typename rhs_char_t>
+bool operator>=(
+    const string_view_facade_t<lhs_char_t> &lhs,
+    const string_view_facade_t<rhs_char_t> &rhs
+) {
+    return !(lhs < rhs);
+}
+
+/** Concats the string view and std string.
+ */
+template <typename lhs_char_t>
+std::string operator+(
+    const string_view_facade_t<lhs_char_t> &lhs,
+    const std::string &rhs
+) {
+    std::string result;
+    result.reserve(lhs.size() + rhs.size());
+    result.append(lhs.data(), lhs.size()).append(rhs);
+    return result;
+}
+
+/** Concats the string view and std string.
+ */
+template <typename rhs_char_t>
+std::string operator+(
+    const std::string &lhs,
+    const string_view_facade_t<rhs_char_t> &rhs
+) {
+    std::string result;
+    result.reserve(lhs.size() + rhs.size());
+    result.append(lhs).append(rhs.data(), rhs.size());
+    return result;
+}
+
+/** Concats the string view and std string.
+ */
+template <typename lhs_char_t>
+std::string operator+(
+    const string_view_facade_t<lhs_char_t> &lhs,
+    const string_view_facade_t<lhs_char_t> &rhs
+) {
+    std::string result;
+    result.reserve(lhs.size() + rhs.size());
+    result.append(lhs.data(), lhs.size()).append(rhs.data(), rhs.size());
+    return result;
+}
+
+/** Concats the string view and std string.
+ */
+template <typename rhs_char_t>
+std::string operator+=(
+    std::string &lhs,
+    const string_view_facade_t<rhs_char_t> &rhs
+) {
+    return lhs.append(rhs.data(), rhs.size());
+}
 
 /** Represent part of mutable string.
  */
@@ -138,21 +259,6 @@ public:
      */
     char &operator[](std::size_t i) {return ptr[i];}
 };
-
-/** Returns true if two views represents same strings.
- */
-inline bool
-operator==(const mutable_string_view_t &lhs, const mutable_string_view_t &rhs) {
-    return (lhs.size() == rhs.size())
-        && (strncmp(lhs.data(), rhs.data(), lhs.size()) == 0);
-}
-
-/** Returns true if two views represents other strings.
- */
-inline bool
-operator!=(const mutable_string_view_t &lhs, const mutable_string_view_t &rhs) {
-    return !(lhs == rhs);
-}
 
 /** Represent part of imutable string.
  */

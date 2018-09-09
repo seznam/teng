@@ -24,7 +24,7 @@
  * $Id$
  *
  * DESCRIPTION
- * String view.
+ * Level 2 lexer.
  *
  * AUTHORS
  * Michal Bukovsky <michal.bukovsky@firma.seznam.cz
@@ -39,12 +39,47 @@
 
 #include <string>
 
-#include "tengposition.h"
-#include "tengyystype.h"
 #include "tenglex1.h"
+#include "tengposition.h"
 
 namespace Teng {
 namespace Parser {
+
+// the eof token id
+constexpr int LEX2_EOF = 0;
+
+/** Converts token id to its string representation.
+ */
+string_view_t l2_token_name(int token_id);
+
+/** Represents level 2 lexical token.
+ */
+class Token_t {
+public:
+    /** Converts token to its id.
+     */
+    operator int() const {return token_id;}
+
+    /** Returns string representation of the token id.
+     */
+    string_view_t token_name() const {return l2_token_name(token_id);}
+
+    /** Returns the original source data from which has been token parsed.
+     */
+    const string_view_t &view() const {return token_view;}
+
+    /** Converts string view representing token to std::string.
+     */
+    std::string str() const {return token_view.str();}
+
+    int token_id;             //!< the token id
+    Pos_t pos;                //!< the position is source code
+    string_view_t token_view; //!< raw string data of the token
+};
+
+/** Writes token description to the stream.
+ */
+std::ostream &operator<<(std::ostream &os, const Token_t &token);
 
 /** This is glue class between lexer and parser of teng directives like
  * <?teng ...?> are.
@@ -65,8 +100,10 @@ public:
     start_scanning(flex_string_view_t &&new_directive, const Pos_t &init_pos);
 
     /** Entry point of lexer that do all the work.
+     *
+     * The implementation is provided by the flex tool.
      */
-    Symbol_t next();
+    Token_t next();
 
     /** Destroy buffer at the top of lexer stack.
      */
@@ -80,34 +117,34 @@ public:
      */
     const Pos_t &position() const {return pos;}
 
-    /** Saves start position of the symbol.
+    /** Saves start position of the token.
      */
-    void make_symbol_start(const char *ipos) {
-        symbol_pos = pos;
-        symbol_ipos = ipos;
+    void make_token_start(const char *ipos) {
+        token_pos = pos;
+        token_ipos = ipos;
     }
 
-    /** Creates new symbol begins at symbol_ipos and ends at epos.
+    /** Creates new token begins at token_ipos and ends at epos.
      */
-    Symbol_t make_symbol(int id, const char *epos) {
-        pos.advance(symbol_ipos, epos);
-        return {symbol_pos, id, {symbol_ipos, epos}};
+    Token_t make_token(int id, const char *epos) {
+        pos.advance(token_ipos, epos);
+        return {id, token_pos, {token_ipos, epos}};
     }
 
-    /** Creates new symbol begins at ipos and ends at epos.
+    /** Creates new token begins at ipos and ends at epos.
      */
-    Symbol_t make_symbol(int id, const char *ipos, const char *epos) {
-        make_symbol_start(ipos);
-        return make_symbol(id, epos);
+    Token_t make_token(int id, const char *ipos, const char *epos) {
+        make_token_start(ipos);
+        return make_token(id, epos);
     }
 
-    /** Creates new symbol begins at ipos and ends at epos. It assumes that
+    /** Creates new token begins at ipos and ends at epos. It assumes that
      * characters within <ipos, epos) range contain no newlines.
      */
-    Symbol_t make_oneline_symbol(int id, const char *ipos, const char *epos) {
-        symbol_pos = pos;
+    Token_t make_nonewline_token(int id, const char *ipos, const char *epos) {
+        token_pos = pos;
         pos.advanceColumn(epos - ipos);
-        return {symbol_pos, id, {ipos, epos}};
+        return {id, token_pos, {ipos, epos}};
     }
 
 protected:
@@ -119,12 +156,12 @@ protected:
     void *buffer;                 //!< buffer for flex lexer
     Error_t &err;                 //!< error log
     Pos_t pos;                    //!< current pos on "page"
-    Pos_t symbol_pos;             //!< start pos of not yet fully parsed symbol
-    const char *symbol_ipos;      //!< ptr to first char of not yet fully ...
+    Pos_t token_pos;              //!< start pos of not yet fully parsed token
+    const char *token_ipos;       //!< ptr to first char of not yet fully ...
     flex_string_view_t directive; //!< the teng directive source code
 };
 
-} // namespace
+} // namespace Parser
 } // namespace Teng
 
 #endif // TENGLEX2_H

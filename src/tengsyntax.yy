@@ -29,6 +29,7 @@
  *
  * AUTHORS
  * Stepan Skrob <stepan@firma.seznam.cz>
+ * Michal Bukovsky <michal.bukovsky@firma.seznam.cz>
  *
  * HISTORY
  * 2003-09-19  (stepan)
@@ -42,24 +43,57 @@
  /********************************************** PROLOGUE: C/C++ declaration. */
 %{
 
-#include "tengsemantic.h"
-
- // I don't know better eay how to access look-ahead symbol
-#define look_ahead_symbol yyla.value
+ // I don't know better way how to access look-ahead symbol
+#define look_ahead_symbol (yyla.value.as<TokenSymbol_t>())
+#define YYDEBUG 1
 
 %}
 
  /************************* BISON DECLARATIONS: options that modifies parser. */
 
-
 // enable debugging
 %define parse.trace true
 
-// add forward declaration to tengsyntax.hh
-%code requires {#include "tengyystype.h"}
-%code requires {namespace Teng {namespace Parser {struct Context_t;}}}
-%code {using I = Teng::Instruction_t;}
-%code provides {namespace Teng {namespace Parser {using LEX2 = Teng::Parser::parser::token::yytokentype;}}}
+// add forward declarations to the begin of tengsyntax.hh
+%code requires {
+    #include "tengyystype.h"
+    #include "tengsemantic.h"
+    namespace Teng {
+    namespace Parser {
+    struct Context_t;
+    namespace Impl {
+        using VariableSymbol_t = OptionalSymbol_t<Parser::Variable_t>;
+        using IVariableSymbol_t = OptionalSymbol_t<Parser::IVariable_t>;
+        using OptionsSymbol_t = OptionalSymbol_t<Parser::Options_t>;
+        using FormatOptionsSymbol_t = OptionalSymbol_t<Parser::FormatOptions_t>;
+        using NAryExprSymbol_t = OptionalSymbol_t<Parser::NAryExpr_t>;
+        using LiteralSymbol_t = OptionalSymbol_t<Parser::Literal_t>;
+        using TokenSymbol_t = OptionalSymbol_t<Parser::Token_t>;
+    } // namespace Impl
+    } // namespace Parser
+    } // namespace Teng
+}
+
+// add some declarations at the end of tengsyntax.hh
+%code provides {
+    namespace Teng {
+    namespace Parser {
+        using LEX2 = Impl::parser::token::yytokentype;
+        using Parser_t = Impl::parser;
+    } // namespace Parser
+    } // namespace Teng
+}
+
+// add forward declaration to the begin of tengsyntax.cc
+%code {
+    namespace Teng {
+    namespace Parser {
+    namespace Impl {
+        int yylex(parser::semantic_type *variant, Context_t *ctx);
+    } // namespace Impl
+    } // namespace Parser
+    } // namespace Teng
+}
 
 // use C++ parser (is always pure parser)
 %skeleton "lalr1.cc"
@@ -67,74 +101,75 @@
 // all callbacks takes context
 %param {Teng::Parser::Context_t *ctx}
 
-// close whole parser into Teng::Parser namespace
-%define api.namespace {Teng::Parser}
+// close whole parser into Teng::Parser::Impl namespace
+%define api.namespace {Teng::Parser::Impl}
 
 // we want to have all lexical symbols in tengsyntax.hh
 %defines
 
 // the type of the lexical symbol
 // %define api.value.type {Teng::Parser::Symbol_t}
-// %union {
-//     Symbol_t symbol;
-// }
-
 %define api.value.type variant
-
-%type <Symbol_t> TEXT TENG teng_fragment_open variable ENDFRAGMENT local_variable
-               absolute_variable relative_variable absolute_variable_path_root
-               absolute_variable_path_this absolute_variable_path_parent
-               identifier BUILTIN_THIS BUILTIN_PARENT absolute_variable_middle
-               SELECTOR identifier_relative TYPE COUNT JSONIFY EXISTS BUILTIN_COUNT
-               BUILTIN_INDEX BUILTIN_FIRST BUILTIN_LAST BUILTIN_INNER
 
  /******************************************* BISON DECLARATIONS: lex tokens. */
 
 // plain text
-%token TEXT
+%token <TokenSymbol_t> TEXT
 
 // teng directives
-%token DEBUG_FRAG BYTECODE_FRAG INCLUDE FORMAT ENDFORMAT FRAGMENT ENDFRAGMENT
-       IF ELSEIF ELSE ENDIF SET EXPR TENG END SHORT_EXPR SHORT_DICT SHORT_END
-       CTYPE ENDCTYPE
+%token <TokenSymbol_t> TENG FRAGMENT ENDFRAGMENT DEBUG_FRAG BYTECODE_FRAG
+%token <TokenSymbol_t> INCLUDE FORMAT ENDFORMAT IF ELSEIF ELSE ENDIF SET EXPR
+%token <TokenSymbol_t> END SHORT_EXPR SHORT_DICT SHORT_END CTYPE ENDCTYPE
 
-// assignment
-%token ASSIGN COMMA
+// assignment operator
+%token <TokenSymbol_t> ASSIGN
+
+// comma operator
+%token <TokenSymbol_t> COMMA
 
 // conditional expression
-%right COND_EXPR COLON
+%right <TokenSymbol_t> COND_EXPR COLON
 
 // logic operators (must be right-associative for proper code-generation)
-%right OR AND
+%right <TokenSymbol_t> OR OR_DIGRAPH
+%right <TokenSymbol_t> AND AND_TRIGRAPH
 
 // bitwise operators
-%left BITOR BITXOR BITAND
+%left <TokenSymbol_t> BITOR
+%left <TokenSymbol_t> BITXOR
+%left <TokenSymbol_t> BITAND
 
-// comparison operators
-%left EQ NE STR_EQ STR_NE GE LE GT LT
+// comparison operators (STR_* are deprecated since teng-3.0)
+%left <TokenSymbol_t> EQ NE STR_EQ STR_NE EQ_DIGRAPH NE_DIGRAPH
+%left <TokenSymbol_t> GE LE GT LT GE_DIGRAPH LE_DIGRAPH GT_DIGRAPH LT_DIGRAPH
 
-// expressions
-%left ADD SUB CONCAT
-%left MUL DIV MOD REPEAT
-%precedence NOT BITNOT
+// binary expressions
+%left <TokenSymbol_t> ADD SUB CONCAT // CONCAT is deprecated since teng-3.0
+%left <TokenSymbol_t> MUL DIV MOD REPEAT
 
-// UNARY is fake terminal
-%precedence UNARY
+%right <TokenSymbol_t> NOT BITNOT
 
 // other keywords/operators
-%token CASE DEFINED ISEMPTY EXISTS JSONIFY TYPE COUNT
+%token <TokenSymbol_t> CASE
 
 // parentheses
-%token L_PAREN R_PAREN
-%token L_BRACKET R_BRACKET
+%token <TokenSymbol_t> L_PAREN R_PAREN
+%token <TokenSymbol_t> L_BRACKET R_BRACKET
+
+// teng variables and dictionary lookups prefixes
+%left <TokenSymbol_t> DICT DICT_INDIRECT SELECTOR VAR
 
 // identifiers and literals
-%token BUILTIN_FIRST BUILTIN_INNER BUILTIN_LAST BUILTIN_INDEX BUILTIN_COUNT
-       BUILTIN_THIS BUILTIN_PARENT VAR DICT DICT_INDIRECT
-       SELECTOR UDF_IDENT IDENT STRING INT REAL
+%token <TokenSymbol_t> BUILTIN_FIRST BUILTIN_INNER BUILTIN_LAST BUILTIN_INDEX
+%token <TokenSymbol_t> BUILTIN_COUNT BUILTIN_THIS BUILTIN_PARENT
+%token <TokenSymbol_t> DEFINED ISEMPTY EXISTS JSONIFY TYPE COUNT
+%token <TokenSymbol_t> IDENT UDF_IDENT STRING REGEX DEC_INT HEX_INT BIN_INT REAL
 
 // invalid lexical token
 %token INVALID
+
+// DEF_PREC is fake terminal (lower in file means higher precedence)
+%precedence DEF_PREC
 
 // start symbol
 %start start
@@ -142,7 +177,7 @@
 // There is one shift/reduce conflict:
 //
 // start -> error
-// teng_format -> error lex_endformat lex_end
+// teng_format -> error endformat end
 // ...
 //
 // which I don't know how to resolve.
@@ -150,492 +185,677 @@
 // This declaration mutes warning caused by this conflict.
 //%expect 1
 
- /*********************************************** GRAMMAR RULES: teng syntax. */
+// TODO(burlog): tady je potreba popsat proc je to tento typ
+%type <TokenSymbol_t> identifier identifier_relative function_name
+// TODO(burlog): tady je potreba popsat proc je to tento typ
+%type <TokenSymbol_t> __error__ __error_cont__ teng_if_statement_ko
+
+// TODO(burlog): tady je potreba popsat proc je to tento typ
+%type <LiteralSymbol_t> value_literal string_literal int_literal
+%type <LiteralSymbol_t> signed_literal real_literal teng_ctype_value
+
+// TODO(burlog): tady je potreba popsat proc je to tento typ
+%type <VariableSymbol_t> variable local_variable relative_variable
+
+// TODO(burlog): tady je potreba popsat proc je to tento typ
+%type <IVariableSymbol_t> frag_name setting_variable
+
+// TODO(burlog): tady je potreba popsat proc je to tento typ
+%type <OptionsSymbol_t> options
+
+// TODO(burlog): tady je potreba popsat proc je to tento typ
+%type <FormatOptionsSymbol_t> teng_format_options
+
+// TODO(burlog): tady je potreba popsat proc je to tento typ
+%type <NAryExprSymbol_t> nary_expression case_expression
+%type <NAryExprSymbol_t> function_expression query_expression
+
+// TODO(burlog): tady je potreba popsat proc je to tento typ
+%type <Nil_t> start template teng_directive teng_unknown empty_options
+%type <Nil_t> teng_fragment teng_fragment_open teng_fragment_close
+%type <Nil_t> teng_expr teng_dict option option_list
+%type <Nil_t> teng_debug teng_bytecode teng_include teng_format first_option
+%type <Nil_t> expression unary_expression teng_format_open teng_format_close
+%type <Nil_t> ternary_expression expression_tail subexpression
+%type <Nil_t> deprecated_binary_expression absolute_variable
+%type <Nil_t> absolute_variable_segment absolute_variable_prefix teng_set
+%type <Nil_t> rtvar_path rtvar_segment rtvar_identifier rtvar_index
+%type <Nil_t> teng_ctype teng_ctype_open teng_ctype_close
+%type <Nil_t> teng_if teng_else teng_elif teng_endif teng_if_statement
+%type <Nil_t> teng_if_statement_ok query_argument_inner
+
+// TODO(burlog): tady je potreba popsat proc je to tento typ
+%type <bool> nullary_expression binary_expression
+
+// TODO(burlog): tady je potreba popsat proc je to tento typ
+%type <Pos_t> runtime_variable
+
+// TODO(burlog): tady je potreba popsat proc je to tento typ
+%type <uint32_t> function_arguments case_options case_more_options case_values
+%type <uint32_t> query_argument
+
+ /************************************************ GRAMMAR RULES: teng syntax */
 %%
 
 
 start
-    : template {generateHalt(ctx);}
-    | error {replaceCode(ctx, I::HALT, look_ahead_symbol);}
+    : template {generate<Halt_t>(ctx);}
+    ;
+
+
+__error__
+    : __error_cont__ {reset_error(ctx); $$ = std::move($1);}
+    ;
+
+
+__error_cont__
+    : __error_cont__ error {$$ = std::move($1);}
+    | error {$$.emplace(note_error(ctx, *look_ahead_symbol));}
     ;
 
 
 template
-    : template TEXT {generatePrint(ctx, $TEXT);}
+    : template TEXT {generate_print(ctx, *$2);}
     | template teng_directive
-    | %empty
+    | template __error__
+    | %empty {}
     ;
 
 
 teng_directive
-    : teng_unknown  // done
-//     | teng_debug    // skip
-//     | teng_bytecode // skip
-//     | teng_include  // done
-//     | teng_format   // done
-    | teng_fragment // done
-//     | teng_if
-//     | teng_set
-//     | teng_expr
-//     | teng_dict
-//     | teng_ctype
+    : teng_unknown
+    | teng_debug
+    | teng_bytecode
+    | teng_include
+    | teng_format
+    | teng_fragment
+    | teng_if_statement
+    | teng_expr
+    | teng_dict
+    | teng_ctype
+    | teng_set
     ;
 
 
- /********************************************************* RULES: directives */
+ /************************************************************ RULES: options */
 
 
-no_options
-//     : options {if (!$options.opt.empty()) logWarning(ctx, $options.pos, "This directive does not accept any option(s)");}
-    : error {syntaxError(ctx, look_ahead_symbol, "Syntax error inside <?teng ...?> directive");}
+option
+    : identifier ASSIGN string_literal
+      {ctx->opts_sym.insert($1->view(), $3->view());}
     ;
 
 
-// options
-//     : identifier ASSIGN STRING options[parsed_options] {$$.opt = std::move($parsed_options.opt); $$.opt.emplace($identifier.val.str(), $STRING.val.str()); $$.pos = $identifier.pos;}
-//     | %empty {$$.opt.clear();}
-//     ;
+first_option
+    : identifier ASSIGN string_literal
+      {ctx->opts_sym = Options_t(*$1, *$3);}
+    ;
+
+
+option_list
+    : option_list option
+    | first_option
+    ;
+
+
+// TODO(burlog): asi taky nejaky diag?
+options
+    : option_list {$$.emplace(std::move(ctx->opts_sym));}
+    ;
+
+
+empty_options
+    : options
+      {logWarning(ctx, $1->pos, "This directive doesn't accept any option");}
+    | %empty {}
+    ;
+
+
+ /************************************************* RULES: general directives */
 
 
 teng_unknown
-    : TENG error END {logError(ctx, $TENG.pos, "Unknown directive: " + $TENG.str());}
+    : TENG __error__ END
+      {logError(ctx, $1->pos, "Unknown Teng directive: " + $2->str());}
     ;
 
 
-// teng_debug
-//     : DEBUG_FRAG no_options END {generateCode(ctx, I::DEBUG_FRAG);}
-//     ;
-//
-//
-// teng_bytecode
-//     : BYTECODE_FRAG no_options END {generateCode(ctx, I::BYTECODE_FRAG);}
-//     ;
-//
-//
-// teng_include
-//     : INCLUDE options END {includeFile(ctx, $INCLUDE, $options);}
-//     | INCLUDE error {syntaxError(ctx, $error, "Invalid <?teng include ...?> directive");} END
-//     ;
-//
-//
-// teng_format
-//     : FORMAT options END {openFormat(ctx, $$, $FORMAT, $options);}
-//       template ENDFORMAT no_options END {closeFormat(ctx, $ENDFORMAT);}
-//     | FORMAT error {syntaxError(ctx, $error, "Invalid <?teng format ...?> directive");}
-//       END template ENDFORMAT no_options END
-//     | FORMAT error {syntaxError(ctx, $error, "Syntax error in teng format block; discarding it");}
-//       ENDFORMAT no_options END {eraseCodeFrom(ctx, $FORMAT.prgsize);}
-//     | error {if (yyn) syntaxError(ctx, $error, "Misplaced <?teng endformat?> directive");}
-//       ENDFORMAT no_options END {eraseCodeFrom(ctx, $ENDFORMAT.prgsize);}
-//     ;
+teng_debug
+    : DEBUG_FRAG empty_options END {generate<DebugFrag_t>(ctx, $1->pos);}
+    | DEBUG_FRAG __error__ END {generate<DebugFrag_t>(ctx, $1->pos);}
+      {logWarning(ctx, $2->pos, "Invalid or excessive tokens in <?teng debug ...?>; ignoring them");}
+    ;
+
+
+teng_bytecode
+    : BYTECODE_FRAG empty_options END {generate<BytecodeFrag_t>(ctx, $1->pos);}
+    | BYTECODE_FRAG __error__ END {generate<BytecodeFrag_t>(ctx, $1->pos);}
+      {logWarning(ctx, $2->pos, "Invalid or excessive tokens in <?teng bytecode ...?>; ignoring them");}
+    ;
+
+
+teng_include
+    : INCLUDE options END {include_file(ctx, $1->pos, *$2);}
+    | INCLUDE END {ignore_include(ctx, *$2);}
+    | INCLUDE __error__ END {ignore_include(ctx, *$2);}
+    ;
+
+
+ /************************************************** RULES: format directives */
+
+
+teng_format_options
+    : options {$$.emplace(std::move(*$1));}
+    | options __error__ {$$.emplace(*$2);}
+    | __error__ {$$.emplace(*$1);}
+    ;
+
+
+teng_format_open
+    : FORMAT teng_format_options END {open_format(ctx, $1->pos, *$2);}
+    ;
+
+
+teng_format_close
+    : ENDFORMAT empty_options END {close_format(ctx, $1->pos);}
+    | ENDFORMAT __error__ END {close_format(ctx, $1->pos, $2->pos);}
+    ;
+
+
+teng_format
+    : teng_format_open template teng_format_close
+    ;
+
+
+ /**************************************************** RULES: frag directives */
+
+
+frag_name
+    : variable {$$.emplace(std::move(*$1));}
+    | variable __error__ {$$.emplace(*$2);}
+    | __error__ {$$.emplace(*$1);}
+    ;
 
 
 teng_fragment_open
-    : FRAGMENT variable END {openFrag(ctx, $$, $variable);
-   {
-        std::cerr << ">>> " << $variable.pos << std::endl;
-        std::cerr << ">>> " << $variable.name() << std::endl;
-    } }
+    : FRAGMENT frag_name END {open_frag(ctx, $1->pos, std::move(*$2));}
     ;
 
 
 teng_fragment_close
-    : ENDFRAGMENT no_options END {closeFrag(ctx, $ENDFRAGMENT);}
+    : ENDFRAGMENT empty_options END {close_frag(ctx, $1->pos);}
+    | ENDFRAGMENT __error__ END {close_frag(ctx, $1->pos, $2->pos);}
     ;
 
 
 teng_fragment
-    : teng_fragment_open template teng_fragment_close {
-        std::cerr << ">>> " << $teng_fragment_open.pos << std::endl;
-        std::cerr << ">>> " << $teng_fragment_open.name() << std::endl;
-    }
-//    | FRAGMENT error {syntaxError(ctx, $error, "Invalid <?teng frag ...?> directive; discarding it");}
-//      END template ENDFRAGMENT no_options END {eraseCodeFrom(ctx, $FRAGMENT.prgsize);}
-//    | FRAGMENT variable END error {syntaxError(ctx, $error, "Syntax error in teng fragment block; discarding it");}
-//      ENDFRAGMENT no_options END {eraseCodeFrom(ctx, $FRAGMENT.prgsize);}
-//    | error {syntaxError(ctx, $error, "Misplaced <?teng endfrag?> directive");}
-//      ENDFRAGMENT no_options END {eraseCodeFrom(ctx, $ENDFRAGMENT.prgsize);}
+    : teng_fragment_open template teng_fragment_close
     ;
 
 
-// teng_set
-//     : SET setting_variable ASSIGN expression END {setVariable(ctx, $$, $SET, $setting_variable);}
-//     | SET invalid_set_expression END {eraseCodeFrom(ctx, $SET.prgsize);}
-//     ;
-//
-//
-// invalid_set_expression
-//     : setting_variable ASSIGN error {syntaxError(ctx, $error, "Invalid expression in <?teng set ...?> directive; variable '" + $setting_variable.val.str() + "' will not be set");}
-//     | error {syntaxError(ctx, $error, "Invalid variable identifier in <?teng set ...?> directive");} ASSIGN expression
-//     | error {syntaxError(ctx, $error, "Invalid <?teng set ...?> directive");}
-//     ;
-//
-//
-// teng_if
-//     : IF expression END {$$.prgsize = generateCode(ctx, I::JMPIFNOT);}
-//       template {$$.prgsize = ctx->program->size();}
-//       teng_else ENDIF no_options END {buildIfEndJump(ctx, $4, $6, $7);}
-//     | IF error {syntaxError(ctx, $error, "Error in condition expression " "in <?teng if ...?> directive");}
-//       END {eraseCodeFrom(ctx, $IF.prgsize);}
-//       template {$$.prgsize = ctx->program->size();}
-//       teng_else ENDIF no_options END {eraseCodeFrom(ctx, $7.prgsize);}
-//     | IF error {syntaxError(ctx, $error, "Syntax error in teng conditional block; discarding it");}
-//       ENDIF no_options END {eraseCodeFrom(ctx, $IF.prgsize);}
-//     | error[first_error] {syntaxError(ctx, $first_error, "Misplaced <?teng elseif ...?> directive");}
-//       ELSEIF error[second_error] END {eraseCodeFrom(ctx, $second_error.prgsize);}
-//     | error {syntaxError(ctx, $error, "Misplaced <?teng else?> directive");}
-//       ELSE no_options END {eraseCodeFrom(ctx, $error.prgsize);}
-//     | error {syntaxError(ctx, $error, "Misplaced <?teng endif?> directive");}
-//       ENDIF no_options END {eraseCodeFrom(ctx, $error.prgsize);}
-//     ;
-//
-//
-// teng_else
-//     : ELSE no_options END {$$.addr = {generateCode(ctx, I::JMP)};}
-//       template {$$.addr = $END.addr;}
-//     | ELSEIF {$$.prgsize = generateCode(ctx, I::JMP);}
-//       expression END {$$.prgsize = generateCode(ctx, I::JMPIFNOT);}
-//       template {$$.prgsize = ctx->program->size();}
-//       teng_else {buildElseEndJump(ctx, $$, $2, $5, $7, $8);}
-//     | ELSEIF
-//       error {syntaxError(ctx, $error, "Error in condition expression in <?teng elseif ...?> directive");}
-//       END {eraseCodeFrom(ctx, $ELSEIF.prgsize);}
-//       template {$$.prgsize = ctx->program->size();}
-//       teng_else {eraseCodeFrom(ctx, $7.prgsize);}
-//     | %empty {$$.addr.clear();}
-//     ;
-//
-//
-// teng_expr
-//     : EXPR expression END {generatePrint(ctx);}
-//     | SHORT_EXPR expression SHORT_END {generatePrint(ctx);}
-//     | EXPR error {syntaxError(ctx, $error, "Invalid expression in <?teng expr ...?> directive");}
-//       END {generateUndefined(ctx, $$, $EXPR); generatePrint(ctx);}
-//     | SHORT_EXPR error {syntaxError(ctx, $error, "Invalid expression in ${...} statement");}
-//       SHORT_END {generateUndefined(ctx, $$, $SHORT_EXPR); generatePrint(ctx);}
-//     ;
-//
-//
-// teng_dict
-//     : SHORT_DICT dictionary_item SHORT_END {generatePrint(ctx);}
-//     | SHORT_DICT error {syntaxError(ctx, $error, "Invalid dictionary item in #{...} statement");}
-//       SHORT_END {generateUndefined(ctx, $$, $SHORT_DICT); generatePrint(ctx);}
-//     ;
-//
-//
-// teng_ctype
-//     : CTYPE STRING END {$$.val = openCType(ctx, $STRING);}
-//       template ENDCTYPE no_options END {closeCType(ctx, $ENDCTYPE);}
-//     | CTYPE error {syntaxError(ctx, $error, "Invalid <?teng ctype ...?> directive");}
-//       END template ENDCTYPE no_options END
-//     | CTYPE error {syntaxError(ctx, $error, "Syntax error in teng ctype block; discarding it");}
-//       ENDCTYPE no_options END {eraseCodeFrom(ctx, $CTYPE.prgsize);}
-//     | error {syntaxError(ctx, $error, "Misplaced <?teng endctype?> directive");}
-//       ENDCTYPE no_options END {eraseCodeFrom(ctx, $ENDCTYPE.prgsize);}
-//     ;
-//
-//
-//  /********************************************************* RULES: expression */
-//
-//
-// expression
-//     : unary_expression {$$ = $unary_expression;}
-//     | binary_expression {$$ = $binary_expression;}
-//     | ternary_expression {$$ = $ternary_expression;}
-//     ;
-//
-//
-// unary_expression
-//     : L_PAREN expression R_PAREN {$$.prgsize = $unary_expression.prgsize;}
-//     | L_PAREN error {syntaxError(ctx, $error, "Invalid sub-expression (in parentheses)");} R_PAREN {generateUndefined(ctx, $$, $L_PAREN);}
-//     | NOT expression {$$.prgsize = generateExpression(ctx, $NOT.prgsize, I::NOT);}
-//     | BITNOT expression {$$.prgsize = generateExpression(ctx, $BITNOT.prgsize, I::BITNOT);}
-//     | SUB %prec UNARY {$$.val = 0; $$.prgsize = generateCode(ctx, I::VAL, $$.val);}
-//       expression {$$.prgsize = generateExpression(ctx, $expression.prgsize, I::SUB);}
-//     | ADD %prec UNARY {$$.val = 0; $$.prgsize = generateCode(ctx, I::VAL, $$.val);}
-//       expression {$$.prgsize = generateExpression(ctx, $expression.prgsize, I::ADD);}
-//     | DICT dictionary_item {$$.prgsize = $dictionary_item.prgsize;}
-//     | DICT_INDIRECT unary_expression[expression] {$$.prgsize = generateExpression(ctx, $expression.prgsize, I::DICT);}
-//     | VAR variable {$$.prgsize = ctx->program->size(); codeForVariable(ctx, $$, $variable);}
-//     | variable {$$.prgsize = ctx->program->size(); codeForVariable(ctx, $$, $variable);}
-//     | runtime_variable {generateRepr(ctx); $$.prgsize = ctx->program->size();}
-//     | value_literal {$$.prgsize = generateCode(ctx, I::VAL, $value_literal.val);}
-//     | function_expression {$$.prgsize = $function_expression.prgsize;}
-//     | query_expression {$$.prgsize = $query_expression.prgsize;}
-//     | case_expression {$$.prgsize = $case_expression.prgsize;}
-//     ;
-//
-//
-// binary_expression
-//     : expression[lhs] EQ expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::NUMEQ);}
-//     | expression[lhs] NE expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::NUMEQ, true);}
-//     | expression[lhs] GE expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::NUMGE);}
-//     | expression[lhs] LE expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::NUMGT, true);}
-//     | expression[lhs] GT expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::NUMGT);}
-//     | expression[lhs] LT expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::NUMGE, true);}
-//     | expression[lhs] STR_EQ expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::STREQ);}
-//     | expression[lhs] STR_NE expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::STREQ, true);}
-//     | expression[lhs] OR {$$.prgsize = generateCode(ctx, I::OR);}
-//       expression[rhs] {$$.prgsize = finalizeBinOp(ctx, $lhs, $rhs);}
-//     | expression[lhs] AND {$$.prgsize = generateCode(ctx, I::AND);}
-//       expression[rhs] {$$.prgsize = finalizeBinOp(ctx, $lhs, $rhs);}
-//     | expression[lhs] BITOR expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::BITOR);}
-//     | expression[lhs] BITXOR expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::BITXOR);}
-//     | expression[lhs] BITAND expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::BITAND);}
-//     | expression[lhs] ADD expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::ADD);}
-//     | expression[lhs] SUB expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::SUB);}
-//     | expression[lhs] CONCAT expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::CONCAT);}
-//     | expression[lhs] MUL expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::MUL);}
-//     | expression[lhs] DIV expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::DIV);}
-//     | expression[lhs] MOD expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::MOD);}
-//     | expression[lhs] REPEAT expression {$$.prgsize = generateExpression(ctx, $lhs.prgsize, I::REPEAT);}
-//     ;
-//
-//
-// ternary_expression
-//     : expression[cond] COND_EXPR {$$.prgsize = generateCode(ctx, I::JMPIFNOT);}
-//       expression[true] COLON {$$.prgsize = buildTernOp(ctx, $[true]);}
-//       expression[false] {$$.prgsize = finalizeTernOp(ctx, $[cond], $[false]);}
-//     ;
-// 
-// 
-//  /*********************************************** RULES: identifier, literals */
-// 
-// 
-// dictionary_item
-//     : identifier {generateDictLookup(ctx, $$, $identifier);}
-//     ;
-// 
-// 
-// value_literal
-//     : string_literal {$$.val = $string_literal.val;}
-//     | INT {$$.val = $INT.val;}
-//     | REAL {$$.val = $REAL.val;}
-//     ;
-// 
-// 
-// string_literal
-//     : STRING {$$.val = $STRING.val;}
-//     | STRING string_literal[tail] {$$.val = $STRING.val.str() + $tail.val.str();}
-//     ;
+ /*************************************************** RULES: ctype directives */
+
+
+teng_ctype_value
+    : string_literal {$$ = std::move($1);}
+    | string_literal __error__ {$$.emplace(*$2, Value_t());}
+    | __error__ {$$.emplace(*$1, Value_t());}
+    ;
+
+
+teng_ctype_open
+    : CTYPE teng_ctype_value END {open_ctype(ctx, $1->pos, *$2);}
+    ;
+
+
+teng_ctype_close
+    : ENDCTYPE empty_options END {close_ctype(ctx, $1->pos);}
+    | ENDCTYPE __error__ END {close_ctype(ctx, $1->pos, $2->pos);}
+    ;
+
+
+teng_ctype
+    : teng_ctype_open template teng_ctype_close
+    ;
+
+
+ /***************************************************** RULES: set directives */
+
+
+setting_variable
+    : variable {$$.emplace(std::move(*$1));}
+    | variable __error__ {$$.emplace(*$2);}
+    | __error__ {$$.emplace(*$1);}
+    ;
+
+
+teng_set
+    : SET setting_variable ASSIGN expression END {set_var(ctx, std::move(*$2));}
+    ;
+
+
+ /**************************************************** RULES: cond directives */
+
+
+teng_if
+    : IF {expr_diag_sentinel(ctx, diag_code::if_cond);}
+      expression END {generate_if(ctx, *$1);}
+    ;
+
+
+teng_else
+    : ELSE empty_options END {finalize_if(ctx, 0); generate_else(ctx, *$1);}
+    ;
+
+
+teng_elif
+    : ELSEIF {finalize_if(ctx, 1); expr_diag(ctx, diag_code::if_cond, false);}
+      expression END {generate_if(ctx, *$1);}
+    ;
+
+
+teng_endif
+    : ENDIF empty_options END {finalize_if(ctx, 1);}
+    ;
+
+
+teng_elif_statement
+    : teng_elif template
+    | teng_elif_statement teng_elif template
+    ;
+
+
+teng_if_statement_ok
+    : teng_if template teng_endif
+    | teng_if template teng_else template teng_endif
+    | teng_if template teng_elif_statement teng_endif
+    | teng_if template teng_elif_statement teng_else template teng_endif
+    ;
+
+
+teng_if_statement_ko
+    : teng_if template teng_else template teng_elif __error__
+      {$$ = std::move($6);}
+    | teng_if template teng_elif_statement teng_else template teng_elif __error__
+      {$$ = std::move($7);}
+    ;
+
+
+teng_if_statement
+    : teng_if_statement_ok {ctx->expr_diag.pop();}
+    | teng_if_statement_ko {ctx->expr_diag.unwind(ctx, *$1);}
+    ;
+
+
+ /**************************************************** RULES: expr directives */
+
+
+teng_expr
+    : EXPR expression END {generate_print(ctx);}
+    | SHORT_EXPR expression SHORT_END {generate_print(ctx);}
+    ;
+
+
+teng_dict
+    : SHORT_DICT identifier SHORT_END {generate_print_dict_lookup(ctx, *$2);}
+    | SHORT_DICT __error__ SHORT_END {generate_print_dict_undef(ctx, *$2);}
+    ;
+
+
+ /********************************************************* RULES: expression */
+
+
+expression
+    : {note_expr_start_point(ctx);} expression_tail {}
+    ;
+
+
+expression_tail
+    : __error__ {discard_expr(ctx);}
+    | subexpression {ctx->optimization_points.pop();}
+    | subexpression __error__ {discard_expr(ctx);}
+    ;
+
+
+subexpression
+    : nullary_expression {note_optimization_point(ctx, $1);}
+    | unary_expression {optimize_expr(ctx, 1);}
+    | regex_expression {optimize_expr(ctx, 1);}
+    | binary_expression {optimize_expr(ctx, 2, $1);}
+    | deprecated_binary_expression {optimize_expr(ctx, 2);}
+    | ternary_expression {optimize_expr(ctx, 3, true);}
+    | nary_expression {optimize_expr(ctx, $1->arity, $1->lazy_evaluated);}
+    ;
+
+
+nullary_expression
+    : VAR variable {generate_var(ctx, std::move(*$2)); $$ = false;}
+    | variable {generate_var(ctx, std::move(*$1)); $$ = false;}
+    | value_literal {generate_val(ctx, $1->pos, $1->value); $$ = true;}
+    | DICT identifier {generate_dict_lookup(ctx, *$2); $$ = true;}
+    ;
+
+
+unary_expression
+    : L_PAREN subexpression R_PAREN {}
+    | NOT subexpression {generate_expr<Not_t>(ctx, *$1);}
+    | BITNOT subexpression {generate_expr<BitNot_t>(ctx, *$1);}
+    | DICT_INDIRECT subexpression {generate_expr<Dict_t>(ctx, *$1);}
+    | ADD {generate_val(ctx, $1->pos, Value_t(0));} subexpression {generate_expr<Add_t>(ctx, *$1);} %prec DEF_PREC
+    | SUB {generate_val(ctx, $1->pos, Value_t(0));} subexpression {generate_expr<Sub_t>(ctx, *$1);} %prec DEF_PREC
+    | runtime_variable {generate<Repr_t>(ctx, $1);}
+    ;
+
+
+regex_expression
+    : subexpression STR_EQ REGEX {generate_regex(ctx, *$2, *$3);}
+    | subexpression STR_NE REGEX {generate_regex(ctx, *$2, *$3);}
+    ;
+
+
+binary_expression
+    : subexpression EQ subexpression {generate_expr<EQ_t>(ctx, *$2); $$ = false;}
+    | subexpression EQ_DIGRAPH subexpression {generate_expr<EQ_t>(ctx, *$2); $$ = false;}
+    | subexpression NE subexpression {generate_expr<NE_t>(ctx, *$2); $$ = false;}
+    | subexpression NE_DIGRAPH subexpression {generate_expr<NE_t>(ctx, *$2); $$ = false;}
+    | subexpression GE subexpression {generate_expr<GE_t>(ctx, *$2); $$ = false;}
+    | subexpression GE_DIGRAPH subexpression {generate_expr<GE_t>(ctx, *$2); $$ = false;}
+    | subexpression GT subexpression {generate_expr<GT_t>(ctx, *$2); $$ = false;}
+    | subexpression GT_DIGRAPH subexpression {generate_expr<GT_t>(ctx, *$2); $$ = false;}
+    | subexpression LE subexpression {generate_expr<LE_t>(ctx, *$2); $$ = false;}
+    | subexpression LE_DIGRAPH subexpression {generate_expr<LE_t>(ctx, *$2); $$ = false;}
+    | subexpression LT subexpression {generate_expr<LT_t>(ctx, *$2); $$ = false;}
+    | subexpression LT_DIGRAPH subexpression {generate_expr<LT_t>(ctx, *$2); $$ = false;}
+    | subexpression BITOR subexpression {generate_expr<BitOr_t>(ctx, *$2); $$ = false;}
+    | subexpression BITXOR subexpression {generate_expr<BitXor_t>(ctx, *$2); $$ = false;}
+    | subexpression BITAND subexpression {generate_expr<BitAnd_t>(ctx, *$2); $$ = false;}
+    | subexpression ADD subexpression {generate_expr<Add_t>(ctx, *$2); $$ = false;}
+    | subexpression SUB subexpression {generate_expr<Sub_t>(ctx, *$2); $$ = false;}
+    | subexpression MUL subexpression {generate_expr<Mul_t>(ctx, *$2); $$ = false;}
+    | subexpression DIV subexpression {generate_expr<Div_t>(ctx, *$2); $$ = false;}
+    | subexpression MOD subexpression {generate_expr<Mod_t>(ctx, *$2); $$ = false;}
+    | subexpression REPEAT subexpression {generate_expr<Repeat_t>(ctx, *$2); $$ = false;}
+    | subexpression OR {generate_bin_op<Or_t>(ctx, *$2);} subexpression {finalize_bin_op<Or_t>(ctx); $$ = true;}
+    | subexpression OR_DIGRAPH {generate_bin_op<Or_t>(ctx, *$2);} subexpression {finalize_bin_op<Or_t>(ctx); $$ = true;}
+    | subexpression AND {generate_bin_op<And_t>(ctx, *$2);} subexpression {finalize_bin_op<And_t>(ctx); $$ = true;}
+    | subexpression AND_TRIGRAPH {generate_bin_op<And_t>(ctx, *$2);} subexpression {finalize_bin_op<And_t>(ctx); $$ = true;}
+    ;
+
+
+deprecated_binary_expression
+    : subexpression STR_EQ subexpression {generate_expr<StrEQ_t>(ctx, *$2);}
+    | subexpression STR_NE subexpression {generate_expr<StrNE_t>(ctx, *$2);}
+    | subexpression CONCAT subexpression {generate_expr<Concat_t>(ctx, *$2);}
+    ;
+
+
+ternary_expression
+    : subexpression COND_EXPR {generate_tern_op(ctx, *$2);}
+      subexpression COLON {finalize_tern_op_true_branch(ctx, *$5);}
+      subexpression {finalize_tern_op_false_branch(ctx);}
+    ;
+
+
+nary_expression
+    : function_expression {$$ = std::move($1);}
+    | case_expression {$$ = std::move($1);}
+    | query_expression {$$ = std::move($1);}
+    ;
+
+
+ /*********************************************** RULES: identifier, literals */
+
+
+value_literal
+    : string_literal {$$ = std::move($1);}
+    | int_literal {$$ = std::move($1);}
+    | real_literal {$$ = std::move($1);}
+    ;
+
+
+int_literal
+    : DEC_INT {$$.emplace(*$1, Literal_t::extract_int($1->view(), 10));}
+    | HEX_INT {$$.emplace(*$1, Literal_t::extract_int($1->view(), 16));}
+    | BIN_INT {$$.emplace(*$1, Literal_t::extract_int($1->view(), 2));}
+    ;
+
+
+real_literal
+    : REAL {$$.emplace(*$1, Literal_t::extract_real($1->view()));}
+    ;
+
+
+string_literal
+    : STRING {$$.emplace(*$1, Literal_t::extract_str($1->view()));}
+    | STRING string_literal {$$.emplace(*$1, Literal_t::extract_str($1->view()) + $2->value.as_string());}
+    ;
+
+
+// Following code is for parsing literals used in case label. It must
+// be literal for fast evaluation but we must allow thing like +number
+// and -number.
+signed_literal
+    : value_literal {$$ = std::move($1);}
+    | ADD int_literal {$$ = std::move($2);}
+    | ADD real_literal {$$ = std::move($2);}
+    | SUB int_literal {$$.emplace(*$1, -$2->value.as_int());}
+    | SUB real_literal {$$.emplace(*$1, -$2->value.as_real());}
+    ;
 
 
 identifier_relative
-    : IDENT {}
-    | BUILTIN_FIRST
-    | BUILTIN_INNER
-    | BUILTIN_LAST
-    | BUILTIN_INDEX
-    | BUILTIN_COUNT
-    | TYPE
-    | COUNT
-    | JSONIFY
-    | EXISTS
+    : IDENT {$$ = std::move($1);}
+    | BUILTIN_FIRST {$$ = std::move($1);}
+    | BUILTIN_INNER {$$ = std::move($1);}
+    | BUILTIN_LAST {$$ = std::move($1);}
+    | BUILTIN_INDEX {$$ = std::move($1);}
+    | BUILTIN_COUNT {$$ = std::move($1);}
+    | TYPE {$$ = std::move($1);}
+    | COUNT {$$ = std::move($1);}
+    | JSONIFY {$$ = std::move($1);}
+    | EXISTS {$$ = std::move($1);}
+    | LT_DIGRAPH {$$ = std::move($1);}
+    | LE_DIGRAPH {$$ = std::move($1);}
+    | GT_DIGRAPH {$$ = std::move($1);}
+    | GE_DIGRAPH {$$ = std::move($1);}
+    | EQ_DIGRAPH {$$ = std::move($1);}
+    | NE_DIGRAPH {$$ = std::move($1);}
+    | AND_TRIGRAPH {$$ = std::move($1);}
+    | OR_DIGRAPH {$$ = std::move($1);}
+    | CASE {$$ = std::move($1);}
     ;
 
 
 identifier
-    : identifier_relative {}
-    | BUILTIN_THIS
-    | BUILTIN_PARENT
+    : identifier_relative {$$ = std::move($1);}
+    | BUILTIN_THIS {$$ = std::move($1);}
+    | BUILTIN_PARENT {$$ = std::move($1);}
     ;
 
 
- /****************************************************** RULES: teng variable */
+ /********************************************** RULES: teng regular variable */
 
 
 variable
-    : absolute_variable // {buildAbsVar(ctx, $$, $absolute_variable);}
-    | relative_variable // {buildRelVar(ctx, $$, $relative_variable);}
-    | local_variable
-   {
-        std::cerr << ">>> " << $local_variable.pos << std::endl;
-        std::cerr << ">>> " << $local_variable.name() << std::endl;
-    } // {buildLocVar(ctx, $$, $local_variable);}
+    : absolute_variable {$$.emplace(std::move(ctx->var_sym));}
+    | relative_variable {$$.emplace(std::move(ctx->var_sym));}
+    | local_variable {$$.emplace(std::move(ctx->var_sym));}
+    ;
+
+
+absolute_variable_prefix
+    : SELECTOR {prepare_root_variable(ctx, *$1);}
+    | BUILTIN_THIS SELECTOR {prepare_this_variable(ctx, *$1);}
+    | BUILTIN_PARENT SELECTOR {prepare_parent_variable(ctx, *$1);}
     ;
 
 
 absolute_variable
-    : absolute_variable_path_root
-    | absolute_variable_path_this
-    | absolute_variable_path_parent
+    : absolute_variable_prefix absolute_variable_segment identifier
+      {ctx->var_sym.push_back(*$3);}
     ;
 
 
-absolute_variable_path_root
-    : /* {ctx->ident = {};} */
-      absolute_variable_middle // identifier {pushVarName(ctx, $$, $2, $3);}
-    ;
-
-
-absolute_variable_path_this
-    : BUILTIN_THIS // {ctx->ident = ctx->frag_ctxs.top().ident;}
-      absolute_variable_middle identifier // {pushVarName(ctx, $$, $1, $4);}
-    ;
-
-
-absolute_variable_path_parent
-    : BUILTIN_PARENT // {ctx->ident = ctx->frag_ctxs.top().ident; popAbsVarSegment(ctx, $1);}
-      absolute_variable_middle identifier // {pushVarName(ctx, $$, $1, $4);}
-    ;
-
-
-absolute_variable_middle
-    : absolute_variable_middle identifier_relative SELECTOR // {pushAbsVarSegment(ctx, $2); $$.pos = $1.pos;}
-    | absolute_variable_middle BUILTIN_THIS SELECTOR // {logWarning(ctx, $2.pos, "Ignoring useless _this variable path segment"); $$.pos = $1.pos;}
-    | absolute_variable_middle BUILTIN_PARENT SELECTOR // {popAbsVarSegment(ctx, $2); $$.pos = $1.pos;}
-    | SELECTOR // {$$.pos = $1.pos;}
+absolute_variable_segment
+    : absolute_variable_segment identifier_relative SELECTOR
+      {ctx->var_sym.push_back(*$2);}
+    | absolute_variable_segment BUILTIN_THIS SELECTOR
+      {logWarning(ctx, $2->pos, "Ignoring useless var path segment _this");}
+    | absolute_variable_segment BUILTIN_PARENT SELECTOR
+      {ctx->var_sym.pop_back(ctx, $2->pos);}
+    | %empty
+      {}
     ;
 
 
 relative_variable
-    : identifier_relative // {ctx->ident = {std::move($1.val.as_str())};}
-      SELECTOR relative_variable_middle identifier // {pushVarName(ctx, $$, $1, $5);}
+    : identifier_relative
+      {ctx->var_sym = Variable_t(*$1);}
+      relative_variable_segment identifier
+      {ctx->var_sym.push_back(*$4);}
     ;
 
 
-relative_variable_middle
-    : relative_variable_middle identifier SELECTOR // {pushRelVarSegment(ctx, $2);}
-    | %empty
+relative_variable_segment
+    : relative_variable_segment identifier SELECTOR
+      {ctx->var_sym.push_back(*$2);}
+    | SELECTOR
+      {}
     ;
 
 
 local_variable
-    : identifier
+    : identifier {ctx->var_sym = Variable_t(*$1);}
     ;
 
 
-// setting_variable
-//     : VAR variable {$$.val = std::move($2.val); $$.id = std::move($2.id);}
-//     | variable {$$.val = std::move($1.val); $$.id = std::move($1.id);}
-//     ;
-//
-//
-// runtime_variable
-//     : VAR VAR runtime_variable_path
-//     ;
-//
-//
-// runtime_variable_path
-//     : SELECTOR {generateCode(ctx, I::PUSH_ROOT_FRAG);} runtime_variable_segment
-//     | {generateCode(ctx, I::PUSH_THIS_FRAG);} runtime_variable_segment
-//     ;
-//
-//
-// runtime_variable_segment
-//     : runtime_variable_segment SELECTOR runtime_variable_identifier runtime_variable_subscript
-//     | runtime_variable_identifier runtime_variable_subscript
-//     ;
-//
-//
-// runtime_variable_subscript
-//     : runtime_variable_subscript L_BRACKET expression R_BRACKET {generateCode(ctx, I::PUSH_ATTR_AT);}
-//     | %empty
-//     ;
-//
-//
-// runtime_variable_identifier
-//     : identifier {if ($1.token_id != token::BUILTIN_THIS) generateCode(ctx, I::PUSH_ATTR, $1.val);}
-//     ;
-//
-//
-//  /**************************************************** RULES: case expression */
-//
-//
-// case_options
-//     : case_values COLON {$$.prgsize = generateCode(ctx, I::JMPIFNOT);}
-//       expression {$$.prgsize = ctx->program->size();}
-//       case_more_options {finalizeCaseOptionsOp(ctx, $$, $3, $5, $6);}
-//     | MUL COLON expression {$$.addr.clear();}
-//     ;
-//
-//
-// case_more_options
-//     : COMMA {$$.prgsize = generateCode(ctx, I::JMP);}
-//       case_options {$$.addr = $3.addr; $$.addr.push_back($2.prgsize);}
-//     | %empty {$$.addr = {generateCode(ctx, I::JMP, I::VAL)};}
-//     ;
-//
-//
-// // Following code is for parsing literals used in case label. It must
-// // be literal for fast evaluation but we must allow thing like +number
-// // and -number.
-// case_literal
-//     : value_literal {$$.val = $1.val;}
-//     | ADD INT {$$.val = $2.val;}
-//     | ADD REAL {$$.val = $2.val;}
-//     | SUB INT {$$.val = -$2.val;}
-//     | SUB REAL {$$.val = -$2.val;}
-//     ;
-//
-//
-// case_values
-//     : case_literal {generateCaseLiteral(ctx, $$, $1);}
-//     | case_literal COMMA case_values {generateCaseValues(ctx, $$, $1);}
-//     ;
-//
-//
-// case_expression
-//     : CASE L_PAREN expression COMMA {generateCode(ctx, I::PUSH);}
-//       case_options R_PAREN {finalizeCaseOp(ctx, $$, $1, $6);}
-//     | CASE L_PAREN error {syntaxError(ctx, $error, "Invalid condition expression in 'case()' operator");}
-//       COMMA case_options R_PAREN {$$.prgsize = generateUndefined(ctx, $$, $1);}
-//     | CASE L_PAREN error {syntaxError(ctx, $error, "Invalid 'case()' operator arguments");}
-//       R_PAREN {$$.prgsize = generateUndefined(ctx, $$, $1);}
-//     ;
-//
-//
-//  /************************************************ RULES: function expression */
-//
-//
-// function_name
-//     : IDENT {$$.val = $1.val;}
-//     | UDF_IDENT {$$.val = $1.val;}
-//     ;
-//
-//
-// function_arguments
-//     : expression COMMA function_arguments {$$.val = $3.val.integral() + 1;}
-//     | expression {$$.val = 1;}
-//     | %empty {$$.val = 0;}
-//     ;
-//
-//
-//  // {syntaxError(ctx, yyla.value, "Invalid function '" + $1.val.str() + "()' arg(s)");}
-// function_expression
-//     : function_name L_PAREN function_arguments R_PAREN {$$.prgsize = generateFunction(ctx, $1, $2, $3);}
-//     | function_name L_PAREN error R_PAREN {$$.prgsize = generateUndefined(ctx, $$, $1);}
-//     ;
-//
-//
-//  /*************************************************** RULES: query expression */
-//
-//
-// query_argument
-//     : variable {$$.val = std::move($1.val); $$.id = std::move($1.id);}
-//     | VAR variable {$$.val = "$";}
-//     | %empty
-//     ;
-//
-//
-// query_name
-//     : DEFINED {prepareQueryInstr(ctx, $$, $1, "_defined");}
-//     | ISEMPTY {prepareQueryInstr(ctx, $$, $1, "_isempty");}
-//     | EXISTS {prepareQueryInstr(ctx, $$, $1, "_exists");}
-//     ;
-//
-//
-//  // {syntaxError(ctx, yyla.value, "Invalid query '" + $1.val.str() + "()' arg");}
-// query_expression
-//     : query_name L_PAREN query_argument R_PAREN {generateQueryInstr(ctx, $$, $1, $3);}
-//     | query_name L_PAREN runtime_variable R_PAREN {/* warn */generateRepr(ctx, $1);}
-//     | query_name L_PAREN error {generateQueryInstr(ctx, $$, $1, $error);} R_PAREN
-//     /* | EXISTS L_PAREN runtime_variable R_PAREN { */
-//     /*     generateFunctionCall(ctx, "_exists", 1); */
-//     /* } */
-//     ;
+ /********************************************** RULES: teng runtime variable */
+
+
+rtvar_path
+    : SELECTOR {generate_rtvar<PushRootFrag_t>(ctx, *$1);} rtvar_segment {}
+    | {generate_rtvar<PushThisFrag_t>(ctx, *look_ahead_symbol);} rtvar_segment {}
+    ;
+
+
+rtvar_segment
+    : rtvar_segment SELECTOR rtvar_identifier rtvar_index {}
+    | rtvar_identifier rtvar_index {}
+    ;
+
+
+rtvar_index
+    : rtvar_index L_BRACKET subexpression R_BRACKET
+      {generate_rtvar_index(ctx, *$2);}
+    | %empty {}
+    ;
+
+
+rtvar_identifier
+    : identifier_relative {generate<PushAttr_t>(ctx, $1->str(), $1->pos);}
+    | BUILTIN_THIS {/*ignore this*/}
+    | BUILTIN_PARENT {generate<PopAttr_t>(ctx, $1->pos);}
+    ;
+
+
+runtime_variable
+    : VAR VAR rtvar_path {$$ = $1->pos;}
+    ;
+
+
+ /************************************************* RULES: case subexpression */
+
+
+case_options
+    : case_values COLON {update_case_jmp(ctx, *$2, $1);}
+      subexpression {expr_diag(ctx, diag_code::case_option);}
+      case_more_options {$$ = $6 + 1;}
+    | MUL COLON {expr_diag(ctx, diag_code::case_default_branch);}
+      subexpression {$$ = 1;}
+    ;
+
+
+case_more_options
+    : COMMA {finalize_case_branch(ctx, *$1); } case_options {$$ = $3;}
+    | %empty {finalize_case_branch(ctx, *look_ahead_symbol); $$ = 0;}
+    ;
+
+
+case_values
+    : signed_literal {$$ = generate_case_cmp(ctx, *$1);}
+    | case_values COMMA signed_literal {$$ = generate_case_next(ctx, *$3, $1);}
+    ;
+
+
+case_expression
+    : CASE L_PAREN {expr_diag_sentinel(ctx, diag_code::case_cond);}
+      subexpression COMMA {prepare_case(ctx, *$5);}
+      case_options R_PAREN {$$.emplace(finalize_case(ctx, *$8, $7));}
+    ;
+
+
+ /********************************************* RULES: function subexpression */
+
+
+function_name
+    : IDENT {$$ = std::move($1);}
+    | UDF_IDENT {$$ = std::move($1);}
+
+
+function_arguments
+    : subexpression COMMA function_arguments {$$ = $3 + 1;}
+    | subexpression {$$ = 1;}
+    | %empty {$$ = 0;}
+    ;
+
+
+function_expression
+    : function_name L_PAREN {expr_diag_sentinel(ctx, diag_code::fun_args);}
+      function_arguments R_PAREN {$$.emplace(*$1, generate_func(ctx, *$1, $4));}
+    ;
+
+
+ /************************************************ RULES: query subexpression */
+
+
+query_argument
+    : L_PAREN query_argument_inner R_PAREN {$$ = 1;}
+    | L_PAREN __error__ {invalid_query(ctx, $2->pos); $$ = 0;}
+    | L_PAREN variable __error__ {invalid_query(ctx, $3->pos); $$ = 0;}
+    | L_PAREN VAR variable __error__ {invalid_query(ctx, $4->pos); $$ = 0;}
+    | L_PAREN runtime_variable __error__ {invalid_query(ctx, $3->pos); $$ = 0;}
+    ;
+
+
+query_argument_inner
+    : variable {generate_query(ctx, *$1, false);}
+    | VAR variable {generate_query(ctx, *$2, true);}
+    | runtime_variable {/*generates instructions itself*/}
+    ;
+
+
+query_expression
+    : DEFINED query_argument {$$.emplace(query_expr<ReprDefined_t>(ctx, *$1, $2));}
+    | EXISTS query_argument {$$.emplace(query_expr<ReprExists_t>(ctx, *$1, $2));}
+    | ISEMPTY query_argument {$$.emplace(query_expr<ReprIsEmpty_t>(ctx, *$1, $2));}
+    | TYPE query_argument {$$.emplace(query_expr<ReprType_t>(ctx, *$1, $2));}
+    | COUNT query_argument {$$.emplace(query_expr<ReprCount_t>(ctx, *$1, $2));}
+    | JSONIFY query_argument {$$.emplace(query_expr<ReprJsonify_t>(ctx, *$1, $2));}
+    ;
 
 
  /************************************ EPILOGUE: glue between bison and flex. */
 %%
+
+namespace Teng {
+namespace Parser {
+namespace Impl {
+
+int yylex(parser::semantic_type *variant, Context_t *ctx) {
+    return *(variant->build<TokenSymbol_t>().emplace(ctx->next_token()));
+}
+
+} // namespace Impl
+} // namespace Parser
+} // namespace Teng
 

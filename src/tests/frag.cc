@@ -36,12 +36,58 @@
 
 #include <teng.h>
 
+// TODO(burlog): remove
+#include <iostream>
+
 #include "catch.hpp"
 #include "utils.h"
 
+// TODO(burlog): !!!!!!!!!!!!!!!
+// "${$$.g[0]['h']['f']}"
+// "${$$.g[-1]['h']['f']}"
+// "${$$.a.b[0].c}"
+// "${$$.a[0].b[0+0].c}"
+// "${$$.a['b'].c}"
+// "${.z}==${$$.z}|"
+// "${.alpha}==${$$.alpha}|"
+// "<?teng frag f?>${$$f}<?teng endfrag?>" // ==${$$.f.f}|"
+// "<?teng frag a?><?teng frag b?>${c}<?teng endfrag?>==${$$.a.b.c}<?teng endfrag?>|"
+// "<?teng frag f?>${.alpha}==${$$.f[0+a].f ++ $$.alpha}<?teng endfrag?>"
+// "${.alpha}${alpha}${$$alpha}${0+0}"
+// "<?teng frag f?>${exists($$.f[0])}<?teng endfrag?>"
+// "<?teng frag f?>${exists($$.f[3])}<?teng endfrag?>"
+// "<?teng frag g?><?teng frag h?>${exists($$.g[0].h)}<?teng endfrag?><?teng endfrag?>"
+// "${z}"
+// "<?teng frag b?>"
+// "<?teng frag .a?>"
+// "${b.c}"
+// "${z}"
+// "<?teng endfrag?>"
+// "<?teng endfrag?>"
+// "<?teng endfrag?>"
+//"${'abc'}"
+//"${'abc'}"
+//"<?teng format space='nospace'?>"
+//"${'abc'}"
+//"<?teng endformat ?>"
+// "${1||2||3}"
+//"<?teng format 'text'?>"
+// "<?teng if 0?>"
+// "a"
+// "<?teng elif 0?>"
+// "b"
+// "<?teng elif 0?>"
+// "b2"
+// "${case(2, 1: 'jedna'+a, 3,6,7,2: 'dva'++'dva', 5,4: 'dva'++'dva', *: 'ostatni')}"
+// "${1 || (1 + a)}"
+// "<?teng else?>"
+// "c"
+// "<?teng endif?>"
+//"<?teng endformat a ?>"
+
 SCENARIO(
     "One Teng fragment",
-    "[frags][y]"
+    "[frags]"
 ) {
     GIVEN("Template with one Teng fragment") {
         auto t = "<?teng frag sample?>content<?teng endfrag?>";
@@ -177,8 +223,8 @@ SCENARIO(
             Teng::Error_t err;
             Teng::Fragment_t root;
             root.addFragment("sample1");
-            root.addFragment("sample2");
             root.addFragment("sample1");
+            root.addFragment("sample2");
             auto result = g(err, t, root);
 
             THEN("It contains two times data from first and one from second") {
@@ -376,11 +422,11 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
                     {1, 1},
-                    "Unexpected token: [265] directive '<?teng endfrag'"
+                    "Missing <?teng frag ...?> of this endfrag"
                 }, {
-                    Teng::Error_t::FATAL,
-                    {1, 1},
-                    "Misplaced <?teng endfrag?> directive (syntax error)"
+                    Teng::Error_t::ERROR,
+                    {1, 15},
+                    "Misplaced or excessive '?>' token"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "{}");
@@ -404,13 +450,13 @@ SCENARIO(
             THEN("It contains text from template") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 12},
-                    "Unexpected token: [331] integer literal '1'"
+                    {1, 13},
+                    "Unexpected token: name=DEC_INT, view=1"
                 }, {
-                    Teng::Error_t::FATAL,
-                    {1, 12},
-                    "Invalid <?teng frag ...?> directive; discarding it "
-                    "(syntax error)"
+                    Teng::Error_t::ERROR,
+                    {1, 13},
+                    "Invalid fragment identifier; discarding fragment "
+                    "block content"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "{}");
@@ -435,15 +481,27 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
                     {1, 12},
-                    "Unexpected token: [265] directive '<?teng endfrag'"
+                    "Missing <?teng frag ...?> of this endfrag"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 12},
+                    "Invalid fragment identifier; discarding fragment "
+                    "block content"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 29},
+                    "Unexpected token: name=<EOF>, view="
                 }, {
                     Teng::Error_t::FATAL,
-                    {1, 12},
-                    "Syntax error in teng fragment block; discarding it "
-                    "(syntax error)"
+                    {0, 0},
+                    "Unrecoverable syntax error; discarding whole program"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 1},
+                    "Unclosed <?teng frag ?> directive"
                 }};
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "{}");
+                REQUIRE(result == "");
             }
         }
     }

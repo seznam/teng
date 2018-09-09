@@ -44,9 +44,9 @@
 #include <string>
 #include <functional>
 
-#include <tengconfig.h>
-#include <tenginvoke.h>
-#include <tengparservalue.h>
+#include "tengconfig.h"
+#include "tenginvoke.h"
+#include "tengvalue.h"
 
 namespace Teng {
 namespace udf {
@@ -59,15 +59,15 @@ using Result_t = FunctionResult_t;
 using Function_t = std::function<Result_t(const Args_t &)>;
 
 /**
- * @short registers user-defined function
- * @param name name of the function
+ * @short Registers user-defined function.
+ * @param name name of the function (without udf.prefix)
  * @param udf user-defined callable object
  */
 void registerFunction(const std::string &name, Function_t udf);
 
 /**
  * @short finds function in global UDF list, returns pointer or 0
- * @param name name of the function
+ * @param name name of the function (with udf. prefix)
  */
 Invoker_t<Function_t> findFunction(const std::string &name);
 

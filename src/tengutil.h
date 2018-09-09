@@ -69,9 +69,9 @@ void clipString(std::string &str, unsigned int len);
  */
 std::string tolower(std::string str);
 
-/** Reentrant version of strerror(3).
+/** Re-entrant version of strerror(3).
  */
-std::string strerr();
+std::string strerr(int errno_value);
 
 } // namespace Teng
 

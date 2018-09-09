@@ -36,20 +36,17 @@
  *             Win32 support.
  */
 
-
 #include <unistd.h>
 
 #include <stdexcept>
 #include <memory>
 
-#include "teng.h"
+#include "tengplatform.h"
 #include "tenglogging.h"
 #include "tengstructs.h"
 #include "tengprocessor.h"
-#include "tengcontenttype.h"
 #include "tengtemplate.h"
-#include "tengformatter.h"
-#include "tengplatform.h"
+#include "teng.h"
 
 extern "C" int teng_library_present() {return 0;}
 
@@ -81,45 +78,52 @@ std::string prependBeforeExt(const std::string &str, const std::string &prep) {
     }
 }
 
-int logErrors(const ContentType_t *ct, Writer_t &writer, Error_t &err) {
-    if (!err) return 0;
-    bool useLineComment = false;
+int gen_page(
+    std::unique_ptr<Template_t> templ,
+    const std::string &contentType,
+    const std::string &encoding,
+    const FragmentValue_t &data,
+    Writer_t &writer,
+    Error_t &err
+) {
+    // append error logs of dicts and program
+    err.append(templ->langDictionary->getErrors());
+    err.append(templ->paramDictionary->getErrors());
+    err.append(templ->program->getErrors());
 
-    if (ct->blockComment.first.empty()) {
-        useLineComment = true;
-        if (!ct->lineComment.empty())
-            writer.write(ct->lineComment + ' ');
-
-    } else {
-        if (!ct->blockComment.first.empty())
-            writer.write(ct->blockComment.first + ' ');
+    // if program is valid (not empty) execute it
+    if (!templ->program->empty()) {
+        std::string encoding_lowerized = tolower(encoding);
+        Processor_t(
+            err,
+            *templ->program,
+            *templ->langDictionary,
+            *templ->paramDictionary,
+            encoding_lowerized,
+            contentType
+        ).run(data, writer);
     }
 
-    writer.write("Error log:\n");
-    for (auto &errorEntry: err.getEntries()) {
-        if (useLineComment && !ct->lineComment.empty())
-            writer.write(ct->lineComment + ' ');
-        writer.write(errorEntry.getLogLine());
-    }
+    // flush writer to output
+    writer.flush();
 
-    if (!useLineComment)
-        writer.write(ct->blockComment.second + '\n');
+    // append writer errors
+    err.append(writer.getErrors());
 
-    return 0;
+    // return error level from error log
+    return err.max_level;
 }
 
 } // namespace
 
 Teng_t::Teng_t(const std::string &root, const Teng_t::Settings_t &settings)
-    : root(root), templateCache(nullptr), err()
+    : root(root), templateCache(nullptr)
 {
     // if not absolute path, prepend current working directory
     if (root.empty() || !ISROOT(root)) {
         char cwd[2048];
-        if (!getcwd(cwd, sizeof(cwd))) {
-            logFatal(err, {}, "Cannot get cwd (" + strerr() + ")");
-            throw std::runtime_error("Cannot get cwd.");
-        }
+        if (!getcwd(cwd, sizeof(cwd)))
+            throw std::runtime_error("cannot get cwd");
         this->root = std::string(cwd) + '/' + root;
     }
 
@@ -129,23 +133,20 @@ Teng_t::Teng_t(const std::string &root, const Teng_t::Settings_t &settings)
     );
 }
 
-Teng_t::~Teng_t() {}
+Teng_t::~Teng_t() = default;
 
-int Teng_t::generatePage(const std::string &templateFilename,
-                         const std::string &skin,
-                         const std::string &dict,
-                         const std::string &lang,
-                         const std::string &param,
-                         const std::string &scontentType,
-                         const std::string &encoding,
-                         const Fragment_t &data,
-                         Writer_t &writer,
-                         Error_t &err)
-{
-    // find contentType desciptor for given contentType
-    const ContentType_t *contentType
-        = ContentType_t::findContentType(scontentType, err)->contentType.get();
-
+int Teng_t::generatePage(
+    const std::string &templateFilename,
+    const std::string &skin,
+    const std::string &dict,
+    const std::string &lang,
+    const std::string &param,
+    const std::string &contentType,
+    const std::string &encoding,
+    const Fragment_t &data,
+    Writer_t &writer,
+    Error_t &err
+) const {
     // create template
     std::unique_ptr<Template_t> templ(templateCache->createTemplate(
         prependBeforeExt(templateFilename, skin),
@@ -153,53 +154,27 @@ int Teng_t::generatePage(const std::string &templateFilename,
         param,
         TemplateCache_t::SRC_FILE
     ));
-
-    // append error logs of dicts and program
-    err.append(templ->langDictionary->getErrors());
-    err.append(templ->paramDictionary->getErrors());
-    err.append(templ->program->getErrors());
-
-    // if program is valid (not empty) execute it
-    if (!templ->program->empty()) {
-        Formatter_t output(writer);
-        Processor_t(
-            err,
-            *templ->program,
-            *templ->langDictionary,
-            *templ->paramDictionary,
-            encoding,
-            contentType
-        ).run(data, output);
-    }
-
-    // log error into log, if said
-    if (templ->paramDictionary->isLogToOutputEnabled())
-        logErrors(contentType, writer, err);
-
-    // flush writer to output
-    writer.flush();
-
-    // append writer errors
-    err.append(writer.getErrors());
-
-    // return error level from error log
-    return err.max_level;
+    return gen_page(
+        std::move(templ),
+        contentType,
+        encoding,
+        FragmentValue_t(&data),
+        writer,
+        err
+    );
 }
 
-int Teng_t::generatePage(const std::string &templateString,
-                         const std::string &dict,
-                         const std::string &lang,
-                         const std::string &param,
-                         const std::string &scontentType,
-                         const std::string &encoding,
-                         const Fragment_t &data,
-                         Writer_t &writer,
-                         Error_t &err)
-{
-    // find contentType desciptor for given contentType
-    const ContentType_t *contentType
-        = ContentType_t::findContentType(scontentType, err)->contentType.get();
-
+int Teng_t::generatePage(
+    const std::string &templateString,
+    const std::string &dict,
+    const std::string &lang,
+    const std::string &param,
+    const std::string &contentType,
+    const std::string &encoding,
+    const Fragment_t &data,
+    Writer_t &writer,
+    Error_t &err
+) const {
     // create template
     std::unique_ptr<Template_t> templ(templateCache->createTemplate(
         templateString,
@@ -207,45 +182,23 @@ int Teng_t::generatePage(const std::string &templateString,
         param,
         TemplateCache_t::SRC_STRING
     ));
-
-    // append error logs of dicts and program
-    err.append(templ->langDictionary->getErrors());
-    err.append(templ->paramDictionary->getErrors());
-    err.append(templ->program->getErrors());
-
-    // if program is valid (not empty) execute it
-    if (!templ->program->empty()) {
-        Formatter_t output(writer);
-        Processor_t(
-            err,
-            *templ->program,
-            *templ->langDictionary,
-            *templ->paramDictionary,
-            encoding,
-            contentType
-        ).run(data, output);
-    }
-
-    // log error into log, if said
-    if (templ->paramDictionary->isLogToOutputEnabled())
-        logErrors(contentType, writer, err);
-
-    // flush writer to output
-    writer.flush();
-
-    // append writer errors
-    err.append(writer.getErrors());
-
-    // return error level from error log
-    return err.max_level;
+    return gen_page(
+        std::move(templ),
+        contentType,
+        encoding,
+        FragmentValue_t(&data),
+        writer,
+        err
+    );
 }
 
-int Teng_t::dictionaryLookup(const std::string &config,
-                             const std::string &dict,
-                             const std::string &lang,
-                             const std::string &key,
-                             std::string &value)
-{
+int Teng_t::dictionaryLookup(
+    const std::string &config,
+    const std::string &dict,
+    const std::string &lang,
+    const std::string &key,
+    std::string &value
+) const {
     // find value for key
     auto path = prependBeforeExt(dict, lang);
     auto *dictionary = templateCache->createDictionary(config, path);

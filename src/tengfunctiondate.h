@@ -97,11 +97,11 @@ int unixtime(struct tm dateTime, time_t &res) {
  * @param dateTime destination
  * @return 0 OK, -1 error
  * */
-int parseDateTime(const std::string &str, struct tm &dateTime) {
+int parseDateTime(const string_view_t &str, struct tm &dateTime) {
     char buf4[5];
     char buf2[3];
     char *end; // is set by strtoul
-    const char *pos = str.c_str();
+    const char *pos = str.data();
     memset(&dateTime, 0, sizeof(dateTime));
 
     buf4[4] = buf2[2] = 0;
@@ -230,9 +230,10 @@ endFunction:
  * @param index Which substring put from setup-string into output.
  * @param setup The date-setup string.
  * @param out output string. */
-int addDateString(uint32_t index, const std::string &setup, std::string &out) {
+int
+addDateString(uint32_t index, const string_view_t &setup, std::string &out) {
     // find the proper word
-    std::string::const_iterator isetup = setup.begin();
+    auto isetup = setup.begin();
     for (++index; index > 0; --index) {
         // find next '|"
         for (; (isetup != setup.end()) && (*isetup != '|');
@@ -247,7 +248,7 @@ int addDateString(uint32_t index, const std::string &setup, std::string &out) {
     // not found => error (must be zero)
     if (index) return -1;
 
-    std::string::const_iterator esetup = isetup;
+    auto esetup = isetup;
     // find terminating delimiter
     while  ((esetup != setup.end()) && (*esetup != '|'))
         esetup++;
@@ -275,11 +276,12 @@ void formatValue(std::string &out, const char *format, T1 v1, T &&...v) {
  * @param setup String with literals of month/day names.
  * @param dateTime Date/time for formating.
  * @param output Result (formated string). */
-int formatBrokenDate(const std::string &format,
-                     const std::string &setup,
-                     const struct tm &dateTime,
-                     std::string &output)
-{
+int formatBrokenDate(
+    const string_view_t &format,
+    const string_view_t &setup,
+    const struct tm &dateTime,
+    std::string &output
+) {
     // for all chars in format string
     for (auto ptr = format.begin(); ptr != format.end(); ++ptr) {
         // if formating char '%'  found
@@ -448,11 +450,12 @@ int formatBrokenDate(const std::string &format,
  * @param output result
  * @return 0 OK, -1 error
  * */
-int formatStringDate(const std::string &format,
-                     const std::string &setup,
-                     const std::string &date,
-                     std::string &output)
-{
+int formatStringDate(
+    const string_view_t &format,
+    const string_view_t &setup,
+    const string_view_t &date,
+    std::string &output
+) {
     struct tm dateTime;
     if (parseDateTime(date, dateTime)) return -1;
     return formatBrokenDate(format, setup, dateTime, output);
@@ -467,11 +470,12 @@ int formatStringDate(const std::string &format,
  *
  * @return 0 OK, -1 error
  */
-int formatTime_tDate(const std::string &format,
-                     const std::string &setup,
-                     time_t date,
-                     std::string &output)
-{
+int formatTime_tDate(
+    const string_view_t &format,
+    const string_view_t &setup,
+    time_t date,
+    std::string &output
+) {
     struct tm dateTime;
     if (!localtime_r(&date, &dateTime)) return -1;
     return formatBrokenDate(format, setup, dateTime, output);
@@ -481,14 +485,14 @@ int formatTime_tDate(const std::string &format,
  *
  * @return 0 OK, -1 error
  */
-int to_number(const std::string &text, time_t &res) {
+int to_number(const string_view_t &text, time_t &res) {
     // int value
     char *err = nullptr;
-    auto int_value = strtol(text.c_str(), &err, 10);
+    auto int_value = strtol(text.data(), &err, 10);
     if (*err == '\0') return res = int_value, 0;
 
     // real value
-    auto real_value = strtod(text.c_str(), &err);
+    auto real_value = strtod(text.data(), &err);
     if (*err == '\0') return res = real_value, 0;
 
     // not a number
@@ -523,18 +527,19 @@ Result_t now(Ctx_t &ctx, const Args_t &args) {
 Result_t timestamp(Ctx_t &ctx, const Args_t &args) {
     if (args.size() != 1)
         return wrongNumberOfArgs(ctx, "timestamp", 1);
+    return args[0].print([&] (const string_view_t &arg) {
+        struct tm dateTime;
+        if (parseDateTime(arg, dateTime))
+            return failed(ctx, "Can't parse date", "timestamp");
 
-    struct tm dateTime;
-    if (parseDateTime(*str(args.back()), dateTime))
-        return failed(ctx, "Can't parse date", "timestamp");
+        time_t res = 0;
+        if (unixtime(dateTime, res) == -1) {
+            static auto *msg = "Can't convert parsed date to timestamp";
+            return failed(ctx, msg, "timestamp");
+        }
 
-    time_t res = 0;
-    if (unixtime(dateTime, res) == -1) {
-        static auto *msg = "Can't convert parsed date to timestamp";
-        return failed(ctx, msg, "timestamp");
-    }
-
-    return Result_t(res);
+        return Result_t(res);
+    });
 }
 
 /** strftime like Teng function. Uses user month / day names
@@ -549,7 +554,7 @@ Result_t date(Ctx_t &ctx, const Args_t &args) {
     auto iarg = args.rbegin();
 
     // 0: format
-    if (!iarg->is_string())
+    if (!iarg->is_string_like())
         return failed(ctx, "date", "First arg must be string");
     auto &format = *(iarg++);
 
@@ -557,21 +562,20 @@ Result_t date(Ctx_t &ctx, const Args_t &args) {
     auto &value = *(iarg++);
 
     // 2: setup [optional]
-    static const std::string empty;
-    const std::string *setup = &empty;
+    string_view_t setup;
     if (iarg != args.rend()) {
-        if (!iarg->is_string())
+        if (!iarg->is_string_like())
             return failed(ctx, "date", "Thrid arg must be string");
-        setup = &iarg->as_str();
+        setup = iarg->string();
     }
 
     // string formatting
     time_t time_value = 0;
-    if (value.is_string()) {
+    if (value.is_string_like()) {
         // if string contains a number skip string formatting
-        if (!to_number(value.as_str(), time_value)) {
+        if (!to_number(value.string(), time_value)) {
             std::string res;
-            if (formatStringDate(format.as_str(), *setup, value.as_str(), res))
+            if (formatStringDate(format.string(), setup, value.string(), res))
                 return failed(ctx, "date", "Formatting failed");
             return Result_t(std::move(res));
         }
@@ -579,7 +583,7 @@ Result_t date(Ctx_t &ctx, const Args_t &args) {
 
     // number formatting
     std::string res;
-    if (formatTime_tDate(format.as_str(), *setup, time_value, res))
+    if (formatTime_tDate(format.string(), setup, time_value, res))
         return failed(ctx, "date", "Formatting failed");
     return Result_t(res);
 }

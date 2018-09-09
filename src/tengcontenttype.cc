@@ -40,7 +40,6 @@
 #include <utility>
 #include <algorithm>
 
-#include "tenglogging.h"
 #include "tengcontenttype.h"
 
 namespace Teng {
@@ -267,10 +266,10 @@ int ContentType_t::addEscape(unsigned char c, const std::string &escape) {
     return escapeBitmap[c] = escapes.size() - 1;
 }
 
-std::string ContentType_t::escape(const std::string &src) const {
+std::string ContentType_t::escape(const string_view_t &src) const {
     // output string
     std::string dest;
-    dest.reserve(src.length());
+    dest.reserve(src.size());
 
     // run through input string
     for (auto ch: src) {
@@ -286,10 +285,10 @@ std::string ContentType_t::escape(const std::string &src) const {
     return dest;
 }
 
-std::string ContentType_t::unescape(const std::string &src) const {
+std::string ContentType_t::unescape(const string_view_t &src) const {
     // output string
     std::string dest;
-    dest.reserve(src.length());
+    dest.reserve(src.size());
 
     // run through input string
     for (auto isrc = src.begin(); isrc != src.end();) {
@@ -515,42 +514,16 @@ const ContentType_t::Descriptor_t *ContentType_t::getDefault() {
 }
 
 const ContentType_t::Descriptor_t *
-ContentType_t::findContentType(const std::string &sname,
-                               Error_t &err,
-                               const Pos_t &pos,
-                               bool failOnError)
-{
+ContentType_t::find(const string_view_t &name_view) {
     // make name lower
-    std::string name(sname);
+    std::string name = name_view.str();
     std::transform(name.begin(), name.end(), name.begin(), tolower);
 
-    // create all static data
-    if (!unknown) getDefault();
-
-    if (name.empty()) return unknown;
-
     // try to find cached content type descriptor
-    auto fdescriptors = descriptors.find(name);
-
-    // if no content descriptor found
-    if (fdescriptors == descriptors.end()) {
-        // log error
-        logError(err, pos, "Content type '" + sname + "' not found.");
-
-        // content type not known; return global desriptor for unknown
-        // types or 0 when asked to faile
-        return failOnError ? 0 : unknown;
-    }
-
-    // return cached entry
-    return fdescriptors->second.get();
-};
-
-const ContentType_t::Descriptor_t*
-ContentType_t::getContentType(unsigned int index) {
-    // check bounds and return desctiptor (or 0 on error)
-    if (index >= descriptorIndex.size()) return 0;
-    return descriptorIndex[index];
+    auto idescriptor = descriptors.find(name);
+    return idescriptor == descriptors.end()
+        ? nullptr
+        : idescriptor->second.get();
 }
 
 std::vector<std::pair<std::string, std::string>>
@@ -563,18 +536,8 @@ ContentType_t::listSupported() {
     return result;
 };
 
-void Escaper_t::push(unsigned int index, Error_t &err, const Pos_t &pos) {
-    if (auto *descriptor = ContentType_t::getContentType(index)) {
-        escapers.push(descriptor->contentType.get());
-        return;
-    }
-    logError(err, pos, "Can't push invalid content type: using top instead.");
-    escapers.push(escapers.top());
-}
-
-void Escaper_t::pop(Error_t &err, const Pos_t &pos) {
+void Escaper_t::pop() {
     if (!escapers.empty()) escapers.pop();
-    else logError(err, pos, "Can't pop content type: only one remains.");
 }
 
 } // namespace Teng

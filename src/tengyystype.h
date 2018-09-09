@@ -24,7 +24,7 @@
  * $Id$
  *
  * DESCRIPTION
- * Teng syntax analyzer.
+ * Teng syntax symbols.
  *
  * AUTHORS
  * Filip Volejnik <filip.volejnik@firma.seznam.cz>
@@ -42,131 +42,461 @@
 
 #include <vector>
 #include <string>
+#include <algorithm>
 
-// TODO(burlog): remove it?
-#include <iostream>
-
+#include "tenglex2.h"
 #include "tengposition.h"
 #include "tengstringview.h"
+#include "tengidentifier.h"
+#include "tengvalue.h"
 
 namespace Teng {
 namespace Parser {
 
-/** Converts symbol id to its string representation.
- */
-const char *symbol_name(int symbol_id);
+// forwards
+struct Context_t;
 
-/** Represents value of syntactic symbols. It is used for terminal and
- * nonterminal symbols in bison grammer.
+/** The symbol wrapper that prevents the C++ bison parser to construct a large
+ * amount of useless symbols that will immediately replaced with another values.
+ */
+template <typename ValueType_t>
+class OptionalSymbol_t {
+public:
+    // we enforce nothrow move semantic
+    static_assert(
+        std::is_nothrow_move_constructible<ValueType_t>::value,
+        "The value type has to be nothrow move constructible!"
+    );
+    static_assert(
+        std::is_nothrow_destructible<ValueType_t>::value,
+        "The value type has to be nothrow destructible!"
+    );
+
+    /** C'tor: default.
+     */
+    OptionalSymbol_t() noexcept
+        : initialized(false)
+    {}
+
+    /** C'tor: copy.
+     */
+    OptionalSymbol_t(const OptionalSymbol_t &other)
+        : initialized(other.initialized)
+    {if (other.initialized) new (&value) ValueType_t(*other);}
+
+    /** Assigment: copy.
+     */
+    OptionalSymbol_t &operator=(const OptionalSymbol_t &other) {
+        if (this != &other) {
+            if (other.initialized) {
+                if (initialized) {
+                    ValueType_t tmp(*other);
+                    value.~ValueType_t();
+                    new (&value) ValueType_t(std::move(tmp));
+                } else new (&value) ValueType_t(*other);
+            } else if (initialized) value.~ValueType_t();
+            initialized = other.initialized;
+        }
+        return *this;
+    }
+
+    /** C'tor: move
+     */
+    OptionalSymbol_t(OptionalSymbol_t &&other) noexcept
+        : initialized(other.initialized)
+    {if (other.initialized) new (&value) ValueType_t(std::move(*other));}
+
+    /** Assigment: move.
+     */
+    OptionalSymbol_t &operator=(OptionalSymbol_t &&other) noexcept {
+        if (this != &other) {
+            if (initialized)
+                value.~ValueType_t();
+            if (other.initialized)
+                new (&value) ValueType_t(std::move(*other));
+            initialized = other.initialized;
+        }
+        return *this;
+    }
+
+    /** Creates symbol value inplace.
+     */
+    template <typename... Args_t>
+    OptionalSymbol_t &emplace(Args_t &&...args) {
+        // the emplace() is expected to be used only for uninitialized symbols
+        if (initialized) throw std::runtime_error(__PRETTY_FUNCTION__);
+        new (&value) ValueType_t(std::forward<Args_t>(args)...);
+        initialized = true;
+        return *this;
+    }
+
+    /** D'tor.
+     */
+    ~OptionalSymbol_t() {if (initialized) value.~ValueType_t();}
+
+    /** Returns constant reference to the held symbol value.
+     */
+    const ValueType_t &operator*() const {return value;}
+
+    /** Returns reference to the held symbol value.
+     */
+    ValueType_t &operator*() {return value;}
+
+    /** Returns constant pointer to the held symbol value.
+     */
+    const ValueType_t *operator->() const {return &value;}
+
+    /** Returns pointer to the held symbol value.
+     */
+    ValueType_t *operator->() {return &value;}
+
+public:
+    struct Void_t {};
+    bool initialized;      //!< true if value is valid/initialized
+    union {
+        Void_t void_value; //!< the fake value
+        ValueType_t value; //!< the value of symbol
+    };
+};
+
+/** Symbol used for such rules where code is built without the help of semantic
+ * values.
+ */
+class Nil_t {};
+
+/** Represents value of syntactic symbols.
+ * It is used for terminal and nonterminal symbols in bison grammer.
  */
 class Symbol_t {
 public:
-    Symbol_t(): pos(), id(), symbol_string() { std::cout << __PRETTY_FUNCTION__ << ":" << __FILE__ << ":" << __LINE__ << std::endl;}
+    /** C'tor.
+     */
+    Symbol_t(): id(), pos(), symbol_view() {}
 
-    Symbol_t(Pos_t pos, int id, string_view_t symbol_string)
-        : pos(pos), id(id), symbol_string(symbol_string)
-    { std::cout << __PRETTY_FUNCTION__ << ":" << __FILE__ << ":" << __LINE__ << std::endl; }
+    /** C'tor.
+     */
+    Symbol_t(const Token_t &token)
+        : id(token), pos(token.pos), symbol_view(token.view())
+    {}
 
-    Symbol_t(const Symbol_t &other)
-        : pos(other.pos), id(other.id), symbol_string(other.symbol_string)
-    { std::cout << __PRETTY_FUNCTION__ << ":" << __FILE__ << ":" << __LINE__ << std::endl;}
-
-    Symbol_t &operator=(const Symbol_t &other) {
-        std::cout << __PRETTY_FUNCTION__ << ":" << __FILE__ << ":" << __LINE__ << std::endl;
-        if (this != &other) {
-            pos = other.pos;
-            pos.colno = 333;
-            id = other.id;
-            symbol_string = other.symbol_string;
-        }
-        return *this;
-    }
-
-    Symbol_t(Symbol_t &&other)
-        : pos(other.pos), id(other.id), symbol_string(other.symbol_string)
-    { std::cout << __PRETTY_FUNCTION__ << ":" << __FILE__ << ":" << __LINE__ << std::endl;}
-
-    Symbol_t &operator=(Symbol_t &&other) {
-        std::cout << __PRETTY_FUNCTION__ << ":" << __FILE__ << ":" << __LINE__ << std::endl;
-        if (this != &other) {
-            pos = other.pos;
-            id = other.id;
-            symbol_string = other.symbol_string;
-        }
-        return *this;
-    }
-
-    ~Symbol_t() { std::cout << __PRETTY_FUNCTION__ << ":" << __FILE__ << ":" << __LINE__ << std::endl;}
+    /** C'tor.
+     */
+    Symbol_t(int id, Pos_t pos = {}, string_view_t symbol_view = {})
+        : id(id), pos(pos), symbol_view(symbol_view)
+    {}
 
     /** Returns string representation of the symbol id.
      */
-    const char *name() const {return Parser::symbol_name(id);}
+    string_view_t token_name() const {return l2_token_name(id);}
+
+    /** Returns the original source data from which has been symbol parsed.
+     */
+    const string_view_t &view() const {return symbol_view;}
 
     /** Converts string view representing symbol to std::string.
      */
-    std::string str() const {return symbol_string.str();}
+    std::string str() const {return symbol_view.str();}
 
-    Pos_t pos;
-    int id;
-    string_view_t symbol_string;
+    int id;                    //!< the LEX2 token id that creates the symbol
+    Pos_t pos;                 //!< source position of such token
+    string_view_t symbol_view; //!< the view to source code of whole symbol
+};
 
-    // enum class tag {integral, real, string, options, } symbol_tag;
-    // union {
-    // };
+/** The symbol representing the scalar value (int, real or string).
+ */
+class Literal_t: public Symbol_t {
+public:
+    /** C'tor.
+     */
+    template <typename type_t>
+    Literal_t(const Token_t &token, type_t &&value)
+        : Symbol_t(token), value(std::forward<type_t>(value))
+    {}
 
-    // // define option list type
-    // using OptionList_t = std::map<std::string, std::string>;
-    // // teng-directive options -- used for building code
-    // OptionList_t opt;
-    //
-    // // define list of addresses info
-    // using AddressList_t = std::vector<uint64_t>;
-    // // program address -- tmp just for building code
-    // AddressList_t addr;
-    //
-    // // define identifier type
-    // using Identifier_t = std::vector<std::string>;
-    // // variable identifier
-    // Identifier_t id;
-    //
-    // #<{(|* Sets identifier to {prefix0, ..., prefixn, name} and val to
-    //  * prefix0.[...].prefix1.name string.
-    //  |)}>#
-    // void set_ident(Identifier_t prefix, std::string name = {}) {
-    //     id = std::move(prefix);
-    //     if (!name.empty())
-    //         id.push_back(std::move(name));
-    //     buildVal();
-    // }
-    //
-    // #<{(|* Sets identifier to {lhs0, ..., lhsn, rhs0, ..., rhsn}
-    //  * and val to lhs0.[...].lhsn.rhs0.[...].rhsn string.
-    //  |)}>#
-    // void set_ident(Identifier_t lhs, const Identifier_t &rhs) {
-    //     id = std::move(lhs);
-    //     for (auto item: rhs) id.push_back(item);
-    //     buildVal();
-    // }
-    //
-    // #<{(|* Sets val according to id value.
-    //  |)}>#
-    // void buildVal() {
-    //     std::string tmp;
-    //     for (auto &item: id) tmp += "." + item;
-    //     val = std::move(tmp);
-    // }
-    //
-    // // position in input stream (just for lexical elements)
-    // // in other cases is pos-value irrelevant
-    // Pos_t pos;
-    //
-    // // program size in the time when the element was read (and then shifted)
-    // // this value is used for discarding parts of program in case of error
-    // std::size_t prgsize;
+    /** Converts the view to the real number.
+     */
+    static double extract_real(string_view_t str) {
+        return strtod(str.data(), nullptr);
+    }
+
+    /** Converts the view to the integral number.
+     */
+    static IntType_t extract_int(string_view_t str, int base) {
+        return strtol(str.data(), nullptr, base);
+    }
+
+    /** Converts the view to the string value.
+     */
+    static std::string extract_str(string_view_t str) {
+        // remove quotes
+        auto raw = string_view_t(str.begin() + 1, str.end() - 1);
+
+        // replace escape sequences
+        std::string result;
+        result.reserve(raw.size());
+        for (auto iraw = raw.begin(), eraw = raw.end(); iraw != eraw;) {
+            switch (*iraw) {
+            case '\\':
+                // TODO(burlog): it is impossible to get here with ++iraw
+                // equaling to eraw because '...\' backslach before closing
+                // quote is taken as escape sequence and so the closing quote
+                // is not closing quote but escaped quoted and string
+                // continues...
+                if (++iraw == eraw)
+                    // TODO(burlog): warn!
+                    return result;
+                switch (*iraw) {
+                case '\n':
+                    // TODO(burlog): warn!
+                    return result;
+                case 'r':
+                    result.push_back('\r');
+                    ++iraw;
+                    break;
+                case 'n':
+                    result.push_back('\n');
+                    ++iraw;
+                    break;
+                case 't':
+                    result.push_back('\t');
+                    ++iraw;
+                    break;
+                case 'f':
+                    result.push_back('\f');
+                    ++iraw;
+                    break;
+                case 'b':
+                    result.push_back('\b');
+                    ++iraw;
+                    break;
+                default:
+                    result.push_back(*iraw);
+                    ++iraw;
+                    break;
+                }
+                break;
+            default:
+                result.push_back(*iraw);
+                ++iraw;
+                break;
+            }
+        }
+        return result;
+    }
+
+    Value_t value; //!< the literal value
+};
+
+
+/** The symbol representing the variables in various contexts.
+ */
+class Variable_t: public Symbol_t {
+public:
+    /** C'tor.
+     */
+    Variable_t()
+        : Symbol_t(),
+          ident(), frame_offset(invalid_offset), frag_offset(invalid_offset)
+    {}
+
+    /** C'tor.
+     */
+    Variable_t(const Token_t &token)
+        : Symbol_t(token),
+          ident(token.view()), frame_offset(invalid_offset),
+          frag_offset(invalid_offset)
+    {}
+
+    /** C'tor.
+     */
+    Variable_t(const Token_t &token, Identifier_t &&ident)
+        : Symbol_t(token),
+          ident(std::move(ident)), frame_offset(invalid_offset),
+          frag_offset(invalid_offset)
+    {}
+
+    /** C'tor.
+     */
+    Variable_t(const Variable_t &other, Identifier_t &&ident)
+        : Symbol_t(other.id, other.pos, other.symbol_view),
+          ident(std::move(ident)), frame_offset(invalid_offset),
+          frag_offset(invalid_offset)
+    {}
+
+    /** Appends new segment of variable identifier at the end of ident list.
+     */
+    Variable_t &push_back(const Token_t &token) {
+        ident.push_back(token.view());
+        symbol_view = {symbol_view.begin(), token.token_view.end()};
+        id = token.token_id;
+        return *this;
+    }
+
+    /** Removes the most recent segment of variable identifier.
+     */
+    Variable_t &pop_back(Context_t *ctx, const Pos_t &pos);
+
+    /** Returns true if open frames and open frags offsets are resolved.
+     */
+    bool offsets_are_valid() const {
+        return (frame_offset != invalid_offset)
+            && (frag_offset != invalid_offset);
+    }
+
+    /** Unresolved offset.
+     */
+    static constexpr auto invalid_offset = std::numeric_limits<uint16_t>::max();
+
+    Identifier_t ident; //!< the variable identifier
+    uint16_t frame_offset;  //!< the offset of frame (NOT fragment!)
+    uint16_t frag_offset;   //!< the offset fo frag
+};
+
+/** Variable used for <?teng frag ...?> directives. It transfers flag if they
+ * has been created in invalid syntactic branch.
+ */
+class IVariable_t: public Variable_t {
+public:
+    /** C'tor.
+     */
+    IVariable_t(const Token_t &token)
+        : Variable_t(token),
+          invalid(true)
+    {}
+
+    /** C'tor.
+     */
+    IVariable_t(Variable_t &&other)
+        : Variable_t(other, std::move(other.ident)),
+          invalid(false)
+    {}
+
+    /** C'tor.
+     */
+    IVariable_t(const Variable_t &other, Identifier_t &&ident)
+        : Variable_t(other, std::move(ident)),
+          invalid(false)
+    {}
+
+    bool invalid; //!< true if variable name is invalid
+};
+
+/** The symbol representing the directive options.
+ */
+class Options_t: public Symbol_t {
+public:
+    // types
+    struct Option_t;
+    using iterator = std::vector<Option_t>::iterator;
+    using const_iterator = std::vector<Option_t>::const_iterator;
+
+    /** C'tor.
+     */
+    Options_t(): Symbol_t() {}
+
+    /** C'tor.
+     */
+    Options_t(const Token_t &token)
+        : Symbol_t(token)
+    {}
+
+    /** C'tor.
+     */
+    Options_t(const Token_t &ident, const Literal_t &value)
+        : Symbol_t(ident)
+    {insert(ident.view(), value.view());}
+
+    /** The option identifier and value pair.
+     */
+    struct Option_t {
+        string_view_t ident; //!< the option identifier
+        string_view_t value; //!< the option value
+        bool operator==(const string_view_t &rhs) const {return ident == rhs;}
+    };
+
+    /** Inserts new option to options.
+     */
+    void insert(const string_view_t &ident, const string_view_t &value) {
+        auto ientry = find(ident);
+        if (ientry == options.end()) options.push_back({ident, value});
+        else ientry->value = value;
+    }
+
+    /** Returns iterator to the option with desired identifier or end().
+     */
+    iterator find(const string_view_t &ident) {
+        return std::find(options.begin(), options.end(), ident);
+    }
+
+    /** Returns iterator to the option with desired identifier or end().
+     */
+    const_iterator find(const string_view_t &ident) const {
+        return std::find(options.begin(), options.end(), ident);
+    }
+
+    /** Returns iterator to the first option.
+     */
+    iterator begin() {return options.begin();}
+
+    /** Returns iterator one past the last option.
+     */
+    iterator end() {return options.end();}
+
+    /** Returns iterator to the first option.
+     */
+    const_iterator begin() const {return options.begin();}
+
+    /** Returns iterator one past the last option.
+     */
+    const_iterator end() const {return options.end();}
+
+    /** Returns true if options are empty.
+     */
+    bool empty() const {return options.empty();}
+
+    std::vector<Option_t> options; //!< the options storage
+};
+
+/** Options used for <?teng format ...?> directives. It transfers flag if they
+ * has been created in invalid syntactic branch.
+ */
+class FormatOptions_t: public Options_t {
+public:
+    /** C'tor.
+     */
+    FormatOptions_t(const Token_t &token)
+        : Options_t(token),
+          invalid(true)
+    {}
+
+    /** C'tor.
+     */
+    FormatOptions_t(Options_t &&options)
+        : Options_t(std::move(options)),
+          invalid(false)
+    {}
+
+    bool invalid; //!< true if options is invalid
+};
+
+/** The symbol used to transfer arity of expression with variadic argumets to
+ * expression optimizer that needs the number.
+ */
+class NAryExpr_t: public Symbol_t {
+public:
+    /** C'tor.
+     */
+    NAryExpr_t(const Token_t &token, uint32_t arity, bool lazy_evaluated = 0)
+        : Symbol_t(token),
+          arity(arity), lazy_evaluated(lazy_evaluated)
+    {}
+
+    uint32_t arity;      //!< the arity of expression (the number of args)
+    bool lazy_evaluated; //!< true if expression is lazy evaluated (||, &&, ...)
 };
 
 } // namespace Parser
 } // namespace Teng
 
-#endif // TENGYYSTYPE_H
+#endif /* TENGYYSTYPE_H */
 

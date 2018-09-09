@@ -62,8 +62,11 @@ std::string to_string(std::multiplies<>) {return "*";}
 std::string to_string(std::divides<>) {return "/";}
 std::string to_string(modulus_t) {return "%";}
 std::string to_string(std::equal_to<>) {return "==";}
+std::string to_string(std::not_equal_to<>) {return "!=";}
 std::string to_string(std::greater_equal<>) {return ">=";}
 std::string to_string(std::greater<>) {return ">";}
+std::string to_string(std::less_equal<>) {return "<=";}
+std::string to_string(std::less<>) {return "<";}
 
 /** Almost all operations accept any lhs value.
  */
@@ -148,8 +151,8 @@ struct rhs_checker_t<operation_t, needs_rhs_non_zero<operation_t>> {
 
 /** Evaluates binary numeric operation.
  */
-template <typename get_arg_t, typename operation_t>
-Result_t numop(EvalCtx_t *ctx, get_arg_t get_arg, operation_t operation) {
+template <typename operation_t>
+Result_t numop(EvalCtx_t *ctx, GetArg_t get_arg, operation_t op) {
     static const std::string S = to_string(operation_t());
 
     // fetch operator args
@@ -158,12 +161,12 @@ Result_t numop(EvalCtx_t *ctx, get_arg_t get_arg, operation_t operation) {
     Value_t lhs = get_arg();
 
     // report invalid operands
-    if (lhs.is_string() || lhs.is_undefined()) {
+    if (!lhs.is_number()) {
         auto tp = lhs.type_str();
         logError(*ctx, "Left operand of " + S + " numeric operator is " + tp);
         return Result_t();
     }
-    if (rhs.is_string() || rhs.is_undefined()) {
+    if (!rhs.is_number()) {
         auto tp = rhs.type_str();
         logError(*ctx, "Right operand of " + S + " numeric operator is " + tp);
         return Result_t();
@@ -183,7 +186,7 @@ Result_t numop(EvalCtx_t *ctx, get_arg_t get_arg, operation_t operation) {
 
     // prepare floating point callback
     auto fp_operation = [&] {
-        return Result_t(operation(lhs.real(), rhs.real()));
+        return Result_t(op(lhs.real(), rhs.real()));
     };
 
     // mod make sense only for integral operands
@@ -192,13 +195,13 @@ Result_t numop(EvalCtx_t *ctx, get_arg_t get_arg, operation_t operation) {
     // exec operation
     return !is_modulus && (lhs.is_real() || rhs.is_real())
         ? fp_safe(fp_operation, fp_error)
-        : Result_t(operation(lhs.integral(), rhs.integral()));
+        : Result_t(op(lhs.integral(), rhs.integral()));
 }
 
 /** Evaluates binary string operation.
  */
-template <typename get_arg_t, typename operation_t>
-Result_t strop(EvalCtx_t *ctx, get_arg_t get_arg, operation_t operation) {
+template <typename operation_t>
+Result_t strop(EvalCtx_t *ctx, GetArg_t get_arg, operation_t op) {
     // fetch operator args
     // remember, they are on stack so get them in opposite order
     Value_t rhs = get_arg();
@@ -211,21 +214,19 @@ Result_t strop(EvalCtx_t *ctx, get_arg_t get_arg, operation_t operation) {
         return Result_t();
 
     // exec operation
-    return Result_t(operation(lhs.str(), rhs.str()));
+    return Result_t(op(lhs.ensure_string_like(), rhs.ensure_string_like()));
 }
 
 /** Implementation of the logic not operator.
  */
-template <typename get_arg_t>
-Result_t logic_not(EvalCtx_t *ctx, get_arg_t get_arg) {
+Result_t logic_not(EvalCtx_t *ctx, GetArg_t get_arg) {
     auto arg = get_arg();
     return arg.is_undefined()? arg: Result_t(!arg);
 }
 
 /** Implementation of the bit not operator.
  */
-template <typename get_arg_t>
-Result_t bit_not(EvalCtx_t *ctx, get_arg_t get_arg) {
+Result_t bit_not(EvalCtx_t *ctx, GetArg_t get_arg) {
     Value_t arg = get_arg();
     if (arg.is_integral())
         return Result_t(~arg.as_int());

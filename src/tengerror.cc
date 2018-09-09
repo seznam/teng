@@ -41,28 +41,37 @@
 #include <sstream>
 #include <iostream>
 
+#include "tengposition.h"
 #include "tengerror.h"
 
 namespace Teng {
+namespace {
 
-/** @short Composes log line.
-  * @return composed log line */
+Pos_t to_pos_t(const Error_t::Entry_t::ErrorPos_t &pos) {
+    return {
+        pos.filename.empty()? nullptr: &pos.filename,
+        pos.lineno,
+        pos.colno
+    };
+}
+
+} // namespace
+
 std::string Error_t::Entry_t::getLogLine() const {
     std::ostringstream out;
     dump(out);
+    out << '\n';
     return out.str();
 }
 
 void Error_t::Entry_t::dump(std::ostream &out) const {
-    static const char *levelString[] = {"Debug", "Warning", "Error", "Fatal"};
-    out << pos << " " << levelString[level] << ": " << msg << std::endl;
+    static const char *LS[] = {"Debug", "Warning", "Diag", "Error", "Fatal"};
+    out << to_pos_t(pos) << " " << LS[level] << ": " << msg;
 }
 
-/** @short Dumps log into stream.
-  * @param out output stream */
 void Error_t::dump(std::ostream &out) const {
     for (auto &entry: entries)
-        out << entry;
+        out << entry << std::endl;
 }
 
 } // namespace Teng

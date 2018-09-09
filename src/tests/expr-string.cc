@@ -726,5 +726,66 @@ SCENARIO(
     }
 }
 
+SCENARIO(
+    "String escaping",
+    "[string][expr]"
+) {
+    GIVEN("Some variables in root frag set to strings") {
+        Teng::Fragment_t root;
+        root.addVariable("html", "<>&\"");
 
+        WHEN("The variable containing dangerous chars is printed") {
+            Teng::Error_t err;
+            auto result = g(err, "${html}", root);
+
+            THEN("The dangerous characters are escaped using current escaper") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "&lt;&gt;&amp;&quot;");
+            }
+        }
+    }
+}
+
+SCENARIO(
+    "Escaping characters in string literals",
+    "[string][expr]"
+) {
+    GIVEN("The empty root") {
+        Teng::Fragment_t root;
+
+        WHEN("The string literal with valid escape sequencies is printed") {
+            Teng::Error_t err;
+            auto result = g(err, "${'[\\'][\\n][\\t][\\\"]'}", root);
+
+            THEN("They are expanded") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "['][\n][\t][\"]");
+            }
+        }
+
+        WHEN("The string literal with unknown escape sequencies is printed") {
+            Teng::Error_t err;
+            auto result = g(err, "${'[\\e][\\g]'}", root);
+
+            THEN("They are preserved as is") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "[\\e][\\g]");
+            }
+        }
+
+        WHEN("The string literal with escaped new line is printed") {
+            Teng::Error_t err;
+            auto result = g(err, "${'prefix\\\nsuffix'}", root);
+
+            THEN("Literal is cropped at the new line place") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "prefix");
+            }
+        }
+    }
+}
 

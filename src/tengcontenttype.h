@@ -46,6 +46,7 @@
 #include <utility>
 
 #include "tengerror.h"
+#include "tengstringview.h"
 
 namespace Teng {
 
@@ -60,10 +61,6 @@ public:
     /** @short Create new empty descriptor.
      */
     ContentType_t();
-
-    /** @short Destroy descriptor.
-     */
-    virtual ~ContentType_t() = default;
 
     /** @short Add escape mapping into escaping table.
      * @param c character
@@ -81,13 +78,13 @@ public:
      * @param src string to escape
      * @return escaped string
      */
-    virtual std::string escape(const std::string &src) const;
+    std::string escape(const string_view_t &src) const;
 
     /** @short Unescape given string.
      * @param src string to unescape
      * @return unescaped string
      */
-    virtual std::string unescape(const std::string &src) const;
+    std::string unescape(const string_view_t &src) const;
 
     /** @short Descriptor of content type.
      */
@@ -102,18 +99,9 @@ public:
     /**
      * @short Find content type descriptor for given name.
      * @param name name of content type
-     * @param err error log
-     * @param failOnError when true return 0 on error;
-     *                    otherwise return default (no-op) desriptor
      * @return descriptor od 0 on error
      */
-    static const Descriptor_t *
-    findContentType(const std::string &name,
-                    Error_t &err,
-                    const Pos_t &pos = {},
-                    bool failOnError = false);
-
-    static const Descriptor_t *getContentType(unsigned int index);
+    static const Descriptor_t *find(const string_view_t &name_view);
 
     /**
      * @short Get default content type.
@@ -139,7 +127,7 @@ private:
     /**
      * @short List of escape rules.
      */
-    std::vector<std::pair<unsigned char, std::string> > escapes;
+    std::vector<std::pair<unsigned char, std::string>> escapes;
 
     /**
      * @short Map of indices to escape list (-1 -> no escape).
@@ -149,7 +137,7 @@ private:
     /**
      * @short Unescaping automaton.
      */
-    std::vector<std::pair<int, int> > unescaper;
+    std::vector<std::pair<int, int>> unescaper;
 
     /**
      * @short Moves to next state of automaton.
@@ -169,7 +157,7 @@ public:
     inline Escaper_t(const ContentType_t *ct = nullptr)
         : escapers()
     {
-        topLevel = (ct? ct : ContentType_t::getDefault()->contentType.get());
+        topLevel = (ct? ct: ContentType_t::getDefault()->contentType.get());
         escapers.push(topLevel);
     }
 
@@ -177,22 +165,15 @@ public:
      *
      * @short ct content type
      */
-    void push(ContentType_t *ct) {escapers.push(ct);}
-
-    /** @short Push new content type.
-     *
-     * @short index index of content type descriptor
-     * @short index err error log
-     * @short index pos position in source file
-     */
-    void push(unsigned int index, Error_t &err, const Pos_t &pos = {});
+    void push(const ContentType_t *ct) {escapers.push(ct? ct: escapers.top());}
 
     /** @short Pop content type from the top.
-     *
-     * @short index err error log
-     * @short index pos position in source file
      */
-    void pop(Error_t &err, const Pos_t &pos = {});
+    void pop();
+
+    /** @short Returns the number of escapers.
+     */
+    std::size_t size() const {return escapers.size();}
 
     /** @short Escape given string.
      *
@@ -201,7 +182,7 @@ public:
      * @param src string to escape
      * @return escaped string
      */
-    std::string escape(const std::string &src) const {
+    std::string escape(const string_view_t &src) const {
         return escapers.top()->escape(src);
     }
 
@@ -212,7 +193,7 @@ public:
      * @param src string to unescape
      * @return unescaped string
      */
-    std::string unescape(const std::string &src) const {
+    std::string unescape(const string_view_t &src) const {
         return escapers.top()->unescape(src);
     }
 

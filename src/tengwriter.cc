@@ -39,6 +39,8 @@
 #include "tenglogging.h"
 #include "tengwriter.h"
 
+#include <iostream>
+
 namespace Teng {
 
 StringWriter_t::StringWriter_t(std::string &str)
@@ -55,6 +57,11 @@ int StringWriter_t::write(const char *str) {
     return 0;
 }
 
+int StringWriter_t::write(const char *str, std::size_t size) {
+    this->str.append(str, size);
+    return 0;
+}
+
 int StringWriter_t::write(const std::string &str, StringSpan_t interval) {
     this->str.append(interval.first, interval.second);
     return 0;
@@ -64,8 +71,12 @@ FileWriter_t::FileWriter_t(const std::string &filename)
     : Writer_t(), file(0), borrowed(false)
 {
     file = fopen(filename.c_str(), "w");
-    if (!file)
-        logFatal(err, "Cannot open file '" + filename + "' (" + strerr() + ")");
+    if (!file) {
+        logFatal(
+            err,
+            "Cannot open file '" + filename + "' (" + strerr(errno) + ")"
+        );
+    }
 }
 
 FileWriter_t::FileWriter_t(FILE *file)
@@ -81,21 +92,25 @@ FileWriter_t::~FileWriter_t() {
 }
 
 int FileWriter_t::write(const std::string &str) {
+    std::cerr << "DDDDDDDDDDDD " << str << std::endl;
     if (!file) return -1;
     fwrite(str.data(), 1, str.length(), file);
     if (feof(file) || ferror(file)) {
-        logFatal(err, "Error writing to output (" + strerr() + ")");
+        logFatal(err, "Error writing to output (" + strerr(errno) + ")");
         return -1;
     }
     return 0;
 }
 
 int FileWriter_t::write(const char *str) {
+    return write(str, strlen(str));
+}
+
+int FileWriter_t::write(const char *str, std::size_t size) {
     if (!file) return -1;
-    size_t len = strlen(str);
-    fwrite(str, 1, len, file);
+    fwrite(str, 1, size, file);
     if (feof(file) || ferror(file)) {
-        logFatal(err, "Error writing to output (" + strerr() + ")");
+        logFatal(err, "Error writing to output (" + strerr(errno) + ")");
         return -1;
     }
     return 0;
@@ -106,7 +121,7 @@ int FileWriter_t::write(const std::string &str, StringSpan_t interval) {
     size_t len = std::distance(interval.first, interval.second);
     fwrite(cstr, 1, len, file);
     if (feof(file) || ferror(file)) {
-        logFatal(err, "Error writing to output (" + strerr() + ")");
+        logFatal(err, "Error writing to output (" + strerr(errno) + ")");
         return -1;
     }
     return 0;

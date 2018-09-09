@@ -58,21 +58,46 @@ using Ctx_t = FunctionCtx_t;
 using Args_t = FunctionArgs_t;
 using Result_t = FunctionResult_t;
 
-/** Handy struct that cache converted numeric arguments to string.
+/** Handy struct that caches converted numeric arguments to string.
  */
-struct str {
-    str(const Parser::Value_t &value): arg(&value.str(tmp)) {}
-    operator const std::string &() const {return *arg;}
+struct string_ptr_t {
+    /** Printer for Value_t::print() that return pointer to given const
+     * std::string & or pointer to cached string.
+     */
+    struct cache_t {
+        const std::string *operator()(const string_view_t &v) {
+            tmp.assign(v.data(), v.size());
+            return &tmp;
+        }
+        const std::string *operator()(const std::string &str) {
+            return &str;
+        }
+        std::string tmp; //!< storage of string repr of non string values
+    };
+
+    /** C'tor.
+     */
+    string_ptr_t(const Value_t &value)
+        : arg(value.print(cached_str))
+    {}
+
+    // don't copy
+    string_ptr_t(const string_ptr_t &) = delete;
+    string_ptr_t &operator=(const string_ptr_t &) = delete;
+
+    // ptr access
     const std::string *operator->() const {return arg;}
     const std::string &operator*() const {return *arg;}
     char operator[](std::string::size_type i) const {return (*arg)[i];}
-    std::string tmp;
-    const std::string *arg;
+
+    cache_t cached_str;     //!< where are non string values cached
+    const std::string *arg; //!< pointer to string value or to tmp
 };
 
 /** Convenient function for reporting error.
  */
 Result_t failed(Ctx_t &ctx, const char *fun, const std::string &msg) {
+    // TODO(burlog): pos?!
     logError(ctx.err, {}, std::string(fun) + "(): " + msg);
     return Result_t();
 }

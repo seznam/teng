@@ -68,10 +68,9 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("It contains data from text.txt") {
-                std::string f = TEST_ROOT "text.txt";
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
-                    {&f, 1, 48},
+                    {TEST_ROOT "text.txt", 1, 48},
                     "Runtime: Variable '.var' is undefined"
                 }};
                 REQUIRE(err.getEntries() == errs);
@@ -170,10 +169,9 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("It contains data from text.txt and fragment") {
-                std::string f = TEST_ROOT "text.txt";
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
-                    {&f, 1, 69},
+                    {TEST_ROOT "text.txt", 1, 69},
                     "Runtime: Variable '.sample.var' is undefined"
                 }};
                 REQUIRE(err.getEntries() == errs);

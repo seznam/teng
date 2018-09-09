@@ -83,6 +83,13 @@ public:
     /** @short Write given string to output.
      *  Abstract, must be overloaded in subclass.
      *  @param str string to be written
+     *  @return 0 OK, !0 error
+     */
+    virtual int write(const char *str, std::size_t size) = 0;
+
+    /** @short Write given string to output.
+     *  Abstract, must be overloaded in subclass.
+     *  @param str string to be written
      *  @param interval iterators to given string, only this part
      *                  shall be written
      *  @return 0 OK, !0 error
@@ -99,6 +106,15 @@ public:
      *  @return error log
      */
     const Error_t &getErrors() const {return err;}
+
+    /** @short Write given string to output.
+     *  @param istr begin of string to be written
+     *  @param estr end of string to be written
+     *  @return 0 OK, !0 error
+     */
+    int write(const char *istr, const char *estr) {
+        return write(istr, estr - istr);
+    }
 
 protected:
     /** @short Error log.
@@ -126,6 +142,12 @@ public:
      *  @return 0 OK, !0 error
      */
     int write(const char *str) override;
+
+    /** @short Write given string to output.
+     *  @param str string to be written
+     *  @return 0 OK, !0 error
+     */
+    int write(const char *str, std::size_t size) override;
 
     /** @short Write given string to output.
      *  @param str string to be written
@@ -178,6 +200,12 @@ public:
      *  @return 0 OK, !0 error
      */
     int write(const char *str) override;
+
+    /** @short Write given string to output.
+     *  @param str string to be written
+     *  @return 0 OK, !0 error
+     */
+    int write(const char *str, std::size_t size) override;
 
     /** @short Write given string to output.
      *  @param str string to be written

@@ -40,10 +40,15 @@
 #include <vector>
 #include <stdexcept>
 
-#include <tengutil.h>
-#include <tengparservalue.h>
+#include "tengvalue.h"
 
 namespace Teng {
+
+/** This structure is control flow exception, that is used when some function
+ * needs runtime context or can't be evaluated during template compile time
+ * because of some other reasons (e.g. rand, time, ...).
+ */
+struct runtime_functx_needed_t {};
 
 // forwards
 class Processor_t;
@@ -58,29 +63,35 @@ class Error_t;
  *  used by string function.
  */
 struct FunctionCtx_t {
+public:
     FunctionCtx_t(
         Error_t &err,
-        const std::string &encoding,
-        const Escaper_t &escaper,
-        const Configuration_t &configuration,
-        const Dictionary_t &langDictionary,
-        const FragmentStack_t *fragStack
-    ): err(err), encoding(tolower(encoding)), escaper(escaper),
-       configuration(configuration), langDictionary(langDictionary),
-       fragStack(fragStack)
+        const string_view_t &encoding,
+        const Escaper_t *escaper,
+        const Configuration_t &params,
+        const Dictionary_t &dict
+    ): err(err), encoding(encoding), params(params), dict(dict),
+       escaper_ptr(escaper)
     {}
 
-    Error_t &err; //!< error log
-    std::string encoding; //!< encoding of template
-    const Escaper_t &escaper; //!< string escaping
-    const Configuration_t &configuration; //!< current configuration
-    const Dictionary_t &langDictionary; //!< current dictionary
-    const FragmentStack_t *fragStack; //!< open fragments stack
+    /** Throws runtime_functx_needed_t if it is invoked during compile time.
+     */
+    const Escaper_t &escaper() const {
+        return escaper_ptr? *escaper_ptr: throw runtime_functx_needed_t();
+    }
+
+    Error_t &err;                  //!< error log
+    const string_view_t &encoding; //!< encoding of template
+    const Configuration_t &params; //!< current configuration
+    const Dictionary_t &dict;      //!< current dictionary
+
+protected:
+    const Escaper_t *escaper_ptr;  //!< string escaping machine
 };
 
 // shostcuts
-using FunctionArgs_t = std::vector<Parser::Value_t>;
-using FunctionResult_t = Parser::Value_t;
+using FunctionArgs_t = std::vector<Value_t>;
+using FunctionResult_t = Value_t;
 
 /** Invoker for teng builtin and user defined funtions.
  */
@@ -122,12 +133,11 @@ struct Invoker_t {
      */
     explicit operator bool() const {return static_cast<bool>(function);}
 
-    std::string name;       //!< the function name
-    function_type function; //!< the function to invoke
+    const std::string &name; //!< the function name
+    function_type function;  //!< the function to invoke
 };
 
 } // namespace Teng
 
-#endif // TENGINVOKE_H
-
+#endif /* TENGINVOKE_H */
 

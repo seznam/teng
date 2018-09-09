@@ -42,8 +42,9 @@
 #include <stack>
 #include <utility>
 
-#include <tengerror.h>
-#include <tengwriter.h>
+#include "tengerror.h"
+#include "tengstringview.h"
+#include "tengwriter.h"
 
 namespace Teng {
 
@@ -54,18 +55,14 @@ public:
     /** @short Mode of filtering whitespaces.
      */
     enum Mode_t {
-        MODE_INVALID     = -1, /**< Invalid mode. */
-        MODE_PASSWHITE   = 0,  /**< Passes whitespaces verbatim. */
-        MODE_NOWHITE,          /**< Discards all whitespaces. */
-        MODE_ONESPACE,         /**< Truncate run of whitespaces to one
-                                    space. */
-        MODE_STRIPLINES,       /**< Remove leading and trailing spaces
-                                    from line.*/
-        MODE_JOINLINES,        /**< Join lines into one long
-                                    line. Leading whitespaces on lines
-                                    are removed.*/
-        MODE_NOWHITELINES,     /**< Remove empty lines. Empty line
-                                    consists only from whitespaces. */
+        MODE_COPY_PREV   = -2, //!< used when format is unrecognized
+        MODE_INVALID     = -1, //!< invalid mode
+        MODE_PASSWHITE   = 0,  //!< passes whitespaces verbatim
+        MODE_NOWHITE,          //!< discards all whitespaces
+        MODE_ONESPACE,         //!< truncate run of whitespaces to one space
+        MODE_STRIPLINES,       //!< remove leading and trailing spaces from line
+        MODE_JOINLINES,        //!< join lines into one long line
+        MODE_NOWHITELINES,     //!< remove empty and whitespace only lines
     };
 
     /** @short Create new formatter.
@@ -78,7 +75,7 @@ public:
      *  @param str string to be written
      *  @return 0 OK, !0 error
      */
-    int write(const std::string &str);
+    int write(string_view_t str);
 
     /** @short Flushes buffered data.
      *  @return 0 OK, !0 error
@@ -97,31 +94,15 @@ public:
      */
     Mode_t pop();
 
+    /** @short Returns formatting mode on top of the stack.
+     *  @return old formatting mode
+     */
+    Mode_t top() {return modeStack.empty()? MODE_PASSWHITE: modeStack.top();}
+
 private:
-    /**
-     * @short Copy constructor intentionally private -- copying
-     *        disabled.
-     */
-    Formatter_t(const Formatter_t&);
-
-    /**
-     * @short Assignment operator intentionally private -- assignment
-     *        disabled.
-     */
-    Formatter_t operator=(const Formatter_t&);
-
-    /** @short Process sequence of spaces.
-     *  @param spaceBlock block of spaces
-     *  @return 0 OK, !0 error
-     */
-    int process(std::pair<std::string::const_iterator,
-                std::string::const_iterator> spaceBlock);
-
-    /** @short Process sequence of spaces.
-     *  @param str white string
-     *  @return 0 OK, !0 error
-     */
-    int process(std::string &str);
+    // don't copy
+    Formatter_t(const Formatter_t &) = delete;
+    Formatter_t &operator=(const Formatter_t &) = delete;
 
     /** @short Output writer.
      */
@@ -138,7 +119,7 @@ private:
 
 /** Returns format enum from format name.
  */
-Formatter_t::Mode_t resolveFormat(const std::string &name);
+Formatter_t::Mode_t resolveFormat(const string_view_t &name);
 
 } // namespace Teng
 

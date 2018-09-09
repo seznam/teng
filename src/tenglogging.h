@@ -37,8 +37,9 @@
 #ifndef TENGLOGGING_H
 #define TENGLOGGING_H
 
-#include <tengerror.h>
-#include <tengstringview.h>
+#include "tengerror.h"
+#include "tengposition.h"
+#include "tengstringview.h"
 
 namespace Teng {
 
@@ -96,11 +97,14 @@ namespace Parser {
 
 // forwards
 struct Context_t;
-class Symbol_t;
 
 /** @short Logs WARNING for given file/position.
  */
 void logWarning(Context_t *ctx, const Pos_t &pos, const string_view_t &msg);
+
+/** @short Logs DIAG for given file/position.
+ */
+void logDiag(Context_t *ctx, const Pos_t &pos, const string_view_t &msg);
 
 /** @short Logs ERROR for given file/position.
  */
@@ -109,22 +113,6 @@ void logError(Context_t *ctx, const Pos_t &pos, const string_view_t &msg);
 /** @short Logs FATAL for given file/position.
  */
 void logFatal(Context_t *ctx, const Pos_t &pos, const string_view_t &msg);
-
-/** @short Logs WARNING for context file/position.
- */
-void logWarning(Context_t *ctx, const string_view_t &msg);
-
-/** @short Logs ERROR for context file/position.
- */
-void logError(Context_t *ctx, const string_view_t &msg);
-
-/** @short Logs FATAL for context file/position.
- */
-void logFatal(Context_t *ctx, const string_view_t &msg);
-
-/** @short Logs ERROR for given file/position.
- */
-void syntaxError(Context_t *ctx, const Symbol_t &sym, const string_view_t &msg);
 
 } // namespace Parser
 } // namespace Teng

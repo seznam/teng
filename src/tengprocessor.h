@@ -45,17 +45,20 @@
 
 #include <string>
 
+#include "tengstringview.h"
+
 namespace Teng {
 
 // forwards
 class Error_t;
+class Value_t;
+class Writer_t;
+struct OFFApi_t;
 class Program_t;
-class Fragment_t;
-class Formatter_t;
+class FragmentValue_t;
 class Dictionary_t;
 class Configuration_t;
 class ContentType_t;
-namespace Parser {class Value_t;}
 
 /** Does the template interpretation.
  */
@@ -75,8 +78,8 @@ public:
         const Program_t &program,
         const Dictionary_t &dict,
         const Configuration_t &params,
-        const std::string &encoding = {},
-        const ContentType_t *contentType = nullptr
+        const string_view_t &encoding = "utf-8",
+        const string_view_t &contentType = {}
     );
 
     /** Execute program.
@@ -84,25 +87,21 @@ public:
      * @param data Application data supplied by user.
      * @param writer Output stream object.
      */
-    void run(const Fragment_t &data, Formatter_t &writer);
+    void run(const FragmentValue_t &data, Writer_t &writer);
 
     /** Try to evaluate an expression.
      *
-     * @param result Structure for output value in case of success.
      * @param startAddress Run program from this address.
-     * @param endAddress Pointer after the last instruction of the prog.
-     *
-     * @return 0=ok (expression evaluated), -1=error (cannot evaluate).
      */
-    int eval(Parser::Value_t &result, int start, int end);
+    Value_t eval(const OFFApi_t *frames, int32_t start);
 
 protected:
-    Error_t &err;                     //!< error log object
-    const Program_t &program;         //!< program (translated template)
-    const Dictionary_t &dict;         //!< language specific dictionary
-    const Configuration_t &params;    //!< param dictionary
-    const std::string &encoding;      //!< the template charset
-    const ContentType_t *contentType; //!< the template content/mime type
+    Error_t &err;                  //!< error log object
+    const Program_t &program;      //!< program (translated template)
+    const Dictionary_t &dict;      //!< language specific dictionary
+    const Configuration_t &params; //!< param dictionary
+    string_view_t encoding;        //!< the template charset
+    string_view_t contentType;     //!< the template content/mime type
 };
 
 } // namespace Teng

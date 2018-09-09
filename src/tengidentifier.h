@@ -39,52 +39,91 @@
 #ifndef TENGIDENTIFIER_H
 #define TENGIDENTIFIER_H
 
-#include <stdio.h>
 #include <string>
 #include <vector>
-#include <iosfwd>
 
-#include "tengparservalue.h"
+// TODO(burlog): remove
+#include <iostream>
+
+#include "tengstringview.h"
 
 namespace Teng {
 
-struct IdentifierPath_t {
-    IdentifierPath_t(std::string value = {})
-        : name(std::move(value)), path{name}
-    {}
-    // TODO(burlog): path jako vector view do name?
-    std::string name;
-    std::vector<std::string> path;
-};
-
-/** Holder of identifier name and its context.
+/** 
  */
 struct Identifier_t {
-    /** 
-     */
-    explicit operator bool() const {return true;}
+public:
+    // TODO(burlog): rename to Identifier_t!
+    using const_iterator = std::vector<string_view_t>::const_iterator;
+    using const_reverse_iterator = std::vector<string_view_t>::const_reverse_iterator;
 
-    /** Name of identifier.
-     */
-    std::string name;
+    Identifier_t(): relative(true) {}
+    Identifier_t(bool relative): relative(relative) {}
+    Identifier_t(const string_view_t &name): relative(true), path{name} {}
+    Identifier_t(std::vector<string_view_t> path, bool relative = false)
+        : relative(relative), path(std::move(path))
+    {}
+    template <typename iter_t>
+    Identifier_t(iter_t ipos, iter_t epos, bool relative = false)
+        : relative(relative), path(ipos, epos)
+    {}
 
-    /** Context of identifier.
-     *
-     * For fragments and variable means how many context we must go
-     * from the root one. 0 means the root, 1 one below the root etc.
-     *
-     * When opening new fragment 1 means open new context, 0 mean
-     * continue in then current context.
-     */
-    uint16_t context;
+    explicit operator bool() const {return !path.empty();}
 
-    /** Depth in associated context.
-     *
-     * Indicates how deep the variable/fragment is in the context --
-     * distance form the root.
-     */
-    uint16_t depth;
+    std::size_t size() const {return path.size();}
+
+    bool empty() const {return path.empty();}
+
+    const string_view_t &name() const {return path.back();}
+
+    const_iterator begin() const {return path.begin();}
+    const_iterator end() const {return path.end();}
+    const_reverse_iterator rbegin() const {return path.rbegin();}
+    const_reverse_iterator rend() const {return path.rend();}
+
+    bool is_relative() const {return relative;}
+    bool is_absolute() const {return !relative;}
+    bool is_local() const {return relative && (path.size() == 1);}
+
+    void push_back(const string_view_t &segment) {path.push_back(segment);}
+    void pop_back() {path.pop_back();}
+
+    const string_view_t &operator[](std::size_t i) const {return path[i];}
+
+    friend bool operator==(const Identifier_t &lhs, const Identifier_t &rhs);
+
+    std::string str() const {
+        std::string result;
+        if (is_absolute()) result.push_back('.');
+        for (int i = 0; i < size(); ++i)
+            result.append((i? ".": "") + path[i]);
+        return result;
+    }
+
+protected:
+    bool relative;
+    std::vector<string_view_t> path;
 };
+
+/** 
+ */
+inline bool operator==(const Identifier_t &lhs, const Identifier_t &rhs) {
+    return lhs.relative == rhs.relative
+        && lhs.path == rhs.path;
+}
+
+/** 
+ */
+inline bool operator!=(const Identifier_t &lhs, const Identifier_t &rhs) {
+    return !(lhs == rhs);
+}
+
+/** Writes human readable string to stream.
+ */
+inline std::ostream &operator<<(std::ostream &os, const Identifier_t &ident) {
+    os << ident.str();
+    return os;
+}
 
 } // namespace Teng
 

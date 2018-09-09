@@ -28,12 +28,15 @@
  *
  * AUTHORS
  * Vaclav Blazek <blazek@firma.seznam.cz>
+ * Michal Bukovsky <michal.bukovsky@firma.seznam.cz
  *
  * HISTORY
  * 2003-09-22  (vasek)
  *             Created.
  * 2006-06-21  (sten__)
  *             Removed error duplicities.
+ * 2018-07-07  (burlog)
+ *             Cleaned.
  */
 
 #include <iostream>
@@ -42,9 +45,6 @@
 
 namespace Teng {
 
-/**
- * @short Dumps all errors to given stream.
- */
 std::ostream &operator<<(std::ostream &o, const Pos_t &pos) {
     o << *pos.filename;
     if ((pos.lineno > 0) && (pos.colno >= 0))

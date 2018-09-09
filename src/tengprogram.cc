@@ -28,13 +28,15 @@
  *
  * AUTHORS
  * Stepan Skrob <stepan@firma.seznam.cz>
+ * Michal Bukovsky <michal.bukovsky@firma.seznam.cz
  *
  * HISTORY
  * 2003-09-24  (stepan)
  *             Created.
+ * 2018-07-07  (burlog)
+ *             Cleaned.
  */
 
-#include <cstdio>
 #include <iomanip>
 
 #include "tengfilestream.h"
@@ -52,6 +54,7 @@ void Program_t::dump(std::ostream &out) const {
         out << std::setw(3) << std::setfill('0') << std::noshowpos
             << std::distance(instrs.data(), &instr) << '\t';
         instr.dump(out);
+        out << std::endl;
     }
 }
 

@@ -160,12 +160,12 @@ Result_t numformat(Ctx_t &ctx, const Args_t &args) {
     // 2: decimal point
     std::string decipoint = ".";
     if (iarg != args.rend())
-        decipoint = str(*iarg++);
+        decipoint = (iarg++)->printable();
 
     // 3: thousands separator
     std::string thousandsep;
     if (iarg != args.rend())
-        thousandsep = str(*iarg++);
+        thousandsep = (iarg++)->printable();
 
     // round the number
     int sign = 1;
@@ -175,7 +175,7 @@ Result_t numformat(Ctx_t &ctx, const Args_t &args) {
     }
 
     // temp value for showing decimal part
-    Parser::Value_t::int_type powernum = 0;
+    Value_t::int_type powernum = 0;
     if (precision <= 0) {
         number /= pow10[-precision];
         number = ::round(number);
@@ -184,7 +184,7 @@ Result_t numformat(Ctx_t &ctx, const Args_t &args) {
     else {
         number *= pow10[precision];
         number = ::round(number);
-        powernum = static_cast<Parser::Value_t::int_type>(number);
+        powernum = static_cast<Value_t::int_type>(number);
         number /= pow10[precision];
     }
 
@@ -192,7 +192,7 @@ Result_t numformat(Ctx_t &ctx, const Args_t &args) {
     // print string using thousand and decimal separators
     char buf[16];
     std::string str;
-    auto int_part = static_cast<Parser::Value_t::int_type>(trunc(number));
+    auto int_part = static_cast<Value_t::int_type>(trunc(number));
 
     // if zero integer part
     if (int_part == 0) {
@@ -282,42 +282,60 @@ Result_t toint(Ctx_t &ctx, const Args_t &args) {
     auto &arg = args.back();
     bool ignore_conversion_errors = args.size() == 2;
 
-    // do conversion
-    switch (arg.type()) {
-    case Parser::Value_t::tag::integral:
-    case Parser::Value_t::tag::real:
-        return Result_t(arg.integral());
-
-    case Parser::Value_t::tag::undefined:
-        return ignore_conversion_errors
-            ? Result_t(0)
-            : failed(ctx, "int", "can't convert undefined to int");
-
-    case Parser::Value_t::tag::pointer:
-        return ignore_conversion_errors
-            ? Result_t(0)
-            : failed(ctx, "int", "can't convert pointer to int");
-
-    case Parser::Value_t::tag::string:
+    // conversion of string to int
+    auto str2int_impl = [&] (const string_view_t &arg) {
         char *err = nullptr;
 
         // try convert string to integral number
-        auto int_number = strtol(arg.as_str().c_str(), &err, 10);
+        auto int_number = strtol(arg.data(), &err, 10);
         if (*err == '\0') return Result_t(int_number);
 
         // if any number has been parsed and we should ignore errors return it
-        if (err != arg.as_str().c_str())
+        if (err != arg.data())
             if (ignore_conversion_errors)
                 return Result_t(int_number);
 
         // try convert string to floating point number
-        auto fp_number = strtod(arg.as_str().c_str(), &err);
+        auto fp_number = strtod(arg.data(), &err);
         if (*err == '\0') return Result_t(IntType_t(fp_number));
 
         // to report or not to report an error ;)
         return ignore_conversion_errors
             ? Result_t(fp_number)
             : failed(ctx, "int", "can't convert string to int");
+    };
+
+    // do conversion
+    switch (arg.type()) {
+    case Value_t::tag::integral:
+    case Value_t::tag::real:
+        return Result_t(arg.integral());
+
+    case Value_t::tag::undefined:
+        return ignore_conversion_errors
+            ? Result_t(0)
+            : failed(ctx, "int", "can't convert undefined to int");
+
+    case Value_t::tag::frag_ref:
+        return ignore_conversion_errors
+            ? Result_t(0)
+            : failed(ctx, "int", "can't convert frag to int");
+
+    case Value_t::tag::list_ref:
+        return ignore_conversion_errors
+            ? Result_t(0)
+            : failed(ctx, "int", "can't convert list to int");
+
+    case Value_t::tag::string:
+        return str2int_impl(arg.as_string());
+
+    case Value_t::tag::string_ref:
+        return str2int_impl(arg.as_string_ref());
+
+    case Value_t::tag::regex:
+        return ignore_conversion_errors
+            ? Result_t(0)
+            : failed(ctx, "int", "can't convert regex to int");
     }
     throw std::runtime_error(__PRETTY_FUNCTION__);
 }

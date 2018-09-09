@@ -125,33 +125,39 @@ TemplateCache_t::getConfigAndDict(const std::string &configFilename,
 {
     // find or create configuration
     std::vector<std::string> key;
-    key.push_back(createCacheKeyForFilename(root, configFilename));
 
     unsigned long int configSerial = 0;
     unsigned long int configDependSerial = 0;
-    const Configuration_t *cachedConfig
-        = configCache->find(key, configDependSerial, &configSerial);
-    if (!cachedConfig
-        || (cachedConfig->isWatchFilesEnabled() && cachedConfig->isChanged())) {
+    auto *cachedCfg = configCache->find(key, configDependSerial, &configSerial);
+    bool reloadCfg = !cachedCfg
+        || (cachedCfg->isWatchFilesEnabled() && cachedCfg->isChanged());
+
+    // find or create dictionary
+    unsigned long int dictSerial = 0;
+    unsigned long int dictDependSerial = 0;
+    auto *cachedDict = dictCache->find(key, dictDependSerial, &dictSerial);
+    bool reloadDict = !cachedDict
+        || (dictDependSerial != configSerial)
+        || (cachedCfg->isWatchFilesEnabled() && cachedDict->isChanged());
+
+    // reuse key for config
+    key.push_back(createCacheKeyForFilename(root, configFilename));
+
+    // reload params if needed
+    if (reloadCfg) {
         // not found or changed -> create new configionary
         Configuration_t *config = new Configuration_t(root);
         // parse file
         if (!configFilename.empty()) config->parse(configFilename);
         // add configionary to cache and return it
-        cachedConfig = configCache->add(key, config, 0, &configSerial);
+        cachedCfg = configCache->add(key, config, 0, &configSerial);
     }
 
     // reuse key for dictionary
     key.push_back(createCacheKeyForFilename(root, dictFilename));
 
-    // find or create dictionary
-    unsigned long int dictSerial = 0;
-    unsigned long int dictDependSerial = 0;
-    const Dictionary_t *cachedDict = dictCache->find(key, dictDependSerial,
-                                                     &dictSerial);
-
-    if (!cachedDict || (dictDependSerial != configSerial)
-        || (cachedConfig->isWatchFilesEnabled() && cachedDict->isChanged())) {
+    // reload lang dict if needed
+    if (reloadDict) {
         // not found or changed -> create new dictionary
         Dictionary_t *dict = new Dictionary_t(root);
         // parse file
@@ -165,7 +171,7 @@ TemplateCache_t::getConfigAndDict(const std::string &configFilename,
     if (serial) *serial = dictSerial;
 
     // return data
-    return ConfigAndDict_t(cachedConfig, cachedDict);
+    return ConfigAndDict_t(cachedCfg, cachedDict);
 }
 
 } // namespace Teng

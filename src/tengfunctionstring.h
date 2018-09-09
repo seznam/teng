@@ -48,6 +48,7 @@
 #include <string>
 #include <cstdint>
 #include <limits>
+#include <pcre++.h>
 
 #include <tengutf8.h>
 #include <tengplatform.h>
@@ -80,7 +81,7 @@ do_substr(Ctx_t &ctx, const char *fun, const Args_t &args, impl_type impl) {
     // 1: text
     SubstrArgs_t s;
     auto iarg = args.rbegin();
-    s.text = (iarg++)->str();
+    s.text = (iarg++)->printable();
 
     // 2: start
     if (!iarg->is_integral()) {
@@ -102,11 +103,11 @@ do_substr(Ctx_t &ctx, const char *fun, const Args_t &args, impl_type impl) {
 
     // 4: prefix [optional]
     if (iarg != args.rend())
-        s.prefix = (iarg++)->str();
+        s.prefix = (iarg++)->printable();
 
     // 5: suffix [optional]
     s.suffix = iarg != args.rend()
-        ? (iarg++)->str()
+        ? (iarg++)->printable()
         : s.prefix;
 
     // done
@@ -162,8 +163,8 @@ Result_t len(Ctx_t &ctx, const Args_t &args) {
     // the string length according to encoding
     return Result_t(
         ctx.encoding == "utf-8"
-        ? utf8::strlen(str(args[0]))
-        : str(args[0])->size()
+        ? args[0].print([] (const string_view_t &v) {return utf8::strlen(v);})
+        : args[0].print([] (const string_view_t &v) {return v.size();})
     );
 }
 
@@ -179,20 +180,22 @@ Result_t nl2br(Ctx_t &ctx, const Args_t &args) {
     if (args.size() != 1)
         return wrongNumberOfArgs(ctx, "nl2br", 1);
 
-    // prepare space for result
-    auto arg0 = str(args[0]);
-    std::string tmp;
-    tmp.reserve(arg0->size() * 1.3);
+    // print value
+    return Result_t(args[0].print([&] (const string_view_t &arg) {
+        // prepare space for result
+        std::string tmp;
+        tmp.reserve(arg.size() * 1.3);
 
-    // replace
-    for (char ch: *arg0) {
-        tmp.push_back(ch);
-        if (ch == '\n')
-            tmp.append("<br />");
-    }
+        // replace
+        for (char ch: arg) {
+            tmp.push_back(ch);
+            if (ch == '\n')
+                tmp.append("<br />");
+        }
 
-    // done
-    return Result_t(std::move(tmp));
+        // done
+        return tmp;
+    }));
 }
 
 /** Python-like substr
@@ -278,12 +281,11 @@ Result_t reorder(Ctx_t &ctx, const Args_t &args) {
         return atLeastXArg(ctx, "reorder", 1);
 
     // format string
-    auto format_arg = str(args.back());
-    auto &format = *format_arg;
+    string_ptr_t format(args.back());
 
     // result (formated string) -- reserve some space
     std::string text;
-    text.reserve(2 * format.size());
+    text.reserve(2 * format->size());
 
     // status of automaton
     enum class STATUS {
@@ -302,12 +304,12 @@ Result_t reorder(Ctx_t &ctx, const Args_t &args) {
     bool replace = false;
 
     // position of last %
-    auto mark = format.begin();
+    auto mark = format->begin();
 
     // process automaton
-    for (auto iformat = format.begin(); /* forever */; ++iformat) {
+    for (auto iformat = format->begin(); /* forever */; ++iformat) {
         // get next character of EOS when at the string end
-        int c = ((iformat == format.end()) ? EOS : *iformat);
+        int c = ((iformat == format->end()) ? EOS : *iformat);
         switch (c) {
         case '%':
             switch (status) {
@@ -468,7 +470,7 @@ Result_t reorder(Ctx_t &ctx, const Args_t &args) {
                 );
                 text.append(mark, iformat + 1);
             } else {
-                text.append(str(args[args.size() - 1 - index]));
+                args[args.size() - 1 - index].append_to(text);
             }
             replace = false;
         }
@@ -496,9 +498,9 @@ Result_t replace(Ctx_t &ctx, const Args_t &args) {
         return wrongNumberOfArgs(ctx, "replace", 3);
 
     // cache args (potentially converted to string)
-    auto repl = str(args[0]);
-    auto pattern = str(args[1]);
-    auto text = str(args[2]);
+    string_ptr_t repl(args[0]);
+    string_ptr_t pattern(args[1]);
+    string_ptr_t text(args[2]);
 
     // prepare place for result
     std::string tmp;
@@ -533,9 +535,13 @@ Result_t replace(Ctx_t &ctx, const Args_t &args) {
  * @param result Teng function result
  */
 Result_t regex_replace(Ctx_t &ctx, const Args_t &args) {
-    return args.size() != 3
-        ? wrongNumberOfArgs(ctx, "regex_replace", 3)
-        : Result_t(utf8::regex_replace(str(args[2]), str(args[1]), str(args[0])));
+    if (args.size() != 3)
+        return wrongNumberOfArgs(ctx, "regex_replace", 3);
+    string_ptr_t where(args[2]);
+    string_ptr_t pattern(args[1]);
+    string_ptr_t repl(args[0]);
+    pcrepp::Pcre regex(*pattern, PCRE_GLOBAL | PCRE_UTF8);
+    return Result_t(regex.replace(*where, *repl));
 }
 
 /** Tolower function with utf-8 support.
@@ -549,7 +555,9 @@ Result_t regex_replace(Ctx_t &ctx, const Args_t &args) {
 Result_t strtolower(Ctx_t &ctx, const Args_t &args) {
     return args.size() != 1
         ? wrongNumberOfArgs(ctx, "strtolower", 1)
-        : Result_t(utf8::tolower(str(args[0])));
+        : Result_t(args[0].print([] (const string_view_t &arg) {
+            return utf8::tolower(arg);
+        }));
 }
 
 /** Toupper function with utf-8 support.
@@ -563,7 +571,9 @@ Result_t strtolower(Ctx_t &ctx, const Args_t &args) {
 Result_t strtoupper(Ctx_t &ctx, const Args_t &args) {
     return args.size() != 1
         ? wrongNumberOfArgs(ctx, "strtoupper", 1)
-        : Result_t(utf8::toupper(str(args[0])));
+        : Result_t(args[0].print([] (const string_view_t &arg) {
+            return utf8::toupper(arg);
+        }));
 }
 
 } // namespace builtin

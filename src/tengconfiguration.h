@@ -28,12 +28,12 @@
  *
  * AUTHORS
  * Vaclav Blazek <blazek@firma.seznam.cz>
+ * Michal Bukovsky <michal.bukovsky@firma.seznam.cz>
  *
  * HISTORY
  * 2004-09-18  (vasek)
  *             Created.
  */
-
 
 #ifndef TENGCONFIGURATION_H
 #define TENGCONFIGURATION_H
@@ -45,6 +45,10 @@
 
 namespace Teng {
 
+/** The result type of isEnabled query.
+ */
+enum class teng_feature {unknown = 0, enabled = 1, disabled = 2};
+
 /**
  * @short Language independed dictionary and configuration placeholder.
  */
@@ -55,17 +59,7 @@ public:
      *
      * @param root path of root for locating files
      */
-    Configuration_t(const std::string &root = std::string());
-
-    /**
-     * @short Parses and processes processing directive.
-     *
-     * @param directive whole directive string
-     * @param param parameter to directive
-     *
-     * @return 0 OK !0 error
-     */
-    int processDirective(string_view_t directive, string_view_t param) override;
+    Configuration_t(const std::string &fs_root = std::string());
 
     // @{ shortcuts to query configuration
     bool isDebugEnabled() const {return debug;}
@@ -73,8 +67,8 @@ public:
     bool isLogToOutputEnabled() const {return logToOutput;}
     bool isBytecodeEnabled() const {return bytecode;}
     bool isWatchFilesEnabled() const {return watchFiles;}
-    unsigned int getMaxIncludeDepth() const {return maxIncludeDepth;}
-    unsigned int getMaxDebugValLength() const {return maxDebugValLength;}
+    uint32_t getMaxIncludeDepth() const {return maxIncludeDepth;}
+    uint16_t getMaxDebugValLength() const {return maxDebugValLength;}
     bool isFormatEnabled() const {return format;}
     bool isAlwaysEscapeEnabled() const {return alwaysEscape;}
     bool isShortTagEnabled() const {return shortTag;}
@@ -82,23 +76,31 @@ public:
 
     /** Sets enabled to true if feature is enabled.
      */
-    int isEnabled(const std::string &feature, bool &enabled) const;
+    teng_feature isEnabled(const string_view_t &name) const;
 
     /** Dumps configuration to stream.
      */
     friend std::ostream &operator<<(std::ostream &o, const Configuration_t &c);
 
-private:
-    bool debug;           //!< <?teng debug?> works. (false)
-    bool errorFragment;   //!< <?teng frag ._error?> works. (false)
-    bool logToOutput;     //!< Log error goes to ouput. (false)
-    bool bytecode;        //!< <?teng bytecode?> works. (false)
-    bool watchFiles;      //!< Cached templates are checked for change. (true)
-    bool alwaysEscape;    //!< Escape always (true)
-    bool shortTag;        //!< Short tags <? ?> enabled (false)
-    bool format;          //!< enabled <?tenf formag ...?> (true)
-    uint32_t maxIncludeDepth;   //!< Maximal template include depth.
-    uint16_t maxDebugValLength; //!< Maximal length of variable value length
+protected:
+    /** Called wheb new directive parsed.
+     */
+    error_code
+    new_directive(
+        const char *name_ptr, std::size_t name_len,
+        const char *value_ptr, std::size_t value_len
+    ) override;
+
+    bool debug;         //!< the <?teng debug?> enabled (false)
+    bool errorFragment; //!< the <?teng frag ._error?> enabled (false)
+    bool logToOutput;   //!< log error goes to output (false)
+    bool bytecode;      //!< the <?teng bytecode?> enabled (false)
+    bool watchFiles;    //!< cached templates are checked for change (true)
+    bool alwaysEscape;  //!< always escape regardless on next instr (true)
+    bool shortTag;      //!< short tags <? ?> enabled (false)
+    bool format;        //!< the <?tenf formag ...?> enabled (true)
+    uint32_t maxIncludeDepth;   //!< maximal template include depth
+    uint16_t maxDebugValLength; //!< maximal length of variable value length
 };
 
 } // namespace Teng

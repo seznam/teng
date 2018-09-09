@@ -956,13 +956,13 @@ namespace Catch {
         template<typename InputIterator>
         std::string rangeToString(InputIterator first, InputIterator last) {
             ReusableStringStream rss;
-            rss << "{ ";
+            rss << "{\n";
             if (first != last) {
                 rss << ::Catch::Detail::stringify(*first);
                 for (++first; first != last; ++first)
-                    rss << ", " << ::Catch::Detail::stringify(*first);
+                    rss << ",\n" << ::Catch::Detail::stringify(*first);
             }
-            rss << " }";
+            rss << "\n}";
             return rss.str();
         }
     }
@@ -1011,11 +1011,11 @@ namespace Catch {
     struct StringMaker<std::pair<T1, T2> > {
         static std::string convert(const std::pair<T1, T2>& pair) {
             ReusableStringStream rss;
-            rss << "{ "
+            rss << "{\n"
                 << ::Catch::Detail::stringify(pair.first)
-                << ", "
+                << ",\n"
                 << ::Catch::Detail::stringify(pair.second)
-                << " }";
+                << "\n}";
             return rss.str();
         }
     };
@@ -1089,16 +1089,16 @@ namespace Catch {
     template<typename Allocator>
     std::string rangeToString( std::vector<bool, Allocator> const& v ) {
         ReusableStringStream rss;
-        rss << "{ ";
+        rss << "{\n";
         bool first = true;
         for( bool b : v ) {
             if( first )
                 first = false;
             else
-                rss << ", ";
+                rss << ",\n";
             rss << ::Catch::Detail::stringify( b );
         }
-        rss << " }";
+        rss << "\n}";
         return rss.str();
     }
 
