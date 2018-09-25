@@ -827,6 +827,7 @@ protected:
             if (visited_value(visit_tag) == tag::regex)
                 regex_value.~regex_type();
             // here are all dynamic resources released
+            tag_value = tag::string;
             new (&string_value) string_type(v.str());
         });
         return string_value;

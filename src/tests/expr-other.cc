@@ -58,7 +58,7 @@ SCENARIO(
             }
         }
 
-        WHEN("Expression with MUL and SUB operators evaluated") {
+        WHEN("Expression with MUL and MINUS operators evaluated") {
             Teng::Error_t err;
             auto t = "${2 * 3 - 2}";
             auto result = g(err, t, root);
@@ -70,7 +70,7 @@ SCENARIO(
             }
         }
 
-        WHEN("Expression with SUB and MUL operators evaluated") {
+        WHEN("Expression with MINUS and MUL operators evaluated") {
             Teng::Error_t err;
             auto t = "${2 - 3 * 2}";
             auto result = g(err, t, root);
@@ -86,21 +86,21 @@ SCENARIO(
 
 SCENARIO(
     "The propagating of undefined value through parentheses",
-    "[expr]"
+    "[expr][x]"
 ) {
     GIVEN("No data") {
         Teng::Fragment_t root;
 
         WHEN("Invalid string exrepssion in parentheses is evaluated") {
             Teng::Error_t err;
-            auto t = "${('a' + 'b') ++ 'c'}";
+            auto t = "${('a' - 'b') + 'c'}";
             auto result = g(err, t, root);
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 21},
-                    "Runtime: left operand of + numeric operator is string"
+                    {1, 7},
+                    "Runtime: Left operand of - numeric operator is string"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefinedc");
@@ -115,12 +115,12 @@ SCENARIO(
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 14},
-                    "Runtime: right operand of % division operator is zero"
+                    {1, 5},
+                    "Runtime: Right operand of % division operator is zero"
                 }, {
                     Teng::Error_t::ERROR,
-                    {1, 14},
-                    "Runtime: left operand of + numeric operator is undefined"
+                    {1, 10},
+                    "Runtime: Left operand of + numeric operator is undefined"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -129,22 +129,28 @@ SCENARIO(
 
         WHEN("Invalid exrepssion in parentheses is evaluated") {
             Teng::Error_t err;
-            auto t = "${(1 +) + 3}";
+            auto t = "<?teng format space='onespace'?>aaaa<?teng endformat?>"
+                     "<?teng endformat ?>a";
             auto result = g(err, t, root);
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 6},
-                    "Unexpected token: [314] character ')'"
-                }, {
-                    Teng::Error_t::FATAL,
-                    {1, 6},
-                    "Invalid sub-expression (in parentheses) (syntax error)"
+                    {1, 2},
+                    "Invalid expression, fix it please; replacing whole "
+                    "expression with undefined value"
                 }, {
                     Teng::Error_t::ERROR,
-                    {1, 12},
-                    "Runtime: left operand of + numeric operator is undefined"
+                    {1, 6},
+                    "Unexpected token: name=R_PAREN, view=)"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 8},
+                    "Unexpected token: name=PLUS, view=+"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 11},
+                    "Misplaced or excessive '}' token"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");

@@ -290,6 +290,7 @@ Formatter_t::Mode_t Formatter_t::pop() {
 Formatter_t::Mode_t resolveFormat(const string_view_t &name) {
     static const std::unordered_map<std::string, Formatter_t::Mode_t> modes = {
         {"nowhite", Formatter_t::MODE_NOWHITE},
+        {"nospace", Formatter_t::MODE_NOWHITE},
         {"onespace", Formatter_t::MODE_ONESPACE},
         {"striplines", Formatter_t::MODE_STRIPLINES},
         {"joinlines", Formatter_t::MODE_JOINLINES},

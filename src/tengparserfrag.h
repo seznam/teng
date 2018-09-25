@@ -57,7 +57,7 @@ namespace Parser {
 
 /** The struct representing the open frag.
  */
-struct OpenFragment_t {
+struct FragRec_t {
     string_view_t name; //!< the fragment local name
     int32_t addr;       //!< the address of Frag_t instruction
     bool auto_close;    //!< if frag was created by <?teng frag ...?>
@@ -65,10 +65,10 @@ struct OpenFragment_t {
 
 /** The frame of open frags.
  */
-class OpenFrame_t {
+class FrameRec_t {
 public:
     // types
-    using OpenFragments_t = std::vector<OpenFragment_t>;
+    using OpenFragments_t = std::vector<FragRec_t>;
     using const_iterator = OpenFragments_t::const_iterator;
 
     /** Returns the number of open fragments.
@@ -97,7 +97,7 @@ public:
 
     /** Close the most recent frag.
      */
-    OpenFragment_t close_frag() {
+    FragRec_t close_frag() {
         auto result = frags.back();
         frags.pop_back();
         return result;
@@ -145,7 +145,7 @@ public:
 
     /** Returns open fragment at desired index.
      */
-    const OpenFragment_t &operator[](int64_t i) const {return frags[i];}
+    const FragRec_t &operator[](int64_t i) const {return frags[i];}
 
 protected:
     OpenFragments_t frags; //!< the list of open frags
@@ -169,7 +169,7 @@ protected:
 class OpenFrames_t: public OFFApi_t {
 public:
     // types
-    using OpenFramesImpl_t = std::vector<OpenFrame_t>;
+    using OpenFramesImpl_t = std::vector<FrameRec_t>;
     using iterator = OpenFramesImpl_t::iterator;
     using const_iterator = OpenFramesImpl_t::const_iterator;
     using reverse_iterator = OpenFramesImpl_t::reverse_iterator;
@@ -178,7 +178,7 @@ public:
     /** C'tor.
      */
     OpenFrames_t(Program_t &program)
-        : program(program), frames(1, OpenFrame_t())
+        : program(program), frames(1, FrameRec_t())
     {}
 
     /** D'tor.
@@ -194,57 +194,57 @@ public:
     //
     // We are using indices to open fragments list as fragment identifiers.
 
-    /** Returns zero which is index to root frag.
+    /** Returns frag at given offsets.
      */
-    Value_t root_frag() const override {return Value_t(0);}
-
-    /** Returns zero which is index to root frag.
-     */
-    Value_t this_frag() const override {return Value_t(top().size() - 1);}
+    Value_t
+    frag(uint16_t frame_offset, uint16_t frag_offset) const override {
+        if (frame_offset >= frames.size())
+            throw runtime_ctx_needed_t();
+        if (frag_offset >= frames[frames.size() - frame_offset - 1].size())
+            throw runtime_ctx_needed_t();
+        return Value_t(make_frag_ident(frame_offset, frag_offset));
+    }
 
     /** Returns index i+1 which identifies next open fragment but only if
      * desired name match open fragment name. If name does not match open
      * fragment then runtime_ctx_needed_t is thrown which tells the optimalizer
      * that expression is unoptimizable.
      */
-    Value_t frag_attr(const Value_t &i, string_view_t name) const override {
-        if (i.is_undefined())
-            throw runtime_ctx_needed_t();
-        if (i.as_int() >= top().size())
-            throw runtime_ctx_needed_t();
-        if (top()[i.as_int()].name != name)
-            throw runtime_ctx_needed_t();
-        return Value_t(i.as_int() + 1);
+    Value_t
+    frag_attr(const Value_t &offsets, string_view_t name) const override {
+        return evaluate(
+            offsets,
+            [&] (auto &frag_rec, uint16_t frame_offset, uint16_t frag_offset) {
+                if (frag_rec.name != name)
+                    throw runtime_ctx_needed_t();
+                return Value_t(make_frag_ident(frame_offset, frag_offset + 1));
+            }
+        );
     }
 
     /** If the idx argument is zero then it is ignored because of implicit list
      * to frag conversion. If the idx argument is string and the string equals
      * to i-th frag name then the index to next frag is returned.
      */
-    Value_t value_at(const Value_t &i, const Value_t &idx) const override {
-        if (i.is_undefined())
+    Value_t
+    value_at(const Value_t &offsets, const Value_t &idx) const override {
+        if (offsets.is_undefined())
             throw runtime_ctx_needed_t();
         switch (idx.type()) {
         case Value_t::tag::undefined:
             throw runtime_ctx_needed_t();
         case Value_t::tag::integral:
             if (idx.as_int() == 0)
-                return i;
+                return offsets;
             throw runtime_ctx_needed_t();
         case Value_t::tag::real:
             if (idx.as_real() == 0)
-                return i;
+                return offsets;
             throw runtime_ctx_needed_t();
         case Value_t::tag::string:
-            if (i.as_int() < top().size())
-                if (top()[i.as_int()].name == idx.as_string())
-                    return Value_t(i.as_int() + 1);
-            throw runtime_ctx_needed_t();
+            return frag_attr(offsets, idx.string());
         case Value_t::tag::string_ref:
-            if (i.as_int() < top().size())
-                if (top()[i.as_int()].name == idx.as_string_ref())
-                    return Value_t(i.as_int() + 1);
-            throw runtime_ctx_needed_t();
+            return frag_attr(offsets, idx.string());
         case Value_t::tag::frag_ref:
             throw runtime_ctx_needed_t();
         case Value_t::tag::list_ref:
@@ -256,17 +256,18 @@ public:
 
     /** Returns 'representation' of the open fragments at given index.
      */
-    Value_t repr(const Value_t &i) const override {
-        if (i.is_undefined()) throw runtime_ctx_needed_t();
-        if ((i.as_int() + 1) < top().size())
+    Value_t repr(const Value_t &offsets) const override {
+        return evaluate(offsets, [&] (auto &, uint16_t, uint16_t) {
             return Value_t("$frag-or-list$");
-        throw runtime_ctx_needed_t();
+        });
     }
 
     /** Returns true if there is open fragment at given index.
      */
-    Value_t exists(const Value_t &i) const override {
-        if (i.is_undefined()) throw runtime_ctx_needed_t();
+    Value_t exists(const Value_t &offsets) const override {
+        // TODO(burlog): fakt je tohle dobre?
+        if (offsets.is_undefined())
+            throw runtime_ctx_needed_t();
         return Value_t(true);
     }
 
@@ -310,19 +311,19 @@ public:
 
     /** Returns the most recent frame of open frags.
      */
-    OpenFrame_t &top() {return frames.back();}
+    FrameRec_t &top() {return frames.back();}
 
     /** Returns i-th frame.
      */
-    const OpenFrame_t &operator[](std::size_t i) const {return frames[i];}
+    const FrameRec_t &operator[](std::size_t i) const {return frames[i];}
 
     /** Returns the most recent frame of open frags.
      */
-    const OpenFrame_t &top() const {return frames.back();}
+    const FrameRec_t &top() const {return frames.back();}
 
     /** Opens new frame of open frags. The frame does not contain any open frag.
      */
-    OpenFrame_t &open_frame() {
+    FrameRec_t &open_frame() {
         if (frames.size() >= std::numeric_limits<uint16_t>::max())
             throw std::length_error("the number of open frames exceeded 65535");
         frames.emplace_back();
@@ -334,6 +335,41 @@ public:
     void close_frame() {frames.pop_back();}
 
 protected:
+    /** Joins frame and frag offsets to one "big" int.
+     */
+    int64_t make_frag_ident(uint16_t frame_offset, uint16_t frag_offset) const {
+        return (frame_offset << 16) | frag_offset;
+    }
+
+    /** Splits frame offset from "big" int.
+     */
+    uint16_t make_frame_offset(int64_t frag_ident) const {
+        return (frag_ident >> 16) | 0xffff;
+    }
+
+    /** Splits frag offset from big int.
+     */
+    uint16_t make_frag_offset(int64_t frag_ident) const {
+        return frag_ident | 0xffff;
+    }
+
+    /** Calls desired callback with valied frame and frag offsets.
+     */
+    template <typename call_t>
+    Value_t evaluate(const Value_t &offsets, call_t &&call) const {
+        if (offsets.is_undefined())
+            throw runtime_ctx_needed_t();
+        uint16_t frame_offset = make_frame_offset(offsets.as_int());
+        if (frame_offset >= frames.size())
+            throw runtime_ctx_needed_t();
+        auto frame_i = frames.size() - frame_offset - 1;
+        uint16_t frag_offset = make_frag_offset(offsets.as_int());
+        if (frag_offset >= frames[frame_i].size())
+            throw runtime_ctx_needed_t();
+        auto frag_i = frames[frame_i].size() - frag_offset - 1;
+        return call(frames[frame_i][frag_i], frame_offset, frag_offset);
+    }
+
     Program_t &program;      //!< program created by parser
     OpenFramesImpl_t frames; //!< frames of open fragments
 };

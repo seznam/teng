@@ -41,6 +41,7 @@
 #include <stdexcept>
 #include <memory>
 
+#include "tengutil.h"
 #include "tengplatform.h"
 #include "tenglogging.h"
 #include "tengstructs.h"
@@ -114,24 +115,26 @@ int gen_page(
     return err.max_level;
 }
 
-} // namespace
-
-Teng_t::Teng_t(const std::string &root, const Teng_t::Settings_t &settings)
-    : root(root), templateCache(nullptr)
-{
+std::string normalize_root(std::string root) {
     // if not absolute path, prepend current working directory
     if (root.empty() || !ISROOT(root)) {
         char cwd[2048];
         if (!getcwd(cwd, sizeof(cwd)))
             throw std::runtime_error("cannot get cwd");
-        this->root = std::string(cwd) + '/' + root;
+        root = std::string(cwd) + '/' + root;
     }
-
-    // create template cache
-    templateCache = std::make_unique<TemplateCache_t>(
-        root, settings.programCacheSize, settings.dictCacheSize
-    );
+    normalizeFilename(root);
+    return root;
 }
+
+} // namespace
+
+Teng_t::Teng_t(const std::string &root, const Teng_t::Settings_t &settings)
+    : root(normalize_root(root)),
+      templateCache(std::make_unique<TemplateCache_t>(
+          this->root, settings.programCacheSize, settings.dictCacheSize
+      ))
+{}
 
 Teng_t::~Teng_t() = default;
 

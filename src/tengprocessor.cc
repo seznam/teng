@@ -191,35 +191,43 @@ process(Ctx_t *ctx, std::stack<Value_t> &stack, const SubProgram_t &program) {
             stack.push(exec::var(ctx, program[ip + 1].opcode() == OPCODE::PRINT));
             break;
 
-        case OPCODE::PUSH:
+        case OPCODE::PRG_STACK_PUSH:
             exec::prg_stack_push(prg_stack, get_arg);
             break;
 
-        case OPCODE::POP:
+        case OPCODE::PRG_STACK_POP:
             exec::prg_stack_pop(prg_stack);
             break;
 
-        case OPCODE::STACK:
+        case OPCODE::PRG_STACK_AT:
             stack.push(exec::prg_stack_at(ctx, prg_stack));
             break;
 
-        case OPCODE::BITOR:
+        case OPCODE::BIT_OR:
             stack.push(exec::numop(ctx, get_arg, std::bit_or<int64_t>()));
             break;
 
-        case OPCODE::BITXOR:
+        case OPCODE::BIT_XOR:
             stack.push(exec::numop(ctx, get_arg, std::bit_xor<int64_t>()));
             break;
 
-        case OPCODE::BITAND:
+        case OPCODE::BIT_AND:
             stack.push(exec::numop(ctx, get_arg, std::bit_and<int64_t>()));
             break;
 
-        case OPCODE::ADD:
-            stack.push(exec::numop(ctx, get_arg, std::plus<>()));
+        case OPCODE::UNARY_PLUS:
+            stack.push(exec::unary_plus(ctx, get_arg));
             break;
 
-        case OPCODE::SUB:
+        case OPCODE::UNARY_MINUS:
+            stack.push(exec::unary_minus(ctx, get_arg));
+            break;
+
+        case OPCODE::PLUS:
+            stack.push(exec::strnumop(ctx, get_arg, std::plus<>()));
+            break;
+
+        case OPCODE::MINUS:
             stack.push(exec::numop(ctx, get_arg, std::minus<>()));
             break;
 
@@ -236,38 +244,38 @@ process(Ctx_t *ctx, std::stack<Value_t> &stack, const SubProgram_t &program) {
             break;
 
         case OPCODE::EQ:
-            stack.push(exec::numop(ctx, get_arg, std::equal_to<>()));
+            stack.push(exec::strnumop(ctx, get_arg, std::equal_to<>()));
             break;
 
         case OPCODE::NE:
-            stack.push(exec::numop(ctx, get_arg, std::not_equal_to<>()));
+            stack.push(exec::strnumop(ctx, get_arg, std::not_equal_to<>()));
             break;
 
         case OPCODE::GE:
-            stack.push(exec::numop(ctx, get_arg, std::greater_equal<>()));
+            stack.push(exec::strnumop(ctx, get_arg, std::greater_equal<>()));
             break;
 
         case OPCODE::GT:
-            stack.push(exec::numop(ctx, get_arg, std::greater<>()));
+            stack.push(exec::strnumop(ctx, get_arg, std::greater<>()));
             break;
 
         case OPCODE::LE:
-            stack.push(exec::numop(ctx, get_arg, std::less_equal<>()));
+            stack.push(exec::strnumop(ctx, get_arg, std::less_equal<>()));
             break;
 
         case OPCODE::LT:
-            stack.push(exec::numop(ctx, get_arg, std::less<>()));
+            stack.push(exec::strnumop(ctx, get_arg, std::less<>()));
             break;
 
         case OPCODE::CONCAT:
             stack.push(exec::strop(ctx, get_arg, std::plus<>()));
             break;
 
-        case OPCODE::STREQ:
+        case OPCODE::STR_EQ:
             stack.push(exec::strop(ctx, get_arg, std::equal_to<>()));
             break;
 
-        case OPCODE::STRNE:
+        case OPCODE::STR_NE:
             stack.push(exec::strop(ctx, get_arg, std::not_equal_to<>()));
             break;
 
@@ -279,7 +287,7 @@ process(Ctx_t *ctx, std::stack<Value_t> &stack, const SubProgram_t &program) {
             stack.push(exec::logic_not(ctx, get_arg));
             break;
 
-        case OPCODE::BITNOT:
+        case OPCODE::BIT_NOT:
             stack.push(exec::bit_not(ctx, get_arg));
             break;
 
@@ -301,7 +309,7 @@ process(Ctx_t *ctx, std::stack<Value_t> &stack, const SubProgram_t &program) {
             else ip += ctx->instr->template as<Or_t>().addr_offset;
             break;
 
-        case OPCODE::JMPIFNOT:
+        case OPCODE::JMP_IF_NOT:
             if (!get_arg())
                 ip += ctx->instr->template as<JmpIfNot_t>().addr_offset;
             break;
@@ -310,50 +318,62 @@ process(Ctx_t *ctx, std::stack<Value_t> &stack, const SubProgram_t &program) {
             ip += ctx->instr->template as<Jmp_t>().addr_offset;
             break;
 
-        case OPCODE::FORMAT:
+        case OPCODE::OPEN_FORMAT:
             exec::push_formatter(ctx);
             break;
 
-        case OPCODE::ENDFORMAT:
+        case OPCODE::CLOSE_FORMAT:
             exec::pop_formatter(ctx);
             break;
 
-        case OPCODE::FRAG:
+        case OPCODE::OPEN_FRAG:
             if (auto shift = exec::open_frag(ctx))
                 ip += shift;
             break;
 
-        case OPCODE::ENDFRAG:
+        case OPCODE::CLOSE_FRAG:
             if (auto shift = exec::close_frag(ctx))
                 ip += shift;
             break;
 
-        case OPCODE::FRAME:
+        case OPCODE::OPEN_FRAME:
             exec::open_frame(ctx);
             break;
 
-        case OPCODE::ENDFRAME:
+        case OPCODE::CLOSE_FRAME:
             exec::close_frame(ctx);
             break;
 
-        case OPCODE::FRAGCNT:
+        case OPCODE::PUSH_FRAG_COUNT:
             stack.push(exec::frag_count(ctx));
             break;
 
-        case OPCODE::FRAGINDEX:
+        case OPCODE::PUSH_FRAG_INDEX:
             stack.push(exec::frag_index(ctx));
             break;
 
-        case OPCODE::FRAGFIRST:
+        case OPCODE::PUSH_FRAG_FIRST:
             stack.push(exec::is_first_frag(ctx));
             break;
 
-        case OPCODE::FRAGLAST:
+        case OPCODE::PUSH_FRAG_LAST:
             stack.push(exec::is_last_frag(ctx));
             break;
 
-        case OPCODE::FRAGINNER:
+        case OPCODE::PUSH_FRAG_INNER:
             stack.push(exec::is_inner_frag(ctx));
+            break;
+
+        case OPCODE::PUSH_FRAG:
+            stack.push(exec::push_frag(ctx));
+            break;
+
+        case OPCODE::PUSH_ROOT_FRAG:
+            stack.push(exec::push_root_frag(ctx));
+            break;
+
+        case OPCODE::PUSH_THIS_FRAG:
+            stack.push(exec::push_this_frag(ctx));
             break;
 
         case OPCODE::PRINT:
@@ -364,11 +384,11 @@ process(Ctx_t *ctx, std::stack<Value_t> &stack, const SubProgram_t &program) {
             exec::set_var(ctx, get_arg);
             break;
 
-        case OPCODE::CTYPE:
+        case OPCODE::OPEN_CTYPE:
             exec::push_escaper(ctx);
             break;
 
-        case OPCODE::ENDCTYPE:
+        case OPCODE::CLOSE_CTYPE:
             exec::pop_escaper(ctx);
             break;
 
@@ -382,14 +402,6 @@ process(Ctx_t *ctx, std::stack<Value_t> &stack, const SubProgram_t &program) {
 
         case OPCODE::PUSH_ATTR:
             stack.push(exec::push_attr(ctx, get_arg));
-            break;
-
-        case OPCODE::PUSH_ROOT_FRAG:
-            stack.push(exec::push_root_frag(ctx));
-            break;
-
-        case OPCODE::PUSH_THIS_FRAG:
-            stack.push(exec::push_this_frag(ctx));
             break;
 
         case OPCODE::REPR:

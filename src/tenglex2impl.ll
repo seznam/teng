@@ -451,13 +451,13 @@ IDENT       [_[:alpha:]][_[:alnum:]]*
 }
 
 "+" {
-    // match add operator
-    return make_nonewline_token(LEX2::ADD, yytext, yytext + yyleng);
+    // match plus operator
+    return make_nonewline_token(LEX2::PLUS, yytext, yytext + yyleng);
 }
 
 "-" {
-    // match sub operator
-    return make_nonewline_token(LEX2::SUB, yytext, yytext + yyleng);
+    // match minus operator
+    return make_nonewline_token(LEX2::MINUS, yytext, yytext + yyleng);
 }
 
 "*" {

@@ -55,69 +55,72 @@ namespace Teng {
 /** Allowed operation codes.
  */
 enum class OPCODE {
-    NOOP,           //!< Does nothing (used as the first instruction)
-    VAL,            //!< Value literal
-    VAR,            //!< Get value from variable
-    DICT,           //!< Get value of dictionary item based on variable content
-    PUSH,           //!< Push value on top of the program stack
-    POP,            //!< Remove value from top of the program stack
-    STACK,          //!< Get value from the top of program stack
-    ADD,            //!< Addition
-    SUB,            //!< Substraction
-    MUL,            //!< Multiplication
-    DIV,            //!< Division
-    MOD,            //!< Modulo
-    CONCAT,         //!< Concatenation
-    REPEAT,         //!< Repeating a pattern
-    BITAND,         //!< Bitwise AND
-    BITXOR,         //!< Bitwise XOR
-    BITOR,          //!< Bitwise OR
-    BITNOT,         //!< Bitwise NOT
-    AND,            //!< Pseudo-logic AND
-    OR,             //!< Pseudo-logic OR
-    NOT,            //!< Logic not
-    EQ,             //!< ==
-    NE,             //!< !=
-    GE,             //!< >=
-    GT,             //!< >
-    LE,             //!< <
-    LT,             //!< <=
-    STREQ,          //!< String == (OBSOLETE)
-    STRNE,          //!< String != (OBSOLETE)
-    FUNC,           //!< Evaluate function
-    JMPIFNOT,       //!< Conditional jump
-    JMP,            //!< Unconditional jump
-    FORMAT,         //!< Start formating block
-    ENDFORMAT,      //!< End of format block
-    FRAG,           //!< Start fragment block
-    ENDFRAG,        //!< End of fragment block
-    FRAGCNT,        //!< Openned fragment size ($_count) - fast access
-    FRAGINDEX,      //!< Actual fragment iteration number ($_number)
-    FRAGFIRST,      //!< Is this the first iteration ($._first)?
-    FRAGLAST,       //!< Is this the last iteration ($._last)?
-    FRAGINNER,      //!< Is this inner iteration ($._inner)?
-    PRINT,          //!< Print onto output
-    SET,            //!< Create new variable and assign value
-    HALT,           //!< End of program. Relax
-    DEBUG_FRAG,     //!< Print data tree (vars & vals) to output
-    BYTECODE_FRAG,  //!< Print bytecode -- disassembled program
-    CTYPE,          //!< Change content type (push new)
-    ENDCTYPE,       //!< Change content type (pop)
-    PUSH_ATTR,      //!< Push attr/frag on stack
-    PUSH_ROOT_FRAG, //!< Push root frag on frag stack
-    PUSH_THIS_FRAG, //!< Push this frag on frag stack
-    PUSH_ATTR_AT,   //!< Push value at given index
-    POP_ATTR,       //!< Push parent fragment on stack
-    REPR,           //!< Convert frag value into value
-    REPR_JSONIFY,   //!< Convert frag value into value
-    REPR_COUNT,     //!< Convert frag value into value
-    REPR_TYPE,      //!< Convert frag value into value
-    REPR_DEFINED,   //!< Convert frag value into value [OBSOLETE]
-    REPR_EXISTS,    //!< Convert frag value into value
-    REPR_ISEMPTY,   //!< Convert frag value into value
-    FRAME,          //!< Used to open new frame of fragments
-    ENDFRAME,       //!< Uset to close frame of fragements
-    REGEX_MATCH     //!< Matching of regular expression
+    NOOP,            //!< Does nothing (used as the first instruction)
+    VAL,             //!< Value literal
+    VAR,             //!< Get value from variable
+    DICT,            //!< Get value of dictionary identified by variable value
+    PRG_STACK_PUSH,  //!< Push value on top of the program stack
+    PRG_STACK_POP,   //!< Remove value from top of the program stack
+    PRG_STACK_AT,    //!< Get value from the top of program stack
+    UNARY_PLUS,      //!< +
+    UNARY_MINUS,     //!< -
+    PLUS,            //!< Addition
+    MINUS,           //!< Substraction
+    MUL,             //!< Multiplication
+    DIV,             //!< Division
+    MOD,             //!< Modulo
+    BIT_AND,         //!< Bitwise AND
+    BIT_XOR,         //!< Bitwise XOR
+    BIT_OR,          //!< Bitwise OR
+    BIT_NOT,         //!< Bitwise NOT
+    AND,             //!< Pseudo-logic AND
+    OR,              //!< Pseudo-logic OR
+    NOT,             //!< Logic not
+    EQ,              //!< ==
+    NE,              //!< !=
+    GE,              //!< >=
+    GT,              //!< >
+    LE,              //!< <
+    LT,              //!< <=
+    REPEAT,          //!< Repeating a pattern
+    CONCAT,          //!< Concatenation [OBSOLETE]
+    STR_EQ,          //!< String == [OBSOLETE]
+    STR_NE,          //!< String != [OBSOLETE]
+    FUNC,            //!< Evaluate function
+    JMP_IF_NOT,      //!< Conditional jump
+    JMP,             //!< Unconditional jump
+    OPEN_FORMAT,     //!< Start formating block
+    CLOSE_FORMAT,    //!< End of format block
+    OPEN_FRAG,       //!< Start fragment block
+    CLOSE_FRAG,      //!< End of fragment block
+    OPEN_CTYPE,      //!< Change content type (push new)
+    CLOSE_CTYPE,     //!< Change content type (pop)
+    OPEN_FRAME,      //!< Used to open new frame of fragments
+    CLOSE_FRAME,     //!< Uset to close frame of fragements
+    PRINT,           //!< Print onto output
+    SET,             //!< Create new variable and assign value
+    HALT,            //!< End of program. Relax
+    DEBUG_FRAG,      //!< Print data tree (vars & vals) to output
+    BYTECODE_FRAG,   //!< Print bytecode -- disassembled program
+    PUSH_ROOT_FRAG,  //!< Push root frag on value stack
+    PUSH_THIS_FRAG,  //!< Push current frag on value stack
+    PUSH_FRAG,       //!< Push frag on value stack
+    PUSH_FRAG_COUNT, //!< Openned fragment size ($_count) - fast access
+    PUSH_FRAG_INDEX, //!< Actual fragment iteration number ($_number)
+    PUSH_FRAG_FIRST, //!< Is this the first iteration ($_first)
+    PUSH_FRAG_LAST,  //!< Is this the last iteration ($_last)
+    PUSH_FRAG_INNER, //!< Is this inner iteration ($_inner)
+    PUSH_ATTR,       //!< Push attr/frag on value stack
+    PUSH_ATTR_AT,    //!< Push value at given index on value stack
+    POP_ATTR,        //!< Push parent fragment of current value to stack
+    REPR,            //!< Convert frag value into value
+    REPR_JSONIFY,    //!< Convert frag value into value
+    REPR_COUNT,      //!< Convert frag value into value
+    REPR_TYPE,       //!< Convert frag value into value
+    REPR_DEFINED,    //!< Convert frag value into value [OBSOLETE]
+    REPR_EXISTS,     //!< Convert frag value into value
+    REPR_ISEMPTY,    //!< Convert frag value into value
+    REGEX_MATCH      //!< Matching of regular expression
 };
 
 /** Converts opcode to its string representation.
@@ -206,27 +209,39 @@ struct Dict_t: public Instruction_t {
     {}
 };
 
-struct Push_t: public Instruction_t {
-    Push_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::PUSH, pos)
+struct PrgStackPush_t: public Instruction_t {
+    PrgStackPush_t(const Pos_t &pos)
+        : Instruction_t(OPCODE::PRG_STACK_PUSH, pos)
     {}
 };
 
-struct Pop_t: public Instruction_t {
-    Pop_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::POP, pos)
+struct PrgStackPop_t: public Instruction_t {
+    PrgStackPop_t(const Pos_t &pos)
+        : Instruction_t(OPCODE::PRG_STACK_POP, pos)
     {}
 };
 
-struct Add_t: public Instruction_t {
-    Add_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::ADD, pos)
+struct UnaryPlus_t: public Instruction_t {
+    UnaryPlus_t(const Pos_t &pos)
+        : Instruction_t(OPCODE::UNARY_PLUS, pos)
     {}
 };
 
-struct Sub_t: public Instruction_t {
-    Sub_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::SUB, pos)
+struct UnaryMinus_t: public Instruction_t {
+    UnaryMinus_t(const Pos_t &pos)
+        : Instruction_t(OPCODE::UNARY_MINUS, pos)
+    {}
+};
+
+struct Plus_t: public Instruction_t {
+    Plus_t(const Pos_t &pos)
+        : Instruction_t(OPCODE::PLUS, pos)
+    {}
+};
+
+struct Minus_t: public Instruction_t {
+    Minus_t(const Pos_t &pos)
+        : Instruction_t(OPCODE::MINUS, pos)
     {}
 };
 
@@ -262,25 +277,25 @@ struct Repeat_t: public Instruction_t {
 
 struct BitAnd_t: public Instruction_t {
     BitAnd_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::BITAND, pos)
+        : Instruction_t(OPCODE::BIT_AND, pos)
     {}
 };
 
 struct BitXor_t: public Instruction_t {
     BitXor_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::BITXOR, pos)
+        : Instruction_t(OPCODE::BIT_XOR, pos)
     {}
 };
 
 struct BitOr_t: public Instruction_t {
     BitOr_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::BITOR, pos)
+        : Instruction_t(OPCODE::BIT_OR, pos)
     {}
 };
 
 struct BitNot_t: public Instruction_t {
     BitNot_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::BITNOT, pos)
+        : Instruction_t(OPCODE::BIT_NOT, pos)
     {}
 };
 
@@ -328,13 +343,13 @@ struct LT_t: public Instruction_t {
 
 struct StrEQ_t: public Instruction_t {
     StrEQ_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::STREQ, pos)
+        : Instruction_t(OPCODE::STR_EQ, pos)
     {}
 };
 
 struct StrNE_t: public Instruction_t {
     StrNE_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::STRNE, pos)
+        : Instruction_t(OPCODE::STR_NE, pos)
     {}
 };
 
@@ -362,15 +377,15 @@ struct Print_t: public Instruction_t {
     {}
 };
 
-struct EndFormat_t: public Instruction_t {
-    EndFormat_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::ENDFORMAT, pos)
+struct CloseFormat_t: public Instruction_t {
+    CloseFormat_t(const Pos_t &pos)
+        : Instruction_t(OPCODE::CLOSE_FORMAT, pos)
     {}
 };
 
-struct EndCType_t: public Instruction_t {
-    EndCType_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::ENDCTYPE, pos)
+struct CloseCType_t: public Instruction_t {
+    CloseCType_t(const Pos_t &pos)
+        : Instruction_t(OPCODE::CLOSE_CTYPE, pos)
     {}
 };
 
@@ -390,23 +405,21 @@ struct PushThisFrag_t: public Instruction_t {
     PushThisFrag_t(const Pos_t &pos)
         : Instruction_t(OPCODE::PUSH_THIS_FRAG, pos)
     {}
-};
-
-struct PushRootFrag_t: public Instruction_t {
-    PushRootFrag_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::PUSH_ROOT_FRAG, pos)
+    // provide same iface as push root frag has
+    PushThisFrag_t(uint16_t, const Pos_t &pos)
+        : PushThisFrag_t(pos)
     {}
 };
 
-struct Frame_t: public Instruction_t {
-    Frame_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::FRAME, pos)
+struct OpenFrame_t: public Instruction_t {
+    OpenFrame_t(const Pos_t &pos)
+        : Instruction_t(OPCODE::OPEN_FRAME, pos)
     {}
 };
 
-struct EndFrame_t: public Instruction_t {
-    EndFrame_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::ENDFRAME, pos)
+struct CloseFrame_t: public Instruction_t {
+    CloseFrame_t(const Pos_t &pos)
+        : Instruction_t(OPCODE::CLOSE_FRAME, pos)
     {}
 };
 
@@ -452,10 +465,10 @@ struct ReprIsEmpty_t: public Instruction_t {
     {}
 };
 
-struct FragIndex_t: public Instruction_t {
+struct PushFragIndex_t: public Instruction_t {
     template <typename Variable_t>
-    FragIndex_t(const Variable_t &var)
-        : Instruction_t(OPCODE::FRAGINDEX, var.pos),
+    PushFragIndex_t(const Variable_t &var)
+        : Instruction_t(OPCODE::PUSH_FRAG_INDEX, var.pos),
           frame_offset(var.frame_offset), frag_offset(var.frag_offset)
     {}
     void dump_params(std::ostream &os) const;
@@ -463,10 +476,10 @@ struct FragIndex_t: public Instruction_t {
     uint16_t frag_offset;  //!< the offset of fragment in frame
 };
 
-struct FragCnt_t: public Instruction_t {
+struct PushFragCount_t: public Instruction_t {
     template <typename Variable_t>
-    FragCnt_t(const Variable_t &var)
-        : Instruction_t(OPCODE::FRAGCNT, var.pos),
+    PushFragCount_t(const Variable_t &var)
+        : Instruction_t(OPCODE::PUSH_FRAG_COUNT, var.pos),
           frame_offset(var.frame_offset), frag_offset(var.frag_offset)
     {}
     void dump_params(std::ostream &os) const;
@@ -474,10 +487,10 @@ struct FragCnt_t: public Instruction_t {
     uint16_t frag_offset;  //!< the offset of fragment in frame
 };
 
-struct FragFirst_t: public Instruction_t {
+struct PushFragFirst_t: public Instruction_t {
     template <typename Variable_t>
-    FragFirst_t(const Variable_t &var)
-        : Instruction_t(OPCODE::FRAGFIRST, var.pos),
+    PushFragFirst_t(const Variable_t &var)
+        : Instruction_t(OPCODE::PUSH_FRAG_FIRST, var.pos),
           frame_offset(var.frame_offset), frag_offset(var.frag_offset)
     {}
     void dump_params(std::ostream &os) const;
@@ -485,10 +498,10 @@ struct FragFirst_t: public Instruction_t {
     uint16_t frag_offset;  //!< the offset of fragment in frame
 };
 
-struct FragInner_t: public Instruction_t {
+struct PushFragInner_t: public Instruction_t {
     template <typename Variable_t>
-    FragInner_t(const Variable_t &var)
-        : Instruction_t(OPCODE::FRAGINNER, var.pos),
+    PushFragInner_t(const Variable_t &var)
+        : Instruction_t(OPCODE::PUSH_FRAG_INNER, var.pos),
           frame_offset(var.frame_offset), frag_offset(var.frag_offset)
     {}
     void dump_params(std::ostream &os) const;
@@ -496,15 +509,41 @@ struct FragInner_t: public Instruction_t {
     uint16_t frag_offset;  //!< the offset of fragment in frame
 };
 
-struct FragLast_t: public Instruction_t {
+struct PushFragLast_t: public Instruction_t {
     template <typename Variable_t>
-    FragLast_t(const Variable_t &var)
-        : Instruction_t(OPCODE::FRAGLAST, var.pos),
+    PushFragLast_t(const Variable_t &var)
+        : Instruction_t(OPCODE::PUSH_FRAG_LAST, var.pos),
           frame_offset(var.frame_offset), frag_offset(var.frag_offset)
     {}
     void dump_params(std::ostream &os) const;
     uint16_t frame_offset; //!< the offset of frame (NOT fragment!)
     uint16_t frag_offset;  //!< the offset of fragment in frame
+};
+
+struct PushFrag_t: public Instruction_t {
+    template <typename Variable_t>
+    PushFrag_t(const Variable_t &var, uint16_t frag_offset)
+        : Instruction_t(OPCODE::PUSH_FRAG, var.pos),
+          name(var.ident.name().str()),
+          frame_offset(var.frame_offset), frag_offset(frag_offset)
+    {}
+    template <typename Variable_t>
+    PushFrag_t(const Variable_t &var)
+        : PushFrag_t(var, var.frag_offset)
+    {}
+    void dump_params(std::ostream &os) const;
+    std::string name;      //!< the frag identifier
+    uint16_t frame_offset; //!< the offset of frame (NOT fragment!)
+    uint16_t frag_offset;  //!< the offset of fragment in frame
+};
+
+struct PushRootFrag_t: public Instruction_t {
+    PushRootFrag_t(uint16_t root_frag_offset, const Pos_t &pos)
+        : Instruction_t(OPCODE::PUSH_ROOT_FRAG, pos),
+          root_frag_offset(root_frag_offset)
+    {}
+    void dump_params(std::ostream &os) const;
+    uint16_t root_frag_offset;  //!< the offset of root fragment in frame
 };
 
 struct Val_t: public Instruction_t {
@@ -531,9 +570,9 @@ struct Var_t: public Instruction_t {
     bool escape;           //!< true if variable has to be escaped
 };
 
-struct Stack_t: public Instruction_t {
-    Stack_t(std::size_t index, const Pos_t &pos)
-        : Instruction_t(OPCODE::STACK, pos),
+struct PrgStackAt_t: public Instruction_t {
+    PrgStackAt_t(std::size_t index, const Pos_t &pos)
+        : Instruction_t(OPCODE::PRG_STACK_AT, pos),
           index(index)
     {}
     void dump_params(std::ostream &os) const;
@@ -571,7 +610,7 @@ struct Func_t: public Instruction_t {
 
 struct JmpIfNot_t: public Instruction_t {
     JmpIfNot_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::JMPIFNOT, pos),
+        : Instruction_t(OPCODE::JMP_IF_NOT, pos),
           addr_offset(-1)
     {}
     void dump_params(std::ostream &os) const;
@@ -587,32 +626,32 @@ struct Jmp_t: public Instruction_t {
     int32_t addr_offset; //!< offset where to jump
 };
 
-struct Format_t: public Instruction_t {
-    Format_t(int64_t mode, const Pos_t &pos)
-        : Instruction_t(OPCODE::FORMAT, pos),
+struct OpenFormat_t: public Instruction_t {
+    OpenFormat_t(int64_t mode, const Pos_t &pos)
+        : Instruction_t(OPCODE::OPEN_FORMAT, pos),
           mode(mode)
     {}
     void dump_params(std::ostream &os) const;
     int64_t mode; //!< the id of data format in format block
 };
 
-struct Frag_t: public Instruction_t {
-    Frag_t(std::string name, const Pos_t &pos)
-        : Instruction_t(OPCODE::FRAG, pos),
-          name(std::move(name)), endfrag_offset(-1)
+struct OpenFrag_t: public Instruction_t {
+    OpenFrag_t(std::string name, const Pos_t &pos)
+        : Instruction_t(OPCODE::OPEN_FRAG, pos),
+          name(std::move(name)), close_frag_offset(-1)
     {}
     void dump_params(std::ostream &os) const;
-    std::string name;       //!< the fragment name
-    int32_t endfrag_offset; //!< offset where to jump if frament is missing
+    std::string name;          //!< the fragment name
+    int32_t close_frag_offset; //!< offset where to jump if frament is missing
 };
 
-struct EndFrag_t: public Instruction_t {
-    EndFrag_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::ENDFRAG, pos),
-          openfrag_offset(-1)
+struct CloseFrag_t: public Instruction_t {
+    CloseFrag_t(const Pos_t &pos)
+        : Instruction_t(OPCODE::CLOSE_FRAG, pos),
+          open_frag_offset(-1)
     {}
     void dump_params(std::ostream &os) const;
-    int32_t openfrag_offset; //!< offset where to jump to repeat fragment
+    int32_t open_frag_offset; //!< offset where to jump to repeat fragment
 };
 
 struct Set_t: public Instruction_t {
@@ -628,9 +667,9 @@ struct Set_t: public Instruction_t {
     uint16_t frag_offset;  //!< the offset of fragment in frame
 };
 
-struct CType_t: public Instruction_t {
-    CType_t(const ContentType_t::Descriptor_t *ctype, const Pos_t &pos)
-        : Instruction_t(OPCODE::CTYPE, pos),
+struct OpenCType_t: public Instruction_t {
+    OpenCType_t(const ContentType_t::Descriptor_t *ctype, const Pos_t &pos)
+        : Instruction_t(OPCODE::OPEN_CTYPE, pos),
           ctype(ctype)
     {}
     void dump_params(std::ostream &os) const;

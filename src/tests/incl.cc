@@ -70,7 +70,7 @@ SCENARIO(
             THEN("It contains data from text.txt") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
-                    {TEST_ROOT "text.txt", 1, 48},
+                    {TEST_ROOT "text.txt", 1, 12},
                     "Runtime: Variable '.var' is undefined"
                 }};
                 REQUIRE(err.getEntries() == errs);
@@ -171,7 +171,7 @@ SCENARIO(
             THEN("It contains data from text.txt and fragment") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
-                    {TEST_ROOT "text.txt", 1, 69},
+                    {TEST_ROOT "text.txt", 1, 12},
                     "Runtime: Variable '.sample.var' is undefined"
                 }};
                 REQUIRE(err.getEntries() == errs);
@@ -210,14 +210,11 @@ SCENARIO(
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 35},
-                    "System call failed: "
-                    "Cannot open input file '" TEST_ROOT "missing.txt' "
-                    "(No such file or directory)"
+                    {1, 0},
+                    "Cannot open input file '" TEST_ROOT "missing.txt'"
                 }, {
                     Teng::Error_t::ERROR,
-                    {1, 35},
-                    "System call failed: "
+                    {0, 0},
                     "Cannot stat file '" TEST_ROOT "missing.txt' "
                     "(No such file or directory)"
                 }};
@@ -243,12 +240,13 @@ SCENARIO(
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 14},
-                    "Unexpected token: [331] integer literal '1'"
+                    {1, 0},
+                    "Invalid or excessive tokens in <?teng include?>; "
+                    "ignoring them"
                 }, {
-                    Teng::Error_t::FATAL,
-                    {1, 14},
-                    "Invalid <?teng include ...?> directive (syntax error)"
+                    Teng::Error_t::ERROR,
+                    {1, 15},
+                    "Unexpected token: name=DEC_INT, view=1"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "");

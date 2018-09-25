@@ -90,8 +90,8 @@ string_view_t l2_token_name(int token_id) {
     case LEX2::GT_DIGRAPH: return "GT_DIGRAPH";
     case LEX2::LT: return "LT";
     case LEX2::LT_DIGRAPH: return "LT_DIGRAPH";
-    case LEX2::ADD: return "ADD";
-    case LEX2::SUB: return "SUB";
+    case LEX2::PLUS: return "PLUS";
+    case LEX2::MINUS: return "MINUS";
     case LEX2::CONCAT: return "CONCAT";
     case LEX2::MUL: return "MUL";
     case LEX2::DIV: return "DIV";
@@ -99,7 +99,7 @@ string_view_t l2_token_name(int token_id) {
     case LEX2::REPEAT: return "REPEAT";
     case LEX2::NOT: return "NOT";
     case LEX2::BITNOT: return "BITNOT";
-    case LEX2::DEF_PREC: return "DEF_PREC";
+    case LEX2::HIGHEST_PREC: return "HIGHEST_PREC";
     case LEX2::CASE: return "CASE";
     case LEX2::DEFINED: return "DEFINED";
     case LEX2::ISEMPTY: return "ISEMPTY";

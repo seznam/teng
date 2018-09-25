@@ -156,13 +156,18 @@ struct Pos_t {
             advance(*ipos);
     }
 
+    /** Converts position to string representation.
+     */
+    std::string str() const;
+
     const std::string *filename; //!< list of sources
     int32_t lineno;              //!< line number
     int32_t colno;               //!< column position in file
 };
 
 /**
- * @short Dumps all errors to given stream.
+ * @short Generates string representation of posistion and
+ * writes it to the given stream.
  */
 std::ostream &operator<<(std::ostream &o, const Pos_t &pos);
 

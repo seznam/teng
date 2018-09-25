@@ -84,7 +84,7 @@ struct ExprDiagEntry_t {
  * where the syntax error is. Appropriate diagnostic code is pushed before
  * every diagnosed syntax symbol and popped out after it is properly parsed.
  * If some will remain in this list it means that some complex expression is
- * incorrectly formatted.
+ * incorrectly formed.
  */
 struct ExprDiag_t {
     void unwind(Context_t *ctx, const Token_t &token);
@@ -93,6 +93,7 @@ struct ExprDiag_t {
     void push_sentinel() {push({diag_code::sentinel, {}});}
     static void log_unexpected_token(Context_t *ctx);
     std::size_t size() const {return entries.size();}
+    void clear() {entries.clear();}
     std::vector<ExprDiagEntry_t> entries; //!< list of diagnostic codes
 };
 

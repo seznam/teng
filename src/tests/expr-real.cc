@@ -392,7 +392,7 @@ SCENARIO(
             THEN("Result of: zero || nula") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "0.000000");
+                REQUIRE(result == "0.0");
             }
         }
 
@@ -403,7 +403,7 @@ SCENARIO(
             THEN("Result of: three || zero") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "3.300000");
+                REQUIRE(result == "3.3");
             }
         }
 
@@ -414,7 +414,7 @@ SCENARIO(
             THEN("Result of: 0 || three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "3.300000");
+                REQUIRE(result == "3.3");
             }
         }
 
@@ -425,7 +425,7 @@ SCENARIO(
             THEN("Result of: three || 0") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "3.300000");
+                REQUIRE(result == "3.3");
             }
         }
     }
@@ -448,7 +448,7 @@ SCENARIO(
             THEN("Result of: zero && nula") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "0.000000");
+                REQUIRE(result == "0.0");
             }
         }
 
@@ -459,7 +459,7 @@ SCENARIO(
             THEN("Result of: three && zero") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "0.000000");
+                REQUIRE(result == "0.0");
             }
         }
 
@@ -470,7 +470,7 @@ SCENARIO(
             THEN("Result of: 0.0 && three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "0.000000");
+                REQUIRE(result == "0.0");
             }
         }
 
@@ -481,7 +481,7 @@ SCENARIO(
             THEN("Result of: three && 2.3") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "2.300000");
+                REQUIRE(result == "2.3");
             }
         }
     }
@@ -503,9 +503,9 @@ SCENARIO(
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 15},
-                    "Runtime: left operand of | numeric operator "
-                    "is not int"
+                    {1, 7},
+                    "Runtime: The left operand of | numeric operator is a "
+                    "real but an integer is expected"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -530,9 +530,9 @@ SCENARIO(
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 15},
-                    "Runtime: left operand of ^ numeric operator "
-                    "is not int"
+                    {1, 7},
+                    "Runtime: The left operand of ^ numeric operator is a "
+                    "real but an integer is expected"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -557,9 +557,9 @@ SCENARIO(
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 15},
-                    "Runtime: left operand of & numeric operator "
-                    "is not int"
+                    {1, 7},
+                    "Runtime: The left operand of & numeric operator is a "
+                    "real but an integer is expected"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -569,7 +569,7 @@ SCENARIO(
 }
 
 SCENARIO(
-    "The ADD operator for real numbers",
+    "The PLUS operator for real numbers",
     "[numeric][expr][real]"
 ) {
     GIVEN("Some variables in root frag set to real numbers") {
@@ -585,7 +585,7 @@ SCENARIO(
             THEN("Result of: zero + three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "3.300000");
+                REQUIRE(result == "3.3");
             }
         }
 
@@ -596,7 +596,7 @@ SCENARIO(
             THEN("Result of: 2.2 + three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "5.500000");
+                REQUIRE(result == "5.5");
             }
         }
 
@@ -607,14 +607,14 @@ SCENARIO(
             THEN("Result of: 2.2 + minus_three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "-1.100000");
+                REQUIRE(result == "-1.1");
             }
         }
     }
 }
 
 SCENARIO(
-    "The SUB operator for real numbers",
+    "The MINUS operator for real numbers",
     "[numeric][expr][real]"
 ) {
     GIVEN("Some variables in root frag set to real numbers") {
@@ -630,7 +630,7 @@ SCENARIO(
             THEN("Result of: zero - three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "-3.300000");
+                REQUIRE(result == "-3.3");
             }
         }
 
@@ -641,7 +641,7 @@ SCENARIO(
             THEN("Result of: 2.2 - three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "-1.100000");
+                REQUIRE(result == "-1.1");
             }
         }
 
@@ -652,7 +652,7 @@ SCENARIO(
             THEN("Result of: 2.2 - minus_three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "5.500000");
+                REQUIRE(result == "5.5");
             }
         }
     }
@@ -674,7 +674,7 @@ SCENARIO(
             THEN("Result is concatenation of stringified real numbers") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "0.0000003.300000");
+                REQUIRE(result == "0.03.3");
             }
         }
     }
@@ -697,7 +697,7 @@ SCENARIO(
             THEN("Result of: zero * three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "0.000000");
+                REQUIRE(result == "0.0");
             }
         }
 
@@ -708,7 +708,7 @@ SCENARIO(
             THEN("Result of: minus_three * minus_three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "10.890000");
+                REQUIRE(result == "10.89");
             }
         }
 
@@ -719,7 +719,7 @@ SCENARIO(
             THEN("Result of: 2.2 * three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "7.260000");
+                REQUIRE(result == "7.26");
             }
         }
 
@@ -730,7 +730,7 @@ SCENARIO(
             THEN("Result of: 2.2 * minus_three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "-7.260000");
+                REQUIRE(result == "-7.26");
             }
         }
     }
@@ -754,7 +754,7 @@ SCENARIO(
             THEN("Result of: three / two") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "1.500000");
+                REQUIRE(result == "1.5");
             }
         }
 
@@ -765,7 +765,7 @@ SCENARIO(
             THEN("Result of: minus_three / three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "-1.000000");
+                REQUIRE(result == "-1.0");
             }
         }
 
@@ -787,8 +787,8 @@ SCENARIO(
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 13},
-                    "Runtime: right operand of / division operator is zero"
+                    {1, 6},
+                    "Runtime: Right operand of / division operator is zero"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -848,8 +848,8 @@ SCENARIO(
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 13},
-                    "Runtime: right operand of % division operator is zero"
+                    {1, 6},
+                    "Runtime: Right operand of % division operator is zero"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -928,8 +928,8 @@ SCENARIO(
             THEN("Result of: ~zero") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 8},
-                    "Runtime: operand of bit ~ operation is not int"
+                    {1, 2},
+                    "Runtime: operand of bit ~ operator is not int"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -939,7 +939,7 @@ SCENARIO(
 }
 
 SCENARIO(
-    "The unary SUB operator for real numbers",
+    "The unary MINUS operator for real numbers",
     "[numeric][expr][real]"
 ) {
     GIVEN("Some variables in root frag set to real numbers") {
@@ -955,7 +955,7 @@ SCENARIO(
             THEN("Result of: -zero") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "0.000000");
+                REQUIRE(result == "-0.0");
             }
         }
 
@@ -966,7 +966,7 @@ SCENARIO(
             THEN("Result of: -three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "-3.100000");
+                REQUIRE(result == "-3.1");
             }
         }
 
@@ -977,7 +977,7 @@ SCENARIO(
             THEN("Result of: -minus_three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "3.100000");
+                REQUIRE(result == "3.1");
             }
         }
 
@@ -988,7 +988,7 @@ SCENARIO(
             THEN("Result of: --three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "3.100000");
+                REQUIRE(result == "3.1");
             }
         }
 
@@ -999,14 +999,14 @@ SCENARIO(
             THEN("Result of: 4.1 * --three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "12.710000");
+                REQUIRE(result == "12.71");
             }
         }
     }
 }
 
 SCENARIO(
-    "The unary ADD operator for real numbers",
+    "The unary PLUS operator for real numbers",
     "[numeric][expr][real]"
 ) {
     GIVEN("Some variables in root frag set to real numbers") {
@@ -1022,7 +1022,7 @@ SCENARIO(
             THEN("Result of: +zero") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "0.000000");
+                REQUIRE(result == "0.0");
             }
         }
 
@@ -1033,7 +1033,7 @@ SCENARIO(
             THEN("Result of: +three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "3.100000");
+                REQUIRE(result == "3.1");
             }
         }
 
@@ -1044,7 +1044,7 @@ SCENARIO(
             THEN("Result of: +minus_three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "-3.100000");
+                REQUIRE(result == "-3.1");
             }
         }
 
@@ -1055,7 +1055,7 @@ SCENARIO(
             THEN("Result of: +(+three)") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "3.100000");
+                REQUIRE(result == "3.1");
             }
         }
 
@@ -1066,11 +1066,9 @@ SCENARIO(
             THEN("Result of: 4.1 * +(+three)") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "12.710000");
+                REQUIRE(result == "12.71");
             }
         }
     }
 }
-
-
 

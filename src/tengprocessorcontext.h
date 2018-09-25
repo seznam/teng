@@ -62,8 +62,8 @@ struct EvalCtx_t {
     const Configuration_t &cfg;             //!< param dictionary
     const string_view_t &encoding;          //!< the template charset
     const OFFApi_t *frames_ptr = nullptr;   //!< open fragments frames accessor
-    const Instruction_t *instr = nullptr;   //!< current instruction or nullptr
     const Escaper_t *escaper_ptr = nullptr; //!< current string escaping machine
+    const Instruction_t *instr = nullptr;   //!< current instruction or nullptr
     uint32_t log_suppressed = 0;            //!< enables errors log
 };
 
@@ -95,7 +95,7 @@ struct RunCtx_t: public EvalCtx_t {
     Escaper_t escaper;   //!< stack of escapers
 };
 
-/** It's supposed to use as default argument of function that need RunCtx_t.
+/** It's supposed to use as default argument of function that needs RunCtx_t.
  */
 struct RunCtxPtr_t {
     RunCtxPtr_t(RunCtx_t *ptr): ptr(ptr) {}

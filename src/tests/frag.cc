@@ -411,7 +411,7 @@ SCENARIO(
     "[frags]"
 ) {
     GIVEN("Template with directive closing not opened frag") {
-        auto t = "{<?teng endfrag?>}";
+        auto t = "{<?teng endfrag ++++ 1 1 + 2?>}";
 
         WHEN("Generated with none data") {
             Teng::Error_t err;
@@ -422,11 +422,8 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
                     {1, 1},
-                    "Missing <?teng frag ...?> of this endfrag"
-                }, {
-                    Teng::Error_t::ERROR,
-                    {1, 15},
-                    "Misplaced or excessive '?>' token"
+                    "The <?teng endfrag?> directive closes unopened "
+                    "fragment block"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "{}");
@@ -450,13 +447,13 @@ SCENARIO(
             THEN("It contains text from template") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 13},
-                    "Unexpected token: name=DEC_INT, view=1"
+                    {1, 1},
+                    "Invalid fragment identifier; discarding fragment "
+                    "block content"
                 }, {
                     Teng::Error_t::ERROR,
                     {1, 13},
-                    "Invalid fragment identifier; discarding fragment "
-                    "block content"
+                    "Unexpected token: name=DEC_INT, view=1"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "{}");
@@ -469,8 +466,163 @@ SCENARIO(
     "Unclosed frag directive",
     "[frags]"
 ) {
+    GIVEN("Template with unclosed fragment directive") {
+        auto t = "{<?teng frag sample?>}";
+
+        WHEN("Generated with some data") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addFragment("sample");
+            auto result = g(err, t, root);
+
+            THEN("The fragment is preserved") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 1},
+                    "The closing directive of this <?teng frag?> directive "
+                    "is missing"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 22},
+                    "Unexpected token: name=<EOF>, view="
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "{}");
+            }
+        }
+    }
+
+    GIVEN("Template with unclosed fragment directive wrapping closed one") {
+        auto t = "<?teng frag sample1?>("
+                 "{<?teng frag sample2?>}<?teng endfrag?>"
+                 ")";
+
+        WHEN("Generated with some data") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addFragment("sample1")
+                .addFragment("sample2");
+            auto result = g(err, t, root);
+
+            THEN("The fragment is preserved") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 0},
+                    "The closing directive of this <?teng frag?> directive "
+                    "is missing"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 62},
+                    "Unexpected token: name=<EOF>, view="
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "({})");
+            }
+        }
+    }
+
+    GIVEN("Template with closed and next unclosed fragment directive") {
+        auto t = "<?teng frag sample?>(<?teng endfrag?>)"
+                 "{<?teng frag sample?>}";
+
+        WHEN("Generated with some data") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addFragment("sample");
+            auto result = g(err, t, root);
+
+            THEN("The fragment is preserved") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 39},
+                    "The closing directive of this <?teng frag?> directive "
+                    "is missing"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 60},
+                    "Unexpected token: name=<EOF>, view="
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "(){}");
+            }
+        }
+    }
+
+    GIVEN("Template with two unclosed fragment blocks") {
+        auto t = "<?teng frag sample1?>()"
+                 "{<?teng frag sample2?>}";
+
+        WHEN("Generated with some data") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addFragment("sample1")
+                .addFragment("sample2");
+            auto result = g(err, t, root);
+
+            THEN("The fragment is preserved") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 0},
+                    "The closing directive of this <?teng frag?> directive "
+                    "is missing"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 24},
+                    "The closing directive of this <?teng frag?> directive "
+                    "is missing"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 46},
+                    "Unexpected token: name=<EOF>, view="
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "(){}");
+            }
+        }
+    }
+
     GIVEN("Template with unclosed frag directive") {
         auto t = "{<?teng frag<?teng endfrag?>}";
+
+        WHEN("Generated with some data") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            auto result = g(err, t, root);
+
+            THEN("It contains text from template") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 1},
+                    "Invalid fragment identifier; "
+                    "discarding fragment block content"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 1},
+                    "The closing directive of this <?teng frag?> "
+                    "directive is missing"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 12},
+                    "The <?teng endfrag?> directive closes unopened "
+                    "fragment block"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 29},
+                    "Unexpected token: name=<EOF>, view="
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "{");
+            }
+        }
+    }
+}
+
+SCENARIO(
+    "The unopened fragment directive",
+    "[frags]"
+) {
+    GIVEN("Template with directive closing not opened fragment") {
+        auto t = "{<?teng endfrag?>}";
 
         WHEN("Generated with none data") {
             Teng::Error_t err;
@@ -480,31 +632,86 @@ SCENARIO(
             THEN("It contains text from template") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 12},
-                    "Missing <?teng frag ...?> of this endfrag"
-                }, {
-                    Teng::Error_t::ERROR,
-                    {1, 12},
-                    "Invalid fragment identifier; discarding fragment "
-                    "block content"
-                }, {
-                    Teng::Error_t::ERROR,
-                    {1, 29},
-                    "Unexpected token: name=<EOF>, view="
-                }, {
-                    Teng::Error_t::FATAL,
-                    {0, 0},
-                    "Unrecoverable syntax error; discarding whole program"
-                }, {
-                    Teng::Error_t::ERROR,
                     {1, 1},
-                    "Unclosed <?teng frag ?> directive"
+                    "The <?teng endfrag?> directive closes unopened "
+                    "fragment block"
                 }};
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "");
+                REQUIRE(result == "{}");
+            }
+        }
+    }
+
+    GIVEN("Template with two directives closing not opened fragment") {
+        auto t = "{<?teng endfrag?>}{<?teng endfrag?>}";
+
+        WHEN("Generated with none data") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            auto result = g(err, t, root);
+
+            THEN("It contains text from template") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 1},
+                    "The <?teng endfrag?> directive closes unopened "
+                    "fragment block"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 19},
+                    "The <?teng endfrag?> directive closes unopened "
+                    "fragment block"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "{}{}");
+            }
+        }
+    }
+
+    GIVEN("Fragment after directive closing not opened fragment") {
+        auto t = "{<?teng endfrag?>}"
+                 "{<?teng frag sample?>x<?teng endfrag?>}";
+
+        WHEN("Generated with some data") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addFragment("sample");
+            auto result = g(err, t, root);
+
+            THEN("It contains text from template") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 1},
+                    "The <?teng endfrag?> directive closes unopened "
+                    "fragment block"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "{}{x}");
+            }
+        }
+    }
+
+    GIVEN("Fragment before directive closing not opened fragment") {
+         auto t = "{<?teng frag sample?>x<?teng endfrag?>}"
+                  "{<?teng endfrag?>}";
+
+        WHEN("Generated with none data") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addFragment("sample");
+            auto result = g(err, t, root);
+
+            THEN("It contains text from template") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 40},
+                    "The <?teng endfrag?> directive closes unopened "
+                    "fragment block"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "{x}{}");
             }
         }
     }
 }
-
 

@@ -45,6 +45,18 @@
 
 namespace Teng {
 
+std::string Pos_t::str() const {
+    std::string result;
+    result.append(*filename);
+    if ((lineno > 0) && (colno >= 0)) {
+        result.push_back(':');
+        result.append(std::to_string(lineno));
+        result.push_back(':');
+        result.append(std::to_string(colno));
+    }
+    return result;
+}
+
 std::ostream &operator<<(std::ostream &o, const Pos_t &pos) {
     o << *pos.filename;
     if ((pos.lineno > 0) && (pos.colno >= 0))

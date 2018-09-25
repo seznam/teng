@@ -39,16 +39,15 @@
 #include "catch.hpp"
 #include "utils.h"
 
-// SCENARIO(
-//     "Escaping string with urlencoding",
-//     "[old]"
-// ) {
-//     WHEN("String with special characters is escaped") {
-//         THEN("Some of them are escaped") {
-//             auto t = "${urlescape(\"'asdf!@#$%^&*\(\\\"\")}";
-//             REQUIRE(g(t) == "'asdf!@%23$%^&*(%22");
-//         }
-//     }
-// }
-
+SCENARIO(
+    "Escaping string with urlencoding",
+    "[old]"
+) {
+    WHEN("String with special characters is escaped") {
+        THEN("Some of them are escaped") {
+            auto t = "${urlescape(\"'asdf!@#$%^&*\(\\\"\")}";
+            REQUIRE(g(t) == "'asdf!@%23$%^&*(%22");
+        }
+    }
+}
 

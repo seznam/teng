@@ -104,25 +104,25 @@ void close_frame(RunCtxPtr_t ctx) {
  * name or jump over frag block.
  */
 int32_t open_frag(RunCtxPtr_t ctx) {
-    auto &instr = ctx->instr->as<Frag_t>();
+    auto &instr = ctx->instr->as<OpenFrag_t>();
     return ctx->frames.open_frag(instr.name)
          ? 0
-         : instr.endfrag_offset;
+         : instr.close_frag_offset;
 }
 
 /** Pop frag from top of the stack of open frags.
  */
 int32_t close_frag(RunCtxPtr_t ctx) {
-    auto &instr = ctx->instr->as<EndFrag_t>();
+    auto &instr = ctx->instr->as<CloseFrag_t>();
     return ctx->frames.next_frag()
-        ? instr.openfrag_offset
+        ? instr.open_frag_offset
         : 0;
 }
 
 /** Returns the number of fragments in current opened fragment list.
  */
 Result_t frag_count(RunCtxPtr_t ctx) {
-    auto &instr = ctx->instr->as<FragIndex_t>();
+    auto &instr = ctx->instr->as<PushFragIndex_t>();
     if (auto list_pos = ctx->frames.get_list_pos(instr))
         return Result_t(list_pos.size);
     logWarning(
@@ -135,7 +135,7 @@ Result_t frag_count(RunCtxPtr_t ctx) {
 /** Returns index of current fragmnet in opened fragment list.
  */
 Result_t frag_index(RunCtxPtr_t ctx, uint32_t *size = nullptr) {
-    auto &instr = ctx->instr->as<FragIndex_t>();
+    auto &instr = ctx->instr->as<PushFragIndex_t>();
     if (auto list_pos = ctx->frames.get_list_pos(instr))
         return Result_t(list_pos.i);
     logWarning(
@@ -148,7 +148,7 @@ Result_t frag_index(RunCtxPtr_t ctx, uint32_t *size = nullptr) {
 /** Returns true if current fragment is the first in opened fragment list.
  */
 Result_t is_first_frag(RunCtxPtr_t ctx) {
-    auto &instr = ctx->instr->as<FragFirst_t>();
+    auto &instr = ctx->instr->as<PushFragFirst_t>();
     if (auto list_pos = ctx->frames.get_list_pos(instr))
         return Result_t(list_pos.i == 0);
     logWarning(
@@ -161,7 +161,7 @@ Result_t is_first_frag(RunCtxPtr_t ctx) {
 /** Returns true if current fragment is the last in opened fragment list.
  */
 Result_t is_last_frag(RunCtxPtr_t ctx) {
-    auto &instr = ctx->instr->as<FragLast_t>();
+    auto &instr = ctx->instr->as<PushFragLast_t>();
     if (auto list_pos = ctx->frames.get_list_pos(instr))
         return Result_t((list_pos.i + 1) == list_pos.size);
     logWarning(
@@ -174,7 +174,7 @@ Result_t is_last_frag(RunCtxPtr_t ctx) {
 /** Returns true if the current fragment is not the first neither the last.
  */
 Result_t is_inner_frag(RunCtxPtr_t ctx) {
-    auto &instr = ctx->instr->as<FragInner_t>();
+    auto &instr = ctx->instr->as<PushFragInner_t>();
     if (auto list_pos = ctx->frames.get_list_pos(instr))
         return Result_t((list_pos.i > 0) && ((list_pos.i + 1) < list_pos.size));
     logWarning(
@@ -187,13 +187,36 @@ Result_t is_inner_frag(RunCtxPtr_t ctx) {
 /** Pushes root frag to value stack.
  */
 Result_t push_root_frag(EvalCtx_t *ctx) {
-    return Result_t(ctx->frames_ptr->root_frag());
+    auto &instr = ctx->instr->as<PushRootFrag_t>();
+    return Result_t(ctx->frames_ptr->frag(0, instr.root_frag_offset));
 }
 
 /** Pushes this frag to value stack.
  */
 Result_t push_this_frag(EvalCtx_t *ctx) {
-    return Result_t(ctx->frames_ptr->this_frag());
+    return Result_t(ctx->frames_ptr->frag(0, 0));
+}
+
+/** Pushes this frag to value stack.
+ */
+Result_t push_frag(RunCtxPtr_t ctx) {
+    auto &instr = ctx->instr->as<PushFrag_t>();
+
+    // we have to lookup variable in current frame and current frag
+    struct VarDesc_t {string_view_t name; uint32_t frame_offset, frag_offset;};
+    Value_t value = ctx->frames.get_var(VarDesc_t{instr.name, 0, 0});
+    if (!value.is_undefined()) {
+        logWarning(
+            *ctx,
+            "Identifier '" + instr.name + "' is reserved, please don't use it"
+        );
+        return value;
+    }
+
+    // if there is no variable of such name return appropriate frag
+    return Result_t(
+        ctx->frames_ptr->frag(instr.frame_offset, instr.frag_offset)
+    );
 }
 
 /** If current value on value stack is fragment or item of list that is
@@ -205,8 +228,9 @@ Result_t push_attr(EvalCtx_t *ctx, GetArg_t get_arg) {
     auto &instr = ctx->instr->as<PushAttr_t>();
     auto result = ctx->frames_ptr->frag_attr(arg, instr.name);
     if (!ctx->log_suppressed && result.is_undefined())
+        // what about attribute of this some frag not defined
         // TODO(burlog): path
-        logError(*ctx, "Variable '" + instr.name + "' is undefined");
+        logWarning(*ctx, "Variable '" + instr.name + "' is undefined");
     return result;
 }
 
@@ -217,8 +241,9 @@ Result_t push_attr_at(EvalCtx_t *ctx, GetArg_t get_arg) {
     auto arg = get_arg();
     auto result = ctx->frames_ptr->value_at(arg, index);
     if (!ctx->log_suppressed && result.is_undefined())
+        // what about attribute of this some frag not defined
         // TODO(burlog): log text
-        logError(*ctx, "Variable '" + index.printable() + "' is undefined");
+        logWarning(*ctx, "Variable '" + index.printable() + "' is undefined");
     return result;
 }
 

@@ -64,7 +64,8 @@ public:
      * @param fs_root path of root for locating files
      */
     Dictionary_t(const std::string &fs_root)
-        : sources(), err(), fs_root(fs_root)
+        : sources(), err(), fs_root(fs_root),
+          expandVars(false), replaceEntries(false)
     {}
 
     /**

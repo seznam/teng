@@ -134,30 +134,30 @@ void ExprDiagEntry_t::log(Context_t *ctx, const Token_t &token) {
 void ExprDiag_t::log_unexpected_token(Context_t *ctx) {
     auto pos = ctx->unexpected_token.pos;
     switch (ctx->unexpected_token) {
-    case LEX2::END:
-        logError(ctx, pos, "Misplaced or excessive '?>' token");
-        break;
+    // case LEX2::END:
+    //     logError(ctx, pos, "Misplaced or excessive '?>' token");
+    //     break;
     case LEX2::ENDIF:
-        logError(ctx, pos, "Missing <?teng if ...?> of this endif");
+        logError(ctx, pos, "The <?teng endif?> directive closes unopened if block");
         break;
     case LEX2::ENDCTYPE:
-        logError(ctx, pos, "Missing <?teng ctype ...?> of this endctype");
+        logError(ctx, pos, "The <?teng endctype?> directive closes unopened ctype block");
         break;
     case LEX2::ENDFORMAT:
-        logError(ctx, pos, "Missing <?teng format ...?> of this endformat");
+        logError(ctx, pos, "The <?teng endformat?> directive closes unopened format block");
         break;
     case LEX2::ENDFRAGMENT:
-        logError(ctx, pos, "Missing <?teng frag ...?> of this endfrag");
+        logError(ctx, pos, "The <?teng endfrag?> directive closes unopened fragment block");
         break;
-    case LEX2::SHORT_END:
-        logError(ctx, pos, "Misplaced or excessive '}' token");
-        break;
-    case LEX2::ELSE:
-        logError(ctx, pos, "Missing <?teng if ...?> of this else");
-        break;
-    case LEX2::ELSEIF:
-        logError(ctx, pos, "Missing <?teng if ...?> of this elseif");
-        break;
+    // case LEX2::SHORT_END:
+    //     logError(ctx, pos, "Misplaced or excessive '}' token");
+    //     break;
+    // case LEX2::ELSE:
+    //     logError(ctx, pos, "Missing <?teng if?> of this else");
+    //     break;
+    // case LEX2::ELSEIF:
+    //     logError(ctx, pos, "Missing <?teng if?> of this elseif");
+    //     break;
     default:
         logError(
             ctx,

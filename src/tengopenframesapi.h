@@ -56,9 +56,7 @@ struct OFFApi_t {
      */
     virtual ~OFFApi_t() noexcept = default;
 
-    virtual Value_t root_frag() const = 0;
-
-    virtual Value_t this_frag() const = 0;
+    virtual Value_t frag(uint16_t frame_offset, uint16_t frag_offset) const = 0;
 
     virtual Value_t frag_attr(const Value_t &, string_view_t) const = 0;
 

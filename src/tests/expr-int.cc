@@ -620,7 +620,7 @@ SCENARIO(
 }
 
 SCENARIO(
-    "The ADD operator for integral numbers",
+    "The PLUS operator for integral numbers",
     "[numeric][expr][integral]"
 ) {
     GIVEN("Some variables in root frag set to integral numbers") {
@@ -665,7 +665,7 @@ SCENARIO(
 }
 
 SCENARIO(
-    "The SUB operator for integral numbers",
+    "The MINUS operator for integral numbers",
     "[numeric][expr][integral]"
 ) {
     GIVEN("Some variables in root frag set to integral numbers") {
@@ -838,8 +838,8 @@ SCENARIO(
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 11},
-                    "Runtime: right operand of / division operator is zero"
+                    {1, 4},
+                    "Runtime: Right operand of / division operator is zero"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -899,8 +899,8 @@ SCENARIO(
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 11},
-                    "Runtime: right operand of % division operator is zero"
+                    {1, 4},
+                    "Runtime: Right operand of % division operator is zero"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -997,7 +997,7 @@ SCENARIO(
 }
 
 SCENARIO(
-    "The unary SUB operator for integral numbers",
+    "The unary MINUS operator for integral numbers",
     "[numeric][expr][integral]"
 ) {
     GIVEN("Some variables in root frag set to integral numbers") {
@@ -1064,7 +1064,7 @@ SCENARIO(
 }
 
 SCENARIO(
-    "The unary ADD operator for integral numbers",
+    "The unary PLUS operator for integral numbers",
     "[numeric][expr][integral]"
 ) {
     GIVEN("Some variables in root frag set to integral numbers") {

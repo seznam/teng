@@ -139,19 +139,29 @@ struct Context_t {
     */
     using SourceCodes_t = std::vector<flex_string_value_t>;
 
-    /** Stack of instruction addresses.
+    /** Stack of instruction addresses. The stack is needed due to nested if
+     * statements.
      */
-    class addrs_stack_t: public std::vector<int32_t> {
-    public:
-        using std::vector<int32_t>::vector;
-        int32_t pop() {auto t = back(); pop_back(); return t;}
-        void push(int32_t v) {push_back(v);}
+    struct addrs_stack_t {
+        struct entry_t {
+            int32_t pop() {auto t = stack.back(); stack.pop_back(); return t;}
+            void push(int32_t v) {stack.push_back(v);}
+            bool empty() const {return stack.empty();}
+            std::vector<int32_t> stack;
+        };
+
+        void push() {addrs.push({});}
+        void pop() {addrs.pop();}
+        entry_t &top() {return addrs.top();}
+        const entry_t &top() const {return addrs.top();}
+
+        std::stack<entry_t> addrs;
     };
 
     /** The pair of instruction address and source code position. It's used to
-     * note where expression begins.
+     * remember where expression begins.
      */
-    struct expr_start_t {Pos_t pos; int32_t addr;};
+    struct expr_start_t {Pos_t pos; int32_t addr; bool update_allowed;};
 
     /** The pair of instruction address and optimizable flag. It's used to note
      * where begins subprogram representing the expression that should be
@@ -170,9 +180,9 @@ struct Context_t {
      *
      * @param ctx Parser context.
      * @param filename Template filename (absolute path).
-     * @param include_pos The include directive position.
+     * @param incl_pos The include directive position.
      */
-    void load_file(const std::string &filename, const Pos_t *include_pos = {});
+    void load_file(const string_view_t &filename, const Pos_t *incl_pos = {});
 
     /** Load source code from string.
      *
@@ -195,7 +205,9 @@ struct Context_t {
     Options_t opts_sym;                 //!< used to build directive options
     bool error_occurred;                //!< used to turn off consequent errors
     Token_t unexpected_token;           //!< the last unexpected token
-    expr_start_t expr_start_point;      //!< address and pos where expr starts
+    expr_start_t expr_start_point;      //!< address and pos where exprs starts
+    expr_start_t if_stmnt_start_point;  //!< address where if stmnt starts
+    // TODO(burlog): proc je tu slovo start, podle me staci branch_addrs
     addrs_stack_t branch_start_addrs;   //!< addresses of unfinished jumps
     optim_points_t optimization_points; //!< adresses of "value generators"
     addrs_stack_t case_option_addrs;    //!< the list of addrs of case options

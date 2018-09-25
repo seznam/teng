@@ -85,16 +85,20 @@ static auto eval(OPCODE opcode, type_t &self, call_t &&call, args_t &&...args) {
         return call(self.template as<Var_t>(), std::forward<args_t>(args)...);
     case OPCODE::DICT:
         return call(self.template as<Dict_t>(), std::forward<args_t>(args)...);
-    case OPCODE::PUSH:
-        return call(self.template as<Push_t>(), std::forward<args_t>(args)...);
-    case OPCODE::POP:
-        return call(self.template as<Pop_t>(), std::forward<args_t>(args)...);
-    case OPCODE::STACK:
-        return call(self.template as<Stack_t>(), std::forward<args_t>(args)...);
-    case OPCODE::ADD:
-        return call(self.template as<Add_t>(), std::forward<args_t>(args)...);
-    case OPCODE::SUB:
-        return call(self.template as<Sub_t>(), std::forward<args_t>(args)...);
+    case OPCODE::PRG_STACK_PUSH:
+        return call(self.template as<PrgStackPush_t>(), std::forward<args_t>(args)...);
+    case OPCODE::PRG_STACK_POP:
+        return call(self.template as<PrgStackPop_t>(), std::forward<args_t>(args)...);
+    case OPCODE::PRG_STACK_AT:
+        return call(self.template as<PrgStackAt_t>(), std::forward<args_t>(args)...);
+    case OPCODE::UNARY_PLUS:
+        return call(self.template as<UnaryPlus_t>(), std::forward<args_t>(args)...);
+    case OPCODE::UNARY_MINUS:
+        return call(self.template as<UnaryMinus_t>(), std::forward<args_t>(args)...);
+    case OPCODE::PLUS:
+        return call(self.template as<Plus_t>(), std::forward<args_t>(args)...);
+    case OPCODE::MINUS:
+        return call(self.template as<Minus_t>(), std::forward<args_t>(args)...);
     case OPCODE::MUL:
         return call(self.template as<Mul_t>(), std::forward<args_t>(args)...);
     case OPCODE::DIV:
@@ -105,13 +109,13 @@ static auto eval(OPCODE opcode, type_t &self, call_t &&call, args_t &&...args) {
         return call(self.template as<Concat_t>(), std::forward<args_t>(args)...);
     case OPCODE::REPEAT:
         return call(self.template as<Repeat_t>(), std::forward<args_t>(args)...);
-    case OPCODE::BITAND:
+    case OPCODE::BIT_AND:
         return call(self.template as<BitAnd_t>(), std::forward<args_t>(args)...);
-    case OPCODE::BITXOR:
+    case OPCODE::BIT_XOR:
         return call(self.template as<BitXor_t>(), std::forward<args_t>(args)...);
-    case OPCODE::BITOR:
+    case OPCODE::BIT_OR:
         return call(self.template as<BitOr_t>(), std::forward<args_t>(args)...);
-    case OPCODE::BITNOT:
+    case OPCODE::BIT_NOT:
         return call(self.template as<BitNot_t>(), std::forward<args_t>(args)...);
     case OPCODE::AND:
         return call(self.template as<And_t>(), std::forward<args_t>(args)...);
@@ -131,34 +135,36 @@ static auto eval(OPCODE opcode, type_t &self, call_t &&call, args_t &&...args) {
         return call(self.template as<LE_t>(), std::forward<args_t>(args)...);
     case OPCODE::LT:
         return call(self.template as<LT_t>(), std::forward<args_t>(args)...);
-    case OPCODE::STREQ:
+    case OPCODE::STR_EQ:
         return call(self.template as<StrEQ_t>(), std::forward<args_t>(args)...);
-    case OPCODE::STRNE:
+    case OPCODE::STR_NE:
         return call(self.template as<StrNE_t>(), std::forward<args_t>(args)...);
     case OPCODE::FUNC:
         return call(self.template as<Func_t>(), std::forward<args_t>(args)...);
-    case OPCODE::JMPIFNOT:
+    case OPCODE::JMP_IF_NOT:
         return call(self.template as<JmpIfNot_t>(), std::forward<args_t>(args)...);
     case OPCODE::JMP:
         return call(self.template as<Jmp_t>(), std::forward<args_t>(args)...);
-    case OPCODE::FORMAT:
-        return call(self.template as<Format_t>(), std::forward<args_t>(args)...);
-    case OPCODE::ENDFORMAT:
-        return call(self.template as<EndFormat_t>(), std::forward<args_t>(args)...);
-    case OPCODE::FRAG:
-        return call(self.template as<Frag_t>(), std::forward<args_t>(args)...);
-    case OPCODE::ENDFRAG:
-        return call(self.template as<EndFrag_t>(), std::forward<args_t>(args)...);
-    case OPCODE::FRAGCNT:
-        return call(self.template as<FragCnt_t>(), std::forward<args_t>(args)...);
-    case OPCODE::FRAGINDEX:
-        return call(self.template as<FragIndex_t>(), std::forward<args_t>(args)...);
-    case OPCODE::FRAGFIRST:
-        return call(self.template as<FragFirst_t>(), std::forward<args_t>(args)...);
-    case OPCODE::FRAGLAST:
-        return call(self.template as<FragLast_t>(), std::forward<args_t>(args)...);
-    case OPCODE::FRAGINNER:
-        return call(self.template as<FragInner_t>(), std::forward<args_t>(args)...);
+    case OPCODE::OPEN_FORMAT:
+        return call(self.template as<OpenFormat_t>(), std::forward<args_t>(args)...);
+    case OPCODE::CLOSE_FORMAT:
+        return call(self.template as<CloseFormat_t>(), std::forward<args_t>(args)...);
+    case OPCODE::OPEN_FRAG:
+        return call(self.template as<OpenFrag_t>(), std::forward<args_t>(args)...);
+    case OPCODE::CLOSE_FRAG:
+        return call(self.template as<CloseFrag_t>(), std::forward<args_t>(args)...);
+    case OPCODE::PUSH_FRAG_COUNT:
+        return call(self.template as<PushFragCount_t>(), std::forward<args_t>(args)...);
+    case OPCODE::PUSH_FRAG_INDEX:
+        return call(self.template as<PushFragIndex_t>(), std::forward<args_t>(args)...);
+    case OPCODE::PUSH_FRAG_FIRST:
+        return call(self.template as<PushFragFirst_t>(), std::forward<args_t>(args)...);
+    case OPCODE::PUSH_FRAG_LAST:
+        return call(self.template as<PushFragLast_t>(), std::forward<args_t>(args)...);
+    case OPCODE::PUSH_FRAG_INNER:
+        return call(self.template as<PushFragInner_t>(), std::forward<args_t>(args)...);
+    case OPCODE::PUSH_FRAG:
+        return call(self.template as<PushFrag_t>(), std::forward<args_t>(args)...);
     case OPCODE::PRINT:
         return call(self.template as<Print_t>(), std::forward<args_t>(args)...);
     case OPCODE::SET:
@@ -169,10 +175,10 @@ static auto eval(OPCODE opcode, type_t &self, call_t &&call, args_t &&...args) {
         return call(self.template as<DebugFrag_t>(), std::forward<args_t>(args)...);
     case OPCODE::BYTECODE_FRAG:
         return call(self.template as<BytecodeFrag_t>(), std::forward<args_t>(args)...);
-    case OPCODE::CTYPE:
-        return call(self.template as<CType_t>(), std::forward<args_t>(args)...);
-    case OPCODE::ENDCTYPE:
-        return call(self.template as<EndCType_t>(), std::forward<args_t>(args)...);
+    case OPCODE::OPEN_CTYPE:
+        return call(self.template as<OpenCType_t>(), std::forward<args_t>(args)...);
+    case OPCODE::CLOSE_CTYPE:
+        return call(self.template as<CloseCType_t>(), std::forward<args_t>(args)...);
     case OPCODE::PUSH_ATTR:
         return call(self.template as<PushAttr_t>(), std::forward<args_t>(args)...);
     case OPCODE::PUSH_ROOT_FRAG:
@@ -197,10 +203,10 @@ static auto eval(OPCODE opcode, type_t &self, call_t &&call, args_t &&...args) {
         return call(self.template as<ReprExists_t>(), std::forward<args_t>(args)...);
     case OPCODE::REPR_ISEMPTY:
         return call(self.template as<ReprIsEmpty_t>(), std::forward<args_t>(args)...);
-    case OPCODE::FRAME:
-        return call(self.template as<Frame_t>(), std::forward<args_t>(args)...);
-    case OPCODE::ENDFRAME:
-        return call(self.template as<EndFrame_t>(), std::forward<args_t>(args)...);
+    case OPCODE::OPEN_FRAME:
+        return call(self.template as<OpenFrame_t>(), std::forward<args_t>(args)...);
+    case OPCODE::CLOSE_FRAME:
+        return call(self.template as<CloseFrame_t>(), std::forward<args_t>(args)...);
     case OPCODE::REGEX_MATCH:
         return call(self.template as<RegexMatch_t>(), std::forward<args_t>(args)...);
     }
@@ -212,20 +218,22 @@ const char *opcode_str(OPCODE opcode) {
     case OPCODE::VAL: return "VAL";
     case OPCODE::VAR: return "VAR";
     case OPCODE::DICT: return "DICT";
-    case OPCODE::PUSH: return "PUSH";
-    case OPCODE::POP: return "POP";
-    case OPCODE::STACK: return "STACK";
-    case OPCODE::ADD: return "ADD";
-    case OPCODE::SUB: return "SUB";
+    case OPCODE::PRG_STACK_PUSH: return "PRG_STACK_PUSH";
+    case OPCODE::PRG_STACK_POP: return "PRG_STACK_POP";
+    case OPCODE::PRG_STACK_AT: return "PRG_STACK_AT";
+    case OPCODE::UNARY_PLUS: return "UNARY_PLUS";
+    case OPCODE::UNARY_MINUS: return "UNARY_MINUS";
+    case OPCODE::PLUS: return "PLUS";
+    case OPCODE::MINUS: return "MINUS";
     case OPCODE::MUL: return "MUL";
     case OPCODE::DIV: return "DIV";
     case OPCODE::MOD: return "MOD";
     case OPCODE::CONCAT: return "CONCAT";
     case OPCODE::REPEAT: return "REPEAT";
-    case OPCODE::BITAND: return "BITAND";
-    case OPCODE::BITXOR: return "BITXOR";
-    case OPCODE::BITOR: return "BITOR";
-    case OPCODE::BITNOT: return "BITNOT";
+    case OPCODE::BIT_AND: return "BIT_AND";
+    case OPCODE::BIT_XOR: return "BIT_XOR";
+    case OPCODE::BIT_OR: return "BIT_OR";
+    case OPCODE::BIT_NOT: return "BIT_NOT";
     case OPCODE::NOT: return "NOT";
     case OPCODE::EQ: return "EQ";
     case OPCODE::NE: return "NE";
@@ -233,29 +241,30 @@ const char *opcode_str(OPCODE opcode) {
     case OPCODE::GT: return "GT";
     case OPCODE::LE: return "LE";
     case OPCODE::LT: return "LT";
-    case OPCODE::STREQ: return "STREQ";
-    case OPCODE::STRNE: return "STRNE";
+    case OPCODE::STR_EQ: return "STR_EQ";
+    case OPCODE::STR_NE: return "STR_NE";
     case OPCODE::HALT: return "HALT";
     case OPCODE::DEBUG_FRAG: return "DEBUG_FRAG";
     case OPCODE::BYTECODE_FRAG: return "BYTECODE_FRAG";
-    case OPCODE::FRAGFIRST: return "FRAGFIRST";
-    case OPCODE::FRAGINNER: return "FRAGINNER";
-    case OPCODE::FRAGLAST: return "FRAGLAST";
+    case OPCODE::PUSH_FRAG_FIRST: return "PUSH_FRAG_FIRST";
+    case OPCODE::PUSH_FRAG_INNER: return "PUSH_FRAG_INNER";
+    case OPCODE::PUSH_FRAG_LAST: return "PUSH_FRAG_LAST";
+    case OPCODE::PUSH_FRAG: return "PUSH_FRAG";
     case OPCODE::PRINT: return "PRINT";
     case OPCODE::AND: return "AND";
     case OPCODE::OR: return "OR";
     case OPCODE::FUNC: return "FUNC";
-    case OPCODE::JMPIFNOT: return "JMPIFNOT";
+    case OPCODE::JMP_IF_NOT: return "JMP_IF_NOT";
     case OPCODE::JMP: return "JMP";
-    case OPCODE::FORMAT: return "FORMAT";
-    case OPCODE::ENDFORMAT: return "ENDFORMAT";
-    case OPCODE::FRAG: return "FRAG";
-    case OPCODE::ENDFRAG: return "ENDFRAG";
-    case OPCODE::FRAGCNT: return "FRAGCNT";
-    case OPCODE::FRAGINDEX: return "FRAGINDEX";
+    case OPCODE::OPEN_FORMAT: return "OPEN_FORMAT";
+    case OPCODE::CLOSE_FORMAT: return "CLOSE_FORMAT";
+    case OPCODE::OPEN_FRAG: return "OPEN_FRAG";
+    case OPCODE::CLOSE_FRAG: return "CLOSE_FRAG";
+    case OPCODE::PUSH_FRAG_COUNT: return "PUSH_FRAG_COUNT";
+    case OPCODE::PUSH_FRAG_INDEX: return "PUSH_FRAG_INDEX";
     case OPCODE::SET: return "SET";
-    case OPCODE::CTYPE: return "CTYPE";
-    case OPCODE::ENDCTYPE: return "ENDCTYPE";
+    case OPCODE::OPEN_CTYPE: return "OPEN_CTYPE";
+    case OPCODE::CLOSE_CTYPE: return "CLOSE_CTYPE";
     case OPCODE::PUSH_ATTR: return "PUSH_ATTR";
     case OPCODE::PUSH_THIS_FRAG: return "PUSH_THIS_FRAG";
     case OPCODE::PUSH_ROOT_FRAG: return "PUSH_ROOT_FRAG";
@@ -268,8 +277,8 @@ const char *opcode_str(OPCODE opcode) {
     case OPCODE::REPR_DEFINED: return "REPR_DEFINED";
     case OPCODE::REPR_EXISTS: return "REPR_EXISTS";
     case OPCODE::REPR_ISEMPTY: return "REPR_ISEMPTY";
-    case OPCODE::FRAME: return "FRAME";
-    case OPCODE::ENDFRAME: return "ENDFRAME";
+    case OPCODE::OPEN_FRAME: return "OPEN_FRAME";
+    case OPCODE::CLOSE_FRAME: return "CLOSE_FRAME";
     case OPCODE::REGEX_MATCH: return "REGEX_MATCH";
     }
     throw std::runtime_error(__PRETTY_FUNCTION__);
@@ -331,33 +340,45 @@ InstrBox_t::~InstrBox_t() noexcept {
     });
 }
 
-void FragIndex_t::dump_params(std::ostream &os) const {
-    os << "<frame_offset=" << frame_offset
-       << ",frag_offset=" << frag_offset
+void PushFragIndex_t::dump_params(std::ostream &os) const {
+    os << "<frame-offset=" << frame_offset
+       << ",frag-offset=" << frag_offset
        << '>';
 }
 
-void FragCnt_t::dump_params(std::ostream &os) const {
-    os << "<frame_offset=" << frame_offset
-       << ",frag_offset=" << frag_offset
+void PushFragCount_t::dump_params(std::ostream &os) const {
+    os << "<frame-offset=" << frame_offset
+       << ",frag-offset=" << frag_offset
        << '>';
 }
 
-void FragFirst_t::dump_params(std::ostream &os) const {
-    os << "<frame_offset=" << frame_offset
-       << ",frag_offset=" << frag_offset
+void PushFragFirst_t::dump_params(std::ostream &os) const {
+    os << "<frame-offset=" << frame_offset
+       << ",frag-offset=" << frag_offset
        << '>';
 }
 
-void FragInner_t::dump_params(std::ostream &os) const {
-    os << "<frame_offset=" << frame_offset
-       << ",frag_offset=" << frag_offset
+void PushFragInner_t::dump_params(std::ostream &os) const {
+    os << "<frame-offset=" << frame_offset
+       << ",frag-offset=" << frag_offset
        << '>';
 }
 
-void FragLast_t::dump_params(std::ostream &os) const {
-    os << "<frame_offset=" << frame_offset
-       << ",frag_offset=" << frag_offset
+void PushFragLast_t::dump_params(std::ostream &os) const {
+    os << "<frame-offset=" << frame_offset
+       << ",frag-offset=" << frag_offset
+       << '>';
+}
+
+void PushFrag_t::dump_params(std::ostream &os) const {
+    os << "<name=" << name
+       << ",frame-offset=" << frame_offset
+       << ",frag-offset=" << frag_offset
+       << '>';
+}
+
+void PushRootFrag_t::dump_params(std::ostream &os) const {
+    os << "<root-frag-offset=" << root_frag_offset
        << '>';
 }
 
@@ -370,12 +391,12 @@ void Val_t::dump_params(std::ostream &os) const {
 void Var_t::dump_params(std::ostream &os) const {
     os << "<name=" << name
        << ",escape=" << escape
-       << ",frame_offset=" << frame_offset
-       << ",frag_offset=" << frag_offset
+       << ",frame-offset=" << frame_offset
+       << ",frag-offset=" << frag_offset
        << '>';
 }
 
-void Stack_t::dump_params(std::ostream &os) const {
+void PrgStackAt_t::dump_params(std::ostream &os) const {
     os << "<index=" << index << '>';
 }
 
@@ -399,29 +420,29 @@ void Jmp_t::dump_params(std::ostream &os) const {
     os << "<jump=" << std::showpos << addr_offset << '>' << std::noshowpos;
 }
 
-void Format_t::dump_params(std::ostream &os) const {
+void OpenFormat_t::dump_params(std::ostream &os) const {
     os << "<mode=" << mode << '>';
 }
 
-void Frag_t::dump_params(std::ostream &os) const {
+void OpenFrag_t::dump_params(std::ostream &os) const {
     os << "<name=" << name
-       << ",endfrag-offset=" << std::showpos << endfrag_offset
+       << ",close-frag-offset=" << std::showpos << close_frag_offset
        << '>' << std::noshowpos;
 }
 
-void EndFrag_t::dump_params(std::ostream &os) const {
-    os << "<openfrag-offset=" << std::showpos << openfrag_offset
+void CloseFrag_t::dump_params(std::ostream &os) const {
+    os << "<open-frag-offset=" << std::showpos << open_frag_offset
        << '>' << std::noshowpos;
 }
 
 void Set_t::dump_params(std::ostream &os) const {
     os << "<name=" << name
-       << ",frame_offset=" << frame_offset
-       << ",frag_offset=" << frag_offset
+       << ",frame-offset=" << frame_offset
+       << ",frag-offset=" << frag_offset
        << '>';
 }
 
-void CType_t::dump_params(std::ostream &os) const {
+void OpenCType_t::dump_params(std::ostream &os) const {
     os << "<mime-type=" << (ctype? ctype->name: "unknown/unknown") << '>';
 }
 

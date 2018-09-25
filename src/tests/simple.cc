@@ -125,11 +125,13 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
                     {1, 0},
-                    "Unexpected token: [265] directive '<?teng endfrag'"
+                    "The <?teng endfrag?> directive closes unopened fragment "
+                    "block"
                 }, {
-                    Teng::Error_t::FATAL,
-                    {1, 0},
-                    "Fatal parse error in template (syntax error)"
+                    Teng::Error_t::ERROR,
+                    {1, 16},
+                    "The closing directive of this <?teng frag?> directive "
+                    "is missing"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "");
@@ -154,7 +156,11 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
                     {1, 0},
-                    "Unknown <?teng garf?> directive"
+                    "Unknown Teng directive: <?teng garf?>"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 12},
+                    "Unexpected token: name=IDENT, view=sample"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "");

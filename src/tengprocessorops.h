@@ -75,7 +75,7 @@ struct lhs_checker_t {
     static bool is_valid(EvalCtx_t *, Value_t &) {return true;}
 };
 
-/** Almost all operations accept any lhs value.
+/** Almost all operations accept any rhs value.
  */
 template <typename operation_t, typename = void>
 struct rhs_checker_t {
@@ -92,7 +92,7 @@ using is_bit_op = typename std::enable_if<
     || std::is_same<operation_t, bit_xor_t>::value
 >::type;
 
-/** Bit OR needs integral operands.
+/** Bit operations needs integral operands.
  */
 template <typename operation_t>
 struct lhs_checker_t<operation_t, is_bit_op<operation_t>> {
@@ -152,13 +152,8 @@ struct rhs_checker_t<operation_t, needs_rhs_non_zero<operation_t>> {
 /** Evaluates binary numeric operation.
  */
 template <typename operation_t>
-Result_t numop(EvalCtx_t *ctx, GetArg_t get_arg, operation_t op) {
+Result_t numop(EvalCtx_t *ctx, Value_t &lhs, Value_t &rhs, operation_t op) {
     static const std::string S = to_string(operation_t());
-
-    // fetch operator args
-    // remember, they are on stack so get them in opposite order
-    Value_t rhs = get_arg();
-    Value_t lhs = get_arg();
 
     // report invalid operands
     if (!lhs.is_number()) {
@@ -201,12 +196,7 @@ Result_t numop(EvalCtx_t *ctx, GetArg_t get_arg, operation_t op) {
 /** Evaluates binary string operation.
  */
 template <typename operation_t>
-Result_t strop(EvalCtx_t *ctx, GetArg_t get_arg, operation_t op) {
-    // fetch operator args
-    // remember, they are on stack so get them in opposite order
-    Value_t rhs = get_arg();
-    Value_t lhs = get_arg();
-
+Result_t strop(EvalCtx_t *ctx, Value_t &lhs, Value_t &rhs, operation_t op) {
     // some operations have restrictions for operands
     if (!lhs_checker_t<operation_t>::is_valid(ctx, lhs))
         return Result_t();
@@ -215,6 +205,47 @@ Result_t strop(EvalCtx_t *ctx, GetArg_t get_arg, operation_t op) {
 
     // exec operation
     return Result_t(op(lhs.ensure_string_like(), rhs.ensure_string_like()));
+}
+
+/** Evaluates binary numeric operation.
+ */
+template <typename operation_t>
+Result_t numop(EvalCtx_t *ctx, GetArg_t get_arg, operation_t op) {
+    // fetch operator args
+    // remember, they are on stack so get them in opposite order
+    Value_t rhs = get_arg();
+    Value_t lhs = get_arg();
+
+    // evalute
+    return numop(ctx, lhs, rhs, op);
+}
+
+/** Evaluates binary string operation.
+ */
+template <typename operation_t>
+Result_t strop(EvalCtx_t *ctx, GetArg_t get_arg, operation_t op) {
+    // fetch operator args
+    // remember, they are on stack so get them in opposite order
+    Value_t rhs = get_arg();
+    Value_t lhs = get_arg();
+
+    // evaluate
+    return strop(ctx, lhs, rhs, op);
+}
+
+/** Evaluates binary string or numeric operation.
+ */
+template <typename operation_t>
+Result_t strnumop(EvalCtx_t *ctx, GetArg_t get_arg, operation_t op) {
+    // fetch operator args
+    // remember, they are on stack so get them in opposite order
+    Value_t rhs = get_arg();
+    Value_t lhs = get_arg();
+
+    // if at least one operand is string use string version of operator
+    return lhs.is_string_like() || rhs.is_string_like()
+        ? strop(ctx, lhs, rhs, op)
+        : numop(ctx, lhs, rhs, op);
 }
 
 /** Implementation of the logic not operator.
@@ -230,8 +261,66 @@ Result_t bit_not(EvalCtx_t *ctx, GetArg_t get_arg) {
     Value_t arg = get_arg();
     if (arg.is_integral())
         return Result_t(~arg.as_int());
-    logError(*ctx, "operand of bit ~ operation is not int");
+    logError(*ctx, "operand of bit ~ operator is not int");
     return Result_t();
+}
+
+/** Implementation of the unary plus operator.
+ */
+Result_t unary_plus(EvalCtx_t *ctx, GetArg_t get_arg) {
+    Value_t arg = get_arg();
+    switch (arg.type()) {
+    case Value_t::tag::integral:
+        return Result_t(arg.as_int());
+    case Value_t::tag::real:
+        return Result_t(arg.as_real());
+    default:
+        logError(*ctx, "operand of unary + operator is not number");
+        return Result_t();
+    }
+}
+
+/** Implementation of the unary minus operator.
+ */
+Result_t unary_minus(EvalCtx_t *ctx, GetArg_t get_arg) {
+    Value_t arg = get_arg();
+    switch (arg.type()) {
+    case Value_t::tag::integral:
+        return Result_t(-arg.as_int());
+    case Value_t::tag::real:
+        return Result_t(-arg.as_real());
+    default:
+        logError(*ctx, "operand of unary - operator is not number");
+        return Result_t();
+    }
+}
+
+/** Implementation of the repeat string operator.
+ */
+Result_t repeat_string(EvalCtx_t *ctx, GetArg_t get_arg) {
+    // fetch operator args
+    // remember, they are on stack so get them in opposite order
+    Value_t rhs = get_arg();
+    Value_t lhs = get_arg();
+
+    // check args
+    if (!rhs.is_integral()) {
+        logError(*ctx, "Right operand of repeat string operator is not int");
+        return Result_t();
+    } else if (rhs.as_int() < 0) {
+        logError(*ctx, "Right operand of repeat string operator is negative");
+        return Result_t();
+    } else if (!lhs.is_string_like()) {
+        logError(*ctx, "Left operand of repeat string operator is not string");
+        return Result_t();
+    }
+
+    // exec operator
+    std::string result;
+    result.reserve(lhs.string().size() * rhs.as_int());
+    for (auto i = 0; i < rhs.as_int(); ++i)
+        result += lhs.string();
+    return Result_t(std::move(result));
 }
 
 } // namespace exec

@@ -94,41 +94,13 @@ void prg_stack_pop(std::vector<Value_t> &prg_stack) {
 /** Returns value at instr.value index on program stack.
  */
 Result_t prg_stack_at(EvalCtx_t *ctx, std::vector<Value_t> &prg_stack) {
-    auto &instr = ctx->instr->as<Stack_t>();
+    auto &instr = ctx->instr->as<PrgStackAt_t>();
     if (instr.index > 0)
         throw std::runtime_error("Program stack underflow");
     if (-instr.index > prg_stack.size())
         throw std::runtime_error("Program stack underflow");
     // TODO(burlog): fakt je to ted dobre, kdyz je index unsigned, nemelo by se to premistit do kompilace
     return prg_stack[prg_stack.size() - 1 + instr.index];
-}
-
-/** Implementation of the repeat string operator.
- */
-Result_t repeat_string(EvalCtx_t *ctx, GetArg_t get_arg) {
-    // fetch operator args
-    // remember, they are on stack so get them in opposite order
-    Value_t rhs = get_arg();
-    Value_t lhs = get_arg();
-
-    // check args
-    if (!rhs.is_integral()) {
-        logError(*ctx, "Right operand of repeat string operator is not int");
-        return Result_t();
-    } else if (rhs.as_int() < 0) {
-        logError(*ctx, "Right operand of repeat string operator is negative");
-        return Result_t();
-    } else if (!lhs.is_string_like()) {
-        logError(*ctx, "Left operand of repeat string operator is not string");
-        return Result_t();
-    }
-
-    // exec operator
-    std::string result;
-    result.reserve(lhs.string().size() * rhs.as_int());
-    for (auto i = 0; i < rhs.as_int(); ++i)
-        result += lhs.string();
-    return Result_t(std::move(result));
 }
 
 /** Evaluates function if such exists.
@@ -187,7 +159,7 @@ void print(RunCtxPtr_t ctx, GetArg_t get_arg) {
  */
 void push_formatter(RunCtxPtr_t ctx) {
     if (ctx->cfg.isFormatEnabled()) {
-        auto &instr = ctx->instr->as<Format_t>();
+        auto &instr = ctx->instr->as<OpenFormat_t>();
         auto mode = static_cast<Formatter_t::Mode_t>(instr.mode);
         if (mode == Formatter_t::MODE_COPY_PREV)
             mode = ctx->output.top();
@@ -206,7 +178,7 @@ void pop_formatter(RunCtxPtr_t ctx) {
 /** Push new escaper on the escapers stak.
  */
 void push_escaper(RunCtxPtr_t ctx) {
-    auto &instr = ctx->instr->as<CType_t>();
+    auto &instr = ctx->instr->as<OpenCType_t>();
     ctx->escaper.push(instr.ctype? instr.ctype->contentType.get(): nullptr);
 }
 

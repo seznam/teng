@@ -62,10 +62,10 @@ using flex_string_view_t = Parser::flex_string_view_t;
 
 /** Compose absolute filename.
  */
-std::string absfile(const std::string &fs_root, const std::string &filename) {
+std::string absfile(const std::string &fs_root, const string_view_t &filename) {
     return !fs_root.empty() && !filename.empty() && !ISROOT(filename)
          ? fs_root + "/" + filename
-         : filename;
+         : filename.str();
 }
 
 /** Reads file content into string.
@@ -73,13 +73,13 @@ std::string absfile(const std::string &fs_root, const std::string &filename) {
 flex_string_value_t
 read_file(
     Parser::Context_t *ctx,
-    const Pos_t *include_pos,
+    const Pos_t *incl_pos,
     const std::string &filename
 ) {
     // open file
     std::ifstream file(filename, std::ios::binary);
     if (!file.is_open()) {
-        Pos_t pos = include_pos? *include_pos: Pos_t();
+        Pos_t pos = incl_pos? *incl_pos: Pos_t();
         logError(ctx, pos, "Cannot open input file '" + filename + "'");
         return flex_string_value_t(0);
     }
@@ -96,6 +96,7 @@ read_file(
 void compile(Parser::Context_t *ctx) {
     // parse input by bison generated parser and compile program
     Parser::Parser_t parser(ctx);
+    // parser.set_debug_level(10);
     if (parser.parse() != 0) {
         // write diagnostic messages if any
         ctx->expr_diag.unwind(ctx, ctx->unexpected_token);
@@ -149,17 +150,18 @@ Context_t::Context_t(
    coproc(coproc_err, *program, *dict, *params),
    open_frames(*program), var_sym(), opts_sym(),
    error_occurred(false), unexpected_token{LEX2::INVALID, {}, {}},
-   expr_start_point{{}, -1}, branch_start_addrs(), optimization_points()
+   expr_start_point{{}, -1, true}, if_stmnt_start_point{{}, -1, true},
+   branch_start_addrs(), optimization_points()
 {}
 // TODO(burlog): zvazit predalokaci stacku na nejakou "velikost" v 2.0 byla na 100
 
 Context_t::~Context_t() = default;
 
 void
-Context_t::load_file(const std::string &filename, const Pos_t *include_pos) {
+Context_t::load_file(const string_view_t &filename, const Pos_t *incl_pos) {
     // load source code from file
     std::string path = absfile(fs_root, filename);
-    source_codes.push_back(read_file(this, include_pos, path));
+    source_codes.push_back(read_file(this, incl_pos, path));
     auto &source_code = source_codes.back();
 
     // register source into program sources list
@@ -243,8 +245,8 @@ Token_t Context_t::next_token() {
 
 #undef DBG
 
-void Parser_t::error(const std::string &) {
-    /* ignore all errors from bison parser since they are useless */
+void Parser_t::error(const std::string &s) {
+    std::cerr << "POSRALO SE TO! " << s << std::endl;
 }
 
 } // namespace Parser

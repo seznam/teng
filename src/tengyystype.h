@@ -62,7 +62,7 @@ struct Context_t;
 template <typename ValueType_t>
 class OptionalSymbol_t {
 public:
-    // we enforce nothrow move semantic
+    // we are enforcing nothrow move semantic
     static_assert(
         std::is_nothrow_move_constructible<ValueType_t>::value,
         "The value type has to be nothrow move constructible!"
@@ -352,35 +352,6 @@ public:
     uint16_t frag_offset;   //!< the offset fo frag
 };
 
-/** Variable used for <?teng frag ...?> directives. It transfers flag if they
- * has been created in invalid syntactic branch.
- */
-class IVariable_t: public Variable_t {
-public:
-    /** C'tor.
-     */
-    IVariable_t(const Token_t &token)
-        : Variable_t(token),
-          invalid(true)
-    {}
-
-    /** C'tor.
-     */
-    IVariable_t(Variable_t &&other)
-        : Variable_t(other, std::move(other.ident)),
-          invalid(false)
-    {}
-
-    /** C'tor.
-     */
-    IVariable_t(const Variable_t &other, Identifier_t &&ident)
-        : Variable_t(other, std::move(ident)),
-          invalid(false)
-    {}
-
-    bool invalid; //!< true if variable name is invalid
-};
-
 /** The symbol representing the directive options.
  */
 class Options_t: public Symbol_t {
@@ -400,26 +371,13 @@ public:
         : Symbol_t(token)
     {}
 
-    /** C'tor.
-     */
-    Options_t(const Token_t &ident, const Literal_t &value)
-        : Symbol_t(ident)
-    {insert(ident.view(), value.view());}
-
-    /** The option identifier and value pair.
-     */
-    struct Option_t {
-        string_view_t ident; //!< the option identifier
-        string_view_t value; //!< the option value
-        bool operator==(const string_view_t &rhs) const {return ident == rhs;}
-    };
-
     /** Inserts new option to options.
      */
-    void insert(const string_view_t &ident, const string_view_t &value) {
+    void emplace(const string_view_t &ident, Value_t &&value) {
         auto ientry = find(ident);
-        if (ientry == options.end()) options.push_back({ident, value});
-        else ientry->value = value;
+        if (ientry == options.end())
+            options.push_back({ident, std::move(value)});
+        else ientry->value = std::move(value);
     }
 
     /** Returns iterator to the option with desired identifier or end().
@@ -454,29 +412,19 @@ public:
      */
     bool empty() const {return options.empty();}
 
+    /** Purges options.
+     */
+    void clear() {options.clear();}
+
+    /** The option identifier and value pair.
+     */
+    struct Option_t {
+        string_view_t ident; //!< the option identifier
+        Value_t value;       //!< the option value
+        bool operator==(const string_view_t &rhs) const {return ident == rhs;}
+    };
+
     std::vector<Option_t> options; //!< the options storage
-};
-
-/** Options used for <?teng format ...?> directives. It transfers flag if they
- * has been created in invalid syntactic branch.
- */
-class FormatOptions_t: public Options_t {
-public:
-    /** C'tor.
-     */
-    FormatOptions_t(const Token_t &token)
-        : Options_t(token),
-          invalid(true)
-    {}
-
-    /** C'tor.
-     */
-    FormatOptions_t(Options_t &&options)
-        : Options_t(std::move(options)),
-          invalid(false)
-    {}
-
-    bool invalid; //!< true if options is invalid
 };
 
 /** The symbol used to transfer arity of expression with variadic argumets to

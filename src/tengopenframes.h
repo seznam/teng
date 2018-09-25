@@ -191,8 +191,8 @@ inline ListPos_t get_list_pos_impl(const Value_t &self) {
 
 /** The frame of open frags.
  */
-struct OpenFrame_t {
-    OpenFrame_t(const FragmentValue_t *root)
+struct FrameRec_t {
+    FrameRec_t(const FragmentValue_t *root)
         : open_frags(1, {Value_t(root), {}, {}})
     {}
 
@@ -261,9 +261,6 @@ struct OpenFrame_t {
      */
     template <typename VarDesc_t>
     Value_t get_var(const VarDesc_t &var) const {
-        // TODO(burlog): builtin variables? there plenty amount of them and
-        // some are implemented here and some as extra instructions
-        // some of them have to be implemented one stack frame above
         if (var.frag_offset >= open_frags.size())
             throw std::runtime_error(__PRETTY_FUNCTION__);
 
@@ -318,15 +315,20 @@ struct OpenFrame_t {
             : get_list_pos_impl(open_frags[i].frag);
     }
 
-    /** Returns value representing the most recent open frag.
+    /** Returns fragment (or anything else) at given offset.
      */
-    Value_t this_frag() const {return open_frags.back().frag;}
+    Value_t frag(uint16_t frag_offset) const {
+        if (frag_offset >= open_frags.size())
+            throw std::runtime_error(__PRETTY_FUNCTION__);
+        auto i = open_frags.size() - frag_offset - 1;
+        return open_frags[i].frag;
+    }
 
 protected:
     struct LocalCmp_t: std::less<string_view_t> {struct is_transparent {};};
     using Locals_t = std::map<std::string, Value_t, LocalCmp_t>;
-    struct OpenFragRec_t {Value_t frag; Locals_t locals; string_view_t name;};
-    std::vector<OpenFragRec_t> open_frags; //!< list of open fragments
+    struct FragRec_t {Value_t frag; Locals_t locals; string_view_t name;};
+    std::vector<FragRec_t> open_frags; //!< list of open fragments
 };
 
 // TODO(burlog): 
@@ -385,7 +387,7 @@ public:
     /** C'tor.
      */
     OpenFrames_t(const FragmentValue_t *root)
-        : root(root), frames(1, OpenFrame_t(root))
+        : root(root), frames(1, FrameRec_t(root))
     {}
 
     /** Opens new frame.
@@ -450,14 +452,13 @@ public:
 
     // *********************************************vvv open fragment frames API
 
-    /** Returns value representing root frag.
+    /** Returns frag at given offsets.
      */
-    Value_t root_frag() const override {return Value_t(root);}
-
-    /** Returns value representing the most recent open frag.
-     */
-    Value_t this_frag() const override {
-        return Value_t(frames.back().this_frag());
+    Value_t frag(uint16_t frame_offset, uint16_t frag_offset) const override {
+        if (frame_offset >= frames.size())
+            throw std::runtime_error(__PRETTY_FUNCTION__);
+        auto i = frames.size() - frame_offset - 1;
+        return frames[i].frag(frag_offset);
     }
 
     /** Returns the value for desired name.
@@ -543,8 +544,8 @@ public:
     // }
 
 protected:
-    const FragmentValue_t *root;;    //!< the fragments tree root
-    std::vector<OpenFrame_t> frames; //!< the list of open frames
+    const FragmentValue_t *root;;   //!< the fragments tree root
+    std::vector<FrameRec_t> frames; //!< the list of open frames
 };
 
 } // namespace Teng

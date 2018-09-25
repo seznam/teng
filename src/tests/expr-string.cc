@@ -51,15 +51,10 @@ SCENARIO(
             Teng::Error_t err;
             auto result = g(err, "${three == '(three)'}", root);
 
-            THEN("Result is undefined") {
-                std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
-                    {1, 21},
-                    "Runtime: left operand of == numeric operator "
-                    "is string"
-                }};
+            THEN("Result is true") {
+                std::vector<Teng::Error_t::Entry_t> errs = {};
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "undefined");
+                REQUIRE(result == "1");
             }
         }
 
@@ -67,15 +62,10 @@ SCENARIO(
             Teng::Error_t err;
             auto result = g(err, "${three != '(three)'}", root);
 
-            THEN("Result is undefined") {
-                std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
-                    {1, 21},
-                    "Runtime: left operand of == numeric operator "
-                    "is string"
-                }};
+            THEN("Result is false") {
+                std::vector<Teng::Error_t::Entry_t> errs = {};
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "undefined");
+                REQUIRE(result == "0");
             }
         }
 
@@ -83,15 +73,10 @@ SCENARIO(
             Teng::Error_t err;
             auto result = g(err, "${three <= '(three)'}", root);
 
-            THEN("Result is undefined") {
-                std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
-                    {1, 21},
-                    "Runtime: left operand of > numeric operator "
-                    "is string"
-                }};
+            THEN("Result is true") {
+                std::vector<Teng::Error_t::Entry_t> errs = {};
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "undefined");
+                REQUIRE(result == "1");
             }
         }
 
@@ -99,15 +84,10 @@ SCENARIO(
             Teng::Error_t err;
             auto result = g(err, "${three < '(three)'}", root);
 
-            THEN("Result is undefined") {
-                std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
-                    {1, 20},
-                    "Runtime: left operand of >= numeric operator "
-                    "is string"
-                }};
+            THEN("Result is false") {
+                std::vector<Teng::Error_t::Entry_t> errs = {};
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "undefined");
+                REQUIRE(result == "0");
             }
         }
 
@@ -115,15 +95,10 @@ SCENARIO(
             Teng::Error_t err;
             auto result = g(err, "${three > '(three)'}", root);
 
-            THEN("Result is undefined") {
-                std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
-                    {1, 20},
-                    "Runtime: left operand of > numeric operator "
-                    "is string"
-                }};
+            THEN("Result is false") {
+                std::vector<Teng::Error_t::Entry_t> errs = {};
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "undefined");
+                REQUIRE(result == "0");
             }
         }
 
@@ -131,15 +106,10 @@ SCENARIO(
             Teng::Error_t err;
             auto result = g(err, "${three >= '(three)'}", root);
 
-            THEN("Result is undefined") {
-                std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
-                    {1, 21},
-                    "Runtime: left operand of >= numeric operator "
-                    "is string"
-                }};
+            THEN("Result is true") {
+                std::vector<Teng::Error_t::Entry_t> errs = {};
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "undefined");
+                REQUIRE(result == "1");
             }
         }
 
@@ -150,8 +120,8 @@ SCENARIO(
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 20},
-                    "Runtime: left operand of | numeric operator "
+                    {1, 8},
+                    "Runtime: Left operand of | numeric operator "
                     "is string"
                 }};
                 REQUIRE(err.getEntries() == errs);
@@ -166,8 +136,8 @@ SCENARIO(
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 20},
-                    "Runtime: left operand of ^ numeric operator "
+                    {1, 8},
+                    "Runtime: Left operand of ^ numeric operator "
                     "is string"
                 }};
                 REQUIRE(err.getEntries() == errs);
@@ -182,8 +152,8 @@ SCENARIO(
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 20},
-                    "Runtime: left operand of & numeric operator "
+                    {1, 8},
+                    "Runtime: Left operand of & numeric operator "
                     "is string"
                 }};
                 REQUIRE(err.getEntries() == errs);
@@ -418,7 +388,7 @@ SCENARIO(
 }
 
 SCENARIO(
-    "The ADD operator for strings",
+    "The PLUS operator for strings",
     "[string][expr]"
 ) {
     GIVEN("Some variables in root frag set to strings") {
@@ -431,20 +401,16 @@ SCENARIO(
             auto result = g(err, "${zero + three}", root);
 
             THEN("Result of: zero + three") {
-                std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
-                    {1, 15},
-                    "Runtime: left operand of + numeric operator is string"
-                }};
+                std::vector<Teng::Error_t::Entry_t> errs = {};
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "undefined");
+                REQUIRE(result == "03");
             }
         }
     }
 }
 
 SCENARIO(
-    "The SUB operator for strings",
+    "The MINUS operator for strings",
     "[string][expr]"
 ) {
     GIVEN("Some variables in root frag set to strings") {
@@ -459,8 +425,8 @@ SCENARIO(
             THEN("Result of: zero - three") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 15},
-                    "Runtime: left operand of - numeric operator is string"
+                    {1, 7},
+                    "Runtime: Left operand of - numeric operator is string"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -518,8 +484,8 @@ SCENARIO(
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 15},
-                    "Runtime: left operand of * numeric operator is string"
+                    {1, 7},
+                    "Runtime: Left operand of * numeric operator is string"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -544,8 +510,8 @@ SCENARIO(
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 15},
-                    "Runtime: left operand of / numeric operator is string"
+                    {1, 7},
+                    "Runtime: Left operand of / numeric operator is string"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -570,8 +536,8 @@ SCENARIO(
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 15},
-                    "Runtime: left operand of % numeric operator is string"
+                    {1, 7},
+                    "Runtime: Left operand of % numeric operator is string"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -607,7 +573,7 @@ SCENARIO(
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 15},
+                    {1, 7},
                     "Runtime: Right operand of repeat string operator "
                     "is not int"
                 }};
@@ -666,8 +632,8 @@ SCENARIO(
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 8},
-                    "Runtime: operand of bit ~ operation is not int"
+                    {1, 2},
+                    "Runtime: operand of bit ~ operator is not int"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -677,7 +643,7 @@ SCENARIO(
 }
 
 SCENARIO(
-    "The unary SUB operator for strings",
+    "The unary MINUS operator for strings",
     "[string][expr]"
 ) {
     GIVEN("Some variables in root frag set to strings") {
@@ -691,8 +657,8 @@ SCENARIO(
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 8},
-                    "Runtime: right operand of - numeric operator is string"
+                    {1, 2},
+                    "Runtime: operand of unary - operator is not number"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -702,7 +668,7 @@ SCENARIO(
 }
 
 SCENARIO(
-    "The unary ADD operator for strings",
+    "The unary PLUS operator for strings",
     "[string][expr]"
 ) {
     GIVEN("Some variables in root frag set to strings") {
@@ -716,8 +682,8 @@ SCENARIO(
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 8},
-                    "Runtime: right operand of + numeric operator is string"
+                    {1, 2},
+                    "Runtime: operand of unary + operator is not number"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -769,10 +735,10 @@ SCENARIO(
             Teng::Error_t err;
             auto result = g(err, "${'[\\e][\\g]'}", root);
 
-            THEN("They are preserved as is") {
+            THEN("They are either expanded") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "[\\e][\\g]");
+                REQUIRE(result == "[e][g]");
             }
         }
 

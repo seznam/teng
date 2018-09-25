@@ -553,6 +553,7 @@ SCENARIO(
         root.addVariable("_underscore", "___");
         root.addVariable("_this", "bad_var_name_this");
         root.addVariable("_parent", "bad_var_name_parent");
+        root.addVariable("_count", "bad_var_name_count");
         auto &nested_1 = root.addFragment("nested_1");
         nested_1.addVariable("var", "nested_1_var");
         auto &nested_2 = nested_1.addFragment("nested_2");
@@ -612,7 +613,7 @@ SCENARIO(
             }
         }
 
-        WHEN("The _this only") {
+        WHEN("The overriden _this only") {
             Teng::Error_t err;
             auto result = g(err, "${_this}", root);
 
@@ -620,14 +621,31 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
-                    "The _this variable name is reserved"
+                    "Runtime: Identifier '_this' is reserved, "
+                    "please don't use it"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "bad_var_name_this");
             }
         }
 
-        WHEN("The _parent only") {
+        WHEN("The plain _this only") {
+            Teng::Error_t err;
+            auto t = "<?teng frag nested_1?>${_this}<?teng endfrag?>";
+            auto result = g(err, t, root);
+
+            THEN("Result is $list$") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 30},
+                    "Runtime: Variable is a fragment list, not a scalar value"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "$list$");
+            }
+        }
+
+        WHEN("The overriden _parent only") {
             Teng::Error_t err;
             auto result = g(err, "${_parent}", root);
 
@@ -635,10 +653,76 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
-                    "The _parent variable name is reserved"
+                    "The builtin _parent variable has crossed root boundary; "
+                    "converting it to _this"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 2},
+                    "Runtime: Identifier '_parent' is reserved, "
+                    "please don't use it"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "bad_var_name_parent");
+            }
+        }
+
+        WHEN("The plain _parent only") {
+            Teng::Error_t err;
+            auto t = "<?teng frag nested_1?>${_parent}<?teng endfrag?>";
+            auto result = g(err, t, root);
+
+            THEN("Result is $list$") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 32},
+                    "Runtime: Variable is a fragment, not a scalar value"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "$frag$");
+            }
+        }
+
+        WHEN("The _count only") {
+            Teng::Error_t err;
+            auto result = g(err, "${_count}", root);
+
+            THEN("Result is the number of root fragments -> 1") {
+                std::vector<Teng::Error_t::Entry_t> errs = {};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "1");
+            }
+        }
+
+        WHEN("The _first only") {
+            Teng::Error_t err;
+            auto result = g(err, "${_first}", root);
+
+            THEN("Result is the true") {
+                std::vector<Teng::Error_t::Entry_t> errs = {};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "1");
+            }
+        }
+
+        WHEN("The _last only") {
+            Teng::Error_t err;
+            auto result = g(err, "${_last}", root);
+
+            THEN("Result is the true") {
+                std::vector<Teng::Error_t::Entry_t> errs = {};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "1");
+            }
+        }
+
+        WHEN("The _inner only") {
+            Teng::Error_t err;
+            auto result = g(err, "${_inner}", root);
+
+            THEN("Result is the false") {
+                std::vector<Teng::Error_t::Entry_t> errs = {};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "0");
             }
         }
     }
@@ -656,6 +740,8 @@ SCENARIO(
         auto &nested_2 = nested_1.addFragment("nested_2");
         nested_2.addVariable("var", "nested_2_var");
         nested_2.addVariable("_underscore", "___");
+        auto &other = root.addFragment("other");
+        other.addVariable("var", "other_var");
 
         WHEN("Absolute root variable is expanded") {
             Teng::Error_t err;
@@ -709,14 +795,37 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 46},
-                    "Variable '.invalid.nested_2.var' doesn't match any "
-                    "fragment in any context; replacing variable with "
-                    "undefined value."
+                    "Runtime: Variable 'invalid' is undefined"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 46},
+                    "Runtime: Variable 'nested_2' is undefined"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 46},
+                    "Runtime: Variable 'var' is undefined"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
+            }
+        }
+
+        WHEN("Absolute variable from previous frame is expanded") {
+            Teng::Error_t err;
+            auto templ = "<?teng frag nested_1?>"
+                         "<?teng frag .other?>"
+                         "${.nested_1.var}"
+                         "${.other.var}"
+                         "<?teng endfrag?>"
+                         "<?teng endfrag?>";
+            auto result = g(err, templ, root);
+
+            THEN("Result is composed from variables from two frames") {
+                std::vector<Teng::Error_t::Entry_t> errs = {};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "nested_1_varother_var");
             }
         }
 
@@ -731,11 +840,13 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 46},
-                    "Variable '.nested_1.invalid.var' doesn't match any "
-                    "fragment in any context; replacing variable with "
-                    "undefined value."
+                    "Runtime: Variable 'invalid' is undefined"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 46},
+                    "Runtime: Variable 'var' is undefined"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -754,7 +865,7 @@ SCENARIO(
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
-                    {1, 73},
+                    {1, 46},
                     "Runtime: Variable '.nested_1.nested_2.missing' is "
                     "undefined"
                 }};
@@ -775,8 +886,10 @@ SCENARIO(
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
-                    {1, 65},
-                    "The variable names starting with underscore are reserved"
+                    {1, 46},
+                    "The variable names starting with an underscore are "
+                    "reserved, and might cause undefined behaviour in future: "
+                    "var=.nested_1.nested_2._underscore"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "___");
@@ -806,8 +919,9 @@ SCENARIO(
             THEN("Result is variable value") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
-                    {1, 3},
-                    "The _this variable name is reserved"
+                    {1, 2},
+                    "Runtime: Identifier '_this' is reserved, "
+                    "please don't use it"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "bad_var_name_this");
@@ -821,8 +935,14 @@ SCENARIO(
             THEN("Result is variable value") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
-                    {1, 3},
-                    "The _parent variable name is reserved"
+                    {1, 2},
+                    "The builtin _parent variable has crossed root boundary; "
+                    "converting it to _this"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 2},
+                    "Runtime: Identifier '_parent' is reserved, "
+                    "please don't use it"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "bad_var_name_parent");
@@ -837,7 +957,7 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 3},
-                    "Ignoring useless _this variable path segment"
+                    "Ignoring useless '_this' variable path segment"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "root_var");
@@ -883,7 +1003,7 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 56},
-                    "Ignoring useless _this variable path segment"
+                    "Ignoring useless '_this' variable path segment"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "nested_1_var");
@@ -1068,13 +1188,17 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 46},
-                    "Variable identifier 'invalid.nested_2.var' not found"
+                    "Runtime: Variable 'invalid' is undefined"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 46},
-                    "Variable identifier '' is invalid"
+                    "Runtime: Variable 'nested_2' is undefined"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 46},
+                    "Runtime: Variable 'var' is undefined"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -1092,13 +1216,13 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 46},
-                    "Variable identifier 'invalid.var' not found"
+                    "Runtime: Variable 'invalid' is undefined"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 46},
-                    "Variable identifier '' is invalid"
+                    "Runtime: Variable 'var' is undefined"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -1166,18 +1290,18 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 55},
-                    "Ignoring useless _this relative variable path segment"
+                    "Ignoring useless '_this' variable path segment"
                 }, {
                     Teng::Error_t::WARNING,
                     {1, 70},
-                    "Ignoring useless _this relative variable path segment"
+                    "Ignoring useless '_this' variable path segment"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "nested_2_var");
             }
         }
 
-        WHEN("The _parent inside relative path is ignored") {
+        WHEN("The _parent inside relative path") {
             Teng::Error_t err;
             auto templ = "<?teng frag nested_1?>"
                          "<?teng frag nested_2?>"
@@ -1187,11 +1311,7 @@ SCENARIO(
             auto result = g(err, templ, root);
 
             THEN("Result is variable value") {
-                std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::WARNING,
-                    {1, 55},
-                    "Ignoring invalid _parent relative variable path segment"
-                }};
+                std::vector<Teng::Error_t::Entry_t> errs = {};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "nested_2_var");
             }
@@ -1209,8 +1329,9 @@ SCENARIO(
             THEN("Result is variable value") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
-                    {1, 55},
-                    "The _this variable name is reserved"
+                    {1, 46},
+                    "Runtime: Identifier '_this' is reserved, "
+                    "please don't use it"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "bad_var_name_this_2");
@@ -1229,11 +1350,363 @@ SCENARIO(
             THEN("Result is variable value") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
-                    {1, 55},
-                    "The _parent variable name is reserved"
+                    {1, 46},
+                    "Runtime: Identifier '_parent' is reserved, "
+                    "please don't use it"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "bad_var_name_parent_2");
+            }
+        }
+    }
+}
+
+SCENARIO(
+    "Variables setting",
+    "[vars]"
+) {
+    GIVEN("Some data with nested fragments and with variables") {
+        Teng::Fragment_t root;
+        root.addVariable("var", "root_var");
+        auto &nested_1 = root.addFragment("nested_1");
+        nested_1.addVariable("var", "nested_1_var");
+        auto &nested_2 = nested_1.addFragment("nested_2");
+        nested_2.addVariable("var", "nested_2_var");
+        auto &nested_3 = nested_2.addFragment("nested_3");
+        nested_3.addVariable("var", "3");
+        auto &nested_4 = nested_3.addFragment("nested_4");
+        nested_4.addVariable("var", "4");
+
+        WHEN("Setting root variable from root") {
+            Teng::Error_t err;
+            auto t = "<?teng set .var_set = 'root_var_set'?>${.var_set}";
+            auto result = g(err, t, root);
+
+            THEN("Result is variable value") {
+                std::vector<Teng::Error_t::Entry_t> errs = {};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "root_var_set");
+            }
+        }
+
+        WHEN("Setting root variable from nested frag") {
+            Teng::Error_t err;
+            auto t = "<?teng frag nested_1?>"
+                     "<?teng set .var_set = 'root_var_set'?>${.var_set}"
+                     "<?teng endfrag?>";
+            auto result = g(err, t, root);
+
+            THEN("Result is variable value") {
+                std::vector<Teng::Error_t::Entry_t> errs = {};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "root_var_set");
+            }
+        }
+
+        WHEN("Setting nested_1 variable from nested frag") {
+            Teng::Error_t err;
+            auto t = "<?teng frag nested_1?>"
+                     "<?teng frag nested_2?>"
+                     "<?teng frag .nested_1?>"
+                     "<?teng set .nested_1.var_set = 'xxx'?>"
+                     "${var_set},"
+                     "${nested_1.var_set},"
+                     "${.nested_1.var_set},"
+                     "<?teng set nested_1.var_set = 'yyy'?>"
+                     "${var_set},"
+                     "${nested_1.var_set},"
+                     "${.nested_1.var_set}"
+                     "<?teng endfrag?>|"
+                     "${nested_1.var_set},"
+                     "${.nested_1.var_set}"
+                     "<?teng endfrag?>"
+                     "${var_set},"
+                     "${nested_1.var_set},"
+                     "${.nested_1.var_set}"
+                     "<?teng endfrag?>";
+            auto result = g(err, t, root);
+
+            THEN("Variable is defined only in inner frame") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 264},
+                    "Runtime: Variable '.nested_1.var_set' is undefined"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 284},
+                    "Runtime: Variable '.nested_1.var_set' is undefined"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 320},
+                    "Runtime: Variable '.nested_1.var_set' is undefined"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 331},
+                    "Runtime: Variable '.nested_1.var_set' is undefined"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 351},
+                    "Runtime: Variable '.nested_1.var_set' is undefined"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "xxx,xxx,xxx,yyy,yyy,yyy"
+                        "|undefined,undefinedundefined,undefined,undefined");
+            }
+        }
+
+        WHEN("Setting nested_2 variable from nested frag from next frame") {
+            Teng::Error_t err;
+            auto t = "<?teng frag nested_1?>"
+                     "<?teng frag nested_2?>"
+                     "<?teng frag .nested_1?>"
+                     "<?teng set nested_2.var_set = 'xxx'?>"
+                     "${var_set},"
+                     "${nested_2.var_set},"
+                     "${.nested_1.nested_2.var_set},"
+                     "<?teng set nested_2.var_set = 'yyy'?>"
+                     "${var_set},"
+                     "${nested_2.var_set},"
+                     "${.nested_1.nested_2.var_set}"
+                     "<?teng endfrag?>|"
+                     "${var_set},"
+                     "${nested_2.var_set},"
+                     "${.nested_1.nested_2.var_set},"
+                     "<?teng endfrag?>"
+                     "${var_set},"
+                     "${nested_2.var_set},"
+                     "${.nested_1.nested_2.var_set}"
+                     "<?teng endfrag?>";
+            auto result = g(err, t, root);
+
+            THEN("Variable is defined in outer frame") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 106},
+                    "Runtime: Variable '.nested_1.var_set' is undefined"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 204},
+                    "Runtime: Variable '.nested_1.var_set' is undefined"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 358},
+                    "Runtime: Variable '.nested_1.var_set' is undefined"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 369},
+                    "Runtime: Variable 'var_set' is undefined"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 389},
+                    "Runtime: Variable 'var_set' is undefined"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "undefined,xxx,xxx,undefined,yyy,yyy"
+                        "|yyy,yyy,yyy,undefined,undefined,undefined");
+            }
+        }
+
+        WHEN("Frag with set variable is closed and reopend") {
+            Teng::Error_t err;
+            auto t = "<?teng frag nested_1?>"
+                     "<?teng set var_set = 'nested_1_var_set'?>${var_set}"
+                     "<?teng endfrag?>"
+                     "<?teng frag nested_1?>"
+                     "${var_set}"
+                     "<?teng endfrag?>";
+            auto result = g(err, t, root);
+
+            THEN("Variable become undefined") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 113},
+                    "Runtime: Variable '.nested_1.var_set' is undefined"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "nested_1_var_setundefined");
+            }
+        }
+    }
+}
+
+SCENARIO(
+    "Variables setting errors",
+    "[vars]"
+) {
+    GIVEN("Some data with nested fragments and with variables") {
+        Teng::Fragment_t root;
+        root.addVariable("var", "root_var");
+
+        WHEN("Variable of empty name is set") {
+            Teng::Error_t err;
+            auto t = "<?teng set = 'root_var_set'?>${.var_set}";
+            auto result = g(err, t, root);
+
+            THEN("Result is undefined value") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 0},
+                    "Invalid variable name in the <?teng set?> directive; "
+                    "ignoring the set directive"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 11},
+                    "Unexpected token: name=ASSIGN, view=="
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 31},
+                    "Runtime: Variable '.var_set' is undefined"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "undefined");
+            }
+        }
+
+        WHEN("The selector is set") {
+            Teng::Error_t err;
+            auto t = "<?teng set . = 'root_var_set'?>${.var_set}";
+            auto result = g(err, t, root);
+
+            THEN("Result is undefined value") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 0},
+                    "Invalid variable name in the <?teng set?> directive; "
+                    "ignoring the set directive"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 13},
+                    "Unexpected token: name=ASSIGN, view=="
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 33},
+                    "Runtime: Variable '.var_set' is undefined"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "undefined");
+            }
+        }
+
+        WHEN("Setting the fragment value") {
+            Teng::Error_t err;
+            auto t = "<?teng set ._this = 'root_var_set'?>${.var_set}";
+            auto result = g(err, t, root);
+
+            THEN("Result is undefined value") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 11},
+                    "Builtin variable '._this' can't be set"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 38},
+                    "Runtime: Variable '.var_set' is undefined"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "undefined");
+            }
+        }
+
+        WHEN("Invalid expression") {
+            Teng::Error_t err;
+            auto t = "<?teng set .var_set = *var?>${.var_set}";
+            auto result = g(err, t, root);
+
+            THEN("Result is undefined value") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 22},
+                    "Unexpected token: name=MUL, view=*"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 22},
+                    "Invalid expression, fix it please; replacing whole "
+                    "expression with undefined value"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 30},
+                    "Runtime: Variable '.var_set' is undefined"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "undefined");
+            }
+        }
+
+        WHEN("Invalid expression - more invalid tokens") {
+            Teng::Error_t err;
+            auto t = "<?teng set .var_set = **^**?>${.var_set}";
+            auto result = g(err, t, root);
+
+            THEN("Result is undefined value") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 22},
+                    "Unexpected token: name=REPEAT, view=**"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 22},
+                    "Invalid expression, fix it please; replacing whole "
+                    "expression with undefined value"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 31},
+                    "Runtime: Variable '.var_set' is undefined"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "undefined");
+            }
+        }
+
+        WHEN("Invalid expression with valid prefix") {
+            Teng::Error_t err;
+            auto t = "<?teng set .var_set = var+var+*var?>${.var_set}";
+            auto result = g(err, t, root);
+
+            THEN("Result is undefined value") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 22},
+                    "Invalid expression, fix it please; replacing whole "
+                    "expression with undefined value"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 30},
+                    "Unexpected token: name=MUL, view=*"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 38},
+                    "Runtime: Variable '.var_set' is undefined"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "undefined");
+            }
+        }
+
+        WHEN("Unterminated teng set directive") {
+            Teng::Error_t err;
+            auto t = "<?teng set .var_set = /*?>${.var_set}";
+            auto result = g(err, t, root);
+
+            THEN("Result is undefined value") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 22},
+                    "Unterminated comment"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 22},
+                    "Invalid lexical element"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 26},
+                    "Unexpected token: name=SHORT_EXPR, view=${"
+                }, {
+                    Teng::Error_t::FATAL,
+                    {0, 0},
+                    "Unrecoverable syntax error; discarding whole program"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "");
             }
         }
     }
