@@ -47,10 +47,10 @@
 #include "tengcontenttype.h"
 #include "tengvalue.h"
 
-// forwards
-namespace pcrepp {class Pcre;}
-
 namespace Teng {
+
+// forwards
+struct FixedPCRE_t;
 
 /** Allowed operation codes.
  */
@@ -547,6 +547,10 @@ struct PushRootFrag_t: public Instruction_t {
 };
 
 struct Val_t: public Instruction_t {
+    Val_t(const Pos_t &pos)
+        : Instruction_t(OPCODE::VAL, pos),
+          value()
+    {}
     template <typename type_t>
     Val_t(type_t &&value, const Pos_t &pos)
         : Instruction_t(OPCODE::VAL, pos),
@@ -692,9 +696,8 @@ struct RegexMatch_t: public Instruction_t {
     ~RegexMatch_t() noexcept;
     void dump_params(std::ostream &os) const;
     bool matches(const string_view_t &view) const;
-    static uint32_t to_pcre_flags(const Regex_t &regex);
-    Regex_t value;                                //!< the regular expression
-    std::unique_ptr<pcrepp::Pcre> compiled_value; //!< compiled regex
+    Regex_t value;                               //!< the regular expression
+    std::unique_ptr<FixedPCRE_t> compiled_value; //!< compiled regex
 };
 
 /** The reason of this struct is lack of explicit template parameters of c'tors
@@ -721,8 +724,8 @@ public:
 
     /** C'tor - moves already built instruction into box.
      */
-    template <typename Impl_t>
-    InstrBox_t(Impl_t &&other) noexcept;
+    template <typename ImplArg_t>
+    InstrBox_t(ImplArg_t &&other) noexcept;
 
     /** C'tor: move.
      */

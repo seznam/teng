@@ -41,19 +41,19 @@
 
 SCENARIO(
     "The double divison",
-    "[regex][expr]"
+    "[expr][regex]"
 ) {
     GIVEN("The empty data root") {
         Teng::Fragment_t root;
 
         WHEN("The expression contains two consecutive numeric divisions") {
             Teng::Error_t err;
-            auto result = g(err, "${1 / 2 / 3}");
+            auto result = g(err, "${1.0 / 2.0 / 3.0}");
 
-            THEN("It works") {
+            THEN("It is not matched as regex") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "0");
+                REQUIRE(result == "0.166667");
             }
         }
     }
@@ -61,7 +61,7 @@ SCENARIO(
 
 SCENARIO(
     "Using regex to matching strings",
-    "[regex][expr]"
+    "[expr][regex]"
 ) {
     GIVEN("The empty data root") {
         Teng::Fragment_t root;
@@ -92,41 +92,52 @@ SCENARIO(
 
 SCENARIO(
     "Using regex as pattern for regex_replace function",
-    "[regex][expr]"
+    "[expr][regex]"
 ) {
     GIVEN("The empty data root") {
         Teng::Fragment_t root;
 
-        WHEN("The regex literal is used as value for regex_replace") {
+        WHEN("The regex literal is passed to regex_replace without g flag") {
             Teng::Error_t err;
-            auto result = g(err, "${regex_replace('foo bar', /\\w+/, '$(0)')}");
+            std::string t = "${regex_replace('foo bar', /\\w+/, '($0)')}";
+            auto result = g(err, t);
 
-            THEN("It works") {
+            THEN("Only the first word is replace") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "(foo) bar");
+            }
+        }
+
+        WHEN("The regex literal is passed to regex_replace with g flag") {
+            Teng::Error_t err;
+            std::string t = "${regex_replace('foo bar', /\\w+/g, '($0)')}";
+            auto result = g(err, t);
+
+            THEN("All words are replaced") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "(foo) (bar)");
             }
         }
+    }
+}
 
-        WHEN("Regex contains escaped slash") {
-            Teng::Error_t err;
-            auto result = g(err, "/\\w\\/\\w/}");
-
-            THEN("The slash is printed without backslash") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "/\\w/\\w/");
-            }
-        }
+SCENARIO(
+    "Escape sequencies in regex literal",
+    "[expr][regex]"
+) {
+    GIVEN("The empty data root") {
+        Teng::Fragment_t root;
 
         WHEN("Regex contains common escape sequencies") {
             Teng::Error_t err;
-            auto result = g(err, "/\\w\\n\\t\\w/}");
+            auto result = g(err, "/\\w\\n\\t\\s/");
 
-            THEN("They are expanded") {
+            THEN("They are printed in same form as they has been read") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "/\n\t/");
+                REQUIRE(result == "/\\w\\n\\t\\s/");
             }
         }
     }

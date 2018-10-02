@@ -69,32 +69,56 @@ void ExprDiagEntry_t::log_case(Context_t *ctx, const Token_t &token) {
     }
 }
 
-void ExprDiagEntry_t::log_if(Context_t *ctx, const Token_t &token) {
-    switch (token) {
-    case LEX2_EOF:
-        logDiag(ctx, token.pos, "Missing <?teng endif?> closing directive");
+void ExprDiagEntry_t::log_tern(Context_t *ctx, const Token_t &token) {
+    switch (code) {
+    case diag_code::tern_colon:
+        logDiag(
+            ctx,
+            token.pos,
+            "Missing colon token of ternary operator"
+        );
         break;
-    default:
-        switch (code) {
-        case diag_code::if_cond:
-            logDiag(ctx, pos, "Invalid condition in if statement");
-            break;
-        case diag_code::if_branch:
-            logDiag(ctx, pos, "Error in if true branch");
-            break;
-        case diag_code::elif_cond:
-            logDiag(ctx, pos, "Invalid condition in if elif");
-            break;
-        case diag_code::elif_branch:
-            logDiag(ctx, pos, "Error in elif true branch");
-            break;
-        case diag_code::else_branch:
-            logDiag(ctx, pos, "Error in if false branch");
+    case diag_code::tern_true_branch:
+        switch (token) {
+        case LEX2_EOF:
+        case LEX2::SHORT_END:
+        case LEX2::COLON:
+            logDiag(
+                ctx,
+                token.pos,
+                "Missing expression in true branch of ternary operator"
+            );
             break;
         default:
-            throw std::runtime_error(__PRETTY_FUNCTION__);
+            logDiag(
+                ctx,
+                token.pos,
+                "Invalid expression in true branch of ternary operator"
+            );
+            break;
         }
         break;
+    case diag_code::tern_false_branch:
+        switch (token) {
+        case LEX2_EOF:
+        case LEX2::SHORT_END:
+            logDiag(
+                ctx,
+                token.pos,
+                "Missing expression in false branch of ternary operator"
+            );
+            break;
+        default:
+            logDiag(
+                ctx,
+                token.pos,
+                "Invalid expression in false branch of ternary operator"
+            );
+            break;
+        }
+        break;
+    default:
+        throw std::runtime_error(__PRETTY_FUNCTION__);
     }
 }
 
@@ -121,12 +145,10 @@ void ExprDiagEntry_t::log(Context_t *ctx, const Token_t &token) {
     case diag_code::case_default_branch:
         log_case(ctx, token);
         break;
-    case diag_code::if_cond:
-    case diag_code::if_branch:
-    case diag_code::elif_cond:
-    case diag_code::elif_branch:
-    case diag_code::else_branch:
-        log_if(ctx, token);
+    case diag_code::tern_colon:
+    case diag_code::tern_true_branch:
+    case diag_code::tern_false_branch:
+        log_tern(ctx, token);
         break;
     }
 }

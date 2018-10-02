@@ -96,7 +96,7 @@ SCENARIO(
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 5},
+                    {1, 2},
                     "Runtime: Dictionary item 'hello_world_missing' "
                     "was not found"
                 }};
@@ -164,7 +164,7 @@ SCENARIO(
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 5},
+                    {1, 2},
                     "Runtime: Dictionary item 'hello_world_missing' "
                     "was not found"
                 }};
@@ -227,7 +227,7 @@ SCENARIO(
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 5},
+                    {1, 2},
                     "Runtime: Dictionary item 'hello_world_missing' "
                     "was not found"
                 }};

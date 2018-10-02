@@ -74,6 +74,7 @@ Template_t *
 TemplateCache_t::createTemplate(const std::string &source,
                                 const std::string &langFilename,
                                 const std::string &configFilename,
+                                const std::string &encoding,
                                 SourceType_t sourceType)
 {
     unsigned long int configSerial;
@@ -106,8 +107,8 @@ TemplateCache_t::createTemplate(const std::string &source,
     if (reload) {
         // create new program
         auto program = (sourceType == SRC_STRING)
-            ? compile_string(dict, params, root, std::string{source})
-            : compile_file(dict, params, root, source);
+            ? compile_string(dict, params, root, std::string{source}, encoding)
+            : compile_file(dict, params, root, source, encoding);
 
         // add program into cache
         // TODO(burlog): cached = programCache->add(key, std::move(program), configSerial);

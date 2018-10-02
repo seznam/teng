@@ -42,9 +42,9 @@
 #include <ostream>
 #include <streambuf>
 #include <unistd.h>
-#include <pcre++.h>
 
 #include "tengvalue.h"
+#include "tengregex.h"
 #include "tengfilestream.h"
 #include "tenginstruction.h"
 #include "tengcontenttype.h"
@@ -451,32 +451,21 @@ void PushAttr_t::dump_params(std::ostream &os) const {
 }
 
 void RegexMatch_t::dump_params(std::ostream &os) const {
-    os << "<name=" << value << '>';
+    os << "<regex=" << value << '>';
 }
 
 RegexMatch_t::RegexMatch_t(Regex_t regex, const Pos_t &pos)
     : Instruction_t(OPCODE::REGEX_MATCH, pos),
       value(std::move(regex)),
-      compiled_value(new pcrepp::Pcre(value.pattern, to_pcre_flags(value)))
+      compiled_value(new FixedPCRE_t(value.pattern, to_pcre_flags(value.flags)))
 {}
 
 RegexMatch_t::~RegexMatch_t() noexcept = default;
 
 bool RegexMatch_t::matches(const string_view_t &view) const {
-    auto tmp = *compiled_value;
+    auto tmp = compiled_value->regex;
     tmp.search(view.str());
     return tmp.matched();
-}
-
-uint32_t RegexMatch_t::to_pcre_flags(const Regex_t &regex) {
-    uint32_t result = 0;
-    if (regex.flags.ignore_case)
-        result |= PCRE_GLOBAL;
-    if (regex.flags.global)
-        result |= PCRE_CASELESS;
-    if (regex.flags.multiline)
-        result |= PCRE_MULTILINE;
-    return result;
 }
 
 } // namespace Teng

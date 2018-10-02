@@ -105,12 +105,14 @@ Result_t prg_stack_at(EvalCtx_t *ctx, std::vector<Value_t> &prg_stack) {
 
 /** Evaluates function if such exists.
  */
-Result_t func(EvalCtx_t *ctx, GetArg_t get_arg) {
+template <typename Ctx_t>
+Result_t func(Ctx_t *ctx, GetArg_t get_arg) {
     auto &instr = ctx->instr->template as<Func_t>();
 
     // make function context object
     auto fun_ctx = FunctionCtx_t(
         ctx->err,
+        instr.pos(),
         ctx->encoding,
         ctx->escaper_ptr,
         ctx->cfg,
@@ -133,12 +135,16 @@ Result_t func(EvalCtx_t *ctx, GetArg_t get_arg) {
             return function(ctx, fun_ctx, args);
     }
 
+    // if function does not exist then rather disable optimization
+    if (!std::is_same<std::decay_t<Ctx_t>, RunCtx_t>::value)
+        throw runtime_ctx_needed_t{};
+
     // no such function
     logError(
         *ctx,
-        "call of unknown function " + instr.name + "()"
+        "Call of unknown function " + instr.name + "()"
     );
-    return Result_t(1);
+    return Result_t();
 }
 
 /** Writes string value of top item on stack (arg) to output.

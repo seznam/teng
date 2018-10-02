@@ -1695,18 +1695,19 @@ SCENARIO(
                 }, {
                     Teng::Error_t::ERROR,
                     {1, 22},
-                    "Invalid lexical element"
+                    "Unexpected token: name=INV, view=/*?>"
                 }, {
                     Teng::Error_t::ERROR,
-                    {1, 26},
-                    "Unexpected token: name=SHORT_EXPR, view=${"
+                    {1, 22},
+                    "Invalid expression, fix it please; replacing whole "
+                    "expression with undefined value"
                 }, {
-                    Teng::Error_t::FATAL,
-                    {0, 0},
-                    "Unrecoverable syntax error; discarding whole program"
+                    Teng::Error_t::WARNING,
+                    {1, 28},
+                    "Runtime: Variable '.var_set' is undefined"
                 }};
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "");
+                REQUIRE(result == "undefined");
             }
         }
     }

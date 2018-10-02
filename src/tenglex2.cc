@@ -123,7 +123,7 @@ string_view_t l2_token_name(int token_id) {
     case LEX2::HEX_INT: return "HEX_INT";
     case LEX2::BIN_INT: return "BIN_INT";
     case LEX2::REAL: return "REAL";
-    case LEX2::INVALID: return "INVALID";
+    case LEX2::INV: return "INV";
     case LEX2::BUILTIN_FIRST: return "BUILTIN_FIRST";
     case LEX2::BUILTIN_INNER: return "BUILTIN_INNER";
     case LEX2::BUILTIN_LAST: return "BUILTIN_LAST";

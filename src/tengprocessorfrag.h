@@ -197,7 +197,7 @@ Result_t push_this_frag(EvalCtx_t *ctx) {
     return Result_t(ctx->frames_ptr->frag(0, 0));
 }
 
-/** Pushes this frag to value stack.
+/** Pushes the frag to value stack.
  */
 Result_t push_frag(RunCtxPtr_t ctx) {
     auto &instr = ctx->instr->as<PushFrag_t>();

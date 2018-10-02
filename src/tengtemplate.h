@@ -137,6 +137,7 @@ public:
     Template_t* createTemplate(const std::string &source,
                                const std::string &langFilename,
                                const std::string &paramFilename,
+                               const std::string &encoding,
                                SourceType_t sourceType);
 
     /** @short Create dictionary from given files.

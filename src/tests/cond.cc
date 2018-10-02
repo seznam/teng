@@ -707,14 +707,10 @@ SCENARIO(
                 }, {
                     Teng::Error_t::ERROR,
                     {1, 14},
-                    "Invalid lexical element"
-                }, {
-                    Teng::Error_t::ERROR,
-                    {1, 19},
-                    "Unexpected token: name=TEXT, view=true-branch"
+                    "Unexpected token: name=INV, view=/*1?>"
                 }};
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "");
+                REQUIRE(result == "false-branch");
             }
         }
     }
@@ -827,14 +823,10 @@ SCENARIO(
                 }, {
                     Teng::Error_t::ERROR,
                     {1, 41},
-                    "Invalid lexical element"
-                }, {
-                    Teng::Error_t::ERROR,
-                    {1, 46},
-                    "Unexpected token: name=TEXT, view=second-branch"
+                    "Unexpected token: name=INV, view=/*1?>"
                 }};
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "");
+                REQUIRE(result == "third-branch");
             }
         }
     }
@@ -1409,33 +1401,15 @@ SCENARIO(
                     "Invalid expression in the if statement condition"
                 }, {
                     Teng::Error_t::ERROR,
-                    {1, 0},
-                    "Missing <?teng endif?> closing directive of <?teng if?> "
-                    "statement; discarding whole if statement"
-                }, {
-                    Teng::Error_t::ERROR,
                     {1, 11},
                     "Unterminated comment"
                 }, {
                     Teng::Error_t::ERROR,
                     {1, 11},
-                    "Invalid lexical element"
-                }, {
-                    Teng::Error_t::ERROR,
-                    {1, 16},
-                    "Unexpected token: name=TEXT, view=true-branch"
-                }, {
-                    Teng::Error_t::ERROR,
-                    {1, 16},
-                    "Invalid expression, fix it please; "
-                    "replacing whole expression with undefined value"
-                }, {
-                    Teng::Error_t::ERROR,
-                    {1, 41},
-                    "Unexpected token: name=<EOF>, view="
+                    "Unexpected token: name=INV, view=/*2?>"
                 }};
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "");
+                REQUIRE(result == "true-branch");
             }
         }
     }
@@ -1481,11 +1455,6 @@ SCENARIO(
 
             THEN("The result is empty") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
-                    {1, 0},
-                    "Missing <?teng endif?> closing directive of <?teng if?> "
-                    "statement; discarding whole if statement"
-                }, {
                     Teng::Error_t::DIAG,
                     {1, 24},
                     "Invalid expression in the elif statement condition"
@@ -1496,23 +1465,10 @@ SCENARIO(
                 }, {
                     Teng::Error_t::ERROR,
                     {1, 37},
-                    "Invalid lexical element"
-                }, {
-                    Teng::Error_t::ERROR,
-                    {1, 42},
-                    "Unexpected token: name=TEXT, view=elif-branch"
-                }, {
-                    Teng::Error_t::ERROR,
-                    {1, 42},
-                    "Invalid expression, fix it please; "
-                    "replacing whole expression with undefined value"
-                }, {
-                    Teng::Error_t::ERROR,
-                    {1, 67},
-                    "Unexpected token: name=<EOF>, view="
+                    "Unexpected token: name=INV, view=/*2?>"
                 }};
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "");
+                REQUIRE(result == "elif-branch");
             }
         }
     }

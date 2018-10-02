@@ -213,6 +213,14 @@ public:
         : Symbol_t(token), value(std::forward<type_t>(value))
     {}
 
+    /** C'tor.
+     */
+    template <typename type_t>
+    Literal_t(const Literal_t &other, type_t &&value)
+        : Symbol_t(other.id, other.pos, other.symbol_view),
+          value(std::forward<type_t>(value))
+    {}
+
     /** Converts the view to the real number.
      */
     static double extract_real(string_view_t str) {

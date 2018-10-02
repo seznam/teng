@@ -555,7 +555,7 @@ void Dictionary_t::parse(const std::string &filename) {
     DictParser_t parser{this, err, sources, fs_root, expandVars, filename};
     parser.parse(
         [&] (auto &&name, auto && value, Pos_t name_pos, Pos_t value_pos) {
-            auto result = new_directive(
+            auto result = this->new_directive(
                 name.data(), name.size(),
                 value.data(), value.size()
             );

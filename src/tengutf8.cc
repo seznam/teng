@@ -50,6 +50,12 @@ using g_char_ptr_t = std::unique_ptr<gchar, decltype(::free) *>;
 
 } // namespace
 
+std::size_t charlen(char ch) {
+    int bytes = 0;
+    for (; ch & 0x80; ch <<= 1) ++bytes;
+    return std::max(1, bytes > 4? 1: bytes);
+}
+
 std::size_t strlen(const string_view_t &str) {
     int chars = 0;
     for (auto istr = str.begin(), estr = str.end(); istr != estr;) {

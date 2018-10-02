@@ -94,13 +94,12 @@ int gen_page(
 
     // if program is valid (not empty) execute it
     if (!templ->program->empty()) {
-        std::string encoding_lowerized = tolower(encoding);
         Processor_t(
             err,
             *templ->program,
             *templ->langDictionary,
             *templ->paramDictionary,
-            encoding_lowerized,
+            encoding,
             contentType
         ).run(data, writer);
     }
@@ -150,11 +149,12 @@ int Teng_t::generatePage(
     Writer_t &writer,
     Error_t &err
 ) const {
-    // create template
+    std::string encoding_lowerized = tolower(encoding);
     std::unique_ptr<Template_t> templ(templateCache->createTemplate(
         prependBeforeExt(templateFilename, skin),
         prependBeforeExt(dict, lang),
         param,
+        encoding_lowerized,
         TemplateCache_t::SRC_FILE
     ));
     return gen_page(
@@ -178,11 +178,12 @@ int Teng_t::generatePage(
     Writer_t &writer,
     Error_t &err
 ) const {
-    // create template
+    std::string encoding_lowerized = tolower(encoding);
     std::unique_ptr<Template_t> templ(templateCache->createTemplate(
         templateString,
         prependBeforeExt(dict, lang),
         param,
+        encoding_lowerized,
         TemplateCache_t::SRC_STRING
     ));
     return gen_page(

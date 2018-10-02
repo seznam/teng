@@ -41,6 +41,7 @@
 #include <stdexcept>
 
 #include "tengvalue.h"
+#include "tengcontenttype.h"
 
 namespace Teng {
 
@@ -51,6 +52,7 @@ namespace Teng {
 struct runtime_functx_needed_t {};
 
 // forwards
+struct Pos_t;
 class Processor_t;
 class FragmentStack_t;
 class Dictionary_t;
@@ -66,11 +68,12 @@ struct FunctionCtx_t {
 public:
     FunctionCtx_t(
         Error_t &err,
+        const Pos_t &pos,
         const string_view_t &encoding,
         const Escaper_t *escaper,
         const Configuration_t &params,
         const Dictionary_t &dict
-    ): err(err), encoding(encoding), params(params), dict(dict),
+    ): err(err), pos(pos), encoding(encoding), params(params), dict(dict),
        escaper_ptr(escaper)
     {}
 
@@ -80,7 +83,14 @@ public:
         return escaper_ptr? *escaper_ptr: throw runtime_functx_needed_t();
     }
 
+    /** Throws runtime_functx_needed_t.
+     */
+    void runtime_ctx_needed() const {
+        if (!escaper_ptr) throw runtime_functx_needed_t();
+    }
+
     Error_t &err;                  //!< error log
+    const Pos_t &pos;              //!< the position in source code
     const string_view_t &encoding; //!< encoding of template
     const Configuration_t &params; //!< current configuration
     const Dictionary_t &dict;      //!< current dictionary

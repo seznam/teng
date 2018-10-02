@@ -437,6 +437,8 @@ process(Ctx_t *ctx, std::stack<Value_t> &stack, const SubProgram_t &program) {
         }
 
     } catch (const runtime_ctx_needed_t &) {
+        if (std::is_same<std::decay_t<Ctx_t>, RunCtx_t>::value)
+            throw std::runtime_error("runtime ctx of runtime ctx requested");
         std::cerr << "## END" << std::endl << std::endl;
         return false;
 
@@ -537,6 +539,7 @@ Processor_t::eval(const OFFApi_t *frames, int32_t start) {
 
     // after evaluation the expression should left result value on the stack top
     if (!process(&ctx, stack, {start, end, program})) return Value_t();
+    if (err.count()) return Value_t();
     if (stack.size() != 1) return Value_t();
     return Value_t(std::move(stack.top()));
 }

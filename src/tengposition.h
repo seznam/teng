@@ -105,10 +105,10 @@ struct Pos_t {
       */
     void advanceColumn(int32_t offset = 1) {colno += offset;}
 
-    /** @short Advances column to the next tab position assuming that <TAB> is
-     * 8 chars long.
-     */
-    void advanceToTab(int32_t tab = 8) {colno = tab * (colno / tab + 1);}
+    // #<{(|* @short Advances column to the next tab position assuming that <TAB> is
+    //  * 8 chars long.
+    //  |)}>#
+    // void advanceToTab(int32_t tab = 8) {colno = tab * (colno / tab + 1);}
 
     /** @short Advances position by given char.
      *
@@ -123,9 +123,9 @@ struct Pos_t {
         case '\n':
             newLine();
             break;
-        case '\t':
-            advanceToTab();
-            break;
+        // case '\t':
+        //     advanceToTab();
+        //     break;
         default:
             ++colno;
             break;

@@ -37,8 +37,10 @@
 #include <stdexcept>
 #include <iostream>
 
+#include "tengconfiguration.h"
 #include "tenglogging.h"
 #include "tengerror.h"
+#include "tengutf8.h"
 #include "tenglex1.h"
 #include "tengutil.h"
 
@@ -209,316 +211,334 @@ unescape(flex_string_view_t &str, std::size_t start, std::size_t end) {
     return {ires, eres};
 }
 
+/** Reads input until end of quoted string is reached.
+ */
+template <char quoting_char, typename incr_pos_t, typename incr_col_pos_t>
+bool incr_until(
+    const flex_string_view_t &source_code,
+    std::size_t &offset,
+    incr_pos_t incr_pos,
+    incr_col_pos_t incr_col_pos
+) {
+    while (offset < source_code.size()) {
+        switch (source_code[offset]) {
+        case quoting_char:
+            incr_col_pos(1);
+            return true;
+        case '\\':
+            incr_col_pos(1);
+            if (offset == source_code.size())
+                return false;
+            incr_pos();
+            break;
+        default:
+            incr_pos();
+            break;
+        }
+    }
+    return false;
+};
+
+/** Increments position in the input by the length of the given string.
+ */
+template <std::size_t n, typename incr_col_pos_t>
+void incr_col_pos_by(const char (&)[n], incr_col_pos_t incr_col_pos) {
+    incr_col_pos(n - 1); // the padding zero
+};
+
 } // namespace
 
-Lex1_t::Token_t Lex1_t::next(bool accept_short_directive) {
+Lex1_t::Token_t Lex1_t::next() {
     // backup start values
     std::size_t start_pos = offset;
     int32_t start_line = pos.lineno;
     int32_t start_column = pos.colno;
 
-    auto incrementPosition = [&] (int num) {
-        while (num-- > 0) {
-            if (offset < source_code.size()) {
+    auto incr_pos = [&] {
+        // TODO(burlog): move this branch somewhere at the begin of Lex1_t c'tor?
+        if (utf8) {
+            auto byte = static_cast<uint8_t>(source_code[offset]);
+            switch (byte >> 4) {
+            case 0b0000 ... 0b1011: // 0xxxxxxx, 10xxxxxx
                 pos.advance(source_code[offset]);
-                ++offset;
+                offset += 1;
+                break;
+            case 0b1100 ... 0b1101: // 110xxxxx
+                pos.advanceColumn(1);
+                offset += 2;
+                break;
+            case 0b1110:            // 1110xxxx
+                pos.advanceColumn(1);
+                offset += 3;
+                break;
+            case 0b1111:            // 11110xxx, 111110xx, 1111110x
+                switch (byte & 0b00001100) {
+                case 0b00: pos.advanceColumn(1); offset += 4; break;
+                case 0b01: pos.advanceColumn(1); offset += 4; break;
+                case 0b10: pos.advanceColumn(1); offset += 5; break;
+                case 0b11: pos.advanceColumn(1); offset += 6; break;
+                }
+                break;
             }
+
+        } else {
+            pos.advance(source_code[offset]);
+            ++offset;
         }
     };
 
-    // go up to element start
-    while (offset < source_code.size()) {
+    auto incr_col_pos = [&] (int n) {
+        pos.advanceColumn(n);
+        offset += n;
+    };
 
-        // test for elements
-        if (offset + 4 < source_code.size()
-                && source_code[offset] == '<'
-                && source_code[offset + 1] == '!'
-                && source_code[offset + 2] == '-'
-                && source_code[offset + 3] == '-'
-                && source_code[offset + 4] == '-') {
-            // comment
-            // test for end of text token
-            if (offset > start_pos) {
-                return {
-                    LEX1::TEXT,
-                    {pos.filename, start_line, start_column},
-                    unescape(source_code, start_pos, offset)
-                };
-            }
-            // skip "<!---"
-            incrementPosition(5);
+    // syntactic sugar
+    auto incr_pos_until_single_quote = [&] () {
+        return incr_until<'\''>(source_code, offset, incr_pos, incr_col_pos);
+    };
+    auto incr_pos_until_double_quote = [&] () {
+        return incr_until<'"'>(source_code, offset, incr_pos, incr_col_pos);
+    };
+    auto incr_pos_until_right_curly = [&] () {
+        return incr_until<'}'>(source_code, offset, incr_pos, incr_col_pos);
+    };
 
-            // skip input until "--->"
-            while (offset < source_code.size()) {
-                // test for comment end
-                if (offset + 3 < source_code.size()
-                        && source_code[offset] == '-'
-                        && source_code[offset + 1] == '-'
-                        && source_code[offset + 2] == '-'
-                        && source_code[offset + 3] == '>') {
-                    break; //comment end
-                }
-                incrementPosition(1); //next char
-            }
-            // if comment end not found
-            if (offset >= source_code.size()) {
-                return {
-                    LEX1::ERROR,
-                    {pos.filename, start_line, start_column},
-                    "Unterminated comment"
-                };
-            }
-            // skip "--->"
-            incrementPosition(4);
-            // reset start pointers
-            start_pos = offset;
-            start_line = pos.lineno;
-            start_column = pos.colno;
-            // continue with next token
-            continue;
+    // returns true if source code at current offset matches desired string
+    auto match_char = [&] (char ch, int i) {
+        if ((offset + i) >= source_code.size())
+            return false;
+        return source_code[offset + i] == ch;
+    };
 
-        }
-        else if (offset + 6 < source_code.size()
-                && source_code[offset] == '<'
-                && source_code[offset + 1] == '?'
-                && source_code[offset + 2] == 't'
-                && source_code[offset + 3] == 'e'
-                && source_code[offset + 4] == 'n'
-                && source_code[offset + 5] == 'g'
-                && (isspace(source_code[offset + 6]) //accept "<?teng "
-                || (offset + 7 < source_code.size()
-                && source_code[offset + 6] == '?'
-                && source_code[offset + 7] == '>'))) { //accept "<?teng?>"
-            // "<?teng" directive
-            // test for end of text token
-            if (offset > start_pos)
-                return {
-                    LEX1::TEXT,
-                    {pos.filename, start_line, start_column},
-                    unescape(source_code, start_pos, offset)
-                };
-            // skip "<?teng"
-            incrementPosition(6);
+    // returns true if source code at current offset matches isspace functor
+    auto match_space = [&] (int i) -> bool {
+        if ((offset + i) >= source_code.size())
+            return false;
+        return isspace(source_code[offset + i]);
+    };
 
-            // skip input until "?>"
-            int escape = 0, inString = 0;
-            while (offset < source_code.size()) {
-                if (inString) {
-                    if (source_code[offset] == '"')
-                       if (!escape) inString = 0;
-                    if (source_code[offset] == '\\') escape = !escape;
-                    else escape = 0;
-                }
-                else {
-                    if (offset + 1 < source_code.size()
-                        && source_code[offset] == '?'
-                        && source_code[offset + 1] == '>') break;
-                    if (source_code[offset] == '"') inString = 1;
-                }
-                incrementPosition(1); //next char
-            }
-            // if directive end not found
-            if (offset >= source_code.size()) {
-                return {
-                    LEX1::ERROR,
-                    {pos.filename, start_line, start_column},
-                    "Unterminated <?teng ...?> directive"
-                };
-            }
-            // skip "?>"
-            incrementPosition(2);
-            // return teng token
-            return {
-                LEX1::TENG,
-                {pos.filename, start_line, start_column},
-                {source_code, start_pos, offset - start_pos}
-            };
+    // returns true if source code at current offset matches desired string
+    auto match_str = [&] (string_view_t str, int i) {
+        if ((offset + i + str.size()) > source_code.size())
+            return false;
+        string_view_t view(source_code.data() + i + offset, str.size());
+        return view == str;
+    };
 
-        }
-        else if (accept_short_directive == true
-                && offset + 1 < source_code.size()
-                && source_code[offset] == '<'
-                && source_code[offset + 1] == '?') {
-            // "<?teng" directive
-            // test for end of text token
-            if (offset > start_pos)
-                return {
-                    LEX1::TEXT,
-                    {pos.filename, start_line, start_column},
-                    unescape(source_code, start_pos, offset)
-                };
-            // skip "<?teng"
-            incrementPosition(2);
+    // returns end of input token
+    auto make_end_of_input_token = [&] () -> Token_t {
+        return {
+            LEX1::END_OF_INPUT,
+            {pos.filename, start_line, start_column},
+            "End of input stream"
+        };
+    };
 
-            // skip input until "?>"
-            int escape = 0, inString = 0;
-            while (offset < source_code.size()) {
-                if (inString) {
-                    if (source_code[offset] == '"')
-                       if (!escape) inString = 0;
-                    if (source_code[offset] == '\\') escape = !escape;
-                    else escape = 0;
-                }
-                else {
-                    if (offset + 1 < source_code.size()
-                        && source_code[offset] == '?'
-                        && source_code[offset + 1] == '>') break;
-                    if (source_code[offset] == '"') inString = 1;
-                }
-                incrementPosition(1); //next char
-            }
-            // if directive end not found
-            if (offset >= source_code.size()) {
-                return {
-                    LEX1::ERROR,
-                    {pos.filename, start_line, start_column},
-                    "Unterminated <? ...?> directive"
-                };
-            }
-            // skip "?>"
-            incrementPosition(2);
-            // return teng token
-            return {
-                LEX1::TENG_SHORT,
-                {pos.filename, start_line, start_column},
-                {source_code, start_pos, offset - start_pos}
-            };
+    // returns error token
+    auto make_error_token = [&] (string_view_t error_text) -> Token_t {
+        return {
+            LEX1::ERROR,
+            {pos.filename, start_line, start_column},
+            error_text
+        };
+    };
 
-        }
-        else if (offset + 1 < source_code.size()
-                && source_code[offset] == '$'
-                && source_code[offset + 1] == '{') {
-            // shorted expression form
-            // test for end of text token
-            if (offset > start_pos)
-                return {
-                    LEX1::TEXT,
-                    {pos.filename, start_line, start_column},
-                    unescape(source_code, start_pos, offset),
-                };
-            // skip "${"
-            incrementPosition(2);
-
-            // skip input until "}", except escaped "\}"
-            bool escape = false;
-            char quoting_char = 0;
-            for (; offset < source_code.size(); incrementPosition(1)) {
-                if (quoting_char) {
-                    switch (source_code[offset]) {
-                    case '\\':
-                        escape = !escape;
-                        break;
-                    case '"':
-                    case '\'':
-                        if (source_code[offset] == quoting_char) {
-                            if (!escape) {
-                                quoting_char = 0;
-                                break;
-                            }
-                        }
-                        // pass
-                    default:
-                        escape = false;
-                        break;
-                    }
-
-                } else {
-                    switch (source_code[offset]) {
-                    case '}': break;
-                    case '\'': quoting_char = '\''; continue;
-                    case '"': quoting_char = '"'; continue;
-                    default: continue;
-                    }
-                    break;
-                }
-            }
-            // if directive end not found
-            if (offset >= source_code.size()) {
-                return {
-                    LEX1::ERROR,
-                    {pos.filename, start_line, start_column},
-                    "Unterminated ${...} directive"
-                };
-            }
-            // skip "}"
-            incrementPosition(1);
-            // return expression token
-            return {
-                LEX1::EXPR,
-                {pos.filename, start_line, start_column},
-                {source_code, start_pos, offset - start_pos}
-            };
-
-        }
-        else if (offset + 1 < source_code.size()
-                && source_code[offset] == '#'
-                && source_code[offset + 1] == '{') {
-            // shorted dictionary item form
-            // test for end of text token
-            if (offset > start_pos)
-                return {
-                    LEX1::TEXT,
-                    {pos.filename, start_line, start_column},
-                    unescape(source_code, start_pos, offset),
-                };
-            // skip "#{"
-            incrementPosition(2);
-
-            // skip input until "}", except escaped \}
-            int escape = 0;
-            while (offset < source_code.size()) {
-                // test for directive end
-                if (escape) {
-                    escape = 0;
-                    incrementPosition(1); //skip next char
-                    continue;
-                } else if (source_code[offset] == '}') {
-                    break; //directive end
-                } else if (source_code[offset] == '\\') {
-                    escape = 1;
-                }
-                incrementPosition(1); //next char
-            }
-            // if directive end not found
-            if (offset >= source_code.size()) {
-                return {
-                    LEX1::ERROR,
-                    {pos.filename, start_line, start_column},
-                    "Unterminated #{...} directive"
-                };
-            }
-            // skip "}"
-            incrementPosition(1);
-            // return dict item token
-            return {
-                LEX1::DICT,
-                {pos.filename, start_line, start_column},
-                {source_code, start_pos, offset - start_pos}
-            };
-
-        }
-        else {
-            // text
-            incrementPosition(1);
-        }
-
-    } //end while
-
-    // test for end of text token
-    if (offset > start_pos) {
+    // returns text token built from gathered characters
+    auto make_text_token = [&] () -> Token_t {
         return {
             LEX1::TEXT,
             {pos.filename, start_line, start_column},
             unescape(source_code, start_pos, offset)
         };
+    };
+
+    // returns token built from gathered characters
+    auto make_token = [&] (LEX1 id) -> Token_t {
+        return {
+            id,
+            {pos.filename, start_line, start_column},
+            {source_code, start_pos, offset - start_pos}
+        };
+    };
+
+    // set lexer state and return text token
+    auto accept_text_and_defer = [&] (state deferred_state) {
+        current_state = deferred_state;
+        return make_text_token();
+    };
+
+    // returns expr token, it assumes that "${" has been matched
+    auto accept_expr_directive = [&] () -> Token_t {
+        incr_col_pos_by("${", incr_col_pos);
+        // search for '}' and ignore such '}' that are in string literals
+        while (offset < source_code.size()) {
+            switch (source_code[offset]) {
+            case '\'':
+                incr_col_pos(1);
+                incr_pos_until_single_quote();
+                break;
+            case '"':
+                incr_col_pos(1);
+                incr_pos_until_double_quote();
+                break;
+            case '}':
+                incr_col_pos(1);
+                return make_token(LEX1::EXPR);
+            default:
+                incr_pos();
+                break;
+            }
+        }
+        // end of input reached and '}' not found
+        return make_error_token("Unterminated ${...} directive");
+    };
+
+    // returns dict token, it assumes that "#{" has been matched
+    auto accept_dict_directive = [&] () -> Token_t {
+        incr_col_pos_by("#{", incr_col_pos);
+        return incr_pos_until_right_curly()
+            ? make_token(LEX1::DICT)
+            : make_error_token("Unterminated #{...} directive");
+    };
+
+    // returns teng token, it assumes that "<?" has been matched
+    auto accept_teng_directive = [&] () -> Token_t {
+        // search for '?>' and ignore such '?>' that are in string literals
+        while (offset < source_code.size()) {
+            switch (source_code[offset]) {
+            case '\'':
+                incr_col_pos(1);
+                incr_pos_until_single_quote();
+                break;
+            case '"':
+                incr_col_pos(1);
+                incr_pos_until_double_quote();
+                break;
+            case '>':
+                incr_col_pos(1);
+                if (source_code[offset - 2] == '?')
+                    if ((offset - start_pos) > strlen("<?>"))
+                        return make_token(LEX1::TENG);
+                break;
+            default:
+                incr_pos();
+                break;
+            }
+        }
+        // end of input reached and '}' not found
+        return make_error_token("Unterminated <?teng...?> directive");
+    };
+
+    // returns teng token, it assumes that "<?" has been matched
+    auto accept_short_directive = [&] () -> Token_t {
+        incr_col_pos_by("<?", incr_col_pos);
+        return accept_teng_directive();
+    };
+
+    // returns teng token, it assumes that "<?teng" has been matched
+    auto accept_long_directive = [&] () -> Token_t {
+        incr_col_pos_by("<?teng", incr_col_pos);
+        return accept_teng_directive();
+    };
+
+    // swallows comments, it assumes that "<!---" has been matched
+    auto accept_comment_directive = [&] () {
+        incr_col_pos_by("<!---", incr_col_pos);
+        while (offset < source_code.size()) {
+            switch (source_code[offset]) {
+            case '>':
+                incr_col_pos(1);
+                if (source_code[offset - 2] == '-')
+                    if (source_code[offset - 3] == '-')
+                        if (source_code[offset - 4] == '-')
+                            if ((offset - start_pos) > strlen("<!----->"))
+                                return;
+                break;
+            default:
+                incr_pos();
+                break;
+            }
+        }
+    };
+
+    // parse and return deferred tokens
+    switch (current_state) {
+    case state::initial:
+        break;
+    case state::end_of_input:
+        return make_end_of_input_token();
+    case state::comment_directive:
+        current_state = state::initial;
+        accept_comment_directive();
+        break;
+    case state::long_directive:
+        current_state = state::initial;
+        return accept_long_directive();
+    case state::short_directive:
+        current_state = state::initial;
+        return accept_short_directive();
+    case state::expr_directive:
+        current_state = state::initial;
+        return accept_expr_directive();
+    case state::dict_directive:
+        current_state = state::initial;
+        return accept_dict_directive();
     }
 
-    // return end token
-    return {
-        LEX1::END_OF_INPUT,
-        {pos.filename, start_line, start_column},
-        "End of input stream"
-    };
+    // there is no deferred token then parse new one
+    for (; offset < source_code.size(); incr_pos()) {
+        switch (source_code[offset]) {
+        // accept <!---.*--->, <?.*?>, <?teng.*?>
+        case '<':
+            if ((offset + 1) < source_code.size()) {
+                switch (source_code[offset + 1]) {
+                case '?':
+                    if (match_str("teng", +2) && match_space(+6))
+                        return offset == start_pos
+                            ? accept_long_directive()
+                            : accept_text_and_defer(state::long_directive);
+                    if (params->isShortTagEnabled())
+                        return offset == start_pos
+                            ? accept_short_directive()
+                            : accept_text_and_defer(state::short_directive);
+                    continue;
+                case '!':
+                    if (!match_str("---", +2)) continue;
+                    if (offset == start_pos)
+                        return accept_text_and_defer(state::comment_directive);
+                    accept_comment_directive();
+                    continue;
+                default:
+                    continue;
+                }
+            }
+            continue;
+
+        // accept ${[^}]*}
+        case '$':
+            if (!match_char('{', +1)) continue;
+            return offset == start_pos
+                ? accept_expr_directive()
+                : accept_text_and_defer(state::expr_directive);
+
+        // accept #{[^}]*}
+        case '#':
+            if (!match_char('{', +1)) continue;
+            return offset == start_pos
+                ? accept_dict_directive()
+                : accept_text_and_defer(state::dict_directive);
+
+        // accept .
+        default:
+            break;
+        }
+    }
+
+    // if there is no trailing text return END_OF_INPUT immediately
+    // or return text token and defer emiting it
+    return offset == start_pos
+        ? make_end_of_input_token()
+        : accept_text_and_defer(state::end_of_input);
 }
 
 const char *Lex1_t::Token_t::name() const {

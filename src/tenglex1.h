@@ -46,12 +46,17 @@
 #include "tengflexhelpers.h"
 
 namespace Teng {
+
+// forwards
+class Configuration_t;
+
 namespace Parser {
 
 /** First level of lexical analyzer that generaly splits input to text tokens
  * that does not contain teng expressions and to tokens candidating to valid
  * teng expressions. The teng expressions are analyzed by second level lexical
- * analyzer. See yylex() function where the magic of two analyzers is hidden.
+ * analyzer. See Parser::Context_t::next_token() function where the magic of
+ * two analyzers is hidden.
  */
 class Lex1_t {
 public:
@@ -175,8 +180,13 @@ public:
      * @param source_code Input string.
      * @param filename Pointer to filename.
      */
-    Lex1_t(flex_string_view_t source_code, const std::string *filename = {})
-        : source_code(std::move(source_code)), offset(0), pos(filename, 1, 0)
+    Lex1_t(
+        flex_string_value_t &source_code,
+        bool utf8,
+        const Configuration_t *params,
+        const std::string *filename = {}
+    ): source_code(source_code), offset(0), pos(filename, 1, 0), utf8(utf8),
+       params(params)
     {}
 
     /** C'tor: move.
@@ -187,13 +197,9 @@ public:
      */
     Lex1_t &operator=(Lex1_t &&) = default;
 
-    /** Get next token.
-     *
-     * @param accept_short_directive enable short tah
-     *
-     * @return Token struct of next token.
+    /** Returns the next level 1 token.
      */
-    Token_t next(bool accept_short_directive);
+    Token_t next();
 
     /** Get position within the input string.
      */
@@ -204,9 +210,23 @@ private:
     Lex1_t(const Lex1_t &) = delete;
     Lex1_t &operator=(const Lex1_t &) = delete;
 
+    /** The state of the lexer.
+     */
+    enum class state {
+        initial,
+        end_of_input,
+        long_directive,
+        short_directive,
+        expr_directive,
+        dict_directive,
+        comment_directive,
+    } current_state = state::initial;
+
     flex_string_view_t source_code; //!< source code passed on init
     std::size_t offset;             //!< position within the source code
     Pos_t pos;                      //!< position within the "page"
+    bool utf8;                      //!< if pos should be in utf8 chars
+    const Configuration_t *params;  //!< teng configuration
 };
 
 /** Writes token description to the stream.

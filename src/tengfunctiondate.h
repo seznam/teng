@@ -97,19 +97,28 @@ int unixtime(struct tm dateTime, time_t &res) {
  * @param dateTime destination
  * @return 0 OK, -1 error
  * */
-int parseDateTime(const string_view_t &str, struct tm &dateTime) {
+int parseDateTime(Ctx_t &ctx, const string_view_t &str, struct tm &dateTime) {
     char buf4[5];
     char buf2[3];
     char *end; // is set by strtoul
     const char *pos = str.data();
     memset(&dateTime, 0, sizeof(dateTime));
 
+    auto warn = [&] (const std::string &msg) {
+        logWarning(
+            ctx.err,
+            ctx.pos,
+            "parseDateTime(): " + msg
+            + "; use YYYY-MM-DD[ HH:MM:SS[+ZHZM]] format"
+        );
+    };
+
     buf4[4] = buf2[2] = 0;
 
     strncpy(buf4, pos, 4);
     dateTime.tm_year = strtoul(buf4, &end, 10)-1900;
     if (end != (buf4 + 4)) {
-        //    invalid format of year
+        warn("invalid format of year");
         return -1;
     }
     pos += 4;
@@ -118,7 +127,7 @@ int parseDateTime(const string_view_t &str, struct tm &dateTime) {
     strncpy(buf2, pos, 2);
     dateTime.tm_mon = strtoul(buf2, &end, 10) - 1;
     if (end != (buf2 + 2)) {
-        //    invalid format of month
+        warn("invalid format of month");
         return -1;
     }
     pos += 2;
@@ -127,7 +136,7 @@ int parseDateTime(const string_view_t &str, struct tm &dateTime) {
     strncpy(buf2, pos, 2);
     dateTime.tm_mday = strtoul(buf2, &end, 10);
     if (end != (buf2 + 2)) {
-        //    invalid format of day
+        warn("invalid format of day");
         return -1;
     }
     pos += 2;
@@ -139,45 +148,45 @@ int parseDateTime(const string_view_t &str, struct tm &dateTime) {
     case 'T':
         break;
     default:
-        // expected 'T' or ' ' as date/time separator
+        warn("expected 'T' or ' ' as date/time separator");
         return -1;
     }
 
     strncpy(buf2, pos, 2);
     dateTime.tm_hour = strtoul(buf2, &end, 10);
     if (end != (buf2 + 2)) {
-        //  invalid format of hour
+        warn("invalid format of hour");
         return -1;
     }
     pos += 2;
     if (*pos++ != ':') {
-        //   expected ':' as hour/minute separator
+        warn("expected ':' as hour/minute separator");
         return -1;
     }
 
     strncpy(buf2, pos, 2);
     dateTime.tm_min = strtoul(buf2, &end, 10);
     if (end != (buf2 + 2)) {
-        //    invalid format of minute
+        warn("invalid format of minute");
         return -1;
     }
     pos += 2;
     if (*pos++ != ':') {
-        //    expected ':' as minute/second separator");
+        warn("expected ':' as minute/second separator");
         return -1;
     }
 
     strncpy(buf2, pos, 2);
     dateTime.tm_sec = strtoul(buf2, &end, 10);
     if (end != (buf2 + 2)) {
-        //    invalid format of second");
+        warn("invalid format of second");
         return -1;
     }
     pos += 2;
 
     if (*pos) {
         if ((*pos != '-') && (*pos != '+')) {
-            //  expected EOS");
+            warn("expected '+' or '-'");
             return -1;
         }
         char sign = *pos;
@@ -188,7 +197,7 @@ int parseDateTime(const string_view_t &str, struct tm &dateTime) {
         dateTime.tm_gmtoff = strtoul(buf2, &end, 10);
         if ((end != (buf2 + 2)) || (dateTime.tm_gmtoff < 0)
                                 || (dateTime.tm_gmtoff > 12)) {
-            // expected HH
+            warn("expected ZH");
             return -1;
         }
         pos += 2;
@@ -200,7 +209,7 @@ int parseDateTime(const string_view_t &str, struct tm &dateTime) {
         strncpy(buf2, pos, 2);
         int minutes = strtoul(buf2, &end, 10) * 60 * 60;
         if ((end != (buf2 + 2)) || (minutes < 0) || (minutes > 60)) {
-            // expected MM
+            warn("expected ZM");
             return -1;
         }
         dateTime.tm_gmtoff = ((dateTime.tm_gmtoff * 60 * 60) + minutes * 60)
@@ -451,13 +460,14 @@ int formatBrokenDate(
  * @return 0 OK, -1 error
  * */
 int formatStringDate(
+    Ctx_t &ctx,
     const string_view_t &format,
     const string_view_t &setup,
     const string_view_t &date,
     std::string &output
 ) {
     struct tm dateTime;
-    if (parseDateTime(date, dateTime)) return -1;
+    if (parseDateTime(ctx, date, dateTime)) return -1;
     return formatBrokenDate(format, setup, dateTime, output);
 }
 
@@ -508,8 +518,11 @@ int to_number(const string_view_t &text, time_t &res) {
  * @param result Teng function result
  */
 Result_t now(Ctx_t &ctx, const Args_t &args) {
-    if (args.size() != 1)
-        return wrongNumberOfArgs(ctx, "now", 1);
+    if (args.size() != 0)
+        return wrongNumberOfArgs(ctx, "now", 0);
+
+    // ensure that we are in runtime environment
+    ctx.runtime_ctx_needed();
 
     // there is no need care about timezone
     // localtime and maketime work with actual timezone which is now :)
@@ -529,8 +542,8 @@ Result_t timestamp(Ctx_t &ctx, const Args_t &args) {
         return wrongNumberOfArgs(ctx, "timestamp", 1);
     return args[0].print([&] (const string_view_t &arg) {
         struct tm dateTime;
-        if (parseDateTime(arg, dateTime))
-            return failed(ctx, "Can't parse date", "timestamp");
+        if (parseDateTime(ctx, arg, dateTime))
+            return failed(ctx, "timestamp", "Can't parse date");
 
         time_t res = 0;
         if (unixtime(dateTime, res) == -1) {
@@ -575,7 +588,9 @@ Result_t date(Ctx_t &ctx, const Args_t &args) {
         // if string contains a number skip string formatting
         if (!to_number(value.string(), time_value)) {
             std::string res;
-            if (formatStringDate(format.string(), setup, value.string(), res))
+            auto format_str = format.string();
+            auto value_str = value.string();
+            if (formatStringDate(ctx, format_str, setup, value_str, res))
                 return failed(ctx, "date", "Formatting failed");
             return Result_t(std::move(res));
         }

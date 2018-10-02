@@ -167,7 +167,7 @@
 %token <TokenSymbol_t> IDENT UDF_IDENT STRING REGEX DEC_INT HEX_INT BIN_INT REAL
 
 // invalid lexical token
-%token <TokenSymbol_t> INVALID
+%token <TokenSymbol_t> INV
 
 // HIGHEST_PREC is fake terminal (lower in file means higher precedence)
 %precedence HIGHEST_PREC
@@ -177,13 +177,14 @@
 
 // TODO(burlog): tady je potreba popsat proc je to tento typ
 %type <TokenSymbol_t> identifier identifier_relative function_name
+%type <TokenSymbol_t> teng_if_prepare teng_elif_prepare
 
 // TODO(burlog): tady je potreba popsat proc je to tento typ
 %type <LiteralSymbol_t> value_literal string_literal int_literal
-%type <LiteralSymbol_t> signed_literal real_literal
+%type <LiteralSymbol_t> signed_literal real_literal string_literal_fact
 
 // TODO(burlog): tady je potreba popsat proc je to tento typ
-%type <VariableSymbol_t> variable local_variable relative_variable
+%type <VariableSymbol_t> variable local_variable relative_variable set_variable
 
 // TODO(burlog): tady je potreba popsat proc je to tento typ
 %type <OptionsSymbol_t> options
@@ -199,24 +200,24 @@
 %type <Nil_t> teng_debug teng_bytecode teng_include
 %type <Nil_t> unary_expression expression_impl lazy_binary_expression
 %type <Nil_t> ternary_expression expression binary_expression
-%type <Nil_t> deprecated_binary_expression absolute_variable
+%type <Nil_t> absolute_variable
 %type <Nil_t> absolute_variable_segment absolute_variable_prefix teng_set
 %type <Nil_t> rtvar_path rtvar_segment rtvar_identifier rtvar_index
 %type <Nil_t> teng_ctype teng_ctype_close block_content
 %type <Nil_t> teng_else teng_elif teng_endif teng_if_stmnt
 %type <Nil_t> query_argument_inner template_content teng_if
 %type <Nil_t> teng_format teng_format_close teng_if_stmnt_valid
-%type <Nil_t> teng_if_stmnt_invalid teng_if_stmnt_disordered
+%type <Nil_t> teng_if_stmnt_invalid teng_if_stmnt_disordered case_default_option
 
 // TODO(burlog): tady je potreba popsat proc je to tento typ
-%type <bool> nullary_expression expression_up_to_end
+%type <bool> nullary_expression expr_up_to_end expr_up_to_end_impl
 
 // TODO(burlog): tady je potreba popsat proc je to tento typ
 %type <Pos_t> runtime_variable teng_format_open teng_frag_open teng_ctype_open
 
 // TODO(burlog): tady je potreba popsat proc je to tento typ
-%type <uint32_t> function_arguments case_options case_more_options case_values
-%type <uint32_t> query_argument
+%type <uint32_t> function_arguments case_particular_options case_values
+%type <uint32_t> query_argument case_options deprecated_binary_expression
 
  /************************************************ GRAMMAR RULES: teng syntax */
 %%
@@ -263,16 +264,32 @@ teng_directive
  /************************************************************* RULES: errors */
 
 
+ // The error 'up to end' ensures that error recovery stops just before END
+ // token.
 error_up_to_end
     : error {note_error(ctx, *YYLA);} END {YYBACKUP(LEX2::END, $3);}
+    | error {note_error(ctx, *YYLA);} INV {YYBACKUP(LEX2::END, $3);}
     ;
 
 
+ // The error 'up to end' ensures that error recovery stops just before SHORT_END
+ // token.
 error_up_to_short_end
     : error {note_error(ctx, *YYLA);} SHORT_END {YYBACKUP(LEX2::SHORT_END, $3);}
+    | error {note_error(ctx, *YYLA);} INV {YYBACKUP(LEX2::SHORT_END, $3);}
     ;
 
 
+ // The error 'up to end' ensures that error recovery stops just before R_PAREN
+ // token.
+error_up_to_r_paren
+    : error {note_error(ctx, *YYLA);} R_PAREN {YYBACKUP(LEX2::R_PAREN, $3);}
+    | error {note_error(ctx, *YYLA);} INV {YYBACKUP(LEX2::R_PAREN, $3);}
+    ;
+
+
+ // The error 'up to end' ensures that error recovery stops just before ENDIF
+ // token.
 error_up_to_end_if
     : error ENDIF {YYBACKUP(LEX2::ENDIF, $2);}
     ;
@@ -398,8 +415,14 @@ teng_ctype_close
 
 
 teng_set
-    : SET variable ASSIGN expression_up_to_end END {set_var(ctx, std::move(*$2));}
+    : SET set_variable ASSIGN expr_up_to_end END {set_var(ctx, std::move(*$2));}
     | SET error_up_to_end END {ignore_inv_set(ctx, $1->pos);}
+    ;
+
+
+set_variable
+    : variable {$$ = std::move($1);}
+    | VAR variable {$$ = std::move($2); obsolete_dollar(ctx, $1->pos);}
     ;
 
 
@@ -445,9 +468,14 @@ teng_elif_stmnt
     ;
 
 
+teng_if_prepare
+    : IF {prepare_if(ctx, $1->pos); $$ = std::move($1);}
+    ;
+
+
 teng_if
-    : IF {prepare_if(ctx, $1->pos);} expression_up_to_end
-      END {generate_if(ctx, *$1, $3);}
+    : teng_if_prepare expr_up_to_end END {generate_if(ctx, *$1, $2);}
+    | teng_if_prepare expr_up_to_end INV {generate_if(ctx, *$1, *$3);}
     ;
 
 
@@ -457,9 +485,13 @@ teng_else
     ;
 
 
+teng_elif_prepare
+    : ELSEIF {generate_elif(ctx, *$1); $$ = std::move($1);}
+
+
 teng_elif
-    : ELSEIF {generate_elif(ctx, *$1);} expression_up_to_end
-      END {generate_if(ctx, *$1, $3);}
+    : teng_elif_prepare expr_up_to_end END {generate_if(ctx, *$1, $2);}
+    | teng_elif_prepare expr_up_to_end INV {generate_if(ctx, *$1, *$3);}
     ;
 
 
@@ -473,8 +505,10 @@ teng_endif
 
 
 teng_expr
-    : EXPR expression_up_to_end END {generate_print(ctx);}
-    | SHORT_EXPR expression_up_to_short_end SHORT_END {generate_print(ctx);}
+    : EXPR expr_up_to_end END {generate_print(ctx);}
+    | EXPR expr_up_to_end INV {generate_inv_print(ctx, *$3);}
+    | SHORT_EXPR expr_up_to_short_end SHORT_END {generate_print(ctx);}
+    | SHORT_EXPR expr_up_to_short_end INV {generate_inv_print(ctx, *$3);}
     ;
 
 
@@ -487,18 +521,42 @@ teng_dict
  /********************************************************* RULES: expression */
 
 
-expression_up_to_end
+ // The purpose of expr_up_to_end is pushing new frame to branch
+ // addresses stack.
+expr_up_to_end
+    : {prepare_expr(ctx, YYLA->pos);} expr_up_to_end_impl {$$ = $2;}
+    ;
+
+
+ // The purpose of expr_up_to_end_impl is finish/discard valid/invalid
+ // expressions. The error 'up to end' ensures that error recovery stops just
+ // before END token.
+expr_up_to_end_impl
     : expression_impl {finish_expr(ctx); $$ = true;}
     | error_up_to_end {discard_expr(ctx); $$ = false;}
     ;
 
 
-expression_up_to_short_end
+ // The purpose of expr_up_to_end is pushing new frame to branch
+ // addresses stack.
+expr_up_to_short_end
+    : {prepare_expr(ctx, YYLA->pos);} expr_up_to_short_end_impl
+    ;
+
+
+ // The purpose of expr_up_to_end_impl is finish/discard valid/invalid
+ // expressions. The error 'up to end' ensures that error recovery stops just
+ // before SHORT_END token.
+expr_up_to_short_end_impl
     : expression_impl {finish_expr(ctx);}
     | error_up_to_short_end {discard_expr(ctx);}
     ;
 
 
+ // The purpuse of is to note expression's start address in program and mainly
+ // note position of the expression's first token. This has to be here because
+ // in expr_up_to_end state the YYLA contains token of previous syntactic
+ // element.
 expression_impl
     : {note_expr_start_point(ctx, YYLA->pos);} expression {}
     ;
@@ -507,10 +565,9 @@ expression_impl
 expression
     : nullary_expression {note_optimization_point(ctx, $1);}
     | unary_expression {optimize_expr(ctx, 1);}
-    | regex_expression {optimize_expr(ctx, 1);}
     | binary_expression {optimize_expr(ctx, 2);}
     | lazy_binary_expression {optimize_expr(ctx, 2, true);}
-    | deprecated_binary_expression {optimize_expr(ctx, 2);}
+    | deprecated_binary_expression {optimize_expr(ctx, $1);}
     | ternary_expression {optimize_expr(ctx, 3, true);}
     | nary_expression {optimize_expr(ctx, $1->arity, $1->lazy_evaluated);}
     ;
@@ -521,6 +578,7 @@ nullary_expression
     | variable {generate_var(ctx, std::move(*$1)); $$ = false;}
     | value_literal {generate_val(ctx, $1->pos, $1->value); $$ = true;}
     | DICT identifier {generate_dict_lookup(ctx, *$2); $$ = true;}
+    | REGEX {generate_val(ctx, $1->pos, Value_t(generate_regex(ctx, *$1)));}
     ;
 
 
@@ -531,13 +589,9 @@ unary_expression
     | DICT_INDIRECT expression {generate_expr<Dict_t>(ctx, *$1);}
     | PLUS expression {generate_expr<UnaryPlus_t>(ctx, *$1);} %prec HIGHEST_PREC
     | MINUS expression {generate_expr<UnaryMinus_t>(ctx, *$1);} %prec HIGHEST_PREC
+    /* | expression STR_EQ REGEX {generate_match(ctx, *$2, *$3);} */
+    /* | expression STR_NE REGEX {generate_match(ctx, *$2, *$3);} */
     | runtime_variable {generate<Repr_t>(ctx, $1);}
-    ;
-
-
-regex_expression
-    : expression STR_EQ REGEX {generate_regex(ctx, *$2, *$3);}
-    | expression STR_NE REGEX {generate_regex(ctx, *$2, *$3);}
     ;
 
 
@@ -578,16 +632,19 @@ lazy_binary_expression
     ;
 
 
+ // TODO(burlog): uncommnet 'expression STR_EQ REGEX' rule, after removed
 deprecated_binary_expression
-    : expression STR_EQ expression {generate_expr<StrEQ_t>(ctx, *$2);}
-    | expression STR_NE expression {generate_expr<StrNE_t>(ctx, *$2);}
-    | expression CONCAT expression {generate_expr<Concat_t>(ctx, *$2);}
+    : expression STR_EQ expression {$$ = generate_str_expr<StrEQ_t>(ctx, *$2);}
+    | expression STR_NE expression {$$ = generate_str_expr<StrNE_t>(ctx, *$2);}
+    | expression CONCAT expression {generate_expr<Concat_t>(ctx, *$2); $$ = 2;}
     ;
 
 
 ternary_expression
-    : expression COND_EXPR {generate_tern_op(ctx, *$2);}
-      expression COLON {finalize_tern_op_true_branch(ctx, *$5);}
+    : expression
+      COND_EXPR {generate_tern_op(ctx, *$2);}
+      expression {expr_diag(ctx, diag_code::tern_colon);}
+      COLON {finalize_tern_op_true_branch(ctx, *$6);}
       expression {finalize_tern_op_false_branch(ctx);}
     ;
 
@@ -621,9 +678,15 @@ real_literal
     ;
 
 
-string_literal
+string_literal_fact
     : STRING {$$.emplace(*$1, Literal_t::extract_str($1->view()));}
-    | STRING string_literal {$$.emplace(*$1, Literal_t::extract_str($1->view()) + $2->value.as_string());}
+    ;
+
+
+string_literal
+    : string_literal string_literal_fact
+      {$$.emplace(*$1, $1->value.as_string() + $2->value.as_string());}
+    | string_literal_fact {$$ = std::move($1);}
     ;
 
 
@@ -696,7 +759,7 @@ absolute_variable_segment
     : absolute_variable_segment identifier_relative SELECTOR
       {ctx->var_sym.push_back(*$2);}
     | absolute_variable_segment BUILTIN_THIS SELECTOR
-      {logWarning(ctx, $2->pos, "Ignoring useless '_this' variable path segment");}
+      {ignoring_this(ctx, $2->pos);}
     | absolute_variable_segment BUILTIN_PARENT SELECTOR
       {ctx->var_sym.pop_back(ctx, $2->pos);}
     | %empty
@@ -716,7 +779,7 @@ relative_variable_segment
     : relative_variable_segment identifier_relative SELECTOR
       {ctx->var_sym.push_back(*$2);}
     | relative_variable_segment BUILTIN_THIS SELECTOR
-      {logWarning(ctx, $2->pos, "Ignoring useless '_this' variable path segment");}
+      {ignoring_this(ctx, $2->pos);}
     | relative_variable_segment BUILTIN_PARENT SELECTOR
       {ctx->var_sym.pop_back(ctx, $2->pos);}
     | SELECTOR
@@ -730,6 +793,11 @@ local_variable
 
 
  /********************************************** RULES: teng runtime variable */
+
+
+runtime_variable
+    : VAR VAR rtvar_path {$$ = $1->pos;}
+    ;
 
 
 rtvar_path
@@ -758,55 +826,44 @@ rtvar_identifier
     ;
 
 
-runtime_variable
-    : VAR VAR rtvar_path {$$ = $1->pos;}
+ /**************************************************** RULES: case expression */
+
+
+case_expression
+    : CASE L_PAREN {prepare_case(ctx);}
+      expression {prepare_case_cond(ctx, *$1);}
+      COMMA case_options R_PAREN {$$.emplace(finalize_case(ctx, *$8, $7));}
     ;
-
-
- /************************************************* RULES: case expression */
 
 
 case_options
-    : case_values COLON {update_case_jmp(ctx, *$2, $1);}
-      expression {expr_diag(ctx, diag_code::case_option);}
-      case_more_options {$$ = $6 + 1;}
-    | MUL COLON {expr_diag(ctx, diag_code::case_default_branch);}
-      expression {$$ = 1;}
+    : case_particular_options COMMA case_default_option {$$ = $1 + 1;}
+    | case_particular_options {$$ = $1; generate<Val_t>(ctx, YYLA->pos);}
+    | case_default_option {$$ = 1;}
     ;
 
 
-case_more_options
-    : COMMA {finalize_case_branch(ctx, *$1); } case_options {$$ = $3;}
-    | %empty {finalize_case_branch(ctx, *YYLA); $$ = 0;}
+case_default_option
+    : MUL COLON {expr_diag(ctx, diag_code::case_default_branch);} expression {}
+    ;
+
+
+case_particular_options
+    : case_particular_options
+      COMMA case_values COLON {update_case_jmp(ctx, *$2, $3);}
+      expression {finalize_case_branch(ctx, *$2); $$ = $1 + 1;}
+    | case_values COLON {update_case_jmp(ctx, *$2, $1);}
+      expression {finalize_case_branch(ctx, *YYLA); $$ = 1;}
     ;
 
 
 case_values
-    : signed_literal {$$ = generate_case_cmp(ctx, *$1);}
-    | case_values COMMA signed_literal {$$ = generate_case_next(ctx, *$3, $1);}
+    : case_values COMMA signed_literal {$$ = generate_case_next(ctx, *$3, $1);}
+    | signed_literal {$$ = generate_case_cmp(ctx, *$1);}
     ;
 
 
-case_expression
-    : CASE L_PAREN {expr_diag_sentinel(ctx, diag_code::case_cond);}
-      expression COMMA {prepare_case(ctx, *$5);}
-      case_options R_PAREN {$$.emplace(finalize_case(ctx, *$8, $7));}
-    ;
-
-
- /********************************************* RULES: function expression */
-
-
-function_name
-    : IDENT {$$ = std::move($1);}
-    | UDF_IDENT {$$ = std::move($1);}
-
-
-function_arguments
-    : expression COMMA function_arguments {$$ = $3 + 1;}
-    | expression {$$ = 1;}
-    | %empty {$$ = 0;}
-    ;
+ /************************************************ RULES: function expression */
 
 
 function_expression
@@ -815,15 +872,40 @@ function_expression
     ;
 
 
- /************************************************ RULES: query expression */
+function_name
+    : IDENT {$$ = std::move($1);}
+    | UDF_IDENT {$$ = std::move($1);}
+
+
+function_arguments
+    : function_arguments COMMA expression {$$ = $1 + 1;}
+    | expression {$$ = 1;}
+    | %empty {$$ = 0;}
+    ;
+
+
+ /*************************************************** RULES: query expression */
+
+
+query_expression
+    : DEFINED query_argument
+      {$$.emplace(query_expr<ReprDefined_t>(ctx, *$1, $2));}
+    | EXISTS query_argument
+      {$$.emplace(query_expr<ReprExists_t>(ctx, *$1, $2));}
+    | ISEMPTY query_argument
+      {$$.emplace(query_expr<ReprIsEmpty_t>(ctx, *$1, $2));}
+    | TYPE query_argument
+      {$$.emplace(query_expr<ReprType_t>(ctx, *$1, $2));}
+    | COUNT query_argument
+      {$$.emplace(query_expr<ReprCount_t>(ctx, *$1, $2));}
+    | JSONIFY query_argument
+      {$$.emplace(query_expr<ReprJsonify_t>(ctx, *$1, $2));}
+    ;
 
 
 query_argument
     : L_PAREN query_argument_inner R_PAREN {$$ = 1;}
-    | L_PAREN error {note_error(ctx, *YYLA);} R_PAREN {invalid_query(ctx, $1->pos); $$ = 0;}
-    | L_PAREN variable error {note_error(ctx, *YYLA);} R_PAREN {invalid_query(ctx, $1->pos); $$ = 0;}
-    | L_PAREN VAR variable error {note_error(ctx, *YYLA);} R_PAREN {invalid_query(ctx, $1->pos); $$ = 0;}
-    | L_PAREN runtime_variable error {note_error(ctx, *YYLA);} R_PAREN {invalid_query(ctx, $1->pos); $$ = 0;}
+    | L_PAREN error_up_to_r_paren R_PAREN {$$ = 0;}
     ;
 
 
@@ -831,16 +913,6 @@ query_argument_inner
     : variable {generate_query(ctx, *$1, false);}
     | VAR variable {generate_query(ctx, *$2, true);}
     | runtime_variable {/*generates instructions itself*/}
-    ;
-
-
-query_expression
-    : DEFINED query_argument {$$.emplace(query_expr<ReprDefined_t>(ctx, *$1, $2));}
-    | EXISTS query_argument {$$.emplace(query_expr<ReprExists_t>(ctx, *$1, $2));}
-    | ISEMPTY query_argument {$$.emplace(query_expr<ReprIsEmpty_t>(ctx, *$1, $2));}
-    | TYPE query_argument {$$.emplace(query_expr<ReprType_t>(ctx, *$1, $2));}
-    | COUNT query_argument {$$.emplace(query_expr<ReprCount_t>(ctx, *$1, $2));}
-    | JSONIFY query_argument {$$.emplace(query_expr<ReprJsonify_t>(ctx, *$1, $2));}
     ;
 
 

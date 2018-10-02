@@ -46,6 +46,7 @@
 #define TENGFUNCTIONUTIL_H
 
 #include <string>
+#include <functional>
 
 #include <tenglogging.h>
 #include <tengfunction.h>
@@ -78,7 +79,7 @@ struct string_ptr_t {
     /** C'tor.
      */
     string_ptr_t(const Value_t &value)
-        : arg(value.print(cached_str))
+        : arg(value.print(std::ref(cached_str)))
     {}
 
     // don't copy
@@ -97,8 +98,7 @@ struct string_ptr_t {
 /** Convenient function for reporting error.
  */
 Result_t failed(Ctx_t &ctx, const char *fun, const std::string &msg) {
-    // TODO(burlog): pos?!
-    logError(ctx.err, {}, std::string(fun) + "(): " + msg);
+    logError(ctx.err, ctx.pos, std::string(fun) + "(): " + msg);
     return Result_t();
 }
 

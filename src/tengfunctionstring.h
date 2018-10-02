@@ -48,12 +48,12 @@
 #include <string>
 #include <cstdint>
 #include <limits>
-#include <pcre++.h>
 
-#include <tengutf8.h>
-#include <tengplatform.h>
-#include <tengfunctionutil.h>
-#include <tengfunction.h>
+#include "tengutf8.h"
+#include "tengregex.h"
+#include "tengplatform.h"
+#include "tengfunctionutil.h"
+#include "tengfunction.h"
 
 namespace Teng {
 namespace builtin {
@@ -158,7 +158,7 @@ std::string substr(const SubstrArgs_t &args) {
  */
 Result_t len(Ctx_t &ctx, const Args_t &args) {
     if (args.size() != 1)
-        return wrongNumberOfArgs(ctx, __FUNCTION__, 1);
+        return wrongNumberOfArgs(ctx, "len", 1);
 
     // the string length according to encoding
     return Result_t(
@@ -188,9 +188,9 @@ Result_t nl2br(Ctx_t &ctx, const Args_t &args) {
 
         // replace
         for (char ch: arg) {
-            tmp.push_back(ch);
             if (ch == '\n')
                 tmp.append("<br />");
+            tmp.push_back(ch);
         }
 
         // done
@@ -202,7 +202,7 @@ Result_t nl2br(Ctx_t &ctx, const Args_t &args) {
  *
  * arg0 string
  * arg1 starting index
- * arg2 the number of characters
+ * arg2 ending index
  *
  * @param args Teng function arguments
  * @param ctx Teng function ctx
@@ -239,30 +239,51 @@ Result_t wordsubstr(Ctx_t &ctx, const Args_t &args) {
             // don't ask, it's origin algorithm behaviour
             return Result_t(s.suffix);
 
-        // find space or begin
-        while ((s.start > 0) && !isspace(s.text[s.start]))
-            --s.start;
+        // find space or begin (left edge)
+        if (isspace(s.text[s.start])) {
+            // we have to go right
+            while ((++s.start < s.end) && isspace(s.text[s.start]));
+        } else {
+            // we have to go left
+            while ((s.start > 0) && !isspace(s.text[s.start - 1]))
+                --s.start;
+        }
 
-        // find space or end
-        while ((s.end < s.text.size()) && !isspace(s.text[s.end]))
-            ++s.end;
+        // find space or end (right edge)
+        if (isspace(s.text[s.end - 1])) {
+            // we have to go left
+            while ((--s.end > 0) && isspace(s.text[s.end - 1]));
+        } else {
+            // we have to go right
+            while ((s.end < s.text.size()) && !isspace(s.text[s.end]))
+                ++s.end;
+        }
 
-        // strip whitespaces from left
+        // the start index crossed the end index
+        if (s.start > s.end) s.end = s.start;
+
+        // strip whitespaces from left of origin string
         int stripped_start = 0;
-        while (isspace(s.text[stripped_start]))
+        while (stripped_start < s.text.size()) {
+            if (!isspace(s.text[stripped_start]))
+                break;
             ++stripped_start;
+        }
 
-        // strip whitespaces from right
+        // strip whitespaces from right of origin string
         int stripped_end = s.text.size();
-        while (isspace(s.text[stripped_end - 1]))
+        while (stripped_end > 0) {
+            if (!isspace(s.text[stripped_end - 1]))
+                break;
             --stripped_end;
+        }
 
         // compose result
         std::string text;
-        if (s.start > stripped_start)
+        if (s.start > stripped_start) // if some words have been removed
             text.append(s.prefix);
         text.append(s.text, s.start, (s.end - s.start));
-        if (s.end < stripped_end)
+        if (s.end < stripped_end)     // if some words have been removed
             text.append(s.suffix);
 
         // done
@@ -327,7 +348,7 @@ Result_t reorder(Ctx_t &ctx, const Args_t &args) {
             case STATUS::NUMBER:
                 logError(
                     ctx.err,
-                    {},
+                    ctx.pos,
                     "reorder(): '%' not allowed inside '%{}'"
                 );
                 status = STATUS::DEFAULT;
@@ -378,7 +399,7 @@ Result_t reorder(Ctx_t &ctx, const Args_t &args) {
                 // ? inside number => error
                 logError(
                     ctx.err,
-                    {},
+                    ctx.pos,
                     "reorder(): '{' not allowed inside '%{}'"
                 );
                 status = STATUS::DEFAULT;
@@ -393,7 +414,7 @@ Result_t reorder(Ctx_t &ctx, const Args_t &args) {
                 // } after % => error
                 logError(
                     ctx.err,
-                    {},
+                    ctx.pos,
                     "reorder(): '}' not allowed after '%'"
                 );
                 status = STATUS::DEFAULT;
@@ -425,7 +446,7 @@ Result_t reorder(Ctx_t &ctx, const Args_t &args) {
                 // unterminated format
                 logError(
                     ctx.err,
-                    {},
+                    ctx.pos,
                     "reorder(): runaway argument"
                 );
                 text.append(mark, iformat);
@@ -442,7 +463,7 @@ Result_t reorder(Ctx_t &ctx, const Args_t &args) {
                 char tc = c;
                 logError(
                     ctx.err,
-                    {},
+                    ctx.pos,
                     "reorder(): '" + std::string(&tc, 1)
                     + "' not allowed inside %{} or after %"
                 );
@@ -464,7 +485,7 @@ Result_t reorder(Ctx_t &ctx, const Args_t &args) {
                 // invalid index => do not expand and report error
                 logError(
                     ctx.err,
-                    {},
+                    ctx.pos,
                     "reorder(): invalid or missing index in format '"
                     + std::string(mark, iformat + 1) + "'"
                 );
@@ -534,12 +555,23 @@ Result_t replace(Ctx_t &ctx, const Args_t &args) {
  * @param ctx Teng function ctx
  * @param result Teng function result
  */
+
 Result_t regex_replace(Ctx_t &ctx, const Args_t &args) {
     if (args.size() != 3)
         return wrongNumberOfArgs(ctx, "regex_replace", 3);
     string_ptr_t where(args[2]);
-    string_ptr_t pattern(args[1]);
     string_ptr_t repl(args[0]);
+
+    // use middle arguments as regex
+    if (args[1].is_regex()) {
+        const Regex_t &regex_value = args[1].as_regex();
+        auto flags = to_pcre_flags(regex_value.flags);
+        FixedPCRE_t regex(regex_value.pattern, flags);
+        return Result_t(regex->replace(*where, *repl));
+    }
+
+    // use middle arguments as string
+    string_ptr_t pattern(args[1]);
     pcrepp::Pcre regex(*pattern, PCRE_GLOBAL | PCRE_UTF8);
     return Result_t(regex.replace(*where, *repl));
 }

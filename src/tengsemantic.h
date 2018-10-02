@@ -151,7 +151,7 @@ void generate_query(Context_t *ctx, const Variable_t &var, bool warn);
 
 /** Writes invalid query variable warning into error log.
  */
-void invalid_query(Context_t *ctx, const Pos_t &pos);
+void invalid_query(Context_t *ctx, const Token_t &token);
 
 /** Opens given file and replace include directive with content of the file.
  */
@@ -163,7 +163,11 @@ void ignore_include(Context_t *ctx, const Token_t &token, bool empty = false);
 
 /** Prepares case expression.
  */
-void prepare_case(Context_t *ctx, const Token_t &token);
+void prepare_case(Context_t *ctx);
+
+/** Prepares condition of the case expression.
+ */
+void prepare_case_cond(Context_t *ctx, const Token_t &token);
 
 /** Generates comparison for case branch.
  */
@@ -174,14 +178,14 @@ uint32_t generate_case_cmp(Context_t *ctx, Literal_t &literal);
  */
 void update_case_jmp(Context_t *ctx, const Token_t &token, uint32_t alts);
 
+/** Generates alternative matching instructions for case option alternative.
+ */
+uint32_t generate_case_next(Context_t *ctx, Literal_t &literal, uint32_t alts);
+
 /** Updates jmp address offset in JmpIfNot_t instruction generated for result
  * of matching case option.
  */
 void finalize_case_branch(Context_t *ctx, const Token_t &token);
-
-/** Generates alternative matching instructions for case option alternative.
- */
-uint32_t generate_case_next(Context_t *ctx, Literal_t &literal, uint32_t arity);
 
 /** The case expression is a bit complicated so it takes a lot instruction to
  * build it. Consider such expression and, for the sake of simplicity, split it
@@ -317,6 +321,10 @@ void prepare_if(Context_t *ctx, const Pos_t &pos);
  */
 void generate_if(Context_t *ctx, const Token_t &token, bool valid_expr);
 
+/** Generates instructions implementing the if expression.
+ */
+void generate_if(Context_t *ctx, const Token_t &token, const Token_t &inv);
+
 /** Calculates if expression jump and updates appropriate instructions in
  * program.
  */
@@ -367,9 +375,13 @@ void ignore_inv_set(Context_t *ctx, const Pos_t &pos);
  */
 void generate_rtvar_index(Context_t *ctx, const Token_t &token);
 
+/** Generates code implementing regex.
+ */
+Regex_t generate_regex(Context_t *ctx, const Token_t &regex);
+
 /** Generates code implementing regex matching.
  */
-void generate_regex(Context_t *ctx, const Token_t &token, const Token_t &regex);
+void generate_match(Context_t *ctx, const Token_t &token, const Token_t &regex);
 
 /** Generates code implementing debug fragment.
  */
@@ -393,6 +405,10 @@ void ignore_excessive_options(Context_t *ctx, const Pos_t &pos);
  */
 void new_option(Context_t *ctx, const Token_t &name, Literal_t &&literal);
 
+/** Prepares new expression.
+ */
+void prepare_expr(Context_t *ctx, const Pos_t &pos);
+
 /** Inserts new diagnostic code into diag-codes storage including the diag code
  * sentinel.
  */
@@ -401,11 +417,42 @@ inline void expr_diag_sentinel(Context_t *ctx, diag_code_type new_diag_code) {
     expr_diag(ctx, new_diag_code, false);
 }
 
+/** Generates given instruction pass given args to instruction c'tor.
+ */
+template <typename Instr_t, typename... Args_t>
+void generate(Context_t *ctx, Args_t &&...args) {
+    ctx->program->emplace_back<Instr_t>(std::forward<Args_t>(args)...);
+}
+
 /** Generates expression from given symbol.
  */
 template <typename Instr_t>
 void generate_expr(Context_t *ctx, const Token_t &token) {
-    ctx->program->emplace_back<Instr_t>(token.pos);
+    generate<Instr_t>(ctx, token.pos);
+}
+
+/** Generates expression from given symbol.
+ */
+template <typename Instr_t>
+uint32_t generate_str_expr(Context_t *ctx, const Token_t &token) {
+    // TODO(burlog): delete this when STR_EQ/STR_NE is over
+    if (!ctx->program->empty()) {
+        auto &instr = ctx->program->back();
+        if (instr.opcode() == OPCODE::VAL) {
+            auto &value = instr.as<Val_t>().value;
+            if (value.is_regex()) {
+                Regex_t regex = std::move(value.as_regex());
+                ctx->program->pop_back();
+                generate<RegexMatch_t>(ctx, std::move(regex), token.pos);
+                ctx->optimization_points.pop();
+                if (std::is_same<Instr_t, StrNE_t>::value)
+                    generate<Not_t>(ctx, token.pos);
+                return 1;
+            }
+        }
+    }
+    generate_expr<Instr_t>(ctx, token);
+    return 2;
 }
 
 /** Generates print instruction of given token value.
@@ -415,30 +462,30 @@ inline void generate_print(Context_t *ctx, const Token_t &token) {
     generate_print(ctx);
 }
 
+/** Generates print instruction of given token value.
+ */
+inline void generate_inv_print(Context_t *ctx, const Token_t &inv) {
+    note_error(ctx, inv);
+    reset_error(ctx);
+    logWarning(ctx, inv.pos, "Invalid expression; the behaviour is undefined");
+    generate_print(ctx);
+}
+
 /** Generates binary operator (OR, AND, ...).
  */
 template <typename Instr_t>
 void generate_bin_op(Context_t *ctx, const Token_t &token) {
-    throw std::runtime_error(__PRETTY_FUNCTION__);
-    // ctx->branch_start_addrs.push(ctx->program->size());
-    // ctx->program->emplace_back<Instr_t>(token.pos);
+    ctx->branch_start_addrs.top().push(ctx->program->size());
+    generate<Instr_t>(ctx, token.pos);
 }
 
 /** Finalizes binary operator (OR, AND, ...).
  */
 template <typename Instr_t>
 void finalize_bin_op(Context_t *ctx) {
-    throw std::runtime_error(__PRETTY_FUNCTION__);
-    // int32_t bin_op_addr = ctx->branch_start_addrs.pop();
-    // auto addr_offset = ctx->program->size() - bin_op_addr - 1;
-    // (*ctx->program)[bin_op_addr].as<Instr_t>().addr_offset = addr_offset;
-}
-
-/** Generates given instruction pass given args to instruction c'tor.
- */
-template <typename Instr_t, typename... Args_t>
-void generate(Context_t *ctx, Args_t &&...args) {
-    ctx->program->emplace_back<Instr_t>(std::forward<Args_t>(args)...);
+    int32_t bin_op_addr = ctx->branch_start_addrs.top().pop();
+    auto addr_offset = ctx->program->size() - bin_op_addr - 1;
+    (*ctx->program)[bin_op_addr].as<Instr_t>().addr_offset = addr_offset;
 }
 
 /** Generates instructions implementing runtime variable root.
@@ -456,8 +503,16 @@ void generate_rtvar(Context_t *ctx, const Token_t &token) {
  */
 template <typename Instr_t>
 NAryExpr_t query_expr(Context_t *ctx, const Token_t &token, uint32_t arity) {
-    if (arity == 1)
+    if (arity == 1) {
         generate<Instr_t>(ctx, token.pos);
+    } else {
+        logError(
+            ctx,
+            token.pos,
+            "Invalid variable identifier in " + token.view() + "()"
+        );
+        generate_val(ctx, token.pos, Value_t());
+    }
     return NAryExpr_t(token, arity);
 }
 
@@ -481,6 +536,17 @@ inline void print_dict_undef(Context_t *ctx, const Token_t &token) {
     logWarning(ctx, token.pos, "Invalid dictionary item in #{...} statement");
 }
 
+/** Generates nice warning abount ignored _this.
+ */
+inline void ignoring_this(Context_t *ctx, const Pos_t &pos) {
+    logWarning(ctx, pos, "Ignoring useless '_this' variable path segment");
+}
+
+/** Generates nice warning abount ignored dollar.
+ */
+inline void obsolete_dollar(Context_t *ctx, const Pos_t &pos) {
+    logWarning(ctx, pos, "Don't use dollar sign here please");
+}
 } // namespace Parser
 } // namespace Teng
 

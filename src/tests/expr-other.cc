@@ -40,6 +40,79 @@
 #include "utils.h"
 
 SCENARIO(
+    "The positions in utf-8 encoded template",
+    "[expr]"
+) {
+    GIVEN("Template with utf-8 encoded strings") {
+        Teng::Fragment_t root;
+        auto t = "žžž${fail+^+fail}ššš";
+
+        WHEN("The template contains errors") {
+            Teng::Error_t err;
+            auto result = g(err, t, root);
+
+            THEN("The position respect utf-8 characters") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 5},
+                    "Invalid expression, fix it please; replacing whole "
+                    "expression with undefined value"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 10},
+                    "Unexpected token: name=BITXOR, view=^"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "žžžundefinedššš");
+            }
+        }
+    }
+}
+
+
+SCENARIO(
+    "The utf-8 encoded variable names",
+    "[expr]"
+) {
+    GIVEN("No data") {
+        Teng::Fragment_t root;
+
+        WHEN("The invalid variable name encoded in utf-8") {
+            Teng::Error_t err;
+            auto t = "${žš}";
+            auto result = g(err, t, root);
+
+            THEN("The precedence of parentheses is respected") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 2},
+                    "Unexpected utf-8 encoded character 'ž'"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 2},
+                    "Unexpected token: name=INV, view=ž"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 2},
+                    "Invalid expression, fix it please; replacing whole "
+                    "expression with undefined value"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 4},
+                    "Unexpected utf-8 encoded character 'š'"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 4},
+                    "Unexpected token: name=INV, view=š"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "undefined");
+            }
+        }
+    }
+}
+
+SCENARIO(
     "The precedence of various numeric operators",
     "[expr]"
 ) {
@@ -86,7 +159,7 @@ SCENARIO(
 
 SCENARIO(
     "The propagating of undefined value through parentheses",
-    "[expr][x]"
+    "[expr]"
 ) {
     GIVEN("No data") {
         Teng::Fragment_t root;
@@ -129,8 +202,7 @@ SCENARIO(
 
         WHEN("Invalid exrepssion in parentheses is evaluated") {
             Teng::Error_t err;
-            auto t = "<?teng format space='onespace'?>aaaa<?teng endformat?>"
-                     "<?teng endformat ?>a";
+            auto t = "${(1 +) + 3}";
             auto result = g(err, t, root);
 
             THEN("Result is undefined") {
@@ -143,14 +215,6 @@ SCENARIO(
                     Teng::Error_t::ERROR,
                     {1, 6},
                     "Unexpected token: name=R_PAREN, view=)"
-                }, {
-                    Teng::Error_t::ERROR,
-                    {1, 8},
-                    "Unexpected token: name=PLUS, view=+"
-                }, {
-                    Teng::Error_t::ERROR,
-                    {1, 11},
-                    "Misplaced or excessive '}' token"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -160,155 +224,8 @@ SCENARIO(
 }
 
 SCENARIO(
-    "The ternary operator",
-    "[expr]"
-) {
-    GIVEN("Some data") {
-        Teng::Fragment_t root;
-        root.addVariable("three", 3);
-
-        WHEN("Simple numeric ternary operator is evaluated with false") {
-            Teng::Error_t err;
-            auto t = "${0? 1: 2}";
-            auto result = g(err, t, root);
-
-            THEN("Result of: 0? 1: 2") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "2");
-            }
-        }
-
-        WHEN("Simple numeric ternary operator is evaluated with true") {
-            Teng::Error_t err;
-            auto t = "${3? 1: 2}";
-            auto result = g(err, t, root);
-
-            THEN("Result of: 3 1: 2") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "1");
-            }
-        }
-
-        WHEN("Simple numeric ternary operator is evaluated with variable") {
-            Teng::Error_t err;
-            auto t = "${three? 1: 2}";
-            auto result = g(err, t, root);
-
-            THEN("Result of: three 1: 2") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "1");
-            }
-        }
-    }
-}
-
-SCENARIO(
-    "The switch/case operator",
-    "[expr]"
-) {
-    GIVEN("Some variables") {
-        Teng::Fragment_t root;
-        root.addVariable("aaa", "(aaa)");
-        root.addVariable("bbb", "(bbb)");
-
-        WHEN("The case with branch matching variable value is evaluated") {
-            Teng::Error_t err;
-            auto t = "${case($aaa, '(aaa)': 'aaa == (aaa)', *: '(xxx)')}";
-            auto result = g(err, t, root);
-
-            THEN("The right branch has been choosen") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "aaa == (aaa)");
-            }
-        }
-
-        WHEN("The case with branch no matching variable value is evaluated") {
-           Teng::Error_t err;
-           auto t = "${case($aaa, '(xxx)': 'aaa != (xxx)', *: '(aaa)')}";
-           auto result = g(err, t, root);
-
-           THEN("The right (default) branch has been choosen") {
-               std::vector<Teng::Error_t::Entry_t> errs;
-               REQUIRE(err.getEntries() == errs);
-               REQUIRE(result == "(aaa)");
-           }
-        }
-
-        WHEN("The case with three branches is evaluated (first branch)") {
-           Teng::Error_t err;
-           root.addVariable("n", 1);
-           auto t = "${case(n, 1: 'a', 2: 'b', 3: 'c', *: 'z')}";
-           auto result = g(err, t, root);
-
-           THEN("The first branch has been choosen") {
-               std::vector<Teng::Error_t::Entry_t> errs;
-               REQUIRE(err.getEntries() == errs);
-               REQUIRE(result == "a");
-           }
-        }
-
-        WHEN("The case with three branches is evaluated (second branch)") {
-           Teng::Error_t err;
-           root.addVariable("n", 2);
-           auto t = "${case(n, 1: 'a', 2: 'b', 3: 'c', *: 'z')}";
-           auto result = g(err, t, root);
-
-           THEN("The second branch has been choosen") {
-               std::vector<Teng::Error_t::Entry_t> errs;
-               REQUIRE(err.getEntries() == errs);
-               REQUIRE(result == "b");
-           }
-        }
-
-        WHEN("The case with three branches is evaluated (third branch)") {
-           Teng::Error_t err;
-           root.addVariable("n", 3);
-           auto t = "${case(n, 1: 'a', 2: 'b', 3: 'c', *: 'z')}";
-           auto result = g(err, t, root);
-
-           THEN("The third branch has been choosen") {
-               std::vector<Teng::Error_t::Entry_t> errs;
-               REQUIRE(err.getEntries() == errs);
-               REQUIRE(result == "c");
-           }
-        }
-
-        WHEN("The case with no default branch is evaluated") {
-           Teng::Error_t err;
-           root.addVariable("n", 4);
-           auto t = "${case(n, 1: 'a', 2: 'b', 3: 'c')}";
-           auto result = g(err, t, root);
-
-           THEN("Result is undefined") {
-               std::vector<Teng::Error_t::Entry_t> errs;
-               REQUIRE(err.getEntries() == errs);
-               REQUIRE(result == "undefined");
-           }
-        }
-
-        WHEN("The case complex expressions is evaluated") {
-           Teng::Error_t err;
-           root.addVariable("n", 3);
-           root.addVariable("m", 4);
-           auto t = "${case(n - m, -1: 'n' ++ 'm', *: '')}";
-           auto result = g(err, t, root);
-
-           THEN("The right branch has been choosen") {
-               std::vector<Teng::Error_t::Entry_t> errs;
-               REQUIRE(err.getEntries() == errs);
-               REQUIRE(result == "nm");
-           }
-        }
-    }
-}
-
-SCENARIO(
     "The suspicious defined() operator",
-    "[expr]"
+    "[exprx]"
 ) {
     GIVEN("Some variables and fragments") {
         Teng::Fragment_t root;
@@ -328,8 +245,12 @@ SCENARIO(
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {1, 9},
-                    "Invalid identifier in defined() operator"
+                    {1, 2},
+                    "Invalid variable identifier in defined()"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 10},
+                    "Unexpected token: name=R_PAREN, view=)"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -512,7 +433,7 @@ SCENARIO(
 
 SCENARIO(
     "The suspicious exists() operator",
-    "[expr]"
+    "[expr][!mayfail]"
 ) {
     GIVEN("Some variables and fragments") {
         Teng::Fragment_t root;
@@ -684,48 +605,107 @@ SCENARIO(
 }
 
 SCENARIO(
-    "aaaaaaaaaa",
-    "[expr]"
+    "Invalid end of expressions",
+    "[exprx]"
 ) {
-    GIVEN("Some variables and fragments") {
+    GIVEN("No data") {
         Teng::Fragment_t root;
-        root.addVariable("a", "");
-        root.addVariable("b", "(b)");
-        root.addVariable("_this", "111");
-        root.addFragment("f");
-        auto &frag = root.addFragment("g");
-        frag.addVariable("a", "(a)");
-        frag.addFragmentList("h");
 
-        WHEN("The exists operator is applied on nothing") {
+        WHEN("Short expression contains unterminated comment only") {
             Teng::Error_t err;
-            auto t = "<?teng frag g1?>"
-                     "<?teng frag g2?>"
-                     "<?teng frag g3?>"
-                     "<?teng frag g4?>"
-                     "<?teng frag .g1?>"
-                     "<?teng frag g5?>"
-                     "<?teng frag .g1?>"
-                     "<?teng frag g5?>"
-                     "<?teng frag .g1?>"
-                     "<?teng frag g5?>"
-                     "${exists($$.g1.a)}"
-                     "<?teng endfrag?>"
-                     "<?teng endfrag?>"
-                     "<?teng endfrag?>"
-                     "<?teng endfrag?>"
-                     "<?teng endfrag?>"
-                     "<?teng endfrag?>"
-                     "<?teng endfrag?>"
-                     "<?teng endfrag?>"
-                     "<?teng endfrag?>"
-                     "<?teng endfrag?>";
-            auto result = g(err, t, root);
+            auto templ = "${/*1}hi";
+            auto res = g(err, templ);
 
-            THEN("Result is undefined") {
-                std::vector<Teng::Error_t::Entry_t> errs;
+            THEN("The expression is replaced with undefined value") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 2},
+                    "Unterminated comment"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 2},
+                    "Unexpected token: name=INV, view=/*1}"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 2},
+                    "Invalid expression, fix it please; replacing whole "
+                    "expression with undefined value"
+                }};
                 REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "undefined");
+                REQUIRE(res == "undefinedhi");
+            }
+        }
+
+        WHEN("Short expression contains unterminated comment") {
+            Teng::Error_t err;
+            auto templ = "${1/*1}hi";
+            auto res = g(err, templ);
+
+            THEN("The expression is evaluated up to the comment only") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 3},
+                    "Invalid expression; the behaviour is undefined"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 3},
+                    "Unterminated comment"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 3},
+                    "Unexpected token: name=INV, view=/*1}"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(res == "1hi");
+            }
+        }
+
+        WHEN("Expression contains unterminated comment only") {
+            Teng::Error_t err;
+            auto templ = "<?teng expr /*1?>hi";
+            auto res = g(err, templ);
+
+            THEN("The expression is replaced with undefined value") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 12},
+                    "Unterminated comment"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 12},
+                    "Unexpected token: name=INV, view=/*1?>"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 12},
+                    "Invalid expression, fix it please; replacing whole "
+                    "expression with undefined value"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(res == "undefinedhi");
+            }
+        }
+
+        WHEN("Expression contains unterminated comment") {
+            Teng::Error_t err;
+            auto templ = "<?teng expr 1/*1?>hi";
+            auto res = g(err, templ);
+
+            THEN("The expression is evaluated up to the comment only") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 13},
+                    "Invalid expression; the behaviour is undefined"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 13},
+                    "Unterminated comment"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 13},
+                    "Unexpected token: name=INV, view=/*1?>"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(res == "1hi");
             }
         }
     }

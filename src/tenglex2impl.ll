@@ -78,13 +78,78 @@
 
 %}
 
+ // basic tokens
 INTEGER     [[:digit:]]+
 HEX_INTEGER "0x"[[:xdigit:]]+
 BIN_INTEGER "0b"[01]+
 REAL        [[:digit:]]+"."[[:digit:]]+([eE][+-]?[[:digit:]]+)?
 IDENT       [_[:alpha:]][_[:alnum:]]*
 
+ // basic utf-8 support
+UTF_CONT    [\x80-\xbf]
+UTF_2       [\xc2-\xdf]
+UTF_3       [\xe0-\xef]
+UTF_4       [\xf0-\xf4]
+UTF_5       [\xf8-\xfb]
+UTF_6       [\xfc-\xfd]
+UTF_2_CHAR  {UTF_2}{UTF_CONT}
+UTF_3_CHAR  {UTF_3}{UTF_CONT}{UTF_CONT}
+UTF_4_CHAR  {UTF_4}{UTF_CONT}{UTF_CONT}{UTF_CONT}
+UTF_5_CHAR  {UTF_5}{UTF_CONT}{UTF_CONT}{UTF_CONT}{UTF_CONT}
+UTF_6_CHAR  {UTF_6}{UTF_CONT}{UTF_CONT}{UTF_CONT}{UTF_CONT}{UTF_CONT}
+UTF_CHAR    {UTF_2_CHAR}|{UTF_3_CHAR}|{UTF_4_CHAR}|{UTF_5_CHAR}|{UTF_6_CHAR}
+
 %%
+
+"/*" {
+    // comment start
+    make_token_start(yytext);
+    // change context to parse (ehm, ignore) comment's content
+    BEGIN(multiline_comment);
+}
+
+<multiline_comment>{
+    "*/" {
+        // end of comment
+        pos.advanceColumn(yyleng);
+        BEGIN(INITIAL);
+    }
+    <<EOF>> {
+        // end of input => bad token
+        logError(err, pos, "Unterminated comment");
+        // leave this context
+        BEGIN(INITIAL);
+        return make_token(LEX2::INV, yytext + yyleng - 1);
+    }
+    .|"\n" {
+        // ignore
+    }
+}
+
+"//" {
+    // comment start
+    make_token_start(yytext);
+    // change context to parse (ehm, ignore) comment's content
+    BEGIN(oneline_comment);
+}
+
+<oneline_comment>{
+    "\n" {
+        // end of comment
+        pos.advanceColumn(yyleng);
+        BEGIN(INITIAL);
+    }
+    <<EOF>> {
+        // end of input => bad token
+        logError(err, pos, "Unterminated comment");
+        // leave this context
+        BEGIN(INITIAL);
+        return make_token(LEX2::INV, yytext + yyleng - 1);
+    }
+    . {
+        // ignore
+    }
+}
 
 "<?teng"[[:space:]\0]+"debug" {
     // match '<?teng debug'
@@ -271,7 +336,7 @@ IDENT       [_[:alpha:]][_[:alnum:]]*
         logError(err, pos, "Unterminated xml tag");
         // leave this context
         BEGIN(INITIAL);
-        return make_token(LEX2::INVALID, yytext + yyleng);
+        return make_token(LEX2::INV, yytext + yyleng);
     }
     .|"\n" {
         // do nothing
@@ -657,7 +722,7 @@ IDENT       [_[:alpha:]][_[:alnum:]]*
         logError(err, pos, "Invalid token '" + tmp + "' after number");
         // leave this context
         BEGIN(INITIAL);
-        return make_token(LEX2::INVALID, yytext + yyleng);
+        return make_token(LEX2::INV, yytext + yyleng);
     }
     [^._[:alnum:]]+ {
         // match any other sequence of characters
@@ -682,61 +747,19 @@ IDENT       [_[:alpha:]][_[:alnum:]]*
     pos.advance(yytext, yytext + yyleng);
 }
 
+{UTF_CHAR} {
+    // TODO(burlog): fix the error message for utf-8 == false
+    // utf-8 character rule
+    std::string tmp(yytext, yyleng);
+    logError(err, pos, "Unexpected utf-8 encoded character '" + tmp + "'");
+    return make_token(LEX2::INV, yytext, yytext + yyleng);
+}
+
 . {
     // default rule
     std::string tmp(yytext, yyleng);
     logError(err, pos, "Unexpected character '" + tmp + "'");
-    return make_token(LEX2::INVALID, yytext, yytext + yyleng);
-}
-
-"/*" {
-    // comment start
-    make_token_start(yytext);
-    // change context to parse (ehm, ignore) comment's content
-    BEGIN(multiline_comment);
-}
-
-<multiline_comment>{
-    "*/" {
-        // end of comment
-        pos.advanceColumn(yyleng);
-        BEGIN(INITIAL);
-    }
-    <<EOF>> {
-        // end of input => bad token
-        logError(err, pos, "Unterminated comment");
-        // leave this context
-        BEGIN(INITIAL);
-        return make_token(LEX2::INVALID, yytext + yyleng);
-    }
-    .|"\n" {
-        // ignore
-    }
-}
-
-"//" {
-    // comment start
-    make_token_start(yytext);
-    // change context to parse (ehm, ignore) comment's content
-    BEGIN(oneline_comment);
-}
-
-<oneline_comment>{
-    "\n" {
-        // end of comment
-        pos.advanceColumn(yyleng);
-        BEGIN(INITIAL);
-    }
-    <<EOF>> {
-        // end of input => bad token
-        logError(err, pos, "Unterminated comment");
-        // leave this context
-        BEGIN(INITIAL);
-        return make_token(LEX2::INVALID, yytext + yyleng);
-    }
-    . {
-        // ignore
-    }
+    return make_token(LEX2::INV, yytext, yytext + yyleng);
 }
 
 %%

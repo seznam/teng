@@ -101,8 +101,6 @@ FunctionStub_t builtin_functions[] = {
     {"dictexist", true, builtin::dictexist},     // dictexist(key)
     {"getdict", true, builtin::getdict},         // getdict(key, default)
 
-    {"_exists", true, builtin::exists},         // getdict(key, default)
-
     // sentinel
     {nullptr, false, nullptr}                    // end of list
 };

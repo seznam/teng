@@ -1,2 +1,3 @@
 hello_world	Ahoj svete!
 hello_europe	Ahoj Evropo!
+dict_cs_txt     value

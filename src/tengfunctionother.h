@@ -70,6 +70,9 @@ Result_t isenabled(Ctx_t &ctx, const Args_t &args) {
         return failed(ctx, "isenabled", "Arg must be a string");
     auto feature = arg.string();
 
+    // ensure runtime context
+    ctx.runtime_ctx_needed();
+
     switch (ctx.params.isEnabled(feature)) {
     case teng_feature::disabled:
         return Result_t(false);
@@ -99,100 +102,37 @@ Result_t dictexist(Ctx_t &ctx, const Args_t &args) {
     return Result_t(ctx.dict.lookup(key) || ctx.params.lookup(key));
 }
 
-/** Check whether given key is present in dictionaries.
+/** Returns value for desired key from dictionaries.
  *
  * @param args Function arguments (list of values).
  * @param ctx Teng function ctx.
  * @param result Function's result value.
  */
 Result_t getdict(Ctx_t &ctx, const Args_t &args) {
-    if (args.size() != 2)
-        return wrongNumberOfArgs(ctx, "getdict", 2);
+    if ((args.size() < 1) || (args.size() > 2))
+        return wrongNumberOfArgs(ctx, "getdict", 1, 2);
 
-    auto &arg0 = args[1];
+    auto &arg0 = *args.rbegin();
     if (!arg0.is_string_like())
         return failed(ctx, "getdict", "First must be a string");
     auto key = arg0.string();
-
-    auto &arg1 = args[0];
-    if (!arg1.is_string_like())
-        return failed(ctx, "getdict", "Second must be a string");
-    auto def = arg1.string();
 
     // set result value
     if (auto *val = ctx.dict.lookup(key))
         return Result_t(*val);
     if (auto *val = ctx.params.lookup(key))
         return Result_t(*val);
+
+    // no default given
+    if (args.size() == 1)
+        return Result_t();
+
+    // read default value
+    auto &arg1 = *++args.rbegin();
+    if (!arg1.is_string_like())
+        return failed(ctx, "getdict", "Second must be a string");
+    auto def = arg1.string();
     return Result_t(def);
-}
-
-Result_t exists(Ctx_t &ctx, const Args_t &args) {
-    throw std::runtime_error("AAAAAAAA");
-
-    // std::cerr << "FRAGSTACK " << ctx.fragStack->currentPath() << std::endl;
-    // std::cerr << ctx.fragStack->chainSize() << std::endl;
-    //
-    // Identifier_t ident;
-//     // handle root fragment
-//     if (name.empty()) {
-//         // name is empty
-//         id.name = std::string();
-//         // current context (root is in all contexts)
-//         id.context = fragContext.size() - 1;
-//         // root is first
-//         id.depth = 0;
-//
-//         // OK, found
-//         return FR::FOUND;
-//     }
-//
-//     // process all contexts and try to find varible's prefix (fragment name)
-//     for (auto ifragctx = fragContext.rbegin();
-//          ifragctx != fragContext.rend(); ++ifragctx)
-//     {
-//         if ((name.size() <= ifragctx->size())
-//             && std::equal(name.begin(), name.end(),
-//                           ifragctx->name.begin()))
-//         {
-//             // set object name
-//             id.name = name.back();
-//             // set context (how much to go from the root context)
-//             id.context = (fragContext.rend() - ifragctx - 1);
-//             // set fragment depth
-//             id.depth = name.size();
-//             return FR::FOUND;
-//
-//         } else if (parentIsOK // fragment name cannot be empty!
-//                    && ((name.size() - 1) <= ifragctx->size())
-//                    && std::equal(name.begin(), name.end() - 1,
-//                                  ifragctx->name.begin()))
-//         {
-//             // we have found parent of requested fragment
-//
-//             // set object name
-//             id.name = name.back();
-//             // set context (how much to go from the root context)
-//             id.context = (fragContext.rend() - ifragctx - 1);
-//             // set fragment depth
-//             id.depth = name.size() - 1;
-//             return FR::PARENT_FOUND;
-//         }
-//     }
-//
-//     // log error (only when we are allowed to do so)
-//     if (pos) {
-//         logError(program->getErrors(), *pos,
-//                  "Fragment '" + fullname(name) + "' not found in any context.");
-//     }
-//
-//     // not found
-//     return FR::NOT_FOUND;
-// }
-
-    // auto fr = findFragment(0, name, id, !mustBeOpen);
-    // switch (ctx->exists(name.pos, result.id, fixed_name, id, mustBeOpen)) {
-    return Result_t();
 }
 
 } // namespace builtin

@@ -50,6 +50,10 @@ struct Regex_t;
 
 namespace utf8 {
 
+/** Returns bytes length of the UTF-8 character.
+ */
+std::size_t charlen(char ch);
+
 /** Strlen for UTF-8 string.
  * @param str string
  * @return length of str

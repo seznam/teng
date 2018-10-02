@@ -48,6 +48,8 @@
 #include <cmath>
 #include <algorithm>
 
+#include <iostream>
+
 #include <tengfunctionutil.h>
 #include <tengfunction.h>
 
@@ -118,6 +120,9 @@ Result_t random(Ctx_t &ctx, const Args_t &args) {
 
     if (args.front().as_int() < 0)
         return failed(ctx, "random", "Arg must be positive int");
+
+    // ensure that we are in runtime environment
+    ctx.runtime_ctx_needed();
 
     // it is not good to use low bits of rand() see man 3 rand for detail
     return Result_t(
@@ -280,7 +285,7 @@ Result_t toint(Ctx_t &ctx, const Args_t &args) {
 
     // args
     auto &arg = args.back();
-    bool ignore_conversion_errors = args.size() == 2;
+    bool ignore_conversion_errors = args.size() == 2? args.front().as_int(): 0;
 
     // conversion of string to int
     auto str2int_impl = [&] (const string_view_t &arg) {

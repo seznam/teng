@@ -49,9 +49,17 @@
 #include "tengconfiguration.h"
 #include "tengsemantic.h"
 
+#ifdef DEBUG
+#define DBG(...) __VA_ARGS__
+#else /* DEBUG */
+#define DBG(...)
+#endif /* DEBUG */
+
 namespace Teng {
 namespace Parser {
 namespace {
+
+// TODO(burlog): split this file to more .cc
 
 /** Generates set var instruction.
  */
@@ -94,7 +102,7 @@ set_var_impl(Context_t *ctx, const Variable_t &var) {
     case LEX2::AND_TRIGRAPH:
     case LEX2::OR_DIGRAPH:
     case LEX2::CASE:
-        ctx->program->emplace_back<Set_t>(var);
+        generate<Set_t>(ctx, var);
         break;
 
     default:
@@ -113,19 +121,19 @@ void generate_var_impl(Context_t *ctx, Variable_t &var) {
     // generate var instruction
     switch (var.id) {
     case LEX2::BUILTIN_FIRST:
-        ctx->program->emplace_back<PushFragFirst_t>(var);
+        generate<PushFragFirst_t>(ctx, var);
         break;
     case LEX2::BUILTIN_INNER:
-        ctx->program->emplace_back<PushFragInner_t>(var);
+        generate<PushFragInner_t>(ctx, var);
         break;
     case LEX2::BUILTIN_LAST:
-        ctx->program->emplace_back<PushFragLast_t>(var);
+        generate<PushFragLast_t>(ctx, var);
         break;
     case LEX2::BUILTIN_INDEX:
-        ctx->program->emplace_back<PushFragIndex_t>(var);
+        generate<PushFragIndex_t>(ctx, var);
         break;
     case LEX2::BUILTIN_COUNT:
-        ctx->program->emplace_back<PushFragCount_t>(var);
+        generate<PushFragCount_t>(ctx, var);
         break;
     case LEX2::BUILTIN_PARENT:
         if (var.frag_offset >= ctx->open_frames.top().size()) {
@@ -135,11 +143,11 @@ void generate_var_impl(Context_t *ctx, Variable_t &var) {
                 "The builtin _parent variable has crossed root boundary; "
                 "converting it to _this"
             );
-            ctx->program->emplace_back<PushFrag_t>(var);
-        } else ctx->program->emplace_back<PushFrag_t>(var, var.frag_offset + 1);
+            generate<PushFrag_t>(ctx, var);
+        } else generate<PushFrag_t>(ctx, var, var.frag_offset + 1);
         break;
     case LEX2::BUILTIN_THIS:
-        ctx->program->emplace_back<PushFrag_t>(var);
+        generate<PushFrag_t>(ctx, var);
         break;
 
     case LEX2::VAR:   // $ident
@@ -163,7 +171,7 @@ void generate_var_impl(Context_t *ctx, Variable_t &var) {
     case LEX2::AND_TRIGRAPH:
     case LEX2::OR_DIGRAPH:
     case LEX2::CASE:
-        ctx->program->emplace_back<Var_t>(var, true);
+        generate<Var_t>(ctx, var, true);
         break;
 
     default:
@@ -356,15 +364,17 @@ void generate_print(Context_t *ctx) {
 
     // underflow protect -> no optimalization can be peformed for now
     if (prgsize < 3)
-        return ctx->program->emplace_back<Print_t>(ctx->pos());
+        return generate<Print_t>(ctx, ctx->pos());
 
     // attempt to optimize consecutive print instrs to one merged
     if ((*ctx->program)[prgsize - 1].opcode() != OPCODE::VAL)
-        return ctx->program->emplace_back<Print_t>(ctx->pos());
+        return generate<Print_t>(ctx, ctx->pos());
     if ((*ctx->program)[prgsize - 2].opcode() != OPCODE::PRINT)
-        return ctx->program->emplace_back<Print_t>(ctx->pos());
+        return generate<Print_t>(ctx, ctx->pos());
     if ((*ctx->program)[prgsize - 3].opcode() != OPCODE::VAL)
-        return ctx->program->emplace_back<Print_t>(ctx->pos());
+        return generate<Print_t>(ctx, ctx->pos());
+
+    DBG(std::cerr << "$$$$ print optimization" << std::endl);
 
     // optimalize sequence of VAL, PRINT, VAL, PRINT to single VAL, PRINT pair
     auto &first_val = (*ctx->program)[prgsize - 3].as<Val_t>();
@@ -385,7 +395,7 @@ void open_frag(Context_t *ctx, const Pos_t &pos, Variable_t &frag) {
             "Empty fragment identifier; discarding fragment block content"
         );
         ctx->open_frames.top().open_frag({}, ctx->program->size(), false);
-        ctx->program->emplace_back<OpenFrag_t>(std::string(), pos);
+        generate<OpenFrag_t>(ctx, std::string(), pos);
         return;
     }
 
@@ -401,7 +411,7 @@ void open_frag(Context_t *ctx, const Pos_t &pos, Variable_t &frag) {
         // or open new frame if absolute ident can't be made relative
         if (!frame->is_prefix_of(frag.ident)) {
             frame = &ctx->open_frames.open_frame();
-            ctx->program->emplace_back<OpenFrame_t>(pos);
+            generate<OpenFrame_t>(ctx, pos);
         } else i = frame->size();
     }
 
@@ -409,7 +419,7 @@ void open_frag(Context_t *ctx, const Pos_t &pos, Variable_t &frag) {
     for (auto first_index = i; i < frag.ident.size(); ++i) {
         bool auto_close = i != first_index;
         frame->open_frag(frag.ident[i], ctx->program->size(), auto_close);
-        ctx->program->emplace_back<OpenFrag_t>(frag.ident[i].str(), pos);
+        generate<OpenFrag_t>(ctx, frag.ident[i].str(), pos);
     }
 }
 
@@ -434,7 +444,7 @@ void open_inv_frag(Context_t *ctx, const Pos_t &pos) {
     // if symbol is invalid then create frag instruction with empty name that
     // is used as marker for close_frag() function to discard frag content
     ctx->open_frames.top().open_frag({}, ctx->program->size(), false);
-    ctx->program->emplace_back<OpenFrag_t>("", ctx->unexpected_token.pos);
+    generate<OpenFrag_t>(ctx, "", ctx->unexpected_token.pos);
     reset_error(ctx);
 }
 
@@ -445,7 +455,7 @@ void close_frag(Context_t *ctx, const Pos_t &pos, bool invalid) {
         auto frag = ctx->open_frames.top().close_frag();
 
         // create end-frag instruction and take fragment subprogram length
-        ctx->program->emplace_back<CloseFrag_t>(pos);
+        generate<CloseFrag_t>(ctx, pos);
         auto frag_routine_length = ctx->program->size() - frag.addr - 1;
 
         // take references to instructions after push_back that invalidates them
@@ -464,7 +474,7 @@ void close_frag(Context_t *ctx, const Pos_t &pos, bool invalid) {
         if (ctx->open_frames.top().empty()) {
             if (ctx->open_frames.size() > 1) {
                 ctx->open_frames.close_frame();
-                ctx->program->emplace_back<CloseFrame_t>(pos);
+                generate<CloseFrame_t>(ctx, pos);
             }
         }
 
@@ -516,14 +526,14 @@ void optimize_expr(Context_t *ctx, uint32_t arity, bool lazy_evaluated) {
         Value_t result = ctx->coproc.eval(&ctx->open_frames, args_point);
         if (!result.is_undefined()) {
             // remove expression's program and replace it with its value
-            std::cerr << "$$$$ optimized to = " << result << '\n' << std::endl;
+            DBG(std::cerr << "$$$$ optimized => " << result << std::endl);
             auto pos = (*ctx->program)[args_point].pos();
             ctx->program->erase_from(args_point);
             generate_val(ctx, pos, std::move(result));
 
         } else optimizable = false;
-        if (!optimizable) std::cerr << "$$$$ can't optimize" << std::endl;
-    } else std::cerr << "$$$$ unoptimizable" << std::endl;
+        DBG(if (!optimizable) std::cerr << "$$$$ can't optimize" << std::endl);
+    } else DBG(std::cerr << "$$$$ unoptimizable" << std::endl);
 
     // each expression has a value that plays its role in further optimization
     // if optimization fails then it is ok to replace it with one imaginary
@@ -532,22 +542,22 @@ void optimize_expr(Context_t *ctx, uint32_t arity, bool lazy_evaluated) {
 }
 
 void generate_val(Context_t *ctx, const Pos_t &pos, Value_t value) {
-    ctx->program->emplace_back<Val_t>(std::move(value), pos);
+    generate<Val_t>(ctx, std::move(value), pos);
 }
 
 void generate_dict_lookup(Context_t *ctx, const Token_t &token) {
     // find item in dictionary
     if (auto *item = ctx->dict->lookup(token.str()))
-        return ctx->program->emplace_back<Val_t>(*item, token.pos);
+        return generate<Val_t>(ctx, *item, token.pos);
 
     // find item in param/config dictionary
     if (auto *item = ctx->params->lookup(token.str()))
-        return ctx->program->emplace_back<Val_t>(*item, token.pos);
+        return generate<Val_t>(ctx, *item, token.pos);
 
     // use ident as result value
     auto msg = "Dictionary item '" + token.view() + "' was not found";
     logError(ctx, token.pos, msg);
-    ctx->program->emplace_back<Val_t>(token.view(), token.pos);
+    generate<Val_t>(ctx, token.view(), token.pos);
 }
 
 void discard_expr(Context_t *ctx) {
@@ -561,7 +571,7 @@ void discard_expr(Context_t *ctx) {
 
     // discard whole expression code and replace it with undefined
     ctx->program->erase_from(ctx->expr_start_point.addr);
-    ctx->program->emplace_back<Val_t>(Value_t(), ctx->expr_start_point.pos);
+    generate<Val_t>(ctx, Value_t(), ctx->expr_start_point.pos);
 
     // if there is diagnostics then process it
     ctx->expr_diag.unwind(ctx, ctx->unexpected_token);
@@ -574,10 +584,8 @@ void discard_expr(Context_t *ctx) {
         "replacing whole expression with undefined value"
     );
 
-    // // TODO(burlog): tohle musi byt v case/tern/bin operatorech kde to bude uklizet po push, ktery se bude delat tesne predtim
-    // // fix bin/tern/case operator's stack of addresses
-    // // but only if note_expr_start_point(ctx) has been called
-    // ctx->branch_start_addrs.pop();
+    // fix bin/tern/case operator's stack of addresses
+    ctx->branch_start_addrs.pop();
 
     // also reset optimization points
     // (yes, it clears even nested points - we don't trust its because of error)
@@ -590,35 +598,38 @@ void discard_expr(Context_t *ctx) {
 void finish_expr(Context_t *ctx) {
     ctx->expr_start_point.update_allowed = true;
     ctx->expr_diag.clear();
+    ctx->branch_start_addrs.pop();
 }
 
 void generate_tern_op(Context_t *ctx, const Token_t &token) {
-    throw std::runtime_error(__PRETTY_FUNCTION__);
-    // ctx->branch_start_addrs.push(ctx->program->size());
-    // ctx->program->emplace_back<JmpIfNot_t>(token.pos);
+    ctx->branch_start_addrs.top().push(ctx->program->size());
+    generate<JmpIfNot_t>(ctx, token.pos);
+    expr_diag(ctx, diag_code::tern_true_branch, false);
 }
 
 void finalize_tern_op_true_branch(Context_t *ctx, const Token_t &token) {
-    throw std::runtime_error(__PRETTY_FUNCTION__);
-    // // calculate jump from begin of tern op to false branch
-    // int32_t cond_addr = ctx->branch_start_addrs.pop();
-    // int32_t false_branch_offset = ctx->program->size() - cond_addr;
-    //
-    // // store address of jump from true branch
-    // ctx->branch_start_addrs.push(ctx->program->size());
-    // ctx->program->emplace_back<Jmp_t>(token.pos);
-    //
-    // // fix conditional jump offset (relative addr)
-    // auto &instr = (*ctx->program)[cond_addr].as<JmpIfNot_t>();
-    // instr.addr_offset = false_branch_offset;
+    // calculate jump from begin of tern op to false branch
+    int32_t cond_addr = ctx->branch_start_addrs.top().pop();
+    int32_t false_branch_offset = ctx->program->size() - cond_addr;
+
+    // store address of jump from true branch
+    ctx->branch_start_addrs.top().push(ctx->program->size());
+    generate<Jmp_t>(ctx, token.pos);
+
+    // fix conditional jump offset (relative addr)
+    auto &instr = (*ctx->program)[cond_addr].as<JmpIfNot_t>();
+    instr.addr_offset = false_branch_offset;
+
+    // diagnostic code
+    expr_diag(ctx, diag_code::tern_false_branch);
 }
 
 void finalize_tern_op_false_branch(Context_t *ctx) {
-    throw std::runtime_error(__PRETTY_FUNCTION__);
-    // int32_t true_branch_jump_addr = ctx->branch_start_addrs.pop();
-    // auto tern_op_end_offset = ctx->program->size() - true_branch_jump_addr;
-    // auto &instr = (*ctx->program)[true_branch_jump_addr].as<Jmp_t>();
-    // instr.addr_offset = tern_op_end_offset;
+    int32_t true_branch_jump_addr = ctx->branch_start_addrs.top().pop();
+    auto tern_op_end_offset = ctx->program->size() - true_branch_jump_addr - 1;
+    auto &instr = (*ctx->program)[true_branch_jump_addr].as<Jmp_t>();
+    instr.addr_offset = tern_op_end_offset;
+    ctx->expr_diag.pop();
 }
 
 void generate_query(Context_t *ctx, const Variable_t &var, bool warn) {
@@ -637,10 +648,6 @@ void generate_query(Context_t *ctx, const Variable_t &var, bool warn) {
         var.pos,
         "In query expressions the identifier should not be denoted by $ sign"
     );
-}
-
-void invalid_query(Context_t *ctx, const Pos_t &pos) {
-    logDiag(ctx, pos, "Invalid variable identifier in query");
 }
 
 void include_file(Context_t *ctx, const Pos_t &pos, const Options_t &opts) {
@@ -679,82 +686,82 @@ void ignore_include(Context_t *ctx, const Token_t &token, bool empty) {
     }
 }
 
-void prepare_case(Context_t *ctx, const Token_t &token) {
+void prepare_case(Context_t *ctx) {
+    expr_diag_sentinel(ctx, diag_code::case_cond);
+    ctx->case_option_addrs.push();
+}
+
+void prepare_case_cond(Context_t *ctx, const Token_t &token) {
     expr_diag(ctx, diag_code::case_option);
     generate<PrgStackPush_t>(ctx, token.pos);
 }
 
 uint32_t generate_case_cmp(Context_t *ctx, Literal_t &literal) {
-    throw std::runtime_error(__PRETTY_FUNCTION__);
-    // // warn if there is more than one branch valid for same value
-    // for (auto addr: ctx->case_option_addrs) {
-    //     auto &instr = (*ctx->program)[addr].as<Val_t>();
-    //     if (instr.value == literal.value) {
-    //         auto val = literal.value.string();
-    //         logWarning(ctx, instr.pos(), "Duplicit case operand: " + val);
-    //         logWarning(ctx, literal.pos, "Next seen here");
-    //         break;
-    //     }
-    // }
-    //
-    // // generate instructions
-    // generate<PrgStackAt_t>(ctx, 0, literal.pos);
-    // ctx->case_option_addrs.push_back(ctx->program->size());
-    // generate<Val_t>(ctx, std::move(literal.value), literal.pos);
-    // generate<EQ_t>(ctx, literal.pos);
-    // return 0;
+    // warn if there is more than one branch valid for same value
+    for (auto addr: ctx->case_option_addrs.top()) {
+        auto &instr = (*ctx->program)[addr].as<Val_t>();
+        if (instr.value == literal.value) {
+            auto val = literal.value.string();
+            logWarning(ctx, instr.pos(), "Duplicit case operand: " + val);
+            logWarning(ctx, literal.pos, "Next seen here");
+            break;
+        }
+    }
+
+    // generate instructions
+    generate<PrgStackAt_t>(ctx, 0, literal.pos);
+    ctx->case_option_addrs.top().push(ctx->program->size());
+    generate<Val_t>(ctx, std::move(literal.value), literal.pos);
+    generate<EQ_t>(ctx, literal.pos);
+    return 0;
 }
 
 void update_case_jmp(Context_t *ctx, const Token_t &token, uint32_t alts) {
-    throw std::runtime_error(__PRETTY_FUNCTION__);
-    // expr_diag(ctx, diag_code::case_option_branch);
-    // for (; alts; --alts) {
-    //     auto addr = ctx->branch_start_addrs.pop();
-    //     auto &instr = (*ctx->program)[addr].as<Or_t>();
-    //     instr.addr_offset = ctx->program->size() - addr - 1;
-    // }
-    // ctx->branch_start_addrs.push(ctx->program->size());
-    // generate<JmpIfNot_t>(ctx, token.pos);
+    expr_diag(ctx, diag_code::case_option_branch);
+    for (; alts; --alts) {
+        auto addr = ctx->branch_start_addrs.top().pop();
+        auto &instr = (*ctx->program)[addr].as<Or_t>();
+        instr.addr_offset = ctx->program->size() - addr - 1;
+    }
+    ctx->branch_start_addrs.top().push(ctx->program->size());
+    generate<JmpIfNot_t>(ctx, token.pos);
 }
 
 uint32_t
-generate_case_next(Context_t *ctx, Literal_t &literal, uint32_t arity) {
-    throw std::runtime_error(__PRETTY_FUNCTION__);
-    // ctx->branch_start_addrs.push(ctx->program->size());
-    // generate<Or_t>(ctx, literal.pos);
-    // generate_case_cmp(ctx, literal);
-    // return arity + 1;
+generate_case_next(Context_t *ctx, Literal_t &literal, uint32_t alts) {
+    ctx->branch_start_addrs.top().push(ctx->program->size());
+    generate<Or_t>(ctx, literal.pos);
+    generate_case_cmp(ctx, literal);
+    return alts + 1;
 }
 
 void finalize_case_branch(Context_t *ctx, const Token_t &token) {
-    throw std::runtime_error(__PRETTY_FUNCTION__);
-    // auto branch_if_addr = ctx->branch_start_addrs.pop();
-    // auto &instr = (*ctx->program)[branch_if_addr].as<JmpIfNot_t>();
-    // instr.addr_offset = ctx->program->size() - branch_if_addr;
-    // ctx->branch_start_addrs.push(ctx->program->size());
-    // generate<Jmp_t>(ctx, token.pos);
+    auto branch_case_addr = ctx->branch_start_addrs.top().pop();
+    auto &instr = (*ctx->program)[branch_case_addr].as<JmpIfNot_t>();
+    instr.addr_offset = ctx->program->size() - branch_case_addr;
+    ctx->branch_start_addrs.top().push(ctx->program->size());
+    generate<Jmp_t>(ctx, token.pos);
 }
 
 NAryExpr_t finalize_case(Context_t *ctx, const Token_t &token, uint32_t arity) {
-    throw std::runtime_error(__PRETTY_FUNCTION__);
-    // // update addr offsets of jmp instruction at the end of all branches
-    // for (auto tmp_arity = arity; --tmp_arity;) {
-    //     auto branch_end_addr = ctx->branch_start_addrs.pop();
-    //     auto &instr = (*ctx->program)[branch_end_addr].as<Jmp_t>();
-    //     instr.addr_offset = ctx->program->size() - branch_end_addr - 1;
-    // }
-    //
-    // // generate instruction that remove case value from prg stack
-    // generate<PrgStackPop_t>(ctx, token.pos);
-    //
-    // // clear stored option addresses
-    // ctx->case_option_addrs.clear();
-    //
-    // // clear case expr diagnostic code
-    // ctx->expr_diag.pop();
-    //
-    // // done
-    // return NAryExpr_t(token, arity + 1, true);
+    // update addr offsets of jmp instruction at the end of all branches
+    for (auto tmp_arity = arity; --tmp_arity;) {
+        auto branch_end_addr = ctx->branch_start_addrs.top().pop();
+        auto &instr = (*ctx->program)[branch_end_addr].as<Jmp_t>();
+        instr.addr_offset = ctx->program->size() - branch_end_addr - 1;
+    }
+
+    // generate instruction that remove case value from prg stack
+    generate<PrgStackPop_t>(ctx, token.pos);
+
+    // clear stored option addresses
+    ctx->case_option_addrs.pop();
+
+    // clear case expr diagnostic code
+    ctx->expr_diag.pop();
+
+    // done
+    return NAryExpr_t(token, arity + 1, true);
 }
 
 void expr_diag(Context_t *ctx, diag_code_type new_diag_code, bool pop) {
@@ -957,7 +964,13 @@ void generate_if(Context_t *ctx, const Token_t &token, bool valid_expr) {
             logDiag(ctx, token.pos, token == LEX2::IF? msg_def_if: msg_def_el);
             break;
         }
+        reset_error(ctx);
     }
+}
+
+void generate_if(Context_t *ctx, const Token_t &token, const Token_t &inv) {
+    note_error(ctx, inv);
+    generate_if(ctx, token, false);
 }
 
 void finalize_if_branch(Context_t *ctx, int32_t shift) {
@@ -1004,7 +1017,6 @@ void generate_else(Context_t *ctx, const Token_t &token) {
     finalize_if_branch(ctx, 0);
     ctx->branch_start_addrs.top().push(ctx->program->size());
     generate<Jmp_t>(ctx, token.pos);
-    // expr_diag(ctx, diag_code::else_branch, false);
 }
 
 void generate_inv_else(Context_t *ctx, const Token_t &token) {
@@ -1021,11 +1033,9 @@ void generate_elif(Context_t *ctx, const Token_t &token) {
     finalize_if_branch(ctx, 0);
     ctx->branch_start_addrs.top().push(ctx->program->size());
     generate<Jmp_t>(ctx, token.pos);
-    // expr_diag(ctx, diag_code::if_cond, false);
 }
 
 void finalize_if_stmnt(Context_t *ctx) {
-    // ctx->expr_diag.pop();
     ctx->branch_start_addrs.pop();
 }
 
@@ -1154,35 +1164,39 @@ void generate_rtvar_index(Context_t *ctx, const Token_t &token) {
     ctx->optimization_points.top().optimizable &= optimizable;
 }
 
-void
-generate_regex(Context_t *ctx, const Token_t &token, const Token_t &regex) {
-    // parse regex (split pattern and flags)
-    Regex_t regex_value;
+Regex_t generate_regex(Context_t *ctx, const Token_t &regex) {
+    regex_flags_t flags;
     auto i = regex.view().size() - 1;
-    for (; regex.view()[i] != '/'; ++i) {
+    for (; regex.view()[i] != '/'; --i) {
         switch (regex.view()[i]) {
-        case 'i': regex_value.flags.ignore_case = true;
-        case 'I': regex_value.flags.ignore_case = false;
-        case 'g': regex_value.flags.global = true;
-        case 'G': regex_value.flags.global = false;
-        case 'm': regex_value.flags.multiline = true;
-        case 'M': regex_value.flags.multiline = false;
+        case 'i': flags.ignore_case = true; break;
+        case 'I': flags.ignore_case = false; break;
+        case 'g': flags.global = true; break;
+        case 'G': flags.global = false; break;
+        case 'm': flags.multiline = true; break;
+        case 'M': flags.multiline = false; break;
         default:
             logWarning(
                 ctx,
                 regex.pos,
-                "Ignoring invalid regex flag '"
+                "Ignoring unknown regex flag '"
                 + std::string(1, regex.view()[i])
                 + "'"
                 );
         }
     }
-    regex_value.pattern = {regex.view().data() + 1, regex.view().data() + i};
+    return {{regex.view().data() + 1, regex.view().data() + i}, flags};
+}
 
-    // generate instructin for parsed regex
-    ctx->program->emplace_back<RegexMatch_t>(regex_value, regex.pos);
+void
+generate_match(Context_t *ctx, const Token_t &token, const Token_t &regex) {
+    // parse regex (split pattern and flags)
+    Regex_t regex_value = generate_regex(ctx, regex);
+
+    // generate instruction for parsed regex
+    generate<RegexMatch_t>(ctx, regex_value, regex.pos);
     if (token == LEX2::STR_NE)
-        ctx->program->emplace_back<Not_t>(token.pos);
+        generate<Not_t>(ctx, token.pos);
 }
 
 /** Generates instructions implementing the function call.
@@ -1253,6 +1267,10 @@ void ignore_excessive_options(Context_t *ctx, const Pos_t &pos) {
 
 void new_option(Context_t *ctx, const Token_t &name, Literal_t &&literal) {
     ctx->opts_sym.emplace(name.view(), std::move(literal.value));
+}
+
+void prepare_expr(Context_t *ctx, const Pos_t &pos) {
+    ctx->branch_start_addrs.push();
 }
 
 } // namespace Parser

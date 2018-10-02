@@ -55,11 +55,9 @@ enum diag_code {
     case_option,
     case_option_branch,
     case_default_branch,
-    if_cond,
-    if_branch,
-    elif_cond,
-    elif_branch,
-    else_branch,
+    tern_colon,
+    tern_true_branch,
+    tern_false_branch,
     fun_args,
 };
 
@@ -74,7 +72,7 @@ using diag_code_type = diag_code;
 struct ExprDiagEntry_t {
     bool is_sentinel() {return code == diag_code::sentinel;}
     void log_case(Context_t *ctx, const Token_t &token);
-    void log_if(Context_t *ctx, const Token_t &token);
+    void log_tern(Context_t *ctx, const Token_t &token);
     void log(Context_t *ctx, const Token_t &token);
     diag_code_type code; //!< the code value
     Pos_t pos;           //!< pos to corresponding token

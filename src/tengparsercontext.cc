@@ -117,9 +117,10 @@ compile_file(
     const Dictionary_t *dict,
     const Configuration_t *params,
     const std::string &fs_root,
-    const std::string &filename
+    const std::string &filename,
+    const std::string &encoding
 ) {
-    Parser::Context_t ctx(dict, params, fs_root);
+    Parser::Context_t ctx(dict, params, fs_root, encoding);
     ctx.load_file(filename);
     compile(&ctx);
     return std::move(ctx.program);
@@ -130,9 +131,10 @@ compile_string(
     const Dictionary_t *dict,
     const Configuration_t *params,
     const std::string &fs_root,
-    const std::string &source
+    const std::string &source,
+    const std::string &encoding
 ) {
-    Parser::Context_t ctx(dict, params, fs_root);
+    Parser::Context_t ctx(dict, params, fs_root, encoding);
     ctx.load_source(source);
     compile(&ctx);
     return std::move(ctx.program);
@@ -143,15 +145,17 @@ namespace Parser {
 Context_t::Context_t(
     const Dictionary_t *dict,
     const Configuration_t *params,
-    const std::string &fs_root
-): program(std::make_unique<Program_t>()), dict(dict), params(params),
+    const std::string &fs_root,
+    const std::string &encoding
+): utf8(encoding == "utf-8"),
+   program(std::make_unique<Program_t>()), dict(dict), params(params),
    fs_root(fs_root), source_codes(), lex1_stack(),
    lex2_value(program->getErrors()), coproc_err(),
    coproc(coproc_err, *program, *dict, *params),
    open_frames(*program), var_sym(), opts_sym(),
-   error_occurred(false), unexpected_token{LEX2::INVALID, {}, {}},
+   error_occurred(false), unexpected_token{LEX2::INV, {}, {}},
    expr_start_point{{}, -1, true}, if_stmnt_start_point{{}, -1, true},
-   branch_start_addrs(), optimization_points()
+   branch_start_addrs(), case_option_addrs(), optimization_points()
 {}
 // TODO(burlog): zvazit predalokaci stacku na nejakou "velikost" v 2.0 byla na 100
 
@@ -170,7 +174,7 @@ Context_t::load_file(const string_view_t &filename, const Pos_t *incl_pos) {
     auto *source_path = program->addSource(path, {}).first;
 
     // create the level 1 lexer for given source code
-    lex1_stack.emplace(flex_string_view_t(source_code), source_path);
+    lex1_stack.emplace(source_code, utf8, params, source_path);
 }
 
 void Context_t::load_source(const std::string &source) {
@@ -180,13 +184,13 @@ void Context_t::load_source(const std::string &source) {
     source_codes.push_back(std::move(source_code));
 
     // create the level 1 lexer for given source code
-    lex1_stack.emplace(flex_string_view_t(source_codes.back()));
+    lex1_stack.emplace(source_codes.back(), utf8, params);
 }
 
 #ifdef DEBUG
 #define DBG(...) __VA_ARGS__
 #else /* DEBUG */
-#define DBG()
+#define DBG(...)
 #endif /* DEBUG */
 
 Token_t Context_t::next_token() {
@@ -200,10 +204,9 @@ Token_t Context_t::next_token() {
             default:
                 DBG(std::cerr << "**** " << token << std::endl);
                 return token;
-            case LEX2::INVALID:
-                DBG(std::cerr << "---- " << token << std::endl);
-                logError(this, token.pos, "Invalid lexical element");
-                continue;
+            case LEX2::INV:
+                DBG(std::cerr << "!!!! " << token << std::endl);
+                return token;
             case LEX2_EOF:
                 DBG(std::cerr << "---- " << token << std::endl);
                 lex2().finish_scanning();
@@ -213,8 +216,7 @@ Token_t Context_t::next_token() {
 
         // get next L1 token and process it
         using LEX1 = Lex1_t::LEX1;
-        bool accept_short_directives = params->isShortTagEnabled();
-        switch (auto token = lex1().next(accept_short_directives)) {
+        switch (auto token = lex1().next()) {
         case LEX1::TENG: case LEX1::EXPR:
         case LEX1::DICT: case LEX1::TENG_SHORT:
             DBG(std::cerr << "* " << token << std::endl);
@@ -243,11 +245,11 @@ Token_t Context_t::next_token() {
     return {LEX2_EOF, last_valid_pos, {}}; // EOF
 }
 
-#undef DBG
-
 void Parser_t::error(const std::string &s) {
-    std::cerr << "POSRALO SE TO! " << s << std::endl;
+    DBG(std::cerr << "!!!! Syntax error occurred: " << s << std::endl);
 }
+
+#undef DBG
 
 } // namespace Parser
 } // namespace Teng

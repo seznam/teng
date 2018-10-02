@@ -68,7 +68,8 @@ compile_file(
     const Dictionary_t *dict,
     const Configuration_t *params,
     const std::string &fs_root,
-    const std::string &filename
+    const std::string &filename,
+    const std::string &encoding
 );
 
 /** Compile string template into a program.
@@ -85,7 +86,8 @@ compile_string(
     const Dictionary_t *dict,
     const Configuration_t *params,
     const std::string &fs_root,
-    const std::string &source
+    const std::string &source,
+    const std::string &encoding
 );
 
 namespace Parser {
@@ -98,7 +100,8 @@ struct Context_t {
     Context_t(
         const Dictionary_t *dict,
         const Configuration_t *params,
-        const std::string &fs_root
+        const std::string &fs_root,
+        const std::string &encoding
     );
 
     /** D'tor.
@@ -144,9 +147,12 @@ struct Context_t {
      */
     struct addrs_stack_t {
         struct entry_t {
+            using const_iterator = std::vector<int32_t>::const_iterator;
             int32_t pop() {auto t = stack.back(); stack.pop_back(); return t;}
             void push(int32_t v) {stack.push_back(v);}
             bool empty() const {return stack.empty();}
+            const_iterator begin() const {return stack.begin();}
+            const_iterator end() const {return stack.begin();}
             std::vector<int32_t> stack;
         };
 
@@ -191,10 +197,11 @@ struct Context_t {
      */
     void load_source(const std::string &source);
 
+    bool utf8;                          //!< true if templates are in utf-8
     std::unique_ptr<Program_t> program; //!< program created by parser
     const Dictionary_t *dict;           //!< language dictionary
     const Configuration_t *params;      //!< config dictionary (param.conf)
-    std::string fs_root;                //!< application root path
+    const std::string fs_root;          //!< application root path
     SourceCodes_t source_codes;         //!< parsed/compiled source codes
     std::stack<Lex1_t> lex1_stack;      //!< lexical analyzer (level 1)
     Lex2_t lex2_value;                  //!< lexical analyzer (level 2)
@@ -209,8 +216,8 @@ struct Context_t {
     expr_start_t if_stmnt_start_point;  //!< address where if stmnt starts
     // TODO(burlog): proc je tu slovo start, podle me staci branch_addrs
     addrs_stack_t branch_start_addrs;   //!< addresses of unfinished jumps
-    optim_points_t optimization_points; //!< adresses of "value generators"
     addrs_stack_t case_option_addrs;    //!< the list of addrs of case options
+    optim_points_t optimization_points; //!< adresses of "value generators"
     ExprDiag_t expr_diag;               //!< list of expression diagnostic codes
 };
 

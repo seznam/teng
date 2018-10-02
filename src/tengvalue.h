@@ -554,6 +554,10 @@ public:
      */
     const regex_type &as_regex() const {return regex_value;}
 
+    /** Returns regex value. Does not any checks.
+     */
+    regex_type &as_regex() {return regex_value;}
+
     /** Returns true if value is integral or real number.
      */
     bool is_number() const {
@@ -802,7 +806,7 @@ protected:
             static const visited_type<tag::list_ref> tag_list_ref;
             return visitor(self.list_ref_value.ptr? list: null, tag_list_ref);
         case tag::regex:
-            static const string_view_t regex = "regex";
+            static const string_view_t regex = "$regex$";
             static const visited_type<tag::undefined> tag_regex;
             return visitor(regex, tag_regex);
         }
@@ -826,7 +830,7 @@ protected:
                 return;
             if (visited_value(visit_tag) == tag::regex)
                 regex_value.~regex_type();
-            // here are all dynamic resources released
+            // here are all possible dynamic resources released
             tag_value = tag::string;
             new (&string_value) string_type(v.str());
         });

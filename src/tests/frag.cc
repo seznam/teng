@@ -84,6 +84,53 @@
 // "c"
 // "<?teng endif?>"
 //"<?teng endformat a ?>"
+// SCENARIO(
+//     "aaaaaaaaaa",
+//     "[expr]"
+// ) {
+//     GIVEN("Some variables and fragments") {
+//         Teng::Fragment_t root;
+//         root.addVariable("a", "");
+//         root.addVariable("b", "(b)");
+//         root.addVariable("_this", "111");
+//         root.addFragment("f");
+//         auto &frag = root.addFragment("g");
+//         frag.addVariable("a", "(a)");
+//         frag.addFragmentList("h");
+//
+//         WHEN("The exists operator is applied on nothing") {
+//             Teng::Error_t err;
+//             auto t = "<?teng frag g1?>"
+//                      "<?teng frag g2?>"
+//                      "<?teng frag g3?>"
+//                      "<?teng frag g4?>"
+//                      "<?teng frag .g1?>"
+//                      "<?teng frag g5?>"
+//                      "<?teng frag .g1?>"
+//                      "<?teng frag g5?>"
+//                      "<?teng frag .g1?>"
+//                      "<?teng frag g5?>"
+//                      "${exists($$.g1.a)}"
+//                      "<?teng endfrag?>"
+//                      "<?teng endfrag?>"
+//                      "<?teng endfrag?>"
+//                      "<?teng endfrag?>"
+//                      "<?teng endfrag?>"
+//                      "<?teng endfrag?>"
+//                      "<?teng endfrag?>"
+//                      "<?teng endfrag?>"
+//                      "<?teng endfrag?>"
+//                      "<?teng endfrag?>";
+//             auto result = g(err, t, root);
+//
+//             THEN("Result is undefined") {
+//                 std::vector<Teng::Error_t::Entry_t> errs;
+//                 REQUIRE(err.getEntries() == errs);
+//                 REQUIRE(result == "undefined");
+//             }
+//         }
+//     }
+// }
 
 SCENARIO(
     "One Teng fragment",
