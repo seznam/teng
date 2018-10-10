@@ -48,8 +48,6 @@
 #include <cmath>
 #include <algorithm>
 
-#include <iostream>
-
 #include <tengfunctionutil.h>
 #include <tengfunction.h>
 

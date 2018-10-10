@@ -73,14 +73,13 @@ std::string absfile(const std::string &fs_root, const string_view_t &filename) {
 flex_string_value_t
 read_file(
     Parser::Context_t *ctx,
-    const Pos_t *incl_pos,
+    const Pos_t &incl_pos,
     const std::string &filename
 ) {
     // open file
     std::ifstream file(filename, std::ios::binary);
     if (!file.is_open()) {
-        Pos_t pos = incl_pos? *incl_pos: Pos_t();
-        logError(ctx, pos, "Cannot open input file '" + filename + "'");
+        logError(ctx, incl_pos, "Cannot open input file '" + filename + "'");
         return flex_string_value_t(0);
     }
 
@@ -114,27 +113,31 @@ void compile(Parser::Context_t *ctx) {
 
 std::unique_ptr<Program_t>
 compile_file(
+    Error_t &err,
     const Dictionary_t *dict,
     const Configuration_t *params,
     const std::string &fs_root,
     const std::string &filename,
-    const std::string &encoding
+    const std::string &encoding,
+    const std::string &contentType
 ) {
-    Parser::Context_t ctx(dict, params, fs_root, encoding);
-    ctx.load_file(filename);
+    Parser::Context_t ctx(err, dict, params, fs_root, encoding, contentType);
+    ctx.load_file(filename, Pos_t(/*base level, no include reference*/));
     compile(&ctx);
     return std::move(ctx.program);
 }
 
 std::unique_ptr<Program_t>
 compile_string(
+    Error_t &err,
     const Dictionary_t *dict,
     const Configuration_t *params,
     const std::string &fs_root,
     const std::string &source,
-    const std::string &encoding
+    const std::string &encoding,
+    const std::string &contentType
 ) {
-    Parser::Context_t ctx(dict, params, fs_root, encoding);
+    Parser::Context_t ctx(err, dict, params, fs_root, encoding, contentType);
     ctx.load_source(source);
     compile(&ctx);
     return std::move(ctx.program);
@@ -143,38 +146,50 @@ compile_string(
 namespace Parser {
 
 Context_t::Context_t(
+    Error_t &err,
     const Dictionary_t *dict,
     const Configuration_t *params,
     const std::string &fs_root,
-    const std::string &encoding
+    const std::string &encoding,
+    const std::string &contentType
 ): utf8(encoding == "utf-8"),
-   program(std::make_unique<Program_t>()), dict(dict), params(params),
-   fs_root(fs_root), source_codes(), lex1_stack(),
-   lex2_value(program->getErrors()), coproc_err(),
-   coproc(coproc_err, *program, *dict, *params),
+   program(std::make_unique<Program_t>(err)), dict(dict), params(params),
+   fs_root(fs_root), source_codes(), lex1_stack(), lex2_value(err),
+   coproc_err(), coproc(coproc_err, *program, *dict, *params),
    open_frames(*program), var_sym(), opts_sym(),
    error_occurred(false), unexpected_token{LEX2::INV, {}, {}},
    expr_start_point{{}, -1, true}, if_stmnt_start_point{{}, -1, true},
-   branch_start_addrs(), case_option_addrs(), optimization_points()
-{}
-// TODO(burlog): zvazit predalokaci stacku na nejakou "velikost" v 2.0 byla na 100
+   branch_start_addrs(), case_option_addrs(), optimization_points(),
+   escaper(ContentType_t::find(contentType))
+{
+    // TODO(burlog): zvazit predalokaci stacku na nejakou "velikost" v 2.0 byla na 100
+}
 
 Context_t::~Context_t() = default;
 
 void
-Context_t::load_file(const string_view_t &filename, const Pos_t *incl_pos) {
-    // load source code from file
-    std::string path = absfile(fs_root, filename);
-    source_codes.push_back(read_file(this, incl_pos, path));
-    auto &source_code = source_codes.back();
-
+Context_t::load_file(const string_view_t &filename, const Pos_t &incl_pos) {
     // register source into program sources list
     // the registration routine returns program lifetime durable pointer to
     // filename that can be used as pointer to filename in Pos_t instancies
-    auto *source_path = program->addSource(path, {}).first;
+    std::string path = absfile(fs_root, filename);
+    try {
+        auto *source_path = program->addSource(path).first;
 
-    // create the level 1 lexer for given source code
-    lex1_stack.emplace(source_code, utf8, params, source_path);
+        // load source code from file
+        source_codes.push_back(read_file(this, incl_pos, path));
+        auto &source_code = source_codes.back();
+
+        // create the level 1 lexer for given source code
+        lex1_stack.emplace(source_code, utf8, params, source_path);
+
+    } catch (const std::exception &e) {
+        logError(
+            this,
+            incl_pos,
+            "Error reading file '" + path + "' " + "(" + e.what() + ")"
+        );
+    }
 }
 
 void Context_t::load_source(const std::string &source) {
@@ -217,8 +232,9 @@ Token_t Context_t::next_token() {
         // get next L1 token and process it
         using LEX1 = Lex1_t::LEX1;
         switch (auto token = lex1().next()) {
-        case LEX1::TENG: case LEX1::EXPR:
-        case LEX1::DICT: case LEX1::TENG_SHORT:
+        case LEX1::DICT:
+        case LEX1::TENG: case LEX1::TENG_SHORT:
+        case LEX1::ESC_EXPR: case LEX1::RAW_EXPR:
             DBG(std::cerr << "* " << token << std::endl);
             lex2().start_scanning(std::move(token.flex_view()), token.pos);
             continue; // parse token value by level 2 lexer in next loop

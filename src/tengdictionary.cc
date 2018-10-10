@@ -134,20 +134,20 @@ struct DictParser_t {
         string_view_t filename
     ): dict(dict), err(err), sources(sources), fs_root(fs_root), pos(),
        expandVars(expandVars), include_level(0)
-    {load_file(filename);}
+    {load_file(filename, Pos_t(/*base level, no include reference*/));}
 
-    /** C'tor.
+    /** C'tor: for included dicts.
      */
     DictParser_t(
         DictParser_t &parent,
         string_view_t filename,
-        const Pos_t &include_pos
+        const Pos_t &incl_pos
     ): dict(parent.dict), err(parent.err), sources(parent.sources),
        fs_root(parent.fs_root), expandVars(parent.expandVars),
        include_level(parent.include_level + 1)
-    {load_file(filename, include_pos);}
+    {load_file(filename, incl_pos);}
 
-    void load_file(string_view_t filename, Pos_t include_pos = {});
+    void load_file(string_view_t filename, const Pos_t &incl_pos);
 
     /** Loads dict file data.
      */
@@ -187,7 +187,7 @@ struct DictParser_t {
         type1_t new_directive,
         type2_t new_entry,
         string_view_t filename,
-        Pos_t include_pos
+        Pos_t incl_pos
     );
 
     Dictionary_t *dict;     //!< dict with yet parsed values
@@ -200,15 +200,14 @@ struct DictParser_t {
     uint32_t include_level; //!< the include level
 };
 
-void DictParser_t::load_file(string_view_t filename, Pos_t include_pos) {
+void DictParser_t::load_file(string_view_t filename, const Pos_t &incl_pos) {
     // if relative path => prepend root
     std::string path = absfile(fs_root, filename);
 
-    // insert source into source list and setup file position
-    auto *source_path = sources.push(path, include_pos, err).first;
-    pos = {source_path, 1, 0};
-
     try {
+        // insert source into source list and setup file position
+        pos = {sources.push(path).first, 1, 0};
+
         // read file data
         std::ifstream file(path);
         load_file(file);
@@ -216,9 +215,17 @@ void DictParser_t::load_file(string_view_t filename, Pos_t include_pos) {
     } catch (const std::system_error &e) {
         logError(
             err,
-            include_pos,
-            "Error reading file '" + filename + "' "
+            incl_pos,
+            "Error reading file '" + path + "' "
             + "(" + e.code().message() + ")"
+        );
+
+    } catch (const std::exception &e) {
+        logError(
+            err,
+            incl_pos,
+            "Error reading file '" + path + "' "
+            + "(" + e.what() + ")"
         );
     }
 }
@@ -472,25 +479,25 @@ void DictParser_t::include_file(
     type1_t new_directive,
     type2_t new_entry,
     string_view_t filename,
-    Pos_t include_pos
+    Pos_t incl_pos
 ) {
     // include other source
     if (include_level > 10) {
         auto level = std::to_string(include_level);
-        logError(err, include_pos, "Too many includes: " + level);
+        logError(err, incl_pos, "Too many includes: " + level);
         return;
     }
 
     // strip trailing whitespaces
     auto filename_view = strip(filename);
     auto spaces = std::distance(filename.begin(), filename_view.begin());
-    include_pos.advanceColumn(spaces);
+    incl_pos.advanceColumn(spaces);
 
     // check filename
     if (!filename_view.empty()) {
-        DictParser_t parser(*this, filename, include_pos);
+        DictParser_t parser(*this, filename, incl_pos);
         parser.parse(new_directive, new_entry);
-    } else logError(err, include_pos, "Missing filename to include");
+    } else logError(err, incl_pos, "Missing filename to include");
 }
 
 } // namespace

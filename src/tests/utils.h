@@ -64,7 +64,8 @@ inline std::string g(
     const Teng::Fragment_t &data = {},
     const std::string &lang = "",
     const std::string &ct = "text/html",
-    const std::string &encoding = "utf-8"
+    const std::string &encoding = "utf-8",
+    const std::string &conf_file = "teng.conf"
 ) {
     std::string result;
     Teng::StringWriter_t writer(result);
@@ -73,7 +74,7 @@ inline std::string g(
         templ,
         TEST_ROOT "dict.txt",
         lang,
-        TEST_ROOT "teng.conf",
+        TEST_ROOT + conf_file,
         ct,
         encoding,
         data,

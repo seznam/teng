@@ -43,10 +43,17 @@ SCENARIO(
     "Escaping string with urlencoding",
     "[fun][escaping]"
 ) {
-    WHEN("String with special characters") {
+    WHEN("String with special characters - escaping print used") {
+        THEN("Some of them are escaped") {
+            auto t = "%{urlescape(\"'asdf!@#$%^&*\(\\\"\")}";
+            REQUIRE(g(t) == "'asdf!@%23$%^&*(%22");
+        }
+    }
+
+    WHEN("String with special characters - raw print used") {
         THEN("Some of them are escaped") {
             auto t = "${urlescape(\"'asdf!@#$%^&*\(\\\"\")}";
-            REQUIRE(g(t) == "'asdf!@%23$%^&*(%22");
+            REQUIRE(g(t) == "'asdf!@%23$%^&amp;*(%22");
         }
     }
 }
@@ -55,10 +62,17 @@ SCENARIO(
     "Unescaping urlencoding",
     "[fun][escaping]"
 ) {
-    WHEN("Urlescaped string") {
+    WHEN("Urlescaped string - raw print used") {
+        THEN("Urlescape sequencies are decoded") {
+            auto t = "%{urlunescape(\"%27asdf%21%40%23%24%25%5E%26%2A%28\")}";
+            REQUIRE(g(t) == "'asdf!@#$%^&*(");
+        }
+    }
+
+    WHEN("Urlescaped string - escaping print used") {
         THEN("Urlescape sequencies are decoded") {
             auto t = "${urlunescape(\"%27asdf%21%40%23%24%25%5E%26%2A%28\")}";
-            REQUIRE(g(t) == "'asdf!@#$%^&*(");
+            REQUIRE(g(t) == "'asdf!@#$%^&amp;*(");
         }
     }
 }
@@ -69,7 +83,7 @@ SCENARIO(
 ) {
     GIVEN("The default html content type") {
         Teng::Fragment_t root;
-        auto t = "${escape('some<b>text&\\'\"')}";
+        auto t = "%{escape('some<b>text&\\'\"')}";
 
         WHEN("The escape is called") {
             Teng::Error_t err;
@@ -86,7 +100,7 @@ SCENARIO(
     GIVEN("The quoted string content type") {
         Teng::Fragment_t root;
         auto t = "<?teng ctype 'quoted-string'?>"
-                 "${escape('some<b>#text&\\'\"')}"
+                 "%{escape('some<b>#text&\\'\"')}"
                  "<?teng endctype?>";
 
         WHEN("The escape is called") {
@@ -108,7 +122,7 @@ SCENARIO(
 ) {
     GIVEN("The default html content type") {
         Teng::Fragment_t root;
-        auto t = "${unescape('some&lt;b&gt;text&amp;\\'&quot;')}";
+        auto t = "%{unescape('some&lt;b&gt;text&amp;\\'&quot;')}";
 
         WHEN("The unescape is called") {
             Teng::Error_t err;
@@ -125,7 +139,7 @@ SCENARIO(
     GIVEN("The quoted string content type") {
         Teng::Fragment_t root;
         auto t = "<?teng ctype 'quoted-string'?>"
-                 "${unescape('some<b>#text&\\'\\\"')}"
+                 "%{unescape('some<b>#text&\\'\\\"')}"
                  "<?teng endctype?>";
 
         WHEN("The unescape is called") {
@@ -147,7 +161,7 @@ SCENARIO(
 ) {
     GIVEN("The default html content type") {
         Teng::Fragment_t root;
-        auto t = "${quoteescape('some<b>text&\\'\"\n')}";
+        auto t = "%{quoteescape('some<b>text&\\'\"\n')}";
 
         WHEN("The quoteescape is called") {
             Teng::Error_t err;
@@ -164,7 +178,7 @@ SCENARIO(
     GIVEN("The quoted string content type") {
         Teng::Fragment_t root;
         auto t = "<?teng ctype 'x-sh'?>"
-                 "${quoteescape('some<b>text&\\'\"\n')}"
+                 "%{quoteescape('some<b>text&\\'\"\n')}"
                  "<?teng endctype?>";
 
         WHEN("The escape is called") {
@@ -175,6 +189,81 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "some<b>text&\\'\\\"\\n");
+            }
+        }
+    }
+}
+
+SCENARIO(
+    "The print escaping is disabled",
+    "[fun][escaping]"
+) {
+    GIVEN("The default html content type - raw print used") {
+        Teng::Fragment_t root;
+        auto t = "%{unescape('s&lt;b&gt;t&amp;\\'&quot;')}";
+
+        WHEN("The unescape is called") {
+            Teng::Error_t err;
+            const char *conf = "teng.no-print-escape.conf";
+            auto result = g(err, t, root, "", "text/html", "utf-8", conf);
+
+            THEN("%{} directives are handled as regular text") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "%{unescape('s&lt;b&gt;t&amp;\\'&quot;')}");
+            }
+        }
+    }
+
+    GIVEN("The quoted string content type - raw print used") {
+        Teng::Fragment_t root;
+        auto t = "<?teng ctype 'quoted-string'?>"
+                 "%{unescape('some<b>#text&\\'\\\"')}"
+                 "<?teng endctype?>";
+
+        WHEN("The unescape is called") {
+            Teng::Error_t err;
+            const char *conf = "teng.no-print-escape.conf";
+            auto result = g(err, t, root, "", "text/html", "utf-8", conf);
+
+            THEN("%{} directives are handled as regular text") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "%{unescape('some<b>#text&\\'\\\"')}");
+            }
+        }
+    }
+
+    GIVEN("The default html content type - escaping print used") {
+        Teng::Fragment_t root;
+        auto t = "%{escape('some<b>text&\\'\"')}";
+
+        WHEN("The escape is called") {
+            Teng::Error_t err;
+            auto result = g(err, t, root);
+
+            THEN("Dangerous characters are escaped") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "some&lt;b&gt;text&amp;'&quot;");
+            }
+        }
+    }
+
+    GIVEN("The quoted string content type - escaping print used") {
+        Teng::Fragment_t root;
+        auto t = "<?teng ctype 'quoted-string'?>"
+                 "%{escape('some<b>#text&\\'\"')}"
+                 "<?teng endctype?>";
+
+        WHEN("The escape is called") {
+            Teng::Error_t err;
+            auto result = g(err, t, root);
+
+            THEN("Dangerous characters are escaped") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "some<b>#text&\\'\\\"");
             }
         }
     }

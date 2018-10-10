@@ -44,11 +44,11 @@
 
 namespace Teng {
 
-Configuration_t::Configuration_t(const std::string &fs_root)
-    : Dictionary_t(fs_root),
+Configuration_t::Configuration_t(Error_t &err, const std::string &fs_root)
+    : Dictionary_t(err, fs_root),
       debug(false), errorFragment(false), logToOutput(false), bytecode(false),
       watchFiles(true), alwaysEscape(true), shortTag(false), format(true),
-      maxIncludeDepth(10), maxDebugValLength(40)
+      maxIncludeDepth(10), maxDebugValLength(40), printEscape(true)
 {}
 
 teng_feature
@@ -65,6 +65,7 @@ Configuration_t::isEnabled(const string_view_t &name) const {
     if (name == "watchfiles") return bool2feature(watchFiles);
     if (name == "format") return bool2feature(format);
     if (name == "alwaysescape") return bool2feature(alwaysEscape);
+    if (name == "printescape") return bool2feature(printEscape);
     if (name == "shorttag") return bool2feature(shortTag);
 
     // unknown features
@@ -73,7 +74,7 @@ Configuration_t::isEnabled(const string_view_t &name) const {
 
 std::ostream &operator<<(std::ostream &o, const Configuration_t &c) {
     auto bool2string = [] (bool value) {return value? "enabled": "disabled";};
-    o << "Configuration: " << std::endl
+    o << "Configuration:" << std::endl
       << "    debug: " << bool2string(c.debug) << std::endl
       << "    errorfragment: " << bool2string(c.errorFragment) << std::endl
       << "    logtooutput: " << bool2string(c.logToOutput) << std::endl
@@ -83,6 +84,7 @@ std::ostream &operator<<(std::ostream &o, const Configuration_t &c) {
       << "    maxdebugvallength: " << c.maxDebugValLength << std::endl
       << "    format: " << bool2string(c.format) << std::endl
       << "    alwaysescape: " << bool2string(c.alwaysEscape) << std::endl
+      << "    printescape: " << bool2string(c.printEscape) << std::endl
       << "    shorttag: " << bool2string(c.shortTag) << std::endl;
     return o;
 }
@@ -124,6 +126,7 @@ Configuration_t::new_directive(
         if (value == "watchfiles") return do_enable(watchFiles);
         if (value == "format") return do_enable(format);
         if (value == "alwaysescape") return do_enable(alwaysEscape);
+        if (value == "printescape") return do_enable(printEscape);
         if (value == "shorttag") return do_enable(shortTag);
         return enable? error_code::invalid_enable: error_code::invalid_disable;
     };

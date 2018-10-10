@@ -51,6 +51,7 @@
 #include "tengprocessor.h"
 #include "tengparserfrag.h"
 #include "tengparserdiag.h"
+#include "tengcontenttype.h"
 
 namespace Teng {
 
@@ -65,11 +66,13 @@ namespace Teng {
  */
 std::unique_ptr<Program_t>
 compile_file(
+    Error_t &err,
     const Dictionary_t *dict,
     const Configuration_t *params,
     const std::string &fs_root,
     const std::string &filename,
-    const std::string &encoding
+    const std::string &encoding,
+    const std::string &contentType
 );
 
 /** Compile string template into a program.
@@ -83,11 +86,13 @@ compile_file(
  */
 std::unique_ptr<Program_t>
 compile_string(
+    Error_t &err,
     const Dictionary_t *dict,
     const Configuration_t *params,
     const std::string &fs_root,
     const std::string &source,
-    const std::string &encoding
+    const std::string &encoding,
+    const std::string &contentType
 );
 
 namespace Parser {
@@ -98,10 +103,12 @@ struct Context_t {
     /** C'tor.
      */
     Context_t(
+        Error_t &err,
         const Dictionary_t *dict,
         const Configuration_t *params,
         const std::string &fs_root,
-        const std::string &encoding
+        const std::string &encoding,
+        const std::string &contentType
     );
 
     /** D'tor.
@@ -141,6 +148,10 @@ struct Context_t {
     /** The list of source codes.
     */
     using SourceCodes_t = std::vector<flex_string_value_t>;
+
+    /** Stack of positions where rtvars starts.
+     */
+    using rtvar_strings_t = std::vector<string_view_t>;
 
     /** Stack of instruction addresses. The stack is needed due to nested if
      * statements.
@@ -188,7 +199,7 @@ struct Context_t {
      * @param filename Template filename (absolute path).
      * @param incl_pos The include directive position.
      */
-    void load_file(const string_view_t &filename, const Pos_t *incl_pos = {});
+    void load_file(const string_view_t &filename, const Pos_t &incl_pos);
 
     /** Load source code from string.
      *
@@ -214,11 +225,13 @@ struct Context_t {
     Token_t unexpected_token;           //!< the last unexpected token
     expr_start_t expr_start_point;      //!< address and pos where exprs starts
     expr_start_t if_stmnt_start_point;  //!< address where if stmnt starts
+    rtvar_strings_t rtvar_strings;      //!< positions where rtvar starts
     // TODO(burlog): proc je tu slovo start, podle me staci branch_addrs
     addrs_stack_t branch_start_addrs;   //!< addresses of unfinished jumps
     addrs_stack_t case_option_addrs;    //!< the list of addrs of case options
     optim_points_t optimization_points; //!< adresses of "value generators"
     ExprDiag_t expr_diag;               //!< list of expression diagnostic codes
+    Escaper_t escaper;                  //!< open content types / escaper
 };
 
 } // namespace Parser

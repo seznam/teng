@@ -59,7 +59,7 @@ public:
      *
      * @param root path of root for locating files
      */
-    Configuration_t(const std::string &fs_root = std::string());
+    Configuration_t(Error_t &err, const std::string &fs_root = std::string());
 
     // @{ shortcuts to query configuration
     bool isDebugEnabled() const {return debug;}
@@ -71,6 +71,7 @@ public:
     uint16_t getMaxDebugValLength() const {return maxDebugValLength;}
     bool isFormatEnabled() const {return format;}
     bool isAlwaysEscapeEnabled() const {return alwaysEscape;}
+    bool isPrintEscapeEnabled() const {return printEscape;}
     bool isShortTagEnabled() const {return shortTag;}
     // @}
 
@@ -101,6 +102,7 @@ protected:
     bool format;        //!< the <?tenf formag ...?> enabled (true)
     uint32_t maxIncludeDepth;   //!< maximal template include depth
     uint16_t maxDebugValLength; //!< maximal length of variable value length
+    bool printEscape;  //!< use escaping only if values are printed
 };
 
 } // namespace Teng

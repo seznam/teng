@@ -61,9 +61,8 @@ std::string MD5Hexdigest(const std::string &data);
  *         to end of clipped string (utf-8 safe)
  *  @param str string to clip
  *  @param len maximal length of str after clipping
- *  @param error log
  */
-void clipString(std::string &str, unsigned int len);
+std::string clip(std::string str, unsigned int len);
 
 /** @short Converts ASCII string to lowercase ASCII string.
  */

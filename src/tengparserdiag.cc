@@ -156,6 +156,7 @@ void ExprDiagEntry_t::log(Context_t *ctx, const Token_t &token) {
 void ExprDiag_t::log_unexpected_token(Context_t *ctx) {
     auto pos = ctx->unexpected_token.pos;
     switch (ctx->unexpected_token) {
+        // TODO(burlog): smazat?
     // case LEX2::END:
     //     logError(ctx, pos, "Misplaced or excessive '?>' token");
     //     break;

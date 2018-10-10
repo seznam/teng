@@ -52,10 +52,8 @@ using Function_t
  * @short Finds builtin function in global list, returns pointer or nullptr.
  *
  * @param name name of the function
- * @param normalRun true for normal run, false for preevaluation constant expr
  */
-Invoker_t<Function_t>
-findFunction(const std::string &name, bool normalRun = true);
+Invoker_t<Function_t> findFunction(const std::string &name);
 
 } // namespace Teng
 

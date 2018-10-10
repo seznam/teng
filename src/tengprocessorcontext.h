@@ -59,7 +59,7 @@ struct EvalCtx_t {
     Error_t &err;                           //!< error log
     const Program_t &program;               //!< program (translated template)
     const Dictionary_t &dict;               //!< language specific dictionary
-    const Configuration_t &cfg;             //!< param dictionary
+    const Configuration_t &params;          //!< param dictionary
     const string_view_t &encoding;          //!< the template charset
     const OFFApi_t *frames_ptr = nullptr;   //!< open fragments frames accessor
     const Escaper_t *escaper_ptr = nullptr; //!< current string escaping machine
@@ -77,12 +77,12 @@ struct RunCtx_t: public EvalCtx_t {
         Error_t &err,
         const Program_t &program,
         const Dictionary_t &dict,
-        const Configuration_t &cfg,
+        const Configuration_t &params,
         const string_view_t &encoding,
         const ContentType_t *contentType,
         const FragmentValue_t &root,
         Formatter_t &output
-    ): EvalCtx_t{err, program, dict, cfg, encoding},
+    ): EvalCtx_t{err, program, dict, params, encoding},
        output(output), frames(&root), escaper(contentType)
     {EvalCtx_t::frames_ptr = &frames; EvalCtx_t::escaper_ptr = &escaper;}
 
@@ -102,47 +102,13 @@ struct RunCtxPtr_t {
     RunCtxPtr_t(EvalCtx_t *) {throw runtime_ctx_needed_t{};}
     RunCtx_t *operator->() const {return ptr;}
     RunCtx_t &operator*() const {return *ptr;}
+    operator EvalCtx_t *() const {return ptr;}
     RunCtx_t *ptr;
 };
 
-/** Returns the top item on stack.
- */
-Value_t &stack_top(std::stack<Value_t> &stack) {
-    if (stack.empty())
-        throw std::runtime_error("value stack underflow");
-    return stack.top();
-}
-
-/** Steals the top item from the stack.
- */
-Value_t move_back(std::stack<Value_t> &stack) {
-    if (stack.empty())
-        throw std::runtime_error("value stack underflow");
-    Value_t value = std::move(stack.top());
-    stack.pop();
-    return value;
-}
-
-/** Returns the top item on stack.
- */
-Value_t &stack_top(std::vector<Value_t> &stack) {
-    if (stack.empty())
-        throw std::runtime_error("program stack underflow");
-    return stack.back();
-}
-
-/** Steals the top item from the stack.
- */
-Value_t move_back(std::vector<Value_t> &stack) {
-    if (stack.empty())
-        throw std::runtime_error("program stack underflow");
-    Value_t value = std::move(stack.back());
-    stack.pop_back();
-    return value;
-}
-
 /** Because of undefined order of function arguments evaluation, you can't use
- * somehing like: some_function(move_back(stack), move_back(stack)).
+ * somehing like: some_function(pop(stack), pop(stack)).
+ * (Supposing that pop returns a value.)
  *
  * This class solves the issue by postponing poping of args to function body.
  */
@@ -150,20 +116,26 @@ struct GetArg_t {
 public:
     /** C'tor.
      */
-    GetArg_t(std::stack<Value_t> &stack): stack(stack) {}
+    GetArg_t(std::vector<Value_t> &stack): stack(stack) {}
 
     /** Returns the most recent arg.
      */
-    Value_t operator()() const {return move_back(stack);};
+    Value_t operator()() const {
+        if (stack.empty())
+            throw std::runtime_error("program stack underflow");
+        Value_t value = std::move(stack.back());
+        stack.pop_back();
+        return value;
+    };
 
 protected:
-    std::stack<Value_t> &stack; //!< where are arguments stored
+    std::vector<Value_t> &stack; //!< where are arguments stored
 };
 
 /** Returns position of instruction in template source.
  */
 Pos_t position(const Instruction_t *instr) {
-    return instr? instr->pos(): Pos_t{1, 0};
+    return instr? instr->pos(): Pos_t();
 }
 
 /** Writes fatal message to log.

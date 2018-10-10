@@ -71,7 +71,8 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {TEST_ROOT "text.txt", 1, 12},
-                    "Runtime: Variable '.var' is undefined"
+                    "Runtime: Variable '.var' is undefined "
+                    "[open_frags=., iteration=0]"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "some text undefined\n");
@@ -172,7 +173,8 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {TEST_ROOT "text.txt", 1, 12},
-                    "Runtime: Variable '.sample.var' is undefined"
+                    "Runtime: Variable '.sample.var' is undefined "
+                    "[open_frags=.sample, iteration=0]"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "{some text undefined\n}");
@@ -211,11 +213,7 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
                     {1, 0},
-                    "Cannot open input file '" TEST_ROOT "missing.txt'"
-                }, {
-                    Teng::Error_t::ERROR,
-                    {0, 0},
-                    "Cannot stat file '" TEST_ROOT "missing.txt' "
+                    "Error reading file '" TEST_ROOT "missing.txt' "
                     "(No such file or directory)"
                 }};
                 REQUIRE(err.getEntries() == errs);
@@ -254,4 +252,97 @@ SCENARIO(
         }
     }
 }
+
+SCENARIO(
+    "Omitting duplicate errors across included files",
+    "[include]"
+) {
+    GIVEN("Template with error and include with error") {
+        auto t = "<?teng frag sample?>"
+                 "here is missing variable before include ${before};"
+                 "<?teng include file='incl.error.txt'?>;"
+                 "and here, after the include ${after};"
+                 "<?teng endfrag?>";
+
+        WHEN("The template is rendered with more than one frag") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addFragment("sample");
+            root.addFragment("sample");
+            root.addFragment("sample");
+            root.addFragment("sample");
+            auto result = g(err, t, root);
+
+            THEN("Then the errors should be in log only once") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 62},
+                    "Runtime: Variable '.sample.before' is undefined "
+                    "[open_frags=.sample, iteration=0]"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 62},
+                    "Runtime: Variable '.sample.before' is undefined "
+                    "[open_frags=.sample, iteration=1]"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 62},
+                    "Runtime: Variable '.sample.before' is undefined "
+                    "[open_frags=.sample, iteration=2]"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 62},
+                    "The 1 other error message(s) for this source code "
+                    "position have been ignored"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {TEST_ROOT "incl.error.txt", 2, 2},
+                    "Runtime: Variable '.sample.missing' is undefined "
+                    "[open_frags=.sample, iteration=0]"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {TEST_ROOT "incl.error.txt", 2, 2},
+                    "Runtime: Variable '.sample.missing' is undefined "
+                    "[open_frags=.sample, iteration=1]"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {TEST_ROOT "incl.error.txt", 2, 2},
+                    "Runtime: Variable '.sample.missing' is undefined "
+                    "[open_frags=.sample, iteration=2]"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {TEST_ROOT "incl.error.txt", 2, 2},
+                    "The 1 other error message(s) for this source code "
+                    "position have been ignored"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 139},
+                    "Runtime: Variable '.sample.after' is undefined "
+                    "[open_frags=.sample, iteration=0]"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 139},
+                    "Runtime: Variable '.sample.after' is undefined "
+                    "[open_frags=.sample, iteration=1]"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 139},
+                    "Runtime: Variable '.sample.after' is undefined "
+                    "[open_frags=.sample, iteration=2]"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 139},
+                    "The 1 other error message(s) for this source code "
+                    "position have been ignored"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                std::string s = "here is missing variable before include "
+                                "undefined;some\nundefined\ntext\n;"
+                                "and here, after the include undefined;";
+                REQUIRE(result == s + s + s + s);
+            }
+        }
+    }
+}
+
 

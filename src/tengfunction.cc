@@ -60,57 +60,56 @@ namespace {
 
 struct FunctionStub_t {
     const char *name;  // teng name
-    bool eval;         // use for preevaluation (false for rand(), time() etc)
     Function_t func;   // C++ function addr
 };
 
 FunctionStub_t builtin_functions[] = {
-     // number
-    {"int", true, builtin::toint},               // like (int) in C
-    {"isnumber", true, builtin::isnumber},       // true if arg is number
-    {"random", false, builtin::random},          // random integer
-    {"round", true, builtin::round},             // round(number, precision)
-    {"numformat", true, builtin::numformat},     // format number for display
+    // number
+    {"int", builtin::toint},                   // like (int) in C
+    {"isnumber", builtin::isnumber},           // true if arg is number
+    {"random",  builtin::random},              // random integer
+    {"round", builtin::round},                 // round(number, precision)
+    {"numformat", builtin::numformat},         // format number for display
 
     // string
-    {"len", false, builtin::len},                // like strlen in C
-    {"strtolower", true, builtin::strtolower},   // utf-8 lowercase
-    {"strtoupper", true, builtin::strtoupper},   // utf-8 uppercase
-    {"substr", false, builtin::substr},          // like str[a:b] in Python
-    {"wordsubstr", false, builtin::wordsubstr},  // substr preserving words
-    {"reorder", true, builtin::reorder},         // like sprintf with %s
-    {"nl2br", true, builtin::nl2br},             // convert '\n' => <br />
-    {"replace", true, builtin::replace},         // string replace
-    {"regex_replace", true, builtin::regex_replace}, // regex replace
+    {"len",  builtin::len},                    // like strlen in C
+    {"strtolower", builtin::strtolower},       // utf-8 lowercase
+    {"strtoupper", builtin::strtoupper},       // utf-8 uppercase
+    {"substr",  builtin::substr},              // like str[a:b] in Python
+    {"wordsubstr",  builtin::wordsubstr},      // substr preserving words
+    {"reorder", builtin::reorder},             // like sprintf with %s
+    {"nl2br", builtin::nl2br},                 // convert '\n' => <br />
+    {"replace", builtin::replace},             // string replace
+    {"regex_replace", builtin::regex_replace}, // regex replace
 
     // escaping
-    {"escape", false, builtin::escape},          // for example "<" => "&lt;"
-    {"unescape", false, builtin::unescape},      // for example "&lt;" => "<"
-    {"urlescape", true, builtin::urlescape},     // escape strange chars in urls
-    {"urlunescape", true, builtin::urlunescape}, // unescape url encoding
-    {"quoteescape", true, builtin::quoteescape}, // escape strange chars
+    {"escape",  builtin::escape},              // for example "<" => "&lt;"
+    {"unescape",  builtin::unescape},          // for example "&lt;" => "<"
+    {"urlescape", builtin::urlescape},         // escape strange chars in urls
+    {"urlunescape", builtin::urlunescape},     // unescape url encoding
+    {"quoteescape", builtin::quoteescape},     // escape strange chars
 
     // date
-    {"date", true, builtin::date},               // like strftime
-    {"now", false, builtin::now},                // like gettimeofday
-    {"sectotime", true, builtin::sectotime},     // convert seconds to HH:MM:SS
-    {"timestamp", true, builtin::timestamp},     // returns current timestamp
+    {"date", builtin::date},                   // like strftime
+    {"now",  builtin::now},                    // like gettimeofday
+    {"sectotime", builtin::sectotime},         // convert seconds to HH:MM:SS
+    {"timestamp", builtin::timestamp},         // returns current timestamp
 
     // other
-    {"isenabled", true, builtin::isenabled},     // isenabled(feature)
-    {"dictexist", true, builtin::dictexist},     // dictexist(key)
-    {"getdict", true, builtin::getdict},         // getdict(key, default)
+    {"isenabled", builtin::isenabled},         // isenabled(feature)
+    {"dictexist", builtin::dictexist},         // dictexist(key)
+    {"getdict", builtin::getdict},             // getdict(key, default)
 
     // sentinel
-    {nullptr, false, nullptr}                    // end of list
+    {nullptr,  nullptr}                        // end of list
 };
 
 } // namespace
 
 Invoker_t<Function_t>
-findFunction(const std::string &name, bool normalRun) {
+findFunction(const std::string &name) {
     for (auto *p = builtin_functions; p->name; ++p)
-        if ((normalRun || p->eval) && (p->name == name))
+        if (p->name == name)
             return {name, p->func};
     return {name, nullptr};
 }

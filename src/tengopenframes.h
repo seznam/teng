@@ -42,9 +42,6 @@
 
 #include <string>
 
-// TODO(burlog): remove
-#include <iostream>
-
 #include "tengerror.h"
 #include "tengvalue.h"
 #include "tengstructs.h"
@@ -128,6 +125,7 @@ inline const Fragment_t *get_lone_frag(const Value_t &self) {
     case Value_t::tag::list_ref:
         if (self.as_list_ref().ptr->size() == 1)
             return self.as_list_ref().ptr->begin()->fragment();
+        // TODO(burlog): tell the user that the expression is ambigous
         return nullptr;
     }
 }
@@ -321,7 +319,26 @@ struct FrameRec_t {
         if (frag_offset >= open_frags.size())
             throw std::runtime_error(__PRETTY_FUNCTION__);
         auto i = open_frags.size() - frag_offset - 1;
-        return open_frags[i].frag;
+        return Value_t(get_frag(open_frags[i].frag));
+    }
+
+    /** Returns open fragments joined by dot.
+     */
+    std::string current_path() const {
+        std::string result = ".";
+        for (auto i = 1u; i < open_frags.size(); ++i) {
+            if (i > 1) result.push_back('.');
+            result.append(open_frags[i].name.str());
+        }
+        return result;
+    }
+
+    /** Returns current fragment index in parent list.
+     */
+    std::size_t current_list_i() const {
+        return open_frags.size() == 1
+            ? 0
+            : get_list_pos_impl(open_frags.back().frag).i;
     }
 
 protected:
@@ -384,11 +401,25 @@ public:
     OpenFrames_t(const OpenFrames_t &) = delete;
     OpenFrames_t &operator=(const OpenFrames_t &) = delete;
 
+    /** Used to indetified the variable for cases where the instruction does
+     * not contain offsets.
+     */
+    struct VarDesc_t {
+        VarDesc_t(const string_view_t &name): name(name) {}
+        string_view_t name;
+        uint32_t frame_offset = 0;
+        uint32_t frag_offset = 0;
+    };
+
     /** C'tor.
      */
     OpenFrames_t(const FragmentValue_t *root)
         : root(root), frames(1, FrameRec_t(root))
     {}
+
+    /** Returns the root fragment.
+     */
+    const FragmentValue_t *root_frag() const {return root;}
 
     /** Opens new frame.
      */
@@ -430,6 +461,12 @@ public:
         return frames[i].get_var(var);
     }
 
+    /** Returns the value of the desired variable or an undefined value.
+     */
+    Value_t get_var(const VarDesc_t &var) const {
+        return get_var<VarDesc_t>(var);
+    }
+
     /** Sets the value of the desired variable.
      */
     template <typename VarDesc_t>
@@ -448,6 +485,12 @@ public:
             throw std::runtime_error(__PRETTY_FUNCTION__);
         auto i = frames.size() - var.frame_offset - 1;
         return frames[i].get_list_pos(var);
+    }
+
+    /** Returns index of desired frag in fragment list and list size.
+     */
+    ListPos_t get_list_pos(const VarDesc_t &var) const {
+        return get_list_pos<VarDesc_t>(var);
     }
 
     // *********************************************vvv open fragment frames API
@@ -492,59 +535,34 @@ public:
         }
     }
 
+    /** Returns open fragments joined by dot.
+     */
+    std::string current_path() const override {
+        return frames[0].current_path();
+    }
+
+    /** Returns current fragment index in parent list.
+     */
+    std::size_t current_list_i() const override {
+        return frames[0].current_list_i();
+    }
+
     /** Returns 'representation' of the given value.
      */
     Value_t repr(const Value_t &arg) const override {
-        // TODO(burlog): ma repr vubec pak smysl?
-        // TODO(burlog): repr a escape?
         return arg;
     }
 
     /** Returns true if value exists.
      */
     Value_t exists(const Value_t &arg) const override {
-        // #<{(|* Implementation of the teng 'exists' operator.
-        //  |)}>#
-        // Result_t exists(RunCtxPtr_t ctx) {
-        //     throw std::runtime_error("not implemented yet");
-        //     // auto &instr = ctx->instr->as<Exists_t>();
-        //     // auto error_code = ctx->frag_stack.exists(instr.ident);
-        //     // return Result_t(!error_code);
-        // }
         return Value_t(!arg.is_undefined());
     }
 
     // *********************************************^^^ open fragment frames API
 
-    // #<{(|* Implementation of the teng 'defined' operator.
-    //  |)}>#
-    // Result_t defined(RunCtxPtr_t ctx) {
-    //     throw std::runtime_error(__PRETTY_FUNCTION__);
-    //     // logWarning(*ctx, "The defined() operator is deprecated");
-    //     // auto &instr = ctx->instr->as<Defined_t>();
-    //     //
-    //     // // no such variable and no such fragment found
-    //     // auto error_code = ctx->frag_stack.exists(instr.ident);
-    //     // if (error_code) return Result_t(false);
-    //     //
-    //     // // return false if fragment
-    //     // Result_t tmp;
-    //     // error_code = ctx->frag_stack.findVariable(instr.ident, tmp);
-    //     // if (error_code) return Result_t(true);
-    //     //
-    //     // // ok
-    //     // return tmp;
-    // }
-
-    // #<{(|* Implementation of the teng 'isempty' operator.
-    //  |)}>#
-    // Result_t isempty(RunCtxPtr_t ctx) {
-    //     // TODO(burlog): make it
-    //     throw std::runtime_error("----------!");
-    // }
-
 protected:
-    const FragmentValue_t *root;;   //!< the fragments tree root
+    const FragmentValue_t *root;    //!< the fragments tree root
     std::vector<FrameRec_t> frames; //!< the list of open frames
 };
 

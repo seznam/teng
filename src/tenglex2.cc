@@ -57,10 +57,12 @@ string_view_t l2_token_name(int token_id) {
     case LEX2::ELSE: return "ELSE";
     case LEX2::ENDIF: return "ENDIF";
     case LEX2::SET: return "SET";
-    case LEX2::EXPR: return "EXPR";
+    case LEX2::ESC_EXPR: return "ESC_EXPR";
+    case LEX2::RAW_EXPR: return "RAW_EXPR";
     case LEX2::TENG: return "TENG";
     case LEX2::END: return "END";
-    case LEX2::SHORT_EXPR: return "SHORT_EXPR";
+    case LEX2::SHORT_ESC_EXPR: return "SHORT_ESC_EXPR";
+    case LEX2::SHORT_RAW_EXPR: return "SHORT_RAW_EXPR";
     case LEX2::SHORT_DICT: return "SHORT_DICT";
     case LEX2::SHORT_END: return "SHORT_END";
     case LEX2::CTYPE: return "CTYPE";

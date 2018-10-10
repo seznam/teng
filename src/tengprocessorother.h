@@ -46,20 +46,23 @@
 namespace Teng {
 namespace exec {
 
-/** Writes debug fragment into template if it is enabled.
+/** Implementation of the literal value.
  */
-void debuging(RunCtxPtr_t ctx) {
-    throw std::runtime_error("not implemented yet");
-    // if (configuration.isDebugEnabled())
-    //     instructionDebug(data, output);
-}
-
-/** Writes bytecode fragment into template if it is enabled.
- */
-void bytecode(RunCtxPtr_t ctx) {
-    throw std::runtime_error("not implemented yet");
-    // if (configuration.isBytecodeEnabled())
-    //     dumpBytecode(escaper, program, output);
+Result_t val(EvalCtx_t *ctx) {
+    auto &instr = ctx->instr->template as<Val_t>();
+    switch (instr.value.type()) {
+        case Value_t::tag::undefined:
+        case Value_t::tag::integral:
+        case Value_t::tag::real:
+        case Value_t::tag::string_ref:
+        case Value_t::tag::regex:
+        case Value_t::tag::frag_ref:
+        case Value_t::tag::list_ref:
+            return Result_t(instr.value);
+        case Value_t::tag::string:
+            // saves some allocation, instruction lives longer than value
+            return Result_t(string_view_t(instr.value.string()));
+    }
 }
 
 /** Implementation of the dictionary lookup function.
@@ -69,11 +72,13 @@ Result_t dict(RunCtxPtr_t ctx, GetArg_t get_arg) {
 
     // dict member?
     if (auto *item = ctx->dict.lookup(arg.string()))
-        return Result_t(*item);
+        // saves some allocation, dict lives longer than value
+        return Result_t(string_view_t(*item));
 
     // config member?
-    if (auto *item = ctx->cfg.lookup(arg.string()))
-        return Result_t(*item);
+    if (auto *item = ctx->params.lookup(arg.string()))
+        // saves some allocation, params lives longer than value
+        return Result_t(string_view_t(*item));
 
     logError(*ctx, "Dictionary item '" + arg.string() + "' was not found");
     return arg;
@@ -88,7 +93,9 @@ void prg_stack_push(std::vector<Value_t> &prg_stack, GetArg_t get_arg) {
 /** Popes value from program stack.
  */
 void prg_stack_pop(std::vector<Value_t> &prg_stack) {
-    move_back(prg_stack);
+    if (prg_stack.empty())
+        throw std::runtime_error("program stack underflow");
+    prg_stack.pop_back();
 }
 
 /** Returns value at instr.value index on program stack.
@@ -115,7 +122,7 @@ Result_t func(Ctx_t *ctx, GetArg_t get_arg) {
         instr.pos(),
         ctx->encoding,
         ctx->escaper_ptr,
-        ctx->cfg,
+        ctx->params,
         ctx->dict
     );
 
@@ -135,7 +142,7 @@ Result_t func(Ctx_t *ctx, GetArg_t get_arg) {
             return function(ctx, fun_ctx, args);
     }
 
-    // if function does not exist then rather disable optimization
+    // if function does not exist then rather skip optimization
     if (!std::is_same<std::decay_t<Ctx_t>, RunCtx_t>::value)
         throw runtime_ctx_needed_t{};
 
@@ -150,21 +157,41 @@ Result_t func(Ctx_t *ctx, GetArg_t get_arg) {
 /** Writes string value of top item on stack (arg) to output.
  */
 void print(RunCtxPtr_t ctx, GetArg_t get_arg) {
-    get_arg().print([&] (const string_view_t &v, auto &&tag) {
-        if (Value_t::visited_value(tag) == Value_t::tag::frag_ref)
-            logWarning(*ctx, "Variable is a fragment, not a scalar value");
-        if (Value_t::visited_value(tag) == Value_t::tag::list_ref)
-            logWarning(*ctx, "Variable is a fragment list, not a scalar value");
-        if (Value_t::visited_value(tag) == Value_t::tag::regex)
+    auto arg = get_arg();
+    auto &instr = ctx->instr->as<Print_t>();
+    arg.print([&] (const string_view_t &v, auto &&tag) {
+        switch (Value_t::visited_value(tag)) {
+        case Value_t::tag::undefined:
+        case Value_t::tag::integral:
+        case Value_t::tag::real:
+            ctx->output.write(v);
+            break;
+        case Value_t::tag::string:
+        case Value_t::tag::string_ref:
+            ctx->params.isPrintEscapeEnabled() && instr.print_escape
+                ? ctx->output.write(ctx->escaper.escape(v))
+                : ctx->output.write(v);
+            break;
+        case Value_t::tag::regex:
             logWarning(*ctx, "Variable is a regex, not a scalar value");
-        ctx->output.write(v);
+            ctx->output.write(v);
+            break;
+        case Value_t::tag::frag_ref:
+            logWarning(*ctx, "Variable is a fragment, not a scalar value");
+            ctx->output.write(v);
+            break;
+        case Value_t::tag::list_ref:
+            logWarning(*ctx, "Variable is a fragment list, not a scalar value");
+            ctx->output.write(v);
+            break;
+        }
     });
 }
 
 /** Push new formatter on formatter stack.
  */
 void push_formatter(RunCtxPtr_t ctx) {
-    if (ctx->cfg.isFormatEnabled()) {
+    if (ctx->params.isFormatEnabled()) {
         auto &instr = ctx->instr->as<OpenFormat_t>();
         auto mode = static_cast<Formatter_t::Mode_t>(instr.mode);
         if (mode == Formatter_t::MODE_COPY_PREV)
@@ -176,7 +203,7 @@ void push_formatter(RunCtxPtr_t ctx) {
 /** Pop current formatter from formatter stack.
  */
 void pop_formatter(RunCtxPtr_t ctx) {
-    if (ctx->cfg.isFormatEnabled())
+    if (ctx->params.isFormatEnabled())
         if (ctx->output.pop() == Formatter_t::MODE_INVALID)
             throw std::runtime_error("stack of formatters is corrupted");
 }
@@ -192,17 +219,35 @@ void push_escaper(RunCtxPtr_t ctx) {
  */
 void pop_escaper(RunCtxPtr_t ctx) {
     if (ctx->escaper.size() == 1) {
-        logError(*ctx, "Can't pop content type: only one remains.");
+        logError(*ctx, "Can't pop content type: only one remains");
     } else ctx->escaper.pop();
 }
 
 /** Evaluates matching of regular expression.
  */
 Result_t regex_match(EvalCtx_t *ctx, GetArg_t get_arg) {
+    auto arg = get_arg();
     auto &instr = ctx->instr->template as<RegexMatch_t>();
-    return Result_t(instr.matches(get_arg().printable()));
+    return arg.print([&] (const string_view_t &v, auto &&tag) {
+        switch (Value_t::visited_value(tag)) {
+        case Value_t::tag::integral:
+        case Value_t::tag::real:
+        case Value_t::tag::string:
+        case Value_t::tag::string_ref:
+            return Result_t(instr.matches(v));
+        case Value_t::tag::undefined:
+        case Value_t::tag::regex:
+        case Value_t::tag::frag_ref:
+        case Value_t::tag::list_ref:
+            logWarning(
+                *ctx,
+                "Variable of '" + arg.type_str() + "' type with value '"
+                + v + "' used to regex matching"
+            );
+            return Result_t(0);
+        }
+    });
 }
-
 
 } // namespace exec
 } // namespace Teng

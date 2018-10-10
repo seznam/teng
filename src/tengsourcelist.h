@@ -76,13 +76,10 @@ public:
     /** @short Adds new source into the list.
      *
      * @param source filename of source
-     * @param pos position of include directive
-     * @param err error logger
      *
      * @return index of added source in list
      */
-    std::pair<const std::string *, std::size_t>
-    push(std::string filename, const Pos_t &pos, Error_t &err);
+    std::pair<const std::string *, std::size_t> push(std::string filenam);
 
     /** @short Check validity of all sources.
      *
@@ -102,6 +99,14 @@ public:
     /** @short Returns the number of sources.
      */
     std::size_t size() const {return sources.size();}
+
+    /** @short Returns iterator to the first source.
+     */
+    auto begin() const {return sources.begin();}
+
+    /** @short Returns iterator one past the last source.
+     */
+    auto end() const {return sources.end();}
 
 private:
     // don't copy

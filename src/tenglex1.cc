@@ -53,6 +53,7 @@ namespace {
  * Transformations:
  *     $\{ -> ${
  *     #\{ -> #{
+ *     %\{ -> %{
  *     ?\> -> ?>
  *     \}  -> {
  *     <\? -> <?
@@ -61,7 +62,12 @@ namespace {
  * interval.
  */
 string_view_t
-unescape(flex_string_view_t &str, std::size_t start, std::size_t end) {
+unescape(
+    const Configuration_t *params,
+    flex_string_view_t &str,
+    std::size_t start,
+    std::size_t end
+) {
     enum {
         initial,
         dollar_expected_backslash_lcurly,
@@ -71,6 +77,8 @@ unescape(flex_string_view_t &str, std::size_t start, std::size_t end) {
         lt_backslash_expected_question,
         hash_expected_backslash_lcurly,
         hash_backslash_expected_lcurly,
+        percent_expected_backslash_lcurly,
+        percent_backslash_expected_lcurly,
         question_expected_backslash_gt,
         question_backslash_expected_gt,
     } state = initial;
@@ -99,8 +107,14 @@ unescape(flex_string_view_t &str, std::size_t start, std::size_t end) {
             break;
 
         case '#':
-            //!< .#<\{ -> #.\{
+            //!< .#\{ -> #.\{
             state = hash_expected_backslash_lcurly;
+            icur_seq = ipos;
+            break;
+
+        case '%':
+            //!< .%\{ -> #.\{
+            state = percent_expected_backslash_lcurly;
             icur_seq = ipos;
             break;
 
@@ -123,6 +137,10 @@ unescape(flex_string_view_t &str, std::size_t start, std::size_t end) {
             // #.\{ -> #\.{
             case hash_expected_backslash_lcurly:
                 state = hash_backslash_expected_lcurly;
+                break;
+            // %.\{ -> %\.{
+            case percent_expected_backslash_lcurly:
+                state = percent_backslash_expected_lcurly;
                 break;
             // ?.\> -> ?\.>
             case question_expected_backslash_gt:
@@ -173,6 +191,11 @@ unescape(flex_string_view_t &str, std::size_t start, std::size_t end) {
             //!< #\.{ -> #\{.
             case hash_backslash_expected_lcurly:
                 do_unescape(ipos, "#{");
+                break;
+            //!< %\.{ -> %\{.
+            case percent_backslash_expected_lcurly:
+                if (params->isPrintEscapeEnabled())
+                    do_unescape(ipos, "%{");
                 break;
             // X.{ -> X{.
             default:
@@ -348,7 +371,7 @@ Lex1_t::Token_t Lex1_t::next() {
         return {
             LEX1::TEXT,
             {pos.filename, start_line, start_column},
-            unescape(source_code, start_pos, offset)
+            unescape(params, source_code, start_pos, offset)
         };
     };
 
@@ -367,9 +390,8 @@ Lex1_t::Token_t Lex1_t::next() {
         return make_text_token();
     };
 
-    // returns expr token, it assumes that "${" has been matched
-    auto accept_expr_directive = [&] () -> Token_t {
-        incr_col_pos_by("${", incr_col_pos);
+    // moves tht offset pointer to right curly if it is found
+    auto read_expr_content = [&] () {
         // search for '}' and ignore such '}' that are in string literals
         while (offset < source_code.size()) {
             switch (source_code[offset]) {
@@ -383,26 +405,17 @@ Lex1_t::Token_t Lex1_t::next() {
                 break;
             case '}':
                 incr_col_pos(1);
-                return make_token(LEX1::EXPR);
+                return true;
             default:
                 incr_pos();
                 break;
             }
         }
-        // end of input reached and '}' not found
-        return make_error_token("Unterminated ${...} directive");
-    };
-
-    // returns dict token, it assumes that "#{" has been matched
-    auto accept_dict_directive = [&] () -> Token_t {
-        incr_col_pos_by("#{", incr_col_pos);
-        return incr_pos_until_right_curly()
-            ? make_token(LEX1::DICT)
-            : make_error_token("Unterminated #{...} directive");
+        return false;
     };
 
     // returns teng token, it assumes that "<?" has been matched
-    auto accept_teng_directive = [&] () -> Token_t {
+    auto accept_teng_directive = [&] () {
         // search for '?>' and ignore such '?>' that are in string literals
         while (offset < source_code.size()) {
             switch (source_code[offset]) {
@@ -418,27 +431,54 @@ Lex1_t::Token_t Lex1_t::next() {
                 incr_col_pos(1);
                 if (source_code[offset - 2] == '?')
                     if ((offset - start_pos) > strlen("<?>"))
-                        return make_token(LEX1::TENG);
+                        return true;
                 break;
             default:
                 incr_pos();
                 break;
             }
         }
-        // end of input reached and '}' not found
-        return make_error_token("Unterminated <?teng...?> directive");
+        return false;
+    };
+
+    // returns esc expr token, it assumes that "${" has been matched
+    auto accept_esc_expr_directive = [&] () -> Token_t {
+        incr_col_pos_by("${", incr_col_pos);
+        return read_expr_content()
+            ? make_token(LEX1::ESC_EXPR)
+            : make_error_token("Unterminated ${...} directive");
+    };
+
+    // returns raw expr token, it assumes that "%{" has been matched
+    auto accept_raw_expr_directive = [&] () -> Token_t {
+        incr_col_pos_by("%{", incr_col_pos);
+        return read_expr_content()
+            ? make_token(LEX1::RAW_EXPR)
+            : make_error_token("Unterminated %{...} directive");
+    };
+
+    // returns dict token, it assumes that "#{" has been matched
+    auto accept_dict_directive = [&] () -> Token_t {
+        incr_col_pos_by("#{", incr_col_pos);
+        return incr_pos_until_right_curly()
+            ? make_token(LEX1::DICT)
+            : make_error_token("Unterminated #{...} directive");
     };
 
     // returns teng token, it assumes that "<?" has been matched
     auto accept_short_directive = [&] () -> Token_t {
         incr_col_pos_by("<?", incr_col_pos);
-        return accept_teng_directive();
+        return accept_teng_directive()
+            ? make_token(LEX1::TENG_SHORT)
+            : make_error_token("Unterminated <?...?> directive");
     };
 
     // returns teng token, it assumes that "<?teng" has been matched
     auto accept_long_directive = [&] () -> Token_t {
         incr_col_pos_by("<?teng", incr_col_pos);
-        return accept_teng_directive();
+        return accept_teng_directive()
+            ? make_token(LEX1::TENG)
+            : make_error_token("Unterminated <?teng...?> directive");
     };
 
     // swallows comments, it assumes that "<!---" has been matched
@@ -477,9 +517,12 @@ Lex1_t::Token_t Lex1_t::next() {
     case state::short_directive:
         current_state = state::initial;
         return accept_short_directive();
-    case state::expr_directive:
+    case state::esc_expr_directive:
         current_state = state::initial;
-        return accept_expr_directive();
+        return accept_esc_expr_directive();
+    case state::raw_expr_directive:
+        current_state = state::initial;
+        return accept_raw_expr_directive();
     case state::dict_directive:
         current_state = state::initial;
         return accept_dict_directive();
@@ -518,8 +561,16 @@ Lex1_t::Token_t Lex1_t::next() {
         case '$':
             if (!match_char('{', +1)) continue;
             return offset == start_pos
-                ? accept_expr_directive()
-                : accept_text_and_defer(state::expr_directive);
+                ? accept_esc_expr_directive()
+                : accept_text_and_defer(state::esc_expr_directive);
+
+        // accept %{[^}]*}
+        case '%':
+            if (!match_char('{', +1)) continue;
+            if (!params->isPrintEscapeEnabled()) continue;
+            return offset == start_pos
+                ? accept_raw_expr_directive()
+                : accept_text_and_defer(state::raw_expr_directive);
 
         // accept #{[^}]*}
         case '#':
@@ -548,7 +599,8 @@ const char *Lex1_t::Token_t::name() const {
     case LEX1::TEXT: return "TEXT";
     case LEX1::TENG: return "TENG";
     case LEX1::TENG_SHORT: return "TENG_SHORT";
-    case LEX1::EXPR: return "EXPR";
+    case LEX1::ESC_EXPR: return "ESC_EXPR";
+    case LEX1::RAW_EXPR: return "RAW_EXPR";
     case LEX1::DICT: return "DICT";
     }
     throw std::runtime_error(__PRETTY_FUNCTION__);

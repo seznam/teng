@@ -63,8 +63,8 @@ public:
      *
      * @param fs_root path of root for locating files
      */
-    Dictionary_t(const std::string &fs_root)
-        : sources(), err(), fs_root(fs_root),
+    Dictionary_t(Error_t &err, const std::string &fs_root)
+        : sources(), err(err), fs_root(fs_root),
           expandVars(false), replaceEntries(false)
     {}
 
@@ -101,13 +101,6 @@ public:
      * @return source list
      */
     const SourceList_t &getSources() const {return sources;}
-
-    /**
-     * @short Get error logger.
-     *
-     * @return error logger
-     */
-    const Error_t &getErrors() const {return err;}
 
     /**
      * @short Check source files for change.
@@ -159,7 +152,7 @@ protected:
 
     Entries_t entries;    //!< the dictionary entries
     SourceList_t sources; //!< source files of dictionary entries
-    Error_t err;          //!< the error log
+    Error_t &err;         //!< the error log
     std::string fs_root;  //!< the filesystem root for all relative paths
     bool expandVars;      //!< expand variables in dict values
     bool replaceEntries;  //!< replace already present entries in dict

@@ -87,10 +87,8 @@ int gen_page(
     Writer_t &writer,
     Error_t &err
 ) {
-    // append error logs of dicts and program
-    err.append(templ->langDictionary->getErrors());
-    err.append(templ->paramDictionary->getErrors());
-    err.append(templ->program->getErrors());
+    // propage error log
+    writer.setError(&err);
 
     // if program is valid (not empty) execute it
     if (!templ->program->empty()) {
@@ -106,9 +104,6 @@ int gen_page(
 
     // flush writer to output
     writer.flush();
-
-    // append writer errors
-    err.append(writer.getErrors());
 
     // return error level from error log
     return err.max_level;
@@ -151,10 +146,12 @@ int Teng_t::generatePage(
 ) const {
     std::string encoding_lowerized = tolower(encoding);
     std::unique_ptr<Template_t> templ(templateCache->createTemplate(
+        err,
         prependBeforeExt(templateFilename, skin),
         prependBeforeExt(dict, lang),
         param,
         encoding_lowerized,
+        contentType,
         TemplateCache_t::SRC_FILE
     ));
     return gen_page(
@@ -180,10 +177,12 @@ int Teng_t::generatePage(
 ) const {
     std::string encoding_lowerized = tolower(encoding);
     std::unique_ptr<Template_t> templ(templateCache->createTemplate(
+        err,
         templateString,
         prependBeforeExt(dict, lang),
         param,
         encoding_lowerized,
+        contentType,
         TemplateCache_t::SRC_STRING
     ));
     return gen_page(
@@ -204,8 +203,9 @@ int Teng_t::dictionaryLookup(
     std::string &value
 ) const {
     // find value for key
+    Error_t err;
     auto path = prependBeforeExt(dict, lang);
-    auto *dictionary = templateCache->createDictionary(config, path);
+    auto *dictionary = templateCache->createDictionary(err, config, path);
     auto *foundValue = dictionary->lookup(key);
     if (!foundValue) {
         // not fount => error

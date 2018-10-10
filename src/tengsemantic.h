@@ -88,7 +88,7 @@ void prepare_parent_variable(Context_t *ctx, const Token_t &token);
 
 /** Generates print instruction.
  */
-void generate_print(Context_t *ctx);
+void generate_print(Context_t *ctx, bool print_escape = true);
 
 /** Generates as many as needed open frag instructions.
  */
@@ -373,7 +373,7 @@ void ignore_inv_set(Context_t *ctx, const Pos_t &pos);
 
 /** Generates code implementing runtime variable indexing.
  */
-void generate_rtvar_index(Context_t *ctx, const Token_t &token);
+void generate_rtvar_index(Context_t *ctx, const Token_t &lp, const Token_t &rp);
 
 /** Generates code implementing regex.
  */
@@ -408,6 +408,19 @@ void new_option(Context_t *ctx, const Token_t &name, Literal_t &&literal);
 /** Prepares new expression.
  */
 void prepare_expr(Context_t *ctx, const Pos_t &pos);
+
+/** Generates instructions implementing getting value of runtime variable for
+ * desired key.
+ */
+void generate_rtvar_segment(Context_t *ctx, const Token_t &token);
+
+/** Generates instructions implementing getting this fragment.
+ */
+void generate_rtvar_this(Context_t *ctx, const Token_t &token);
+
+/** Generates instructions implementing getting parent fragment.
+ */
+void generate_rtvar_parent(Context_t *ctx, const Token_t &token);
 
 /** Inserts new diagnostic code into diag-codes storage including the diag code
  * sentinel.
@@ -455,20 +468,27 @@ uint32_t generate_str_expr(Context_t *ctx, const Token_t &token) {
     return 2;
 }
 
-/** Generates print instruction of given token value.
+/** Generates raw print instruction.
  */
-inline void generate_print(Context_t *ctx, const Token_t &token) {
-    generate_val(ctx, token.pos, Value_t(token.view()));
-    generate_print(ctx);
+inline void generate_raw_print(Context_t *ctx) {
+    generate_print(ctx, false);
 }
 
 /** Generates print instruction of given token value.
+ */
+inline void generate_raw_print(Context_t *ctx, const Token_t &token) {
+    generate_val(ctx, token.pos, Value_t(token.str()));
+    generate_raw_print(ctx);
+}
+
+/** Generates print instruction of given token value. It expects that value is
+ * "undefined" which does not need escaping.
  */
 inline void generate_inv_print(Context_t *ctx, const Token_t &inv) {
     note_error(ctx, inv);
     reset_error(ctx);
     logWarning(ctx, inv.pos, "Invalid expression; the behaviour is undefined");
-    generate_print(ctx);
+    generate_raw_print(ctx);
 }
 
 /** Generates binary operator (OR, AND, ...).
@@ -495,6 +515,9 @@ void generate_rtvar(Context_t *ctx, const Token_t &token) {
     uint16_t root_offset = ctx->open_frames.top().size();
     generate<Instr_t>(ctx, root_offset, token.pos);
     note_optimization_point(ctx, true);
+    if (std::is_same<Instr_t, PushThisFrag_t>::value)
+        ctx->rtvar_strings.emplace_back(token.view().begin(), 0);
+    else ctx->rtvar_strings.push_back(token.view());
 }
 
 /** Generates instructions implementing query expression.
@@ -525,14 +548,14 @@ uint32_t generate_func(Context_t *ctx, const Token_t &name, uint32_t nargs);
  */
 inline void print_dict_lookup(Context_t *ctx, const Token_t &token) {
     generate_dict_lookup(ctx, token);
-    generate_print(ctx);
+    generate_raw_print(ctx);
 }
 
 /** Generates undefined value due to invalid dict identifier.
  */
 inline void print_dict_undef(Context_t *ctx, const Token_t &token) {
     generate_val(ctx, token.pos, Value_t());
-    generate_print(ctx);
+    generate_raw_print(ctx);
     logWarning(ctx, token.pos, "Invalid dictionary item in #{...} statement");
 }
 

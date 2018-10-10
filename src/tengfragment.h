@@ -186,6 +186,16 @@ public:
      */
     iterator end() {return items.end();}
 
+    /**
+     * @short Returns true if fragment is empty.
+     */
+    bool empty() const {return items.empty();}
+
+    /**
+     * @short Returns the number of elements in fragment.
+     */
+    std::size_t size() const {return items.size();}
+
 protected:
     Items_t items; //!< fragments data
 };

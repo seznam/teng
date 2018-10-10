@@ -247,7 +247,7 @@ SCENARIO(
     "[old]"
 ) {
     GIVEN("The div tag") {
-        std::string templ = "${escape('<div>')}";
+        std::string templ = "%{escape('<div>')}";
 
         WHEN("Is escaped") {
             Teng::Error_t err;
@@ -265,9 +265,6 @@ SCENARIO(
     "AlwaysEscape",
     "[old]"
 ) {
-    // TODO(burlog): is that wanted behaviour?
-    // each assigning does escaping
-
     GIVEN("Mysterious template") {
         std::string templ = "<?teng set $.q = '\"kaktus&<>\"'?>"
                             "<?teng set $.r = $.q?>"
@@ -277,7 +274,9 @@ SCENARIO(
 
         WHEN("Is escaped") {
             Teng::Error_t err;
-            auto res = g(err, templ);
+            Teng::Fragment_t root;
+            const char * conf = "teng.no-print-escape.conf";
+            auto res = g(err, templ, root, "", "text/html", "utf-8", conf);
             THEN("Dangerous characters are escaped") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
@@ -534,7 +533,7 @@ SCENARIO(
 ) {
     WHEN("String with html entities is unescaped") {
         Teng::Error_t err;
-        auto templ = "${unescape('&lt;b&gt;č&lt;/b&gt;')}";
+        auto templ = "%{unescape('&lt;b&gt;č&lt;/b&gt;')}";
         auto res = g(err, templ);
         THEN("The entities are expanded") {
             std::vector<Teng::Error_t::Entry_t> errs;
@@ -619,12 +618,12 @@ SCENARIO(
 ) {
     WHEN("String with new lines is passed to nl2br") {
         Teng::Error_t err;
-        auto templ = "${nl2br('jede\\nmašina')}";
+        auto templ = "%{nl2br(escape('jede\\nmašina&'))}";
         auto res = g(err, templ);
         THEN("The new lines are replaced with br tags") {
             std::vector<Teng::Error_t::Entry_t> errs;
             REQUIRE(err.getEntries() == errs);
-            REQUIRE(res == "jede<br />\nmašina");
+            REQUIRE(res == "jede<br />\nmašina&amp;");
         }
     }
 }

@@ -141,7 +141,7 @@ public:
     /** C'tor.
      */
     explicit Value_t(const string_ref_type &value) noexcept
-        : tag_value(tag::string), string_value(value.str())
+        : tag_value(tag::string_ref), string_ref_value(value)
     {}
 
     /** C'tor.
@@ -266,9 +266,7 @@ public:
                 operator=(other.string_value);
                 break;
             case tag::string_ref:
-                dispose();
-                string_ref_value = other.string_ref_value;
-                tag_value = tag::string_ref;
+                operator=(other.string_ref_value);
                 break;
             case tag::frag_ref:
                 dispose();
@@ -306,9 +304,7 @@ public:
                 operator=(std::move(other.string_value));
                 break;
             case tag::string_ref:
-                dispose();
-                string_ref_value = other.string_ref_value;
-                tag_value = tag::string_ref;
+                operator=(other.string_ref_value);
                 break;
             case tag::frag_ref:
                 dispose();
@@ -336,24 +332,6 @@ public:
         return *this;
     }
 
-    /** Assigment operator: string copy.
-     */
-    Value_t &operator=(const string_type &value) {
-        switch (tag_value) {
-        case tag::string:
-            string_value = value;
-            break;
-        case tag::regex:
-            regex_value.~regex_type();
-            break;
-        default:
-            new (&string_value) string_type(value);
-            break;
-        }
-        tag_value = tag::string;
-        return *this;
-    }
-
     /** Assigment operator: const char * copy.
      */
     Value_t &operator=(const char *value) {
@@ -363,12 +341,28 @@ public:
             break;
         case tag::regex:
             regex_value.~regex_type();
-            break;
         default:
             new (&string_value) string_type(value);
+            tag_value = tag::string;
             break;
         }
-        tag_value = tag::string;
+        return *this;
+    }
+
+    /** Assigment operator: string copy.
+     */
+    Value_t &operator=(const string_type &value) {
+        switch (tag_value) {
+        case tag::string:
+            string_value = value;
+            break;
+        case tag::regex:
+            regex_value.~regex_type();
+        default:
+            new (&string_value) string_type(value);
+            tag_value = tag::string;
+            break;
+        }
         return *this;
     }
 
@@ -381,12 +375,11 @@ public:
             break;
         case tag::regex:
             regex_value.~regex_type();
-            break;
         default:
             new (&string_value) string_type(std::move(value));
+            tag_value = tag::string;
             break;
         }
-        tag_value = tag::string;
         return *this;
     }
 
@@ -432,12 +425,11 @@ public:
             break;
         case tag::string:
             string_value.~string_type();
-            break;
         default:
             new (&regex_value) regex_type(value);
+            tag_value = tag::regex;
             break;
         }
-        tag_value = tag::regex;
         return *this;
     }
 
@@ -450,12 +442,11 @@ public:
             break;
         case tag::string:
             string_value.~string_type();
-            break;
         default:
             new (&regex_value) regex_type(std::move(value));
+            tag_value = tag::regex;
             break;
         }
-        tag_value = tag::regex;
         return *this;
     }
 
@@ -536,7 +527,7 @@ public:
 
     /** Returns string value. Does not any checks.
      */
-    const string_ref_type &as_string_ref() const {return string_ref_value;}
+    const string_view_t &as_string_ref() const {return string_ref_value;}
 
     /** Returns frag value. Does not any checks.
      */
@@ -675,6 +666,10 @@ public:
         }
     }
 
+    /** Converts value to json.
+     */
+    void json(std::ostream &out) const;
+
     /** Writes printable representation of value to writer.
      */
     template <typename Writer_t>
@@ -735,9 +730,26 @@ public:
         });
     }
 
+    /** After calling this method, the value holds string (even not
+     * string_ref). If needed, then the conversion to printable representation
+     * is called.
+     */
+    std::string &ensure_string() {
+        visit(*this, [&] (const string_view_t &v, auto &&visit_tag) {
+            if (visited_value(visit_tag) == tag::string)
+                return;
+            if (visited_value(visit_tag) == tag::regex)
+                regex_value.~regex_type();
+            // here are all possible dynamic resources released
+            tag_value = tag::string;
+            new (&string_value) string_type(v.str());
+        });
+        return string_value;
+    }
+
     /** Writes string representation to given stream.
      */
-    friend std::ostream &operator<<(std::ostream &o, const Value_t &v);
+    friend std::ostream &operator<<(std::ostream &out, const Value_t &v);
 
     /** Unary minus operator.
      */
@@ -819,23 +831,6 @@ protected:
     static auto visit(Self_t &&self, Visitor_t visitor)
     -> decltype(visitor(std::declval<string_view_t>()))
     {return visit(self, [&] (auto &&v, auto) {return visitor(v);});}
-
-    /** After calling this method, the value holds string (even not
-     * string_ref). If needed, then the conversion to printable representation
-     * is called.
-     */
-    std::string &ensure_string() {
-        visit(*this, [&] (const string_view_t &v, auto &&visit_tag) {
-            if (visited_value(visit_tag) == tag::string)
-                return;
-            if (visited_value(visit_tag) == tag::regex)
-                regex_value.~regex_type();
-            // here are all possible dynamic resources released
-            tag_value = tag::string;
-            new (&string_value) string_type(v.str());
-        });
-        return string_value;
-    }
 
     tag tag_value;                        //!< the type of value
     union {

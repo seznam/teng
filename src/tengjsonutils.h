@@ -39,6 +39,7 @@
 #include <iomanip>
 #include <sstream>
 
+#include "tengstringview.h"
 #include "tengconfig.h"
 
 namespace Teng {
@@ -48,7 +49,7 @@ inline void quoted_unicode_char(std::ostream &o, char ch) {
     o << "\\u00" << std::hex << std::setw(2) << std::setfill('0') << int(ch);
 }
 
-inline void quote_string(std::ostream &o, const std::string &value) {
+inline void quote_string(std::ostream &o, const string_view_t &value) {
     o << '"';
     for (char ch: value) {
         switch (ch) {

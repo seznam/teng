@@ -147,6 +147,17 @@ public:
      */
     const FragRec_t &operator[](int64_t i) const {return frags[i];}
 
+    /** Returns open fragments joined by dot.
+     */
+    std::string current_path() const {
+        std::string result = ".";
+        for (auto i = 1u; i < frags.size(); ++i) {
+            if (i > 1) result.push_back('.');
+            result.append(frags[i].name.str());
+        }
+        return result;
+    }
+
 protected:
     OpenFragments_t frags; //!< the list of open frags
 };
@@ -254,6 +265,18 @@ public:
         }
     }
 
+    /** Returns open fragments joined by dot.
+     */
+    std::string current_path() const override {
+        return frames[0].current_path();
+    }
+
+    /** Returns current fragment index in parent list.
+     */
+    std::size_t current_list_i() const override {
+        throw runtime_ctx_needed_t();
+    }
+
     /** Returns 'representation' of the open fragments at given index.
      */
     Value_t repr(const Value_t &offsets) const override {
@@ -265,7 +288,6 @@ public:
     /** Returns true if there is open fragment at given index.
      */
     Value_t exists(const Value_t &offsets) const override {
-        // TODO(burlog): fakt je tohle dobre?
         if (offsets.is_undefined())
             throw runtime_ctx_needed_t();
         return Value_t(true);

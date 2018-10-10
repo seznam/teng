@@ -67,7 +67,8 @@ public:
         TEXT,         //!< General text
         TENG,         //!< Teng directive
         TENG_SHORT,   //!< Teng short directive
-        EXPR,         //!< Shorted expression form
+        ESC_EXPR,     //!< Shorted expression form
+        RAW_EXPR,     //!< Shorted expression form
         DICT,         //!< Shorted dictionary item form
     };
 
@@ -93,13 +94,14 @@ public:
             : token_id(token.token_id), pos(token.pos)
         {
             switch (token_id) {
-            case LEX1::END_OF_INPUT: case LEX1::ERROR:
             case LEX1::TEXT:
+            case LEX1::END_OF_INPUT: case LEX1::ERROR:
                 new (&string_view_value)
                     string_view_t(std::move(token.string_view_value));
                 return;
+            case LEX1::DICT:
             case LEX1::TENG: case LEX1::TENG_SHORT:
-            case LEX1::EXPR: case LEX1::DICT:
+            case LEX1::ESC_EXPR: case LEX1::RAW_EXPR:
                 new (&flex_view_value)
                     flex_string_view_t(std::move(token.flex_view_value));
                 return;
@@ -120,12 +122,13 @@ public:
          */
         ~Token_t() {
             switch (token_id) {
-            case LEX1::END_OF_INPUT: case LEX1::ERROR:
             case LEX1::TEXT:
+            case LEX1::END_OF_INPUT: case LEX1::ERROR:
                 string_view_value.~string_view_t();
                 return;
+            case LEX1::DICT:
             case LEX1::TENG: case LEX1::TENG_SHORT:
-            case LEX1::EXPR: case LEX1::DICT:
+            case LEX1::ESC_EXPR: case LEX1::RAW_EXPR:
                 flex_view_value.~flex_string_view_t();
                 return;
             }
@@ -139,11 +142,12 @@ public:
         */
         string_view_t view() const {
             switch (token_id) {
-            case LEX1::END_OF_INPUT: case LEX1::ERROR:
             case LEX1::TEXT:
+            case LEX1::END_OF_INPUT: case LEX1::ERROR:
                 return string_view_value;
+            case LEX1::DICT:
             case LEX1::TENG: case LEX1::TENG_SHORT:
-            case LEX1::EXPR: case LEX1::DICT:
+            case LEX1::ESC_EXPR: case LEX1::RAW_EXPR:
                 return flex_view_value;
             }
         }
@@ -217,7 +221,8 @@ private:
         end_of_input,
         long_directive,
         short_directive,
-        expr_directive,
+        esc_expr_directive,
+        raw_expr_directive,
         dict_directive,
         comment_directive,
     } current_state = state::initial;

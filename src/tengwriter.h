@@ -60,11 +60,15 @@ public:
 
     /** @short Create new writer.
      */
-    Writer_t(): err() {}
+    Writer_t(): err(nullptr) {}
 
     /** @short Destroy writer.
      */
     virtual ~Writer_t() = default;
+
+    /** @short Sets new error log.
+     */
+    void setError(Error_t *new_err) {err = new_err;}
 
     /** @short Write given string to output.
      *  Abstract, must be overloaded in subclass.
@@ -102,11 +106,6 @@ public:
      */
     virtual int flush() = 0;
 
-    /** @short Get error log.
-     *  @return error log
-     */
-    const Error_t &getErrors() const {return err;}
-
     /** @short Write given string to output.
      *  @param istr begin of string to be written
      *  @param estr end of string to be written
@@ -119,7 +118,7 @@ public:
 protected:
     /** @short Error log.
      */
-    Error_t err;
+    Error_t *err;
 };
 
 /** @short Output writer. Writes to the associated string.

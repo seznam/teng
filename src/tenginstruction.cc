@@ -78,137 +78,340 @@ template <typename type_t, typename call_t, typename... args_t>
 static auto eval(OPCODE opcode, type_t &self, call_t &&call, args_t &&...args) {
     switch (opcode) {
     case OPCODE::NOOP:
-        return call(self.template as<Noop_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<Noop_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::VAL:
-        return call(self.template as<Val_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<Val_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::VAR:
-        return call(self.template as<Var_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<Var_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::DICT:
-        return call(self.template as<Dict_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<Dict_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::PRG_STACK_PUSH:
-        return call(self.template as<PrgStackPush_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<PrgStackPush_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::PRG_STACK_POP:
-        return call(self.template as<PrgStackPop_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<PrgStackPop_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::PRG_STACK_AT:
-        return call(self.template as<PrgStackAt_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<PrgStackAt_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::UNARY_PLUS:
-        return call(self.template as<UnaryPlus_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<UnaryPlus_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::UNARY_MINUS:
-        return call(self.template as<UnaryMinus_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<UnaryMinus_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::PLUS:
-        return call(self.template as<Plus_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<Plus_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::MINUS:
-        return call(self.template as<Minus_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<Minus_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::MUL:
-        return call(self.template as<Mul_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<Mul_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::DIV:
-        return call(self.template as<Div_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<Div_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::MOD:
-        return call(self.template as<Mod_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<Mod_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::CONCAT:
-        return call(self.template as<Concat_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<Concat_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::REPEAT:
-        return call(self.template as<Repeat_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<Repeat_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::BIT_AND:
-        return call(self.template as<BitAnd_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<BitAnd_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::BIT_XOR:
-        return call(self.template as<BitXor_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<BitXor_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::BIT_OR:
-        return call(self.template as<BitOr_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<BitOr_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::BIT_NOT:
-        return call(self.template as<BitNot_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<BitNot_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::AND:
-        return call(self.template as<And_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<And_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::OR:
-        return call(self.template as<Or_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<Or_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::NOT:
-        return call(self.template as<Not_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<Not_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::EQ:
-        return call(self.template as<EQ_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<EQ_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::NE:
-        return call(self.template as<NE_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<NE_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::GE:
-        return call(self.template as<GE_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<GE_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::GT:
-        return call(self.template as<GT_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<GT_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::LE:
-        return call(self.template as<LE_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<LE_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::LT:
-        return call(self.template as<LT_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<LT_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::STR_EQ:
-        return call(self.template as<StrEQ_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<StrEQ_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::STR_NE:
-        return call(self.template as<StrNE_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<StrNE_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::FUNC:
-        return call(self.template as<Func_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<Func_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::JMP_IF_NOT:
-        return call(self.template as<JmpIfNot_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<JmpIfNot_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::JMP:
-        return call(self.template as<Jmp_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<Jmp_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::OPEN_FORMAT:
-        return call(self.template as<OpenFormat_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<OpenFormat_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::CLOSE_FORMAT:
-        return call(self.template as<CloseFormat_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<CloseFormat_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::OPEN_FRAG:
-        return call(self.template as<OpenFrag_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<OpenFrag_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::CLOSE_FRAG:
-        return call(self.template as<CloseFrag_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<CloseFrag_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::PUSH_FRAG_COUNT:
-        return call(self.template as<PushFragCount_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<PushFragCount_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::PUSH_FRAG_INDEX:
-        return call(self.template as<PushFragIndex_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<PushFragIndex_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::PUSH_FRAG_FIRST:
-        return call(self.template as<PushFragFirst_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<PushFragFirst_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::PUSH_FRAG_LAST:
-        return call(self.template as<PushFragLast_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<PushFragLast_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::PUSH_FRAG_INNER:
-        return call(self.template as<PushFragInner_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<PushFragInner_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::PUSH_FRAG:
-        return call(self.template as<PushFrag_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<PushFrag_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::PRINT:
-        return call(self.template as<Print_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<Print_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::SET:
-        return call(self.template as<Set_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<Set_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::HALT:
-        return call(self.template as<Halt_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<Halt_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::DEBUG_FRAG:
-        return call(self.template as<DebugFrag_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<DebugFrag_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::BYTECODE_FRAG:
-        return call(self.template as<BytecodeFrag_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<BytecodeFrag_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::OPEN_CTYPE:
-        return call(self.template as<OpenCType_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<OpenCType_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::CLOSE_CTYPE:
-        return call(self.template as<CloseCType_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<CloseCType_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::PUSH_ATTR:
-        return call(self.template as<PushAttr_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<PushAttr_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::PUSH_ROOT_FRAG:
-        return call(self.template as<PushRootFrag_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<PushRootFrag_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::PUSH_THIS_FRAG:
-        return call(self.template as<PushThisFrag_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<PushThisFrag_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::PUSH_ATTR_AT:
-        return call(self.template as<PushAttrAt_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<PushAttrAt_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::POP_ATTR:
-        return call(self.template as<PopAttr_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<PopAttr_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::REPR:
-        return call(self.template as<Repr_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<Repr_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::REPR_JSONIFY:
-        return call(self.template as<ReprJsonify_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<ReprJsonify_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::REPR_COUNT:
-        return call(self.template as<ReprCount_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<ReprCount_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::REPR_TYPE:
-        return call(self.template as<ReprType_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<ReprType_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::REPR_DEFINED:
-        return call(self.template as<ReprDefined_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<ReprDefined_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::REPR_EXISTS:
-        return call(self.template as<ReprExists_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<ReprExists_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::REPR_ISEMPTY:
-        return call(self.template as<ReprIsEmpty_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<ReprIsEmpty_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::OPEN_FRAME:
-        return call(self.template as<OpenFrame_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<OpenFrame_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::CLOSE_FRAME:
-        return call(self.template as<CloseFrame_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<CloseFrame_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::REGEX_MATCH:
-        return call(self.template as<RegexMatch_t>(), std::forward<args_t>(args)...);
+        return call(
+            self.template as<RegexMatch_t>(),
+            std::forward<args_t>(args)...
+        );
+    case OPCODE::LOG_SUPPRESS:
+        return call(
+            self.template as<LogSuppress_t>(),
+            std::forward<args_t>(args)...
+        );
     }
 }
 
@@ -280,6 +483,7 @@ const char *opcode_str(OPCODE opcode) {
     case OPCODE::OPEN_FRAME: return "OPEN_FRAME";
     case OPCODE::CLOSE_FRAME: return "CLOSE_FRAME";
     case OPCODE::REGEX_MATCH: return "REGEX_MATCH";
+    case OPCODE::LOG_SUPPRESS: return "LOG_SUPPRESS";
     }
     throw std::runtime_error(__PRETTY_FUNCTION__);
 }
@@ -301,7 +505,7 @@ InstrBox_t::InstrBox_t(ImplArg_t &&other) noexcept
     using Impl_t = std::decay_t<ImplArg_t>;
     static_assert(
         sizeof(Impl_t) <= sizeof(InstrBox_t),
-        "The size of InstrBox_t padding has to be updated becouse used "
+        "The size of InstrBox_t padding has to be updated because used "
         "Instruction_t is bigger than current padding!"
     );
     static_assert(
@@ -317,11 +521,6 @@ InstrBox_t::InstrBox_t(ImplArg_t &&other) noexcept
         std::is_nothrow_destructible<Impl_t>::value,
         "The instruction implementation has to be nothrow destructible!"
     );
-    // TODO(burlog): 
-    std::cerr << "@@@@ " << this
-              << "->" << std::string(typeid(Impl_t).name()).substr(7)
-              << "[" << sizeof(Impl_t) << "<"
-              << sizeof(InstrBox_t) << "]" << std::endl;
     new (this) Impl_t(std::move(other));
 }
 
@@ -435,6 +634,11 @@ void CloseFrag_t::dump_params(std::ostream &os) const {
        << '>' << std::noshowpos;
 }
 
+void Print_t::dump_params(std::ostream &os) const {
+    os << "<print_escape=" << print_escape
+       << '>';
+}
+
 void Set_t::dump_params(std::ostream &os) const {
     os << "<name=" << name
        << ",frame-offset=" << frame_offset
@@ -447,7 +651,14 @@ void OpenCType_t::dump_params(std::ostream &os) const {
 }
 
 void PushAttr_t::dump_params(std::ostream &os) const {
-    os << "<name=" << name << '>';
+    os << "<name=" << name
+       << ",path=" << path
+       << '>';
+}
+
+void PushAttrAt_t::dump_params(std::ostream &os) const {
+    os << "<path=" << path
+       << '>';
 }
 
 void RegexMatch_t::dump_params(std::ostream &os) const {

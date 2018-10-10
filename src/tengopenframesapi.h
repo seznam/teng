@@ -62,6 +62,10 @@ struct OFFApi_t {
 
     virtual Value_t value_at(const Value_t &, const Value_t &) const = 0;
 
+    virtual std::string current_path() const = 0;
+
+    virtual std::size_t current_list_i() const = 0;
+
     virtual Value_t repr(const Value_t &) const = 0;
 
     virtual Value_t exists(const Value_t &) const = 0;

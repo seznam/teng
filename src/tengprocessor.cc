@@ -45,150 +45,130 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-// TODO(burlog): remove it?
-#include <iomanip>
-
+#include "tenginstructionpointer.h"
 #include "tengprocessorcontext.h"
 #include "tengprocessorother.h"
+#include "tengprocessordebug.h"
 #include "tengprocessorfrag.h"
 #include "tengprocessorops.h"
 #include "tengprocessor.h"
 
+#ifdef DEBUG
+#define DBG(...) __VA_ARGS__
+#else /* DEBUG */
+#define DBG(...)
+#endif /* DEBUG */
+
 namespace Teng {
 namespace {
 
-/** Some, even whole, part of program.
- */
-struct SubProgram_t {
-    const Instruction_t &operator[](int32_t i) const {return program[i];}
-    const int32_t start; //!< pointer to the first instruction in program
-    const int32_t end;   //!< pointer to one past last instruction in program
-    const Program_t &program; //!< the whole program
-};
+template <typename Ctx_t>
+void dump_program(Ctx_t *ctx, const SubProgram_t &program, std::ostream &out) {
+    bool optimization = std::is_same<std::decay_t<Ctx_t>, EvalCtx_t>::value;
 
-/** Represents safe instruction pointer.
- */
-struct InstructionPointer_t {
-    /** C'tor.
-     */
-    InstructionPointer_t(const SubProgram_t &program)
-        : value(program.start), program(program)
-    {}
+    // top banner
+    out << std::endl << "## PROGRAM -- "
+        << (optimization? "optimization": "run")
+        << std::endl;
 
-    /** Increments the instruction pointer (it check boundaries).
-     */
-    int32_t operator++() {
-        *this += 1;
-        return value;
-    }
+    // program
+    for (int i = program.start; i < program.end; ++i)
+        out << std::setw(3) << std::setfill('0')
+            << std::noshowpos << i << " " << program[i]
+            << std::endl;
 
-    /** Increments the instruction pointer (it check boundaries).
-     */
-    int32_t operator++(int) {
-        int32_t tmp = value;
-        *this += 1;
-        return tmp;
-    }
+    // bottom banner
+    out << "## END" << std::endl << std::endl
+        << "## EXECUTION -- "
+        << (optimization? "optimization": "run")
+        << std::endl;
+}
 
-    /** Increments the instruction pointer (it check boundaries).
-     */
-    int32_t operator+=(int32_t incr) {
-        return value = *this + incr;
-    }
+template <typename Ctx_t>
+void dump_instr(
+    Ctx_t *ctx,
+    const SubProgram_t &program,
+    InstructionPointer_t &ip,
+    const std::vector<Value_t> &stack,
+    const std::vector<Value_t> &prg_stack,
+    std::ostream &out
+) {
+    std::ostringstream os;
 
-    /** Increments the instruction pointer (it check boundaries).
-     */
-    int32_t operator+(int32_t incr) const {
-        auto new_value = value + incr;
-        if (new_value < 0)
-            throw std::runtime_error("instruction pointer underflow");
-        return new_value;
-    }
+    // instruction
+    os << std::setw(3) << std::setfill('0')
+       << std::noshowpos << *ip << ' ' << program[*ip];
 
-    /** Returns true if value of ip is less than given address.
-     */
-    int32_t operator<(int32_t addr) const {
-        return value < addr;
-    }
+    // stack
+    int64_t len = std::max(0l, 75l - static_cast<int64_t>(os.str().size()));
+    os << std::string(len, ' ') << " | ";
+    for (auto &item: stack)
+        os << '[' << item << ']';
 
-    /** Returns numeric value of instruction pointer.
-     */
-    int32_t operator*() const {return value;}
+    // prg_stack
+    len = std::max(0l, 125l - static_cast<int64_t>(os.str().size()));
+    os << std::string(len, ' ') << " | ";
+    for (auto &item: prg_stack)
+        os << '[' << item << ']';
 
-protected:
-    int32_t value;               //!< never will be changed to unsigned !!
-    const SubProgram_t &program; //!< evaluated program
-};
+    // done
+    out << os.str() << std::endl;
+}
 
 /** The core of Teng template engine. Renders the template.
  */
 template <typename Ctx_t>
 bool
-process(Ctx_t *ctx, std::stack<Value_t> &stack, const SubProgram_t &program) {
+process(Ctx_t *ctx, std::vector<Value_t> &stack, const SubProgram_t &program) {
     std::vector<Value_t> prg_stack;
-    bool evaluating = std::is_same<std::decay_t<Ctx_t>, EvalCtx_t>::value;
-    std::cerr << std::endl << "## PROGRAM -- "
-              << (evaluating? "eval": "run")
-              << std::endl;
-    for (int i = program.start; i < program.end; ++i) {
-        std::cerr << std::setw(3) << std::setfill('0')
-                  << std::noshowpos << i << " " << program[i]
-                  << std::endl;
-    }
-    std::cerr << "## END" << std::endl << std::endl;
-    auto dump_instr = [&] (InstructionPointer_t &ip) {
-        std::ostringstream os;
-        os << std::setw(3) << std::setfill('0')
-           << std::noshowpos << *ip << " " << program[*ip];
-        int64_t len = std::max(0l, 75l - static_cast<int64_t>(os.str().size()));
-        os << std::string(len, ' ') << " | ";
-        auto stack_copy = stack;
-        while (!stack_copy.empty()) {
-            os << '[' << stack_copy.top() << "]";
-            stack_copy.pop();
-        }
-        len = std::max(0l, 125l - static_cast<int64_t>(os.str().size()));
-        os << std::string(len, ' ') << " | ";
-        auto prg_stack_copy = prg_stack;
-        while (!prg_stack_copy.empty()) {
-            os << '[' << prg_stack_copy.back() << "]";
-            prg_stack_copy.pop_back();
-        }
-        std::cerr << os.str() << std::endl;
+    DBG(dump_program(ctx, program, std::cerr));
+
+    // syntactic sugar
+    auto push = [&] (auto &&value) {
+        stack.push_back(std::forward<decltype(value)>(value));
+    };
+    auto top = [&] () -> Value_t &{
+        if (stack.empty())
+            throw std::runtime_error("program stack underflow");
+        return stack.back();
     };
 
     // exec program on stack-based processor
-    std::cerr << "## EXECUTION -- "
-              << (evaluating? "eval": "run")
-              << std::endl;
     GetArg_t get_arg(stack);
     for (InstructionPointer_t ip(program); ip < program.end; ++ip) try {
         ctx->instr = &program[*ip];
-        dump_instr(ip);
+        DBG(dump_instr(ctx, program, ip, stack, prg_stack, std::cerr));
 
         switch (ctx->instr->opcode()) {
         case OPCODE::NOOP:
             break;
 
         case OPCODE::DEBUG_FRAG:
-            exec::debuging(ctx);
+            exec::debug_frag(ctx);
             break;
 
         case OPCODE::BYTECODE_FRAG:
-            exec::bytecode(ctx);
+            exec::bytecode_frag(ctx);
+            break;
+
+        case OPCODE::PRINT:
+            exec::print(ctx, get_arg);
+            break;
+
+        case OPCODE::SET:
+            exec::set_var(ctx, get_arg);
             break;
 
         case OPCODE::VAL:
-            stack.push(ctx->instr->template as<Val_t>().value);
+            push(exec::val(ctx));
             break;
 
         case OPCODE::DICT:
-            stack.push(exec::dict(ctx, get_arg));
+            push(exec::dict(ctx, get_arg));
             break;
 
         case OPCODE::VAR:
-            // TODO(burlog): zalomit
-            stack.push(exec::var(ctx, program[ip + 1].opcode() == OPCODE::PRINT));
+            push(exec::var(ctx, program[ip + 1].opcode() == OPCODE::PRINT));
             break;
 
         case OPCODE::PRG_STACK_PUSH:
@@ -200,112 +180,112 @@ process(Ctx_t *ctx, std::stack<Value_t> &stack, const SubProgram_t &program) {
             break;
 
         case OPCODE::PRG_STACK_AT:
-            stack.push(exec::prg_stack_at(ctx, prg_stack));
+            push(exec::prg_stack_at(ctx, prg_stack));
             break;
 
         case OPCODE::BIT_OR:
-            stack.push(exec::numop(ctx, get_arg, std::bit_or<int64_t>()));
+            push(exec::numop(ctx, get_arg, std::bit_or<int64_t>()));
             break;
 
         case OPCODE::BIT_XOR:
-            stack.push(exec::numop(ctx, get_arg, std::bit_xor<int64_t>()));
+            push(exec::numop(ctx, get_arg, std::bit_xor<int64_t>()));
             break;
 
         case OPCODE::BIT_AND:
-            stack.push(exec::numop(ctx, get_arg, std::bit_and<int64_t>()));
+            push(exec::numop(ctx, get_arg, std::bit_and<int64_t>()));
             break;
 
         case OPCODE::UNARY_PLUS:
-            stack.push(exec::unary_plus(ctx, get_arg));
+            push(exec::unary_plus(ctx, get_arg));
             break;
 
         case OPCODE::UNARY_MINUS:
-            stack.push(exec::unary_minus(ctx, get_arg));
+            push(exec::unary_minus(ctx, get_arg));
             break;
 
         case OPCODE::PLUS:
-            stack.push(exec::strnumop(ctx, get_arg, std::plus<>()));
+            push(exec::strnumop(ctx, get_arg, std::plus<>()));
             break;
 
         case OPCODE::MINUS:
-            stack.push(exec::numop(ctx, get_arg, std::minus<>()));
+            push(exec::numop(ctx, get_arg, std::minus<>()));
             break;
 
         case OPCODE::MUL:
-            stack.push(exec::numop(ctx, get_arg, std::multiplies<>()));
+            push(exec::numop(ctx, get_arg, std::multiplies<>()));
             break;
 
         case OPCODE::DIV:
-            stack.push(exec::numop(ctx, get_arg, std::divides<>()));
+            push(exec::numop(ctx, get_arg, std::divides<>()));
             break;
 
         case OPCODE::MOD:
-            stack.push(exec::numop(ctx, get_arg, std::modulus<int64_t>()));
+            push(exec::numop(ctx, get_arg, std::modulus<int64_t>()));
             break;
 
         case OPCODE::EQ:
-            stack.push(exec::strnumop(ctx, get_arg, std::equal_to<>()));
+            push(exec::strnumop(ctx, get_arg, std::equal_to<>()));
             break;
 
         case OPCODE::NE:
-            stack.push(exec::strnumop(ctx, get_arg, std::not_equal_to<>()));
+            push(exec::strnumop(ctx, get_arg, std::not_equal_to<>()));
             break;
 
         case OPCODE::GE:
-            stack.push(exec::strnumop(ctx, get_arg, std::greater_equal<>()));
+            push(exec::strnumop(ctx, get_arg, std::greater_equal<>()));
             break;
 
         case OPCODE::GT:
-            stack.push(exec::strnumop(ctx, get_arg, std::greater<>()));
+            push(exec::strnumop(ctx, get_arg, std::greater<>()));
             break;
 
         case OPCODE::LE:
-            stack.push(exec::strnumop(ctx, get_arg, std::less_equal<>()));
+            push(exec::strnumop(ctx, get_arg, std::less_equal<>()));
             break;
 
         case OPCODE::LT:
-            stack.push(exec::strnumop(ctx, get_arg, std::less<>()));
+            push(exec::strnumop(ctx, get_arg, std::less<>()));
             break;
 
         case OPCODE::CONCAT:
-            stack.push(exec::strop(ctx, get_arg, std::plus<>()));
+            push(exec::strop(ctx, get_arg, std::plus<>()));
             break;
 
         case OPCODE::STR_EQ:
-            stack.push(exec::strop(ctx, get_arg, std::equal_to<>()));
+            push(exec::strop(ctx, get_arg, std::equal_to<>()));
             break;
 
         case OPCODE::STR_NE:
-            stack.push(exec::strop(ctx, get_arg, std::not_equal_to<>()));
+            push(exec::strop(ctx, get_arg, std::not_equal_to<>()));
             break;
 
         case OPCODE::REPEAT:
-            stack.push(exec::repeat_string(ctx, get_arg));
+            push(exec::repeat_string(ctx, get_arg));
             break;
 
         case OPCODE::NOT:
-            stack.push(exec::logic_not(ctx, get_arg));
+            push(exec::logic_not(ctx, get_arg));
             break;
 
         case OPCODE::BIT_NOT:
-            stack.push(exec::bit_not(ctx, get_arg));
+            push(exec::bit_not(ctx, get_arg));
             break;
 
         case OPCODE::REGEX_MATCH:
-            stack.push(exec::regex_match(ctx, get_arg));
+            push(exec::regex_match(ctx, get_arg));
             break;
 
         case OPCODE::FUNC:
-            stack.push(exec::func(ctx, get_arg));
+            push(exec::func(ctx, get_arg));
             break;
 
         case OPCODE::AND:
-            if (stack_top(stack)) stack.pop();
+            if (top()) stack.pop_back();
             else ip += ctx->instr->template as<And_t>().addr_offset;
             break;
 
         case OPCODE::OR:
-            if (!stack_top(stack)) stack.pop();
+            if (!top()) stack.pop_back();
             else ip += ctx->instr->template as<Or_t>().addr_offset;
             break;
 
@@ -344,46 +324,6 @@ process(Ctx_t *ctx, std::stack<Value_t> &stack, const SubProgram_t &program) {
             exec::close_frame(ctx);
             break;
 
-        case OPCODE::PUSH_FRAG_COUNT:
-            stack.push(exec::frag_count(ctx));
-            break;
-
-        case OPCODE::PUSH_FRAG_INDEX:
-            stack.push(exec::frag_index(ctx));
-            break;
-
-        case OPCODE::PUSH_FRAG_FIRST:
-            stack.push(exec::is_first_frag(ctx));
-            break;
-
-        case OPCODE::PUSH_FRAG_LAST:
-            stack.push(exec::is_last_frag(ctx));
-            break;
-
-        case OPCODE::PUSH_FRAG_INNER:
-            stack.push(exec::is_inner_frag(ctx));
-            break;
-
-        case OPCODE::PUSH_FRAG:
-            stack.push(exec::push_frag(ctx));
-            break;
-
-        case OPCODE::PUSH_ROOT_FRAG:
-            stack.push(exec::push_root_frag(ctx));
-            break;
-
-        case OPCODE::PUSH_THIS_FRAG:
-            stack.push(exec::push_this_frag(ctx));
-            break;
-
-        case OPCODE::PRINT:
-            exec::print(ctx, get_arg);
-            break;
-
-        case OPCODE::SET:
-            exec::set_var(ctx, get_arg);
-            break;
-
         case OPCODE::OPEN_CTYPE:
             exec::push_escaper(ctx);
             break;
@@ -392,44 +332,80 @@ process(Ctx_t *ctx, std::stack<Value_t> &stack, const SubProgram_t &program) {
             exec::pop_escaper(ctx);
             break;
 
+        case OPCODE::PUSH_FRAG_COUNT:
+            push(exec::frag_count(ctx));
+            break;
+
+        case OPCODE::PUSH_FRAG_INDEX:
+            push(exec::frag_index(ctx));
+            break;
+
+        case OPCODE::PUSH_FRAG_FIRST:
+            push(exec::is_first_frag(ctx));
+            break;
+
+        case OPCODE::PUSH_FRAG_LAST:
+            push(exec::is_last_frag(ctx));
+            break;
+
+        case OPCODE::PUSH_FRAG_INNER:
+            push(exec::is_inner_frag(ctx));
+            break;
+
+        case OPCODE::PUSH_FRAG:
+            push(exec::push_frag(ctx));
+            break;
+
+        case OPCODE::PUSH_ROOT_FRAG:
+            push(exec::push_root_frag(ctx));
+            break;
+
+        case OPCODE::PUSH_THIS_FRAG:
+            push(exec::push_this_frag(ctx));
+            break;
+
         case OPCODE::PUSH_ATTR_AT:
-            stack.push(exec::push_attr_at(ctx, get_arg));
+            push(exec::push_attr_at(ctx, get_arg));
             break;
 
         case OPCODE::POP_ATTR:
-            stack.push(exec::pop_attr(ctx, get_arg));
+            push(exec::pop_attr(ctx, get_arg));
             break;
 
         case OPCODE::PUSH_ATTR:
-            stack.push(exec::push_attr(ctx, get_arg));
+            push(exec::push_attr(ctx, get_arg));
             break;
 
         case OPCODE::REPR:
-            stack.push(exec::repr(ctx, get_arg));
+            push(exec::repr(ctx, get_arg));
             break;
 
         case OPCODE::REPR_JSONIFY:
-            stack.push(exec::repr_jsonify(ctx, get_arg));
+            push(exec::repr_jsonify(ctx, get_arg));
             break;
 
         case OPCODE::REPR_COUNT:
-            stack.push(exec::repr_count(ctx, get_arg));
+            push(exec::repr_count(ctx, get_arg));
             break;
 
         case OPCODE::REPR_TYPE:
-            stack.push(exec::repr_type(ctx, get_arg));
+            push(exec::repr_type(ctx, get_arg));
             break;
 
         case OPCODE::REPR_DEFINED:
-            stack.push(exec::repr_defined(ctx, get_arg));
+            push(exec::repr_defined(ctx, get_arg));
             break;
 
         case OPCODE::REPR_EXISTS:
-            stack.push(exec::repr_exists(ctx, get_arg));
+            push(exec::repr_exists(ctx, get_arg));
             break;
 
         case OPCODE::REPR_ISEMPTY:
-            stack.push(exec::repr_isempty(ctx, get_arg));
+            push(exec::repr_isempty(ctx, get_arg));
+            break;
+
+        case OPCODE::LOG_SUPPRESS:
+            ++ctx->log_suppressed;
             break;
 
         case OPCODE::HALT:
@@ -439,25 +415,28 @@ process(Ctx_t *ctx, std::stack<Value_t> &stack, const SubProgram_t &program) {
     } catch (const runtime_ctx_needed_t &) {
         if (std::is_same<std::decay_t<Ctx_t>, RunCtx_t>::value)
             throw std::runtime_error("runtime ctx of runtime ctx requested");
-        std::cerr << "## END" << std::endl << std::endl;
+        DBG(std::cerr << "## END\n" << std::endl);
         return false;
 
     } catch (const runtime_functx_needed_t &) {
-        std::cerr << "## END" << std::endl << std::endl;
+        if (std::is_same<std::decay_t<Ctx_t>, RunCtx_t>::value)
+            throw std::runtime_error("runtime ctx of runtime ctx requested");
+        DBG(std::cerr << "## END\n" << std::endl);
         return false;
 
     } catch (const std::exception &e) {
-        std::cerr << "## END (" << e.what() << ")" << std::endl << std::endl;
+        DBG(std::cerr << "## END (" << e.what() << ")\n" << std::endl);
+        ctx->log_suppressed = 0;
         logFatal(*ctx, e.what());
         return false;
     }
 
     // warn about relicts on value and program stack
     if (!prg_stack.empty())
-        logWarning(*ctx, "Program stack is not empty");
+        logError(*ctx, "Program stack is not empty");
     if (!stack.empty())
-        logWarning(*ctx, "Value stack is not empty");
-    std::cerr << "## END" << std::endl << std::endl;
+        logError(*ctx, "Value stack is not empty");
+    DBG(std::cerr << "## END\n" << std::endl);
     return true;
 }
 
@@ -515,7 +494,7 @@ void Processor_t::run(const FragmentValue_t &data, Writer_t &writer) {
     const ContentType_t *ct = desc->contentType.get();
 
     // run the program
-    std::stack<Value_t> stack;
+    std::vector<Value_t> stack;
     Formatter_t output(writer);
     RunCtx_t ctx{err, program, dict, params, encoding, ct, data, output};
     process(&ctx, stack, {0, static_cast<int32_t>(program.size()), program});
@@ -531,17 +510,15 @@ Processor_t::eval(const OFFApi_t *frames, int32_t start) {
     int32_t end = program.size();
 
     // init processor context (no run context - we are in compile time)
-    std::stack<Value_t> stack;
-    EvalCtx_t ctx{err, program, dict, params, encoding, frames};
-
-    // disable log during optimization of expressions
-    ++ctx.log_suppressed;
+    std::vector<Value_t> stack;
+    Error_t opt_err;
+    EvalCtx_t ctx{opt_err, program, dict, params, encoding, frames};
 
     // after evaluation the expression should left result value on the stack top
     if (!process(&ctx, stack, {start, end, program})) return Value_t();
-    if (err.count()) return Value_t();
+    if (!opt_err.empty()) return Value_t();
     if (stack.size() != 1) return Value_t();
-    return Value_t(std::move(stack.top()));
+    return Value_t(std::move(stack.back()));
 }
 
 } // namespace Teng

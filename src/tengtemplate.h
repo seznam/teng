@@ -134,11 +134,16 @@ public:
      *  @param sourceType type of template source
      *  @return created template (borrowed pointer!!!)
      */
-    Template_t* createTemplate(const std::string &source,
-                               const std::string &langFilename,
-                               const std::string &paramFilename,
-                               const std::string &encoding,
-                               SourceType_t sourceType);
+    Template_t *
+    createTemplate(
+        Error_t &err,
+        const std::string &source,
+        const std::string &langFilename,
+        const std::string &paramFilename,
+        const std::string &encoding,
+        const std::string &ctype,
+        SourceType_t sourceType
+    );
 
     /** @short Create dictionary from given files.
      *
@@ -147,10 +152,12 @@ public:
      *  @return created dictionary (borrowed pointer!!!)
      */
     const Dictionary_t *
-    createDictionary(const std::string &configFilename,
-                     const std::string &dictFilename)
-    {
-        return getConfigAndDict(configFilename, dictFilename).second;
+    createDictionary(
+        Error_t &err,
+        const std::string &configFilename,
+        const std::string &dictFilename
+    ) {
+        return getConfigAndDict(err, configFilename, dictFilename).second;
     }
 
     /** @short Release program.
@@ -200,9 +207,12 @@ private:
      *  @param serial serial number of cached data (output)
      *  @return configuration and dictionary (borrowed pointers!!!)
      */
-    ConfigAndDict_t getConfigAndDict(const std::string &configFilename,
-                                     const std::string &dictFilename,
-                                     unsigned long int *serial = 0);
+    ConfigAndDict_t getConfigAndDict(
+        Error_t &err,
+        const std::string &configFilename,
+        const std::string &dictFilename,
+        unsigned long int *serial = 0
+    );
 
     /** @short Root for relativa paths.
      */

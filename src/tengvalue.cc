@@ -42,6 +42,7 @@
 #include <ostream>
 #include <sstream>
 
+#include "tengjsonutils.h"
 #include "tengstructs.h"
 #include "tengplatform.h"
 #include "tengformatter.h"
@@ -69,7 +70,8 @@ Value_t::Value_t(const FragmentValue_t *value) noexcept {
         new (this) Value_t(&value->frag_value);
         break;
     case FragmentValue_t::tag::string:
-        new (this) Value_t(string_ref_type(value->string_value));
+        // saves some allocation, app data lives longer than value
+        new (this) Value_t(string_view_t(value->string_value));
         break;
     case FragmentValue_t::tag::integral:
         new (this) Value_t(value->integral_value);
@@ -80,36 +82,65 @@ Value_t::Value_t(const FragmentValue_t *value) noexcept {
     }
 }
 
-std::ostream &operator<<(std::ostream &o, const Value_t &v) {
-    switch (v.tag_value) {
+void Value_t::json(std::ostream &out) const {
+    switch (tag_value) {
     case Value_t::tag::undefined:
-        o << "undefined";
+        out << "null";
         break;
     case Value_t::tag::integral:
-        o << "integral(" << v.integral_value << ')';
+        out << integral_value;
         break;
     case Value_t::tag::real:
-        o << "real(" << v.real_value << ')';
+        out << real_value;
         break;
     case Value_t::tag::string:
-        o << "string(" << v.string_value << ')';
+        json::quote_string(out, string_value);
         break;
     case Value_t::tag::string_ref:
-        o << "string_ref(" << v.string_ref_value << ')';
+        json::quote_string(out, string_ref_value);
         break;
     case Value_t::tag::frag_ref:
-        o << "frag_ref(@" << v.frag_ref_value.ptr << ')';
+        frag_ref_value.ptr->json(out);
         break;
     case Value_t::tag::list_ref:
-        o << "list_ref(@" << v.list_ref_value.ptr
-          << ',' << v.list_ref_value.i
-          << ',' << v.list_ref_value.ptr->size() << ')';
+        list_ref_value.ptr->json(out);
         break;
     case Value_t::tag::regex:
-        o << "regex(" << v.regex_value << ')';
+        out << "null";
         break;
     }
-    return o;
+}
+
+std::ostream &operator<<(std::ostream &out, const Value_t &v) {
+    switch (v.tag_value) {
+    case Value_t::tag::undefined:
+        out << "undefined";
+        break;
+    case Value_t::tag::integral:
+        out << "integral(" << v.integral_value << ')';
+        break;
+    case Value_t::tag::real:
+        out << "real(" << v.real_value << ')';
+        break;
+    case Value_t::tag::string:
+        out << "string(" << v.string_value << ')';
+        break;
+    case Value_t::tag::string_ref:
+        out << "string_ref(" << v.string_ref_value << ')';
+        break;
+    case Value_t::tag::frag_ref:
+        out << "frag_ref(@" << v.frag_ref_value.ptr << ')';
+        break;
+    case Value_t::tag::list_ref:
+        out << "list_ref(@" << v.list_ref_value.ptr
+            << ',' << v.list_ref_value.i
+            << ',' << v.list_ref_value.ptr->size() << ')';
+        break;
+    case Value_t::tag::regex:
+        out << "regex(" << v.regex_value << ')';
+        break;
+    }
+    return out;
 }
 
 } // namespace Teng

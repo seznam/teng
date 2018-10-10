@@ -122,7 +122,7 @@ SCENARIO(
                     Teng::Error_t::ERROR,
                     {1, 8},
                     "Runtime: Left operand of | numeric operator "
-                    "is string"
+                    "is string_ref"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -138,7 +138,7 @@ SCENARIO(
                     Teng::Error_t::ERROR,
                     {1, 8},
                     "Runtime: Left operand of ^ numeric operator "
-                    "is string"
+                    "is string_ref"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -154,7 +154,7 @@ SCENARIO(
                     Teng::Error_t::ERROR,
                     {1, 8},
                     "Runtime: Left operand of & numeric operator "
-                    "is string"
+                    "is string_ref"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -426,7 +426,7 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
                     {1, 7},
-                    "Runtime: Left operand of - numeric operator is string"
+                    "Runtime: Left operand of - numeric operator is string_ref"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -485,7 +485,7 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
                     {1, 7},
-                    "Runtime: Left operand of * numeric operator is string"
+                    "Runtime: Left operand of * numeric operator is string_ref"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -511,7 +511,7 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
                     {1, 7},
-                    "Runtime: Left operand of / numeric operator is string"
+                    "Runtime: Left operand of / numeric operator is string_ref"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -537,7 +537,7 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
                     {1, 7},
-                    "Runtime: Left operand of % numeric operator is string"
+                    "Runtime: Left operand of % numeric operator is string_ref"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -722,7 +722,7 @@ SCENARIO(
 
         WHEN("The string literal with valid escape sequencies is printed") {
             Teng::Error_t err;
-            auto result = g(err, "${'[\\'][\\n][\\t][\\\"]'}", root);
+            auto result = g(err, "%{'[\\'][\\n][\\t][\\\"]'}", root);
 
             THEN("They are expanded") {
                 std::vector<Teng::Error_t::Entry_t> errs;

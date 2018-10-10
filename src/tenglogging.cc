@@ -53,17 +53,7 @@ logError(
     const Pos_t &pos,
     const string_view_t &msg
 ) {
-    Error_t::Entry_t new_entry = {
-        level, {
-            pos.filename == pos.no_filename()? "": *pos.filename,
-            pos.lineno,
-            pos.colno
-        }, msg.str()
-    };
-    for (auto &entry: err.getEntries())
-        if (entry == new_entry)
-            return;
-    err.append(std::move(new_entry));
+    err.append(level, pos.filename, pos.lineno, pos.colno, msg.str());
 }
 
 void

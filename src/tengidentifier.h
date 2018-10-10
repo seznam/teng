@@ -42,77 +42,131 @@
 #include <string>
 #include <vector>
 
-// TODO(burlog): remove
-#include <iostream>
-
 #include "tengstringview.h"
 
 namespace Teng {
 
-/** 
+/** Represents the Teng variable/function identifier.
  */
 struct Identifier_t {
 public:
-    // TODO(burlog): rename to Identifier_t!
-    using const_iterator = std::vector<string_view_t>::const_iterator;
-    using const_reverse_iterator = std::vector<string_view_t>::const_reverse_iterator;
+    // types
+    using Segments_t = std::vector<string_view_t>;
+    using const_iterator = Segments_t::const_iterator;
+    using const_reverse_iterator = Segments_t::const_reverse_iterator;
 
-    Identifier_t(): relative(true) {}
-    Identifier_t(bool relative): relative(relative) {}
-    Identifier_t(const string_view_t &name): relative(true), path{name} {}
-    Identifier_t(std::vector<string_view_t> path, bool relative = false)
+    /** C'tor: default.
+     */
+    Identifier_t()
+        : relative(true)
+    {}
+
+    /** C'tor: for setting relative/absolute.
+     */
+    explicit Identifier_t(bool relative)
+        : relative(relative)
+    {}
+
+    /** C'tor: for relative from name.
+     */
+    Identifier_t(const string_view_t &name)
+        : relative(true), path{name}
+    {}
+
+    /** C'tor: from segments.
+     */
+    Identifier_t(Segments_t path, bool relative = false)
         : relative(relative), path(std::move(path))
     {}
+
+    /** C'tor: from iter to segments.
+     */
     template <typename iter_t>
     Identifier_t(iter_t ipos, iter_t epos, bool relative = false)
         : relative(relative), path(ipos, epos)
     {}
 
-    explicit operator bool() const {return !path.empty();}
-
+    /** Returns the number of identifier path segments.
+     */
     std::size_t size() const {return path.size();}
 
+    /** Returns true if identifier contains no segments.
+     */
     bool empty() const {return path.empty();}
 
+    /** Returns the last segment.
+     */
     const string_view_t &name() const {return path.back();}
 
+    /** Returns iterator to the first identifier path segment.
+     */
     const_iterator begin() const {return path.begin();}
+
+    /** Returns iterator one past the last identifier path segment.
+     */
     const_iterator end() const {return path.end();}
+
+    /** Returns iterator to the last identifier path segment.
+     */
     const_reverse_iterator rbegin() const {return path.rbegin();}
+
+    /** Returns iterator one before the first identifier path segment.
+     */
     const_reverse_iterator rend() const {return path.rend();}
 
+    /** Returns true if identifier is relative.
+     */
     bool is_relative() const {return relative;}
+
+    /** Returns true if identifier is absolute.
+     */
     bool is_absolute() const {return !relative;}
+
+    /** Returns true if identifier is relative and contains only one segment -
+     * the variable name.
+     */
     bool is_local() const {return relative && (path.size() == 1);}
 
+    /** Appends new segment at the end of identifier path.
+     */
     void push_back(const string_view_t &segment) {path.push_back(segment);}
+
+    /** Removes last path segment.
+     */
     void pop_back() {path.pop_back();}
 
+    /** Returns i-th path segment.
+     */
     const string_view_t &operator[](std::size_t i) const {return path[i];}
 
+    /** Comparison.
+     */
     friend bool operator==(const Identifier_t &lhs, const Identifier_t &rhs);
 
+    /** Returns all path segments joined by dot. If identifier is absolute then
+     * it starts with dot.
+     */
     std::string str() const {
         std::string result;
         if (is_absolute()) result.push_back('.');
-        for (int i = 0; i < size(); ++i)
+        for (auto i = 0lu; i < size(); ++i)
             result.append((i? ".": "") + path[i]);
         return result;
     }
 
 protected:
-    bool relative;
-    std::vector<string_view_t> path;
+    bool relative;   //!< true for relative identifiers
+    Segments_t path; //!< the identifier segments
 };
 
-/** 
+/** Comparison.
  */
 inline bool operator==(const Identifier_t &lhs, const Identifier_t &rhs) {
     return lhs.relative == rhs.relative
         && lhs.path == rhs.path;
 }
 
-/** 
+/** Comparison.
  */
 inline bool operator!=(const Identifier_t &lhs, const Identifier_t &rhs) {
     return !(lhs == rhs);

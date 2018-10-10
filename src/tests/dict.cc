@@ -40,6 +40,149 @@
 #include "utils.h"
 
 SCENARIO(
+    "Regular dict lookups use raw print as default",
+    "[dict][expr]"
+) {
+    GIVEN("Dictionary (see dict.txt) and variables with dict keys") {
+        Teng::Fragment_t root;
+        root.addVariable("a", "html_value");
+        auto r = "&amp;&lt;b&gt;some "
+                 "&lt;i&gt;HTML&lt;/i&gt; text&lt;/b&gt;&amp;";
+
+        WHEN("Regular lookup of the existing key") {
+            Teng::Error_t err;
+            auto t = "#{html_value}";
+            auto result = g(err, t, root);
+
+            THEN("Replaced with raw dict entry value") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "&<b>some <i>HTML</i> text</b>&");
+            }
+        }
+
+        WHEN("Dict lookup of the existing key - raw print used") {
+            Teng::Error_t err;
+            auto t = "%{#html_value}";
+            auto result = g(err, t, root);
+
+            THEN("Replaced with raw dict entry value") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "&<b>some <i>HTML</i> text</b>&");
+            }
+        }
+
+        WHEN("Dict lookup of the existing key - escaping print used") {
+            Teng::Error_t err;
+            auto t = "${#html_value}";
+            auto result = g(err, t, root);
+
+            THEN("Replaced with escaped dict entry value") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == r);
+            }
+        }
+
+        WHEN("Variable lookup of the existing key - raw print used") {
+            Teng::Error_t err;
+            auto t = "%{@a}";
+            auto result = g(err, t, root);
+
+            THEN("Replaced with raw dict entry value") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "&<b>some <i>HTML</i> text</b>&");
+            }
+        }
+
+        WHEN("Variable lookup of the existing key - escaping print used") {
+            Teng::Error_t err;
+            auto t = "${@a}";
+            auto result = g(err, t, root);
+
+            THEN("Replaced with escaped dict entry value") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == r);
+            }
+        }
+    }
+}
+
+SCENARIO(
+    "Regular dict lookups with print escaping disabled",
+    "[dict][expr]"
+) {
+    GIVEN("Dictionary (see dict.txt) and variables with dict keys") {
+        Teng::Fragment_t root;
+        root.addVariable("a", "html_value");
+        const char * conf = "teng.no-print-escape.conf";
+
+        WHEN("Regular lookup of the existing key") {
+            Teng::Error_t err;
+            auto t = "#{html_value}";
+            auto result = g(err, t, root, "", "text/html", "utf-8", conf);
+
+            THEN("Replaced with raw dict entry value") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "&<b>some <i>HTML</i> text</b>&");
+            }
+        }
+
+        WHEN("Dict lookup of the existing key - raw print used") {
+            Teng::Error_t err;
+            auto t = "%{#html_value}";
+            auto result = g(err, t, root, "", "text/html", "utf-8", conf);
+
+            THEN("Raw print directive is printed as regular text") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "%{#html_value}");
+            }
+        }
+
+        WHEN("Dict lookup of the existing key - escaping print used") {
+            Teng::Error_t err;
+            auto t = "${#html_value}";
+            auto result = g(err, t, root, "", "text/html", "utf-8", conf);
+
+            THEN("Replaced with raw dict entry value") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "&<b>some <i>HTML</i> text</b>&");
+            }
+        }
+
+        WHEN("Variable lookup of the existing key - raw print used") {
+            Teng::Error_t err;
+            auto t = "%{@a}";
+            auto result = g(err, t, root, "", "text/html", "utf-8", conf);
+
+            THEN("Raw print directive is printed as regular text") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "%{@a}");
+            }
+        }
+
+        WHEN("Variable lookup of the existing key - escaping print used") {
+            Teng::Error_t err;
+            auto t = "${@a}";
+            auto result = g(err, t, root, "", "text/html", "utf-8", conf);
+
+            THEN("Replaced with raw dict entry value") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "&<b>some <i>HTML</i> text</b>&");
+            }
+        }
+    }
+}
+
+SCENARIO(
     "Dict lookup when language is not specified",
     "[dict][expr]"
 ) {
@@ -47,6 +190,18 @@ SCENARIO(
         Teng::Fragment_t root;
         root.addVariable("a", "hello_world");
         root.addVariable("b", "hello_world_missing");
+
+        WHEN("Regular lookup of the existing key") {
+            Teng::Error_t err;
+            auto t = "#{hello_world}";
+            auto result = g(err, t, root);
+
+            THEN("Replaced with dict entry value") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "hello world");
+            }
+        }
 
         WHEN("Lookup of the existing key") {
             Teng::Error_t err;
@@ -116,6 +271,18 @@ SCENARIO(
         root.addVariable("a", "hello_world");
         root.addVariable("b", "hello_world_missing");
 
+        WHEN("Regular lookup of the existing key") {
+            Teng::Error_t err;
+            auto t = "#{hello_world}";
+            auto result = g(err, t, root, "en");
+
+            THEN("Replaced with dict entry value") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "Hello world!");
+            }
+        }
+
         WHEN("Lookup of the existing key") {
             Teng::Error_t err;
             auto t = "${#hello_world}";
@@ -178,6 +345,18 @@ SCENARIO(
         Teng::Fragment_t root;
         root.addVariable("a", "hello_world");
         root.addVariable("b", "hello_world_missing");
+
+        WHEN("Regular lookup of the existing key") {
+            Teng::Error_t err;
+            auto t = "#{hello_world}";
+            auto result = g(err, t, root, "cs");
+
+            THEN("It is empty string") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "Ahoj svete!");
+            }
+        }
 
         WHEN("Lookup of the existing key") {
             Teng::Error_t err;

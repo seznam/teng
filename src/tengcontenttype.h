@@ -157,7 +157,18 @@ public:
     inline Escaper_t(const ContentType_t *ct = nullptr)
         : escapers()
     {
-        topLevel = (ct? ct: ContentType_t::getDefault()->contentType.get());
+        topLevel = ct? ct: ContentType_t::getDefault()->contentType.get();
+        escapers.push(topLevel);
+    }
+
+    /** @short Creates new escaper with given or default content type.
+     *
+     * @param ct first content type
+     */
+    inline Escaper_t(const ContentType_t::Descriptor_t *desc)
+        : escapers()
+    {
+        topLevel = (desc? desc: ContentType_t::getDefault())->contentType.get();
         escapers.push(topLevel);
     }
 

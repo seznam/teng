@@ -60,8 +60,8 @@ public:
     using iterator = std::vector<value_type>::iterator;
 
     /** @short Create new program. */
-    Program_t()
-        : sources(), error(), instrs()
+    Program_t(Error_t &error)
+        : sources(), error(error), instrs()
     {}
     // TODO(burlog): {instrs.reserve(1024);}
 
@@ -86,12 +86,9 @@ public:
     const Error_t &getErrors() const {return error;}
 
     /** @short Adds new source into the list.
-      * @param filename Filename of source.
-      * @param include_pos Position of include directive. */
+      * @param filename Filename of source.  */
     std::pair<const std::string *, std::size_t>
-    addSource(const std::string &filename, const Pos_t &include_pos = {}) {
-        return sources.push(filename, include_pos, error);
-    }
+    addSource(const std::string &filename) {return sources.push(filename);}
 
     /** Returns list of sources.
       */
@@ -165,7 +162,7 @@ public:
 
 protected:
     SourceList_t sources;           //!< all source files for this program
-    Error_t error;                  //!< error logger
+    Error_t &error;                 //!< error logger
     std::vector<value_type> instrs; //!< list of program instructions
 };
 

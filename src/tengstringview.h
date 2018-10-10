@@ -52,7 +52,7 @@ public:
     /** C'tor: from cstring and size.
      */
     string_view_facade_t(ptr_type ptr, std::size_t len) noexcept
-        : ptr(ptr), len(len)
+        : len(len), ptr(ptr)
     {}
 
     /** Returns pointer to the first character in view.
@@ -92,8 +92,8 @@ public:
     char back() const {return ptr[len - 1];}
 
 protected:
-    ptr_type ptr;    //!< pointer to first character in view
     std::size_t len; //!< the number of characters in view
+    ptr_type ptr;    //!< pointer to first character in view
 };
 
 /** Returns true if two views represents same strings.

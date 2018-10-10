@@ -114,7 +114,7 @@ Result_t getdict(Ctx_t &ctx, const Args_t &args) {
 
     auto &arg0 = *args.rbegin();
     if (!arg0.is_string_like())
-        return failed(ctx, "getdict", "First must be a string");
+        return failed(ctx, "getdict", "First arg must be a string");
     auto key = arg0.string();
 
     // set result value
@@ -130,7 +130,7 @@ Result_t getdict(Ctx_t &ctx, const Args_t &args) {
     // read default value
     auto &arg1 = *++args.rbegin();
     if (!arg1.is_string_like())
-        return failed(ctx, "getdict", "Second must be a string");
+        return failed(ctx, "getdict", "Second arg must be a string");
     auto def = arg1.string();
     return Result_t(def);
 }

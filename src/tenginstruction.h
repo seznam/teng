@@ -120,7 +120,8 @@ enum class OPCODE {
     REPR_DEFINED,    //!< Convert frag value into value [OBSOLETE]
     REPR_EXISTS,     //!< Convert frag value into value
     REPR_ISEMPTY,    //!< Convert frag value into value
-    REGEX_MATCH      //!< Matching of regular expression
+    REGEX_MATCH,     //!< Matching of regular expression
+    LOG_SUPPRESS,    //!< Suppressing error log
 };
 
 /** Converts opcode to its string representation.
@@ -191,7 +192,7 @@ protected:
     /** The instruction implementation can override dump_params to write its
      * parametr to stream.
      */
-    void dump_params(std::ostream &os) const {}
+    void dump_params(std::ostream &) const {}
 
     OPCODE opcode_value; //!< operation to perform
     Pos_t pos_value;     //!< the position of instruction in source file
@@ -371,12 +372,6 @@ struct BytecodeFrag_t: public Instruction_t {
     {}
 };
 
-struct Print_t: public Instruction_t {
-    Print_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::PRINT, pos)
-    {}
-};
-
 struct CloseFormat_t: public Instruction_t {
     CloseFormat_t(const Pos_t &pos)
         : Instruction_t(OPCODE::CLOSE_FORMAT, pos)
@@ -386,12 +381,6 @@ struct CloseFormat_t: public Instruction_t {
 struct CloseCType_t: public Instruction_t {
     CloseCType_t(const Pos_t &pos)
         : Instruction_t(OPCODE::CLOSE_CTYPE, pos)
-    {}
-};
-
-struct PushAttrAt_t: public Instruction_t {
-    PushAttrAt_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::PUSH_ATTR_AT, pos)
     {}
 };
 
@@ -462,6 +451,12 @@ struct ReprExists_t: public Instruction_t {
 struct ReprIsEmpty_t: public Instruction_t {
     ReprIsEmpty_t(const Pos_t &pos)
         : Instruction_t(OPCODE::REPR_ISEMPTY, pos)
+    {}
+};
+
+struct LogSuppress_t: public Instruction_t {
+    LogSuppress_t(const Pos_t &pos)
+        : Instruction_t(OPCODE::LOG_SUPPRESS, pos)
     {}
 };
 
@@ -658,6 +653,15 @@ struct CloseFrag_t: public Instruction_t {
     int32_t open_frag_offset; //!< offset where to jump to repeat fragment
 };
 
+struct Print_t: public Instruction_t {
+    Print_t(bool print_escape, const Pos_t &pos)
+        : Instruction_t(OPCODE::PRINT, pos),
+          print_escape(print_escape)
+    {}
+    void dump_params(std::ostream &os) const;
+    bool print_escape; //!< do escaping if print escaping is enabled
+};
+
 struct Set_t: public Instruction_t {
     template <typename Variable_t>
     Set_t(const Variable_t &var)
@@ -681,12 +685,22 @@ struct OpenCType_t: public Instruction_t {
 };
 
 struct PushAttr_t: public Instruction_t {
-    PushAttr_t(std::string name, const Pos_t &pos)
+    PushAttr_t(std::string name, std::string path, const Pos_t &pos)
         : Instruction_t(OPCODE::PUSH_ATTR, pos),
-          name(std::move(name))
+          name(std::move(name)), path(std::move(path))
     {}
     void dump_params(std::ostream &os) const;
     std::string name; //!< the attribute name
+    std::string path; //!< path from rtvar start to this attribute
+};
+
+struct PushAttrAt_t: public Instruction_t {
+    PushAttrAt_t(std::string path, const Pos_t &pos)
+        : Instruction_t(OPCODE::PUSH_ATTR_AT, pos),
+          path(std::move(path))
+    {}
+    void dump_params(std::ostream &os) const;
+    std::string path; //!< path from rtvar start to this attribute
 };
 
 struct RegexMatch_t: public Instruction_t {
@@ -746,7 +760,7 @@ public:
     ~InstrBox_t() noexcept;
 
 protected:
-    static constexpr auto p_size = sizeof(Val_t) - sizeof(Instruction_t);
+    static constexpr auto p_size = sizeof(PushAttr_t) - sizeof(Instruction_t);
     char padding[p_size]; //!< ensure enough space for the biggest instr
 };
 

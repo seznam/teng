@@ -182,6 +182,7 @@ public:
     /**
      * @short Returns true if value is leaf => string/integral/real.
      */
+    // TODO(burlog): and what frag/frag_ptr?
     bool scalar() const {return tag_value != tag::frags;}
 
     /** Returns backward compatible string representation of value:

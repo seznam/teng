@@ -80,7 +80,8 @@ public:
     /** Throws runtime_functx_needed_t if it is invoked during compile time.
      */
     const Escaper_t &escaper() const {
-        return escaper_ptr? *escaper_ptr: throw runtime_functx_needed_t();
+        if (escaper_ptr) return *escaper_ptr;
+        throw runtime_functx_needed_t();
     }
 
     /** Throws runtime_functx_needed_t.
@@ -95,7 +96,7 @@ public:
     const Configuration_t &params; //!< current configuration
     const Dictionary_t &dict;      //!< current dictionary
 
-protected:
+//protected:
     const Escaper_t *escaper_ptr;  //!< string escaping machine
 };
 

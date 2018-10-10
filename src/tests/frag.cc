@@ -36,9 +36,6 @@
 
 #include <teng.h>
 
-// TODO(burlog): remove
-#include <iostream>
-
 #include "catch.hpp"
 #include "utils.h"
 

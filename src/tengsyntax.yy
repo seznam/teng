@@ -119,8 +119,9 @@
 
 // teng directives
 %token <TokenSymbol_t> TENG FRAGMENT ENDFRAGMENT DEBUG_FRAG BYTECODE_FRAG
-%token <TokenSymbol_t> INCLUDE IF ELSEIF ELSE ENDIF SET EXPR FORMAT ENDFORMAT
-%token <TokenSymbol_t> END SHORT_EXPR SHORT_DICT SHORT_END CTYPE ENDCTYPE
+%token <TokenSymbol_t> INCLUDE IF ELSEIF ELSE ENDIF SET ESC_EXPR RAW_EXPR
+%token <TokenSymbol_t> END SHORT_ESC_EXPR SHORT_RAW_EXPR SHORT_DICT SHORT_END
+%token <TokenSymbol_t> FORMAT ENDFORMAT CTYPE ENDCTYPE
 
 // assignment operator
 %token <TokenSymbol_t> ASSIGN
@@ -175,25 +176,25 @@
 // start symbol
 %start start
 
-// TODO(burlog): tady je potreba popsat proc je to tento typ
+// purpose: propagation of token value and token position
 %type <TokenSymbol_t> identifier identifier_relative function_name
 %type <TokenSymbol_t> teng_if_prepare teng_elif_prepare
 
-// TODO(burlog): tady je potreba popsat proc je to tento typ
+// purpose: propagation of literal value
 %type <LiteralSymbol_t> value_literal string_literal int_literal
 %type <LiteralSymbol_t> signed_literal real_literal string_literal_fact
 
-// TODO(burlog): tady je potreba popsat proc je to tento typ
+// purpose: propagation of variable name
 %type <VariableSymbol_t> variable local_variable relative_variable set_variable
 
-// TODO(burlog): tady je potreba popsat proc je to tento typ
+// purpose: propagation of options value
 %type <OptionsSymbol_t> options
 
-// TODO(burlog): tady je potreba popsat proc je to tento typ
+// purpose: propagation of the subexpression arity to expression optimizer
 %type <NAryExprSymbol_t> nary_expression case_expression
 %type <NAryExprSymbol_t> function_expression query_expression
 
-// TODO(burlog): tady je potreba popsat proc je to tento typ
+// purpose: the rule value is useless
 %type <Nil_t> start template teng_directive teng_unknown ignored_options
 %type <Nil_t> teng_frag teng_frag_close
 %type <Nil_t> teng_expr teng_dict option option_list
@@ -209,13 +210,15 @@
 %type <Nil_t> teng_format teng_format_close teng_if_stmnt_valid
 %type <Nil_t> teng_if_stmnt_invalid teng_if_stmnt_disordered case_default_option
 
-// TODO(burlog): tady je potreba popsat proc je to tento typ
-%type <bool> nullary_expression expr_up_to_end expr_up_to_end_impl
+// purpose: tells the optimizer if subexpression is optimizable
+%type <bool> nullary_expression
+// purpose: tells the if generator if error occurred during expression parsing
+%type <bool> expr_up_to_end expr_up_to_end_impl
 
-// TODO(burlog): tady je potreba popsat proc je to tento typ
+// purpose: propagation of the statement start position
 %type <Pos_t> runtime_variable teng_format_open teng_frag_open teng_ctype_open
 
-// TODO(burlog): tady je potreba popsat proc je to tento typ
+// purpose: propagation of the subexpression arity to the expression optimizer
 %type <uint32_t> function_arguments case_particular_options case_values
 %type <uint32_t> query_argument case_options deprecated_binary_expression
 
@@ -242,7 +245,7 @@ block_content
 
 
 template_content
-    : TEXT {generate_print(ctx, *$1);}
+    : TEXT {generate_raw_print(ctx, *$1);}
     | teng_directive {}
     ;
 
@@ -505,10 +508,12 @@ teng_endif
 
 
 teng_expr
-    : EXPR expr_up_to_end END {generate_print(ctx);}
-    | EXPR expr_up_to_end INV {generate_inv_print(ctx, *$3);}
-    | SHORT_EXPR expr_up_to_short_end SHORT_END {generate_print(ctx);}
-    | SHORT_EXPR expr_up_to_short_end INV {generate_inv_print(ctx, *$3);}
+    : ESC_EXPR expr_up_to_end END {generate_print(ctx);}
+    | ESC_EXPR expr_up_to_end INV {generate_inv_print(ctx, *$3);}
+    | SHORT_ESC_EXPR expr_up_to_short_end SHORT_END {generate_print(ctx);}
+    | SHORT_ESC_EXPR expr_up_to_short_end INV {generate_inv_print(ctx, *$3);}
+    | SHORT_RAW_EXPR expr_up_to_short_end SHORT_END {generate_raw_print(ctx);}
+    | SHORT_RAW_EXPR expr_up_to_short_end INV {generate_inv_print(ctx, *$3);}
     ;
 
 
@@ -796,7 +801,7 @@ local_variable
 
 
 runtime_variable
-    : VAR VAR rtvar_path {$$ = $1->pos;}
+    : VAR VAR rtvar_path {$$ = $1->pos; ctx->rtvar_strings.pop_back();}
     ;
 
 
@@ -814,15 +819,15 @@ rtvar_segment
 
 rtvar_index
     : rtvar_index L_BRACKET expression R_BRACKET
-      {generate_rtvar_index(ctx, *$2);}
+      {generate_rtvar_index(ctx, *$2, *$4);}
     | %empty {}
     ;
 
 
 rtvar_identifier
-    : identifier_relative {generate<PushAttr_t>(ctx, $1->str(), $1->pos);}
-    | BUILTIN_THIS {/*ignore this*/}
-    | BUILTIN_PARENT {generate<PopAttr_t>(ctx, $1->pos);}
+    : identifier_relative {generate_rtvar_segment(ctx, *$1);}
+    | BUILTIN_THIS {generate_rtvar_this(ctx, *$1);}
+    | BUILTIN_PARENT {generate_rtvar_parent(ctx, *$1);}
     ;
 
 
@@ -888,16 +893,16 @@ function_arguments
 
 
 query_expression
-    : DEFINED query_argument
-      {$$.emplace(query_expr<ReprDefined_t>(ctx, *$1, $2));}
-    | EXISTS query_argument
-      {$$.emplace(query_expr<ReprExists_t>(ctx, *$1, $2));}
-    | ISEMPTY query_argument
-      {$$.emplace(query_expr<ReprIsEmpty_t>(ctx, *$1, $2));}
-    | TYPE query_argument
-      {$$.emplace(query_expr<ReprType_t>(ctx, *$1, $2));}
-    | COUNT query_argument
-      {$$.emplace(query_expr<ReprCount_t>(ctx, *$1, $2));}
+    : DEFINED {generate<LogSuppress_t>(ctx, $1->pos);} query_argument
+      {$$.emplace(query_expr<ReprDefined_t>(ctx, *$1, $3));}
+    | EXISTS {generate<LogSuppress_t>(ctx, $1->pos);} query_argument
+      {$$.emplace(query_expr<ReprExists_t>(ctx, *$1, $3));}
+    | ISEMPTY {generate<LogSuppress_t>(ctx, $1->pos);} query_argument
+      {$$.emplace(query_expr<ReprIsEmpty_t>(ctx, *$1, $3));}
+    | TYPE {generate<LogSuppress_t>(ctx, $1->pos);} query_argument
+      {$$.emplace(query_expr<ReprType_t>(ctx, *$1, $3));}
+    | COUNT {generate<LogSuppress_t>(ctx, $1->pos);} query_argument
+      {$$.emplace(query_expr<ReprCount_t>(ctx, *$1, $3));}
     | JSONIFY query_argument
       {$$.emplace(query_expr<ReprJsonify_t>(ctx, *$1, $2));}
     ;

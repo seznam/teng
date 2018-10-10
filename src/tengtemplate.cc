@@ -71,10 +71,12 @@ TemplateCache_t::~TemplateCache_t() {
 }
 
 Template_t *
-TemplateCache_t::createTemplate(const std::string &source,
+TemplateCache_t::createTemplate(Error_t &err,
+                                const std::string &source,
                                 const std::string &langFilename,
                                 const std::string &configFilename,
                                 const std::string &encoding,
+                                const std::string &ctype,
                                 SourceType_t sourceType)
 {
     unsigned long int configSerial;
@@ -83,7 +85,7 @@ TemplateCache_t::createTemplate(const std::string &source,
     const Dictionary_t *dict = nullptr;
     const Configuration_t *params = nullptr;
     std::tie(params, dict)
-        = getConfigAndDict(configFilename, langFilename, &configSerial);
+        = getConfigAndDict(err, configFilename, langFilename, &configSerial);
 
     // create key from source file names
     std::vector<std::string> key;
@@ -107,8 +109,8 @@ TemplateCache_t::createTemplate(const std::string &source,
     if (reload) {
         // create new program
         auto program = (sourceType == SRC_STRING)
-            ? compile_string(dict, params, root, std::string{source}, encoding)
-            : compile_file(dict, params, root, source, encoding);
+            ? compile_string(err, dict, params, root, {source}, encoding, ctype)
+            : compile_file(err, dict, params, root, source, encoding, ctype);
 
         // add program into cache
         // TODO(burlog): cached = programCache->add(key, std::move(program), configSerial);
@@ -120,9 +122,11 @@ TemplateCache_t::createTemplate(const std::string &source,
 }
 
 TemplateCache_t::ConfigAndDict_t
-TemplateCache_t::getConfigAndDict(const std::string &configFilename,
-                                  const std::string &dictFilename,
-                                  unsigned long int *serial)
+TemplateCache_t::getConfigAndDict(
+    Error_t &err,
+    const std::string &configFilename,
+    const std::string &dictFilename,
+    unsigned long int *serial)
 {
     // find or create configuration
     std::vector<std::string> key;
@@ -147,7 +151,7 @@ TemplateCache_t::getConfigAndDict(const std::string &configFilename,
     // reload params if needed
     if (reloadCfg) {
         // not found or changed -> create new configionary
-        Configuration_t *config = new Configuration_t(root);
+        Configuration_t *config = new Configuration_t(err, root);
         // parse file
         if (!configFilename.empty()) config->parse(configFilename);
         // add configionary to cache and return it
@@ -160,7 +164,7 @@ TemplateCache_t::getConfigAndDict(const std::string &configFilename,
     // reload lang dict if needed
     if (reloadDict) {
         // not found or changed -> create new dictionary
-        Dictionary_t *dict = new Dictionary_t(root);
+        Dictionary_t *dict = new Dictionary_t(err, root);
         // parse file
         if (!dictFilename.empty()) dict->parse(dictFilename);
         // add dictionary to cache and return it

@@ -45,12 +45,6 @@
 #include "tengutil.h"
 
 namespace Teng {
-namespace {
-
-// count of "." characters, which are appended to clipped string
-const unsigned int CLIP_DOTS_COUNT = 3;
-
-} // namespace
 
 void normalizeFilename(std::string &filename) {
     // check for empty filename
@@ -97,21 +91,42 @@ void normalizeFilename(std::string &filename) {
     }
 }
 
-void clipString(std::string &str, unsigned int len) {
-    if (str.size() + CLIP_DOTS_COUNT > len) {
-        str = str.substr(0, std::max((int)len - (int)CLIP_DOTS_COUNT, 0));
-        // find previous correct utf8 character
-        while (str.length() && (str[str.length() - 1] & 0x80) == 0x80) {
-            char ch = str[str.length() - 1];
-            str.erase(str.length() - 1, 1);
-            // char 11xxxxxx is begin of utf8 char, we can break
-            if ((ch & 0xc0) == 0xc0)
-                break;
-        }
-        // add ... string to end of value
-        for (unsigned int i = 0; i < CLIP_DOTS_COUNT && str.length() < len; i++)
-            str += ".";
+std::string clip(std::string str, unsigned int len) {
+    static const unsigned int CLIP_DOTS_COUNT = 3;
+    if (str.size() <= len) return str;
+
+    // len is even shorter than CLIP_DOTS_COUNT
+    if (len <= CLIP_DOTS_COUNT) {
+        str.resize(0);
+        for (auto i = 0u; i < len; ++i)
+            str.push_back('.');
+        return str;
     }
+
+    // str.size() > len && len > CLIP_DOTS_COUNT
+    // index to the first character over the limit
+    auto i = len - CLIP_DOTS_COUNT;
+    switch (str[i] & 0b11000000) {
+    case 0b00000000: // ascii char
+    case 0b01000000: // ascii char
+        str.resize(i);
+        break;
+    case 0b10000000: // utf-8 continuation char
+        do {
+            if ((str[--i] & 0b11000000) != 0b10000000)
+                break;
+        } while (i > 0);
+        str.resize(i);
+        break;
+    case 0b11000000: // utf-8 leading char
+        str.resize(i - 1);
+        break;
+    }
+
+    // append three dots
+    for (auto i = 0u; i < CLIP_DOTS_COUNT; ++i)
+        str.push_back('.');
+    return str;
 }
 
 std::string tolower(std::string str) {

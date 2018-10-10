@@ -41,10 +41,12 @@
 
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 namespace Teng {
 
-/** Storage of error messages of template parsing, processing and generation.
+/** Storage of error messages of template parsing, processing and template
+ * rendering.
  */
 class Error_t {
 public:
@@ -59,7 +61,29 @@ public:
 
     /** Creates new error logger.
      */
-    Error_t(): max_level(DEBUGING), entries() {}
+    Error_t() noexcept: max_level(DEBUGING) {}
+
+    /** D'tor.
+     */
+    ~Error_t() noexcept;
+
+    /** The Pos_t class is intentionally not used because it contains pointer
+     * to string stored in Teng_t structure that can be destroyed independly
+     * on Error_t structure. The destruction of Teng_t structures
+     * invalidates all pos structures. Since the Error_t is public API, and
+     * we want to provide safe API, we translate pos structure to ErrorPos_t.
+     */
+    struct ErrorPos_t {
+        ErrorPos_t(std::string filename, int32_t lineno, int32_t colno)
+            : filename(filename), lineno(lineno), colno(colno)
+        {}
+        ErrorPos_t(int32_t lineno, int32_t colno)
+            : lineno(lineno), colno(colno)
+        {}
+        std::string filename; //!< file path
+        int32_t lineno;       //!< the line number (starting with 1)
+        int32_t colno;        //!< the column number (starting with 0)
+    };
 
     /** Entry in error log.
      */
@@ -74,71 +98,45 @@ public:
          */
         void dump(std::ostream &out) const;
 
-        /** The Pos_t class isn't intentionally used because it contains pointer
-         * to string stored in Teng_t structure that can be destroyed idependly
-         * on Error_t structure. The destruction of Teng_t structures
-         * invalidates all pos structures. Since the Error_t is public API and
-         * we want to provide safe API we translate pos structure to ErrorPos_t.
-         */
-        struct ErrorPos_t {
-            ErrorPos_t(std::string filename, int32_t lineno, int32_t colno)
-                : filename(filename), lineno(lineno), colno(colno)
-            {}
-            ErrorPos_t(int32_t lineno, int32_t colno)
-                : lineno(lineno), colno(colno)
-            {}
-            std::string filename; //!< file path
-            int32_t lineno;       //!< the line number (starting with 1)
-            int32_t colno;        //!< the column number (starting with 0)
-        };
-
         Level_t level;    //!< level of message
         ErrorPos_t pos;   //!< the error pos
         std::string msg;  //!< additional message
     };
 
-    /** Returns number of errors in log.
-     * @return number of errors
+    /** Returns whether any error occurred.
      */
-    std::size_t count() const {return entries.size();}
+    bool empty() const {return records.empty();}
 
     /** Returns whether any error occurred.
      * @return true if any error occurred, false otherwise
      */
-    explicit operator bool() const {return !entries.empty();}
+    explicit operator bool() const {return !records.empty();}
 
     /** Clears error log.
      */
-    void clear() {entries.clear();}
+    void clear() {records.clear();}
 
     /** Get raw error log.
       * @return error log
       */
-    const std::vector<Entry_t> &getEntries() const {return entries;}
-
-    /** Appends content of another error log.
-     * @param err appended log
-     */
-    void append(const Error_t &err) {
-        // increase level if lower than that of err
-        if (err.max_level > max_level)
-            max_level = err.max_level;
-
-        // append error log
-        for (auto entry: err.entries)
-            append_sorted(entry);
-    }
+    std::vector<Entry_t> getEntries() const;
 
     /** Appends new entry.
      * @param entry new entry to append
      */
-    void append(Entry_t entry) {
+    void append(
+        Level_t level,
+        const std::string *filename,
+        int32_t lineno,
+        int32_t colno,
+        std::string msg
+    ) {
         // increase level if lower than that of err
-        if (entry.level > max_level)
-            max_level = entry.level;
+        if (level > max_level)
+            max_level = level;
 
         // append error log
-        append_sorted(std::move(entry));
+        append_impl(level, filename, lineno, colno, std::move(msg));
     }
 
     /** Dumps log into stream.
@@ -146,39 +144,70 @@ public:
      */
     void dump(std::ostream &out) const;
 
-    Level_t max_level; //!< Max level of messages (or DEBUGING if no message)
+    /** Max level of messages (or DEBUGING if no message)
+     */
+    Level_t max_level;
+
+    /** Maximal number of error messages per source code position.
+     */
+    std::size_t max_messages_per_pos = 3;
 
 private:
     // don't copy
     Error_t(const Error_t &) = delete;
     Error_t &operator=(const Error_t &) = delete;
 
-    /** Inserts entry to errors vector according to its position in source code.
+    /** Error record key.
      */
-    void append_sorted(Entry_t entry) {
-        entries.push_back(std::move(entry));
-        for (int64_t i = entries.size() - 2; i >= 0; --i) {
-            auto &lhs = entries[i];
-            auto &rhs = entries[i + 1];
-            if (lhs.pos.lineno && rhs.pos.lineno) {
-                if (lhs.pos.filename == rhs.pos.filename) {
-                    if (lhs.pos.lineno < rhs.pos.lineno)
-                        break;
-                    if (lhs.pos.lineno == rhs.pos.lineno) {
-                        if (lhs.pos.colno < rhs.pos.colno)
-                            break;
-                        if (lhs.pos.colno == rhs.pos.colno) {
-                            if (lhs.level <= rhs.level)
-                                break;
-                        }
-                    }
-                    std::swap(lhs, rhs);
-                }
-            }
-        }
-    }
+    struct RecordKey_t {
+        friend bool operator==(const RecordKey_t &lhs, const RecordKey_t &rhs) {
+            return lhs.lineno == rhs.lineno
+                && lhs.colno == rhs.colno
+                && lhs.filename == rhs.filename;
 
-    std::vector<Entry_t> entries; //!< List of error entries
+        }
+        const char *filename; //!< file path
+        int32_t lineno;       //!< the line number (starting with 1)
+        int32_t colno;        //!< the column number (starting with 0)
+    };
+
+    /** Error record value.
+     */
+    struct RecordValue_t {
+        struct Message_t {Level_t level; std::string text;};
+        std::size_t record_order;
+        std::size_t ignored;
+        std::vector<Message_t> messages;
+    };
+
+    /** Hash functor for RecordKey_t.
+     */
+    struct RecordHash_t {
+        std::size_t operator()(const RecordKey_t &record_key) const {
+            std::hash<std::size_t> hash_int;
+            std::hash<const void *> hash_ptr;
+            return hash_ptr(record_key.filename)
+                 ^ hash_int(record_key.lineno)
+                 ^ hash_int(record_key.colno);
+        }
+    };
+
+    /** Inserts record to errors according to its position in source code.
+     */
+    void append_impl(
+        Level_t level,
+        const std::string *filename,
+        int32_t lineno,
+        int32_t colno,
+        std::string msg
+    );
+
+    // types
+    using Filenames_t = std::vector<std::pair<const void *, char *>>;
+    using Entries_t = std::unordered_map<RecordKey_t, RecordValue_t, RecordHash_t>;
+
+    Entries_t records;     //!< error log records
+    Filenames_t filenames; //!< filename cache
 };
 
 /** Dumps the entry to given stream.

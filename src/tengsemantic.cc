@@ -59,12 +59,23 @@ namespace Teng {
 namespace Parser {
 namespace {
 
+template <int beg_offset, int end_offset, typename type_t>
+struct interval_view_t {
+    auto begin() const {return std::next(container.begin(), beg_offset);}
+    auto end() const {return std::prev(container.end(), end_offset);}
+    type_t &container;
+};
+
+template <int n, typename type_t>
+auto skip_last_n(type_t &&container) {
+    return interval_view_t<0, n, type_t>{container};
+}
+
 // TODO(burlog): split this file to more .cc
 
 /** Generates set var instruction.
  */
-void
-set_var_impl(Context_t *ctx, const Variable_t &var) {
+void set_var_impl(Context_t *ctx, const Variable_t &var) {
     switch (var.id) {
     case LEX2::BUILTIN_FIRST:
     case LEX2::BUILTIN_INNER:
@@ -110,7 +121,8 @@ set_var_impl(Context_t *ctx, const Variable_t &var) {
             ctx,
             var.pos,
             "Invalid variable identifier: ident=" + var.symbol_view
-            + ", token=" + l2_token_name(var.id));
+            + ", token=" + l2_token_name(var.id)
+        );
         break;
     }
 }
@@ -179,7 +191,8 @@ void generate_var_impl(Context_t *ctx, Variable_t &var) {
             ctx,
             var.pos,
             "Invalid variable identifier: ident=" + var.symbol_view
-            + ", token=" + l2_token_name(var.id));
+            + ", token=" + l2_token_name(var.id)
+        );
         break;
     }
 }
@@ -273,15 +286,69 @@ void resolve_abs_var(Context_t *ctx, Variable_t &var_sym) {
 }
 
 /** Generates runtime variable instructions for desired variable.
+ *
+ * Assumption: var_sym.ident.size() > 1.
  */
-void generate_rtvar(Context_t *ctx, const Variable_t &var_sym) {
+void generate_auto_rtvar(Context_t *ctx, const Variable_t &var_sym) {
     uint16_t root_offset = ctx->open_frames.top().size();
     var_sym.ident.is_absolute()
         ? generate<PushRootFrag_t>(ctx, root_offset, var_sym.pos)
         : generate<PushThisFrag_t>(ctx, var_sym.pos);
-    for (auto &segment: var_sym.ident)
-        generate<PushAttr_t>(ctx, segment.str(), var_sym.pos);
-    generate<Repr_t>(ctx, var_sym.pos);
+
+    // it is used to generation of one identifier segment resolution
+    auto str_start = var_sym.view().begin();
+    auto prev_str_end = str_start;
+    auto generate_push_attr = [&] (const string_view_t &segment) {
+        string_view_t path = {str_start, prev_str_end};
+        generate<PushAttr_t>(ctx, segment.str(), path.str(), var_sym.pos);
+        prev_str_end = segment.end();
+    };
+
+    // generate runtime variable from regular variable
+    for (auto &segment: skip_last_n<1>(var_sym.ident))
+        generate_push_attr(segment);
+
+    // process builtin variables
+    switch (var_sym.id) {
+    case LEX2::BUILTIN_FIRST:
+    case LEX2::BUILTIN_INNER:
+    case LEX2::BUILTIN_LAST:
+    case LEX2::BUILTIN_INDEX:
+        generate_push_attr(var_sym.ident.name());
+        logWarning(
+            ctx,
+            var_sym.pos,
+            "Using the " + var_sym.ident.name() + " builtin variable "
+            "as variable name of runtime variable does not make sense; "
+            "converting to common variable lookup"
+        );
+        generate<Repr_t>(ctx, var_sym.pos);
+        break;
+
+    case LEX2::BUILTIN_COUNT:
+        generate<LogSuppress_t>(ctx, var_sym.pos);
+        generate<ReprCount_t>(ctx, var_sym.pos);
+        break;
+
+    case LEX2::BUILTIN_PARENT:
+        if (var_sym.ident.size() == 1) {
+            logWarning(
+                ctx,
+                var_sym.pos,
+                "The builtin _parent variable has crossed root boundary; "
+                "converting it to _this"
+            );
+        } else ctx->program->erase_from(ctx->program->size() - 1);
+        break;
+
+    case LEX2::BUILTIN_THIS:
+        break;
+
+    default:
+        generate_push_attr(var_sym.ident.name());
+        generate<Repr_t>(ctx, var_sym.pos);
+        break;
+    }
 }
 
 } // namespace
@@ -327,7 +394,7 @@ void generate_var(Context_t *ctx, Variable_t var) {
         if (var.offsets_are_valid())
             return generate_var_impl(ctx, var);
         // resolution failed so convert scalar variable to runtime
-        return generate_rtvar(ctx, var);
+        return generate_auto_rtvar(ctx, var);
     }
 
     // relative variables have to be resolved prior to instruction generation
@@ -335,7 +402,7 @@ void generate_var(Context_t *ctx, Variable_t var) {
     if (var.offsets_are_valid())
         return generate_var_impl(ctx, var);
     // resolution failed so convert scalar variable to runtime
-    return generate_rtvar(ctx, var);
+    return generate_auto_rtvar(ctx, var);
 }
 
 void prepare_root_variable(Context_t *ctx, const Token_t &token) {
@@ -358,28 +425,54 @@ void prepare_parent_variable(Context_t *ctx, const Token_t &token) {
     ctx->var_sym = Variable_t(token, std::move(result));
 }
 
-void generate_print(Context_t *ctx) {
+void generate_print(Context_t *ctx, bool print_escape) {
     // get current program size
     auto prgsize = ctx->program->size();
 
     // underflow protect -> no optimalization can be peformed for now
     if (prgsize < 3)
-        return generate<Print_t>(ctx, ctx->pos());
+        return generate<Print_t>(ctx, print_escape, ctx->pos());
 
     // attempt to optimize consecutive print instrs to one merged
     if ((*ctx->program)[prgsize - 1].opcode() != OPCODE::VAL)
-        return generate<Print_t>(ctx, ctx->pos());
+        return generate<Print_t>(ctx, print_escape, ctx->pos());
     if ((*ctx->program)[prgsize - 2].opcode() != OPCODE::PRINT)
-        return generate<Print_t>(ctx, ctx->pos());
+        return generate<Print_t>(ctx, print_escape, ctx->pos());
     if ((*ctx->program)[prgsize - 3].opcode() != OPCODE::VAL)
-        return generate<Print_t>(ctx, ctx->pos());
+        return generate<Print_t>(ctx, print_escape, ctx->pos());
 
     DBG(std::cerr << "$$$$ print optimization" << std::endl);
 
     // optimalize sequence of VAL, PRINT, VAL, PRINT to single VAL, PRINT pair
-    auto &first_val = (*ctx->program)[prgsize - 3].as<Val_t>();
-    auto &second_val = (*ctx->program)[prgsize - 1].as<Val_t>();
-    first_val.value.append_str(second_val.value);
+    auto &first_val = (*ctx->program)[prgsize - 3].as<Val_t>().value;
+    auto &second_val = (*ctx->program)[prgsize - 1].as<Val_t>().value;
+
+    // if print escaping is enabled we have to respect print escaping flag
+    if (ctx->params->isPrintEscapeEnabled()) {
+        auto &print_instr = (*ctx->program)[prgsize - 2].as<Print_t>();
+        auto esc = [&] (auto &&v) {return ctx->escaper.escape(v);};
+        switch (int(print_escape) - int(print_instr.print_escape)) {
+        case 0:   // (true - true) || (false - false)
+            first_val.append_str(second_val);
+            break;
+        case -1:  // (false - true)
+            second_val.print([&] (const string_view_t &v) {
+                first_val.append_str(esc(v));
+            });
+            print_instr.print_escape = false;
+            break;
+        case 1:   // (true - false)
+            second_val.print([&] (const string_view_t &v2) {
+                first_val.print([&] (const string_view_t &v1) {
+                    first_val = esc(v1) + v2;
+                });
+            });
+            print_instr.print_escape = false;
+            break;
+        }
+
+    // or if it is disabled we can directly join values
+    } else first_val.append_str(second_val);
 
     // delete last VAL instruction (optimized out)
     ctx->program->pop_back();
@@ -557,7 +650,7 @@ void generate_dict_lookup(Context_t *ctx, const Token_t &token) {
     // use ident as result value
     auto msg = "Dictionary item '" + token.view() + "' was not found";
     logError(ctx, token.pos, msg);
-    generate<Val_t>(ctx, token.view(), token.pos);
+    generate<Val_t>(ctx, token.str(), token.pos);
 }
 
 void discard_expr(Context_t *ctx) {
@@ -638,8 +731,15 @@ void generate_query(Context_t *ctx, const Variable_t &var, bool warn) {
         ? generate<PushRootFrag_t>(ctx, root_offset, var.pos)
         : generate<PushThisFrag_t>(ctx, var.pos);
     note_optimization_point(ctx, true);
-    for (auto &segment: var.ident)
-        generate<PushAttr_t>(ctx, segment.str(), var.pos);
+
+    // generate runtime variable from regular variable
+    auto str_start = var.view().begin();
+    auto prev_str_end = str_start;
+    for (auto &segment: var.ident) {
+        string_view_t path = {str_start, prev_str_end};
+        generate<PushAttr_t>(ctx, segment.str(), path.str(), var.pos);
+        prev_str_end = segment.end();
+    }
 
     // warn if query is name($some.var)
     if (!warn) return;
@@ -665,7 +765,7 @@ void include_file(Context_t *ctx, const Pos_t &pos, const Options_t &opts) {
     }
 
     // compile file (append compiled file at the end of current program)
-    ctx->load_file(iopt->value.string(), &pos);
+    ctx->load_file(iopt->value.string(), pos);
 }
 
 void ignore_include(Context_t *ctx, const Token_t &token, bool empty) {
@@ -872,10 +972,15 @@ close_unclosed_format(Context_t *ctx, const Pos_t &pos, const Token_t &token) {
 
 void open_ctype(Context_t *ctx, const Pos_t &pos, const Literal_t &type) {
     // push new ctype instruction
-    auto *desc = ContentType_t::find(type.value.string());
-    generate<OpenCType_t>(ctx, desc, pos);
-    if (ctx->program->back().as<OpenCType_t>().ctype)
+    if (auto *desc = ContentType_t::find(type.value.string())) {
+        generate<OpenCType_t>(ctx, desc, pos);
+        ctx->escaper.push(desc->contentType.get());
         return;
+    }
+
+    // push invalid ctype
+    generate<OpenCType_t>(ctx, nullptr, pos);
+    ctx->escaper.push(nullptr);
 
     // log invalid conent type name
     logError(
@@ -906,10 +1011,12 @@ void open_inv_ctype(Context_t *ctx, const Pos_t &pos) {
         break;
     }
     generate<OpenCType_t>(ctx, nullptr, pos);
+    ctx->escaper.push(nullptr);
     reset_error(ctx);
 }
 
 void close_ctype(Context_t *ctx, const Pos_t &pos) {
+    ctx->escaper.pop();
     generate<CloseCType_t>(ctx, pos);
 }
 
@@ -1153,8 +1260,10 @@ void ignore_inv_set(Context_t *ctx, const Pos_t &pos) {
     reset_error(ctx);
 }
 
-void generate_rtvar_index(Context_t *ctx, const Token_t &token) {
-    generate<PushAttrAt_t>(ctx, token.pos);
+void
+generate_rtvar_index(Context_t *ctx, const Token_t &lp, const Token_t &rp) {
+    auto &rtvar_string = ctx->rtvar_strings.back();
+    generate<PushAttrAt_t>(ctx, rtvar_string.str(), lp.pos);
 
     // remove optimization point of index expression because it breaks
     // "unarity" of rtvar expression and expression optimization routine pops
@@ -1162,6 +1271,10 @@ void generate_rtvar_index(Context_t *ctx, const Token_t &token) {
     auto optimizable = ctx->optimization_points.top().optimizable;
     ctx->optimization_points.pop();
     ctx->optimization_points.top().optimizable &= optimizable;
+
+    // this code stays valid until the runtime variables
+    // will not be broken to more strings
+    rtvar_string = {ctx->rtvar_strings.back().begin(), rp.view().end()};
 }
 
 Regex_t generate_regex(Context_t *ctx, const Token_t &regex) {
@@ -1202,15 +1315,17 @@ generate_match(Context_t *ctx, const Token_t &token, const Token_t &regex) {
 /** Generates instructions implementing the function call.
  */
 uint32_t generate_func(Context_t *ctx, const Token_t &name, uint32_t nargs) {
-    // be optimal for unescape($variable)
-    // if last instr. is VAR and should be escaped
-    // unescaping a single variable -- change escaping status of that variable
-    if ((name.view() == "unescape") && (nargs == 1)) {
-        if (ctx->program->back().opcode() == OPCODE::VAR) {
-            auto &instr = ctx->program->back().as<Var_t>();
-            if (instr.escape) {
-                instr.escape = false;
-                return nargs;
+    if (!ctx->params->isPrintEscapeEnabled()) {
+        // be optimal for unescape($variable)
+        // if last instr. is VAR and should be escaped
+        // unescaping a single variable -- change escaping status of that var
+        if ((nargs == 1) && (name.view() == "unescape")) {
+            if (ctx->program->back().opcode() == OPCODE::VAR) {
+                auto &instr = ctx->program->back().as<Var_t>();
+                if (instr.escape) {
+                    instr.escape = false;
+                    return nargs;
+                }
             }
         }
     }
@@ -1271,6 +1386,29 @@ void new_option(Context_t *ctx, const Token_t &name, Literal_t &&literal) {
 
 void prepare_expr(Context_t *ctx, const Pos_t &pos) {
     ctx->branch_start_addrs.push();
+}
+
+void generate_rtvar_segment(Context_t *ctx, const Token_t &token) {
+    auto &rtvar_string = ctx->rtvar_strings.back();
+    generate<PushAttr_t>(ctx, token.str(), rtvar_string.str(), token.pos);
+    // this code stays valid until the runtime variables
+    // will not be broken to more strings
+    rtvar_string = {rtvar_string.begin(), token.view().end()};
+}
+
+void generate_rtvar_this(Context_t *ctx, const Token_t &token) {
+    auto &rtvar_string = ctx->rtvar_strings.back();
+    // this code stays valid until the runtime variables
+    // will not be broken to more strings
+    rtvar_string = {rtvar_string.begin(), token.view().end()};
+}
+
+void generate_rtvar_parent(Context_t *ctx, const Token_t &token) {
+    auto &rtvar_string = ctx->rtvar_strings.back();
+    generate<PopAttr_t>(ctx, token.pos);
+    // this code stays valid until the runtime variables
+    // will not be broken to more strings
+    rtvar_string = {rtvar_string.begin(), token.view().end()};
 }
 
 } // namespace Parser

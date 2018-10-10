@@ -218,7 +218,7 @@ UTF_CHAR    {UTF_2_CHAR}|{UTF_3_CHAR}|{UTF_4_CHAR}|{UTF_5_CHAR}|{UTF_6_CHAR}
 
 "<?teng"[[:space:]\0]+"expr" {
     // match '<?teng expr'
-    return make_token(LEX2::EXPR, yytext, yytext + yyleng);
+    return make_token(LEX2::ESC_EXPR, yytext, yytext + yyleng);
 }
 
 "<?teng"[[:space:]\0]+"ctype" {
@@ -303,7 +303,7 @@ UTF_CHAR    {UTF_2_CHAR}|{UTF_3_CHAR}|{UTF_4_CHAR}|{UTF_5_CHAR}|{UTF_6_CHAR}
 
 "<?"[[:space:]\0]*"expr" {
     // match '<?expr'
-    return make_token(LEX2::EXPR, yytext, yytext + yyleng);
+    return make_token(LEX2::ESC_EXPR, yytext, yytext + yyleng);
 }
 
 "<?"[[:space:]\0]*"ctype" {
@@ -349,13 +349,18 @@ UTF_CHAR    {UTF_2_CHAR}|{UTF_3_CHAR}|{UTF_4_CHAR}|{UTF_5_CHAR}|{UTF_6_CHAR}
 }
 
 "${" {
-    // match '${' -- inline variable lookup
-    return make_nonewline_token(LEX2::SHORT_EXPR, yytext, yytext + yyleng);
+    // match '${' -- inline variable lookup escaped
+    return make_nonewline_token(LEX2::SHORT_ESC_EXPR, yytext, yytext + yyleng);
 }
 
 "#{" {
     // match '#{' -- inline dictionary lookup
     return make_nonewline_token(LEX2::SHORT_DICT, yytext, yytext + yyleng);
+}
+
+"%{" {
+    // match '%{' -- inline variable lookup unescaped
+    return make_nonewline_token(LEX2::SHORT_RAW_EXPR, yytext, yytext + yyleng);
 }
 
 "}" {
@@ -603,6 +608,21 @@ UTF_CHAR    {UTF_2_CHAR}|{UTF_3_CHAR}|{UTF_4_CHAR}|{UTF_5_CHAR}|{UTF_6_CHAR}
 "exists" {
     // match exist operator
     return make_nonewline_token(LEX2::EXISTS, yytext, yytext + yyleng);
+}
+
+"type" {
+    // match type operator
+    return make_nonewline_token(LEX2::TYPE, yytext, yytext + yyleng);
+}
+
+"count" {
+    // match count operator
+    return make_nonewline_token(LEX2::COUNT, yytext, yytext + yyleng);
+}
+
+"jsonify" {
+    // match count operator
+    return make_nonewline_token(LEX2::JSONIFY, yytext, yytext + yyleng);
 }
 
 "_first" {

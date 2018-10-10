@@ -156,7 +156,7 @@ SCENARIO(
 
         WHEN("The string without new lines") {
             Teng::Error_t err;
-            auto t = "${nl2br('absakfsdjfkjsd')}";
+            auto t = "%{nl2br('absakfsdjfkjsd')}";
             auto result = g(err, t, root);
 
             THEN("The result is same string") {
@@ -168,7 +168,7 @@ SCENARIO(
 
         WHEN("The string with new lines") {
             Teng::Error_t err;
-            auto t = "${nl2br('\nab\nsak\nfsdjd\n')}";
+            auto t = "%{nl2br('\nab\nsak\nfsdjd\n')}";
             auto result = g(err, t, root);
 
             THEN("The new lines are translated to <br>") {

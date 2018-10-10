@@ -1,3 +1,4 @@
 hello_world	hello world
 hello_europe	hello europe
 dict_txt        value
+html_value      &<b>some <i>HTML</i> text</b>&

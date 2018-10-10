@@ -73,7 +73,7 @@ FileWriter_t::FileWriter_t(const std::string &filename)
     file = fopen(filename.c_str(), "w");
     if (!file) {
         logFatal(
-            err,
+            *err,
             "Cannot open file '" + filename + "' (" + strerr(errno) + ")"
         );
     }
@@ -83,7 +83,7 @@ FileWriter_t::FileWriter_t(FILE *file)
     : Writer_t(), file(file), borrowed(true)
 {
     if (!file)
-        logFatal(err, "Got invalid file handle (nullptr)");
+        logFatal(*err, "Got invalid file handle (nullptr)");
 }
 
 FileWriter_t::~FileWriter_t() {
@@ -92,11 +92,10 @@ FileWriter_t::~FileWriter_t() {
 }
 
 int FileWriter_t::write(const std::string &str) {
-    std::cerr << "DDDDDDDDDDDD " << str << std::endl;
     if (!file) return -1;
     fwrite(str.data(), 1, str.length(), file);
     if (feof(file) || ferror(file)) {
-        logFatal(err, "Error writing to output (" + strerr(errno) + ")");
+        logFatal(*err, "Error writing to output (" + strerr(errno) + ")");
         return -1;
     }
     return 0;
@@ -110,7 +109,7 @@ int FileWriter_t::write(const char *str, std::size_t size) {
     if (!file) return -1;
     fwrite(str, 1, size, file);
     if (feof(file) || ferror(file)) {
-        logFatal(err, "Error writing to output (" + strerr(errno) + ")");
+        logFatal(*err, "Error writing to output (" + strerr(errno) + ")");
         return -1;
     }
     return 0;
@@ -121,7 +120,7 @@ int FileWriter_t::write(const std::string &str, StringSpan_t interval) {
     size_t len = std::distance(interval.first, interval.second);
     fwrite(cstr, 1, len, file);
     if (feof(file) || ferror(file)) {
-        logFatal(err, "Error writing to output (" + strerr(errno) + ")");
+        logFatal(*err, "Error writing to output (" + strerr(errno) + ")");
         return -1;
     }
     return 0;
