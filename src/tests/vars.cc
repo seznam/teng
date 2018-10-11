@@ -1921,13 +1921,50 @@ SCENARIO(
         first.addVariable("var", "VAR");
         auto &second = first.addFragment("second");
         auto &third = second.addFragment("third");
+        third.addVariable("var", 3);
 
         WHEN("The fragment indexed by string") {
             Teng::Error_t err;
             auto t = "${$$.first[0]['var']}";
             auto result = g(err, t, root);
 
-            THEN("The error report contains valid path") {
+            THEN("The result is variable value") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "VAR");
+            }
+        }
+
+        WHEN("The variable path use indexing only") {
+            Teng::Error_t err;
+            auto t = "${$$_this['first'][0]['second']['third']['var']}";
+            auto result = g(err, t, root);
+
+            THEN("The result is variable value") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "3");
+            }
+        }
+
+        WHEN("Negative indices are used") {
+            Teng::Error_t err;
+            auto t = "${$$.first[-1].var}";
+            auto result = g(err, t, root);
+
+            THEN("The result is variable value") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "VAR");
+            }
+        }
+
+        WHEN("Expression in index") {
+            Teng::Error_t err;
+            auto t = "${$$.first[$$.first.second.third.var - 3].var}";
+            auto result = g(err, t, root);
+
+            THEN("The result is variable value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "VAR");
@@ -2220,7 +2257,7 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 10},
-                    "Runtime: The index '10' is out of valid range <0, 2) "
+                    "Runtime: The index '10' is out of valid range <0, 3) "
                     "of the fragments list referenced by this path expression "
                     ".first [open_frags=., iteration=0]"
                 }};
@@ -2238,7 +2275,7 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 10},
-                    "Runtime: The index '-10' is out of valid range <0, 2) "
+                    "Runtime: The index '-10' is out of valid range <0, 3) "
                     "of the fragments list referenced by this path expression "
                     ".first [open_frags=., iteration=0]"
                 }};
@@ -2257,7 +2294,7 @@ SCENARIO(
                     Teng::Error_t::WARNING,
                     {1, 10},
                     "Runtime: The path expression '.first' references "
-                    "fragment lists which it can't be subscripted by values "
+                    "fragment lists which can't be subscripted by values "
                     "of 'string_ref' type with value 'invalid' "
                     "[open_frags=., iteration=0]"
                 }};
@@ -2276,7 +2313,7 @@ SCENARIO(
                     Teng::Error_t::WARNING,
                     {1, 13},
                     "Runtime: The path expression '.first[0]' references "
-                    "fragment which it can't be subscripted by values of "
+                    "fragment which can't be subscripted by values of "
                     "'integral' type with value '0' [open_frags=., iteration=0]"
                 }};
                 REQUIRE(err.getEntries() == errs);

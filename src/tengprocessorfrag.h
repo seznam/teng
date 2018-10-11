@@ -313,7 +313,7 @@ Result_t push_attr_at(EvalCtx_t *ctx, GetArg_t get_arg) {
                 logWarning(
                     *ctx,
                     "The path expression '" + instr.path + "' references "
-                    "fragment which it can't be subscripted by values of '"
+                    "fragment which can't be subscripted by values of '"
                     + index.type_str() + "' type with value '"
                     + index.printable()
                     + "' [open_frags=" + ctx->frames_ptr->current_path()
@@ -327,7 +327,7 @@ Result_t push_attr_at(EvalCtx_t *ctx, GetArg_t get_arg) {
                     *ctx,
                     "The index '" + index.printable() + "' is out of valid "
                     "range <0, "
-                    + std::to_string(arg.as_list_ref().ptr->size() - 1)
+                    + std::to_string(arg.as_list_ref().ptr->size())
                     + ") of the fragments list referenced by this path "
                     "expression " + instr.path
                     + " [open_frags=" + ctx->frames_ptr->current_path()
@@ -337,7 +337,7 @@ Result_t push_attr_at(EvalCtx_t *ctx, GetArg_t get_arg) {
                 logWarning(
                     *ctx,
                     "The path expression '" + instr.path + "' references "
-                    "fragment lists which it can't be subscripted by values "
+                    "fragment lists which can't be subscripted by values "
                     "of '" + index.type_str() + "' type with value '"
                     + index.printable()
                     + "' [open_frags=" + ctx->frames_ptr->current_path()
