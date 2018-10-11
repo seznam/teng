@@ -747,7 +747,11 @@ SCENARIO(
             auto result = g(err, "${'prefix\\\nsuffix'}", root);
 
             THEN("Literal is cropped at the new line place") {
-                std::vector<Teng::Error_t::Entry_t> errs;
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 2},
+                    "Newline can't be escaped"
+                }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "prefix");
             }

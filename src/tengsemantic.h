@@ -556,7 +556,7 @@ inline void print_dict_lookup(Context_t *ctx, const Token_t &token) {
 inline void print_dict_undef(Context_t *ctx, const Token_t &token) {
     generate_val(ctx, token.pos, Value_t());
     generate_raw_print(ctx);
-    logWarning(ctx, token.pos, "Invalid dictionary item in #{...} statement");
+    logWarning(ctx, token.pos, "Invalid dictionary key in #{...} statement");
 }
 
 /** Generates nice warning abount ignored _this.

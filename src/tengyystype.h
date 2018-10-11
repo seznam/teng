@@ -235,66 +235,10 @@ public:
 
     /** Converts the view to the string value.
      */
-    static std::string extract_str(string_view_t str) {
-        // remove quotes
-        auto raw = string_view_t(str.begin() + 1, str.end() - 1);
-
-        // replace escape sequences
-        std::string result;
-        result.reserve(raw.size());
-        for (auto iraw = raw.begin(), eraw = raw.end(); iraw != eraw;) {
-            switch (*iraw) {
-            case '\\':
-                // TODO(burlog): it is impossible to get here with ++iraw
-                // equaling to eraw because '...\' backslach before closing
-                // quote is taken as escape sequence and so the closing quote
-                // is not closing quote but escaped quoted and string
-                // continues...
-                if (++iraw == eraw)
-                    // TODO(burlog): warn!
-                    return result;
-                switch (*iraw) {
-                case '\n':
-                    // TODO(burlog): warn!
-                    return result;
-                case 'r':
-                    result.push_back('\r');
-                    ++iraw;
-                    break;
-                case 'n':
-                    result.push_back('\n');
-                    ++iraw;
-                    break;
-                case 't':
-                    result.push_back('\t');
-                    ++iraw;
-                    break;
-                case 'f':
-                    result.push_back('\f');
-                    ++iraw;
-                    break;
-                case 'b':
-                    result.push_back('\b');
-                    ++iraw;
-                    break;
-                default:
-                    result.push_back(*iraw);
-                    ++iraw;
-                    break;
-                }
-                break;
-            default:
-                result.push_back(*iraw);
-                ++iraw;
-                break;
-            }
-        }
-        return result;
-    }
+    static std::string extract_str(Context_t *ctx, const Token_t &token);
 
     Value_t value; //!< the literal value
 };
-
 
 /** The symbol representing the variables in various contexts.
  */

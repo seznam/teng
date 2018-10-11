@@ -684,7 +684,7 @@ real_literal
 
 
 string_literal_fact
-    : STRING {$$.emplace(*$1, Literal_t::extract_str($1->view()));}
+    : STRING {$$.emplace(*$1, Literal_t::extract_str(ctx, *$1));}
     ;
 
 
