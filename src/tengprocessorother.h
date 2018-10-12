@@ -102,12 +102,9 @@ void prg_stack_pop(std::vector<Value_t> &prg_stack) {
  */
 Result_t prg_stack_at(EvalCtx_t *ctx, std::vector<Value_t> &prg_stack) {
     auto &instr = ctx->instr->as<PrgStackAt_t>();
-    if (instr.index > 0)
+    if (instr.index >= prg_stack.size())
         throw std::runtime_error("Program stack underflow");
-    if (-instr.index > prg_stack.size())
-        throw std::runtime_error("Program stack underflow");
-    // TODO(burlog): fakt je to ted dobre, kdyz je index unsigned, nemelo by se to premistit do kompilace
-    return prg_stack[prg_stack.size() - 1 + instr.index];
+    return prg_stack[prg_stack.size() - 1 - instr.index];
 }
 
 /** Evaluates function if such exists.

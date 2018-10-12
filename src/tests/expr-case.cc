@@ -894,8 +894,32 @@ SCENARIO(
 }
 
 SCENARIO(
+    "The two nested cases",
+    "[expr][case]"
+) {
+    GIVEN("Nested case expressions") {
+        std::string n = "case($b, 'B': 'Y', *: 'N2')";
+        std::string t = "${case($a, 'A': " + n + ", *: 'N1')}";
+
+        WHEN("Variables match 'true' branches") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("a", "A");
+            root.addVariable("b", "B");
+            auto result = g(err, t, root);
+
+            THEN("The result is 'Y'") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "Y");
+            }
+        }
+    }
+}
+
+SCENARIO(
     "The error in case condition",
-    "[expr][casex]"
+    "[expr][case]"
 ) {
     GIVEN("Some variables") {
         Teng::Fragment_t root;
