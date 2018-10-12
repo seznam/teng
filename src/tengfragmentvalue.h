@@ -182,8 +182,16 @@ public:
     /**
      * @short Returns true if value is leaf => string/integral/real.
      */
-    // TODO(burlog): and what frag/frag_ptr?
-    bool scalar() const {return tag_value != tag::frags;}
+    bool scalar() const {
+        switch (tag_value) {
+        case tag::frag: return false;
+        case tag::frag_ptr: return false;
+        case tag::frags: return false;
+        case tag::integral: return true;
+        case tag::real: return true;
+        case tag::string: return true;
+        }
+    }
 
     /** Returns backward compatible string representation of value:
      *
