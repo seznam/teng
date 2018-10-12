@@ -37,6 +37,8 @@
 #ifndef TENGTEMPLATE_H
 #define TENGTEMPLATE_H
 
+#include <tuple>
+#include <memory>
 #include <utility>
 #include <string>
 
@@ -48,77 +50,45 @@
 
 namespace Teng {
 
-/** @short Cache of dictionaries.
- */
-using DictionaryCache_t = Cache_t<Dictionary_t>;
-
-/** @short Cache of configurations.
- */
-using ConfigurationCache_t = Cache_t<Configuration_t>;
-
-/** @short Cache of dictionaries.
- */
-using ProgramCache_t = Cache_t<Program_t>;
-
-class TemplateCache_t;
-
 /** @short Teng template.
+ *
  *  Made up from program, laguage, config dictionary and data
  *  definition. It's able to check change of source files.
  */
 class Template_t {
 public:
-    /** @short Create new template.
-     *  @param program byte compiled program
-     *  @param langDictionary cache entry pointing to language
-     *         dictionary
-     *  @param paramDictionary cache entry pointing to config
-     *         dictionary
-     *  @param owner owning cache
-     */
-    Template_t(const Program_t *program, const Dictionary_t *langDictionary,
-               const Configuration_t *paramDictionary,
-               TemplateCache_t *owner)
-        : program(program), langDictionary(langDictionary),
-          paramDictionary(paramDictionary), owner(owner)
-    {}
-
-    /** @short Destroy template.
-     */
-    ~Template_t();
-
-    /** @short Byte compiled program.
-     */
-    const Program_t *program;
-
-    /** @short Language dictionary.
-     */
-    const Dictionary_t *langDictionary;
-
-    /** @short Config.
-     */
-    const Configuration_t *paramDictionary;
-
-private:
-    Template_t(const Template_t&);
-    Template_t operator=(const Template_t&);
-
-    TemplateCache_t *owner;
+    std::shared_ptr<const Program_t> program;      //!< bytecode of the template
+    std::shared_ptr<const Dictionary_t> dict;      //!< language dictionary
+    std::shared_ptr<const Configuration_t> params; //!< config dictionary
 };
 
 /** @short Cache of templates.
  */
 class TemplateCache_t {
 public:
+    /** @short Cache of dictionaries.
+     */
+    using DictionaryCache_t = Cache_t<Dictionary_t>;
+
+    /** @short Cache of configurations.
+     */
+    using ConfigurationCache_t = Cache_t<Configuration_t>;
+
+    /** @short Cache of dictionaries.
+     */
+    using ProgramCache_t = Cache_t<Program_t>;
+
     /** @short Create new cache.
-     *  @param root root dir for relative paths
+     *
+     *  @param fs_root root dir for relative paths
      *  @param programCacheSize maximal number of programs in the cache
      *  @param dictCacheSizemaximal number of dictionaries in the cache
      */
-    TemplateCache_t(const std::string &root, unsigned int programCacheSize = 0,
-                    unsigned int dictCacheSize = 0);
-
-    ~TemplateCache_t();
+    TemplateCache_t(
+        const std::string &fs_root,
+        unsigned int programCacheSize = 0,
+        unsigned int dictCacheSize = 0
+    );
 
     /** @short Type of source.
      */
@@ -132,9 +102,9 @@ public:
      *  @param langFilename file with language dictionary
      *  @param paramFilename file with config
      *  @param sourceType type of template source
-     *  @return created template (borrowed pointer!!!)
+     *  @return created template
      */
-    Template_t *
+    Template_t
     createTemplate(
         Error_t &err,
         const std::string &source,
@@ -149,86 +119,44 @@ public:
      *
      *  @param configFilename file with configuration
      *  @param dictFilename file with dictionary
-     *  @return created dictionary (borrowed pointer!!!)
+     *  @return created dictionary
      */
-    const Dictionary_t *
+    std::shared_ptr<const Dictionary_t>
     createDictionary(
         Error_t &err,
         const std::string &configFilename,
         const std::string &dictFilename
     ) {
-        return getConfigAndDict(err, configFilename, dictFilename).second;
-    }
-
-    /** @short Release program.
-     *  @param program released program
-     *  @return 0 OK, !0 error
-     */
-    inline int release(const Program_t *program) {
-        return programCache->release(program);
-    }
-
-    /** @short Release dictionary.
-     *  @param dictionary released dictionary
-     *  @return 0 OK, !0 error
-     */
-    inline int release(const Dictionary_t *dictionary) {
-        return dictCache->release(dictionary);
-    }
-
-    /** @short Release configuration.
-     *  @param config released configuration
-     *  @return 0 OK, !0 error
-     */
-    inline int release(const Configuration_t *config) {
-        return configCache->release(config);
+        return std::get<1>(getConfigAndDict(err, configFilename, dictFilename));
     }
 
 private:
-    /** @short Copy constructor intentionally private -- copying
-     *         disabled.
-     */
-    TemplateCache_t(const TemplateCache_t&);
-
-    /** @short Assignment operator intentionally private -- assignment
-     *         disabled.
-     */
-    TemplateCache_t operator=(const TemplateCache_t&);
-
-    typedef std::pair<
-        const Configuration_t *,
-        const Dictionary_t *
-    > ConfigAndDict_t;
+    // don't copy
+    TemplateCache_t(const TemplateCache_t &) = delete;
+    TemplateCache_t &operator=(const TemplateCache_t &) = delete;
 
     /** @short Get configuration and dictionary from given files.
      *
      *  @param configFilename file with configuration
      *  @param dictFilename file with dictionary
      *  @param serial serial number of cached data (output)
-     *  @return configuration and dictionary (borrowed pointers!!!)
+     *  @return configuration and dictionary
      */
-    ConfigAndDict_t getConfigAndDict(
+    std::tuple<
+        std::shared_ptr<Configuration_t>,
+        std::shared_ptr<Dictionary_t>,
+        uint64_t
+    > getConfigAndDict(
         Error_t &err,
         const std::string &configFilename,
         const std::string &dictFilename,
         unsigned long int *serial = 0
     );
 
-    /** @short Root for relativa paths.
-     */
-    std::string root;
-
-    /** @short Cache of templates.
-     */
-    ProgramCache_t *programCache;
-
-    /** @short Cache of dictionaries.
-     */
-    DictionaryCache_t *dictCache;
-
-    /** @short Cache of dictionaries.
-     */
-    ConfigurationCache_t *configCache;
+    std::string fs_root;              //!< root for relativa paths
+    ProgramCache_t programCache;      //!< cache of compiled templates
+    DictionaryCache_t dictCache;      //!< cache of parsed language dictionaries
+    ConfigurationCache_t paramsCache; //!< cahce of parsed config dictionaries
 };
 
 } // namespace Teng

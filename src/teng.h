@@ -63,6 +63,7 @@ public:
         explicit Settings_t(uint32_t prgCSize = 0, uint32_t dictCSize = 0)
             : programCacheSize(prgCSize), dictCacheSize(dictCSize)
         {}
+        // NOTE(burlog): zero is replaced by default size (50) in Cache_t
         uint32_t programCacheSize; //!< the max number of cached templates
         uint32_t dictCacheSize;    //!< the max number of cached dicts
     };
@@ -72,10 +73,13 @@ public:
     Teng_t &operator=(const Teng_t &) = delete;
 
     /** @short Create new engine.
-     *  @param root root of relative paths
+     *  @param fs_root root of relative paths
      *  @param settings teng options
      */
-    Teng_t(const std::string &root = {}, const Settings_t &sets = Settings_t());
+    explicit Teng_t(
+        const std::string &fs_root = {},
+        const Settings_t &setings = Settings_t()
+    );
 
     /** @short Destroy engine.
      */
@@ -96,16 +100,18 @@ public:
      *  @param err error log
      *  @return 0 OK, !0 error
      */
-    int generatePage(const std::string &templateFilename,
-                     const std::string &skin,
-                     const std::string &dict,
-                     const std::string &lang,
-                     const std::string &params,
-                     const std::string &contentType,
-                     const std::string &encoding,
-                     const Fragment_t &data,
-                     Writer_t &writer,
-                     Error_t &err) const;
+    int generatePage(
+        const std::string &templateFilename,
+        const std::string &skin,
+        const std::string &dict,
+        const std::string &lang,
+        const std::string &params,
+        const std::string &contentType,
+        const std::string &encoding,
+        const Fragment_t &data,
+        Writer_t &writer,
+        Error_t &err
+    ) const;
 
     /** @short Generate page from string template.
      *  @param templateString main template
@@ -119,29 +125,31 @@ public:
      *  @param err error log
      *  @return 0 OK, !0 error
      */
-    int generatePage(const std::string &templateString,
-                     const std::string &dict,
-                     const std::string &lang,
-                     const std::string &params,
-                     const std::string &contentType,
-                     const std::string &encoding,
-                     const Fragment_t &data,
-                     Writer_t &writer,
-                     Error_t &err) const;
+    int generatePage(
+        const std::string &templateString,
+        const std::string &dict,
+        const std::string &lang,
+        const std::string &params,
+        const std::string &contentType,
+        const std::string &encoding,
+        const Fragment_t &data,
+        Writer_t &writer,
+        Error_t &err
+    ) const;
 
     /** @short Find entry in dictionary.
      *  @param config config dictionary path
      *  @param dict language dictionary path
      *  @param lang language
      *  @param key name of entry
-     *  @param value found entry
-     *  @return 0 entry found, !0 entry not found
      */
-    int dictionaryLookup(const std::string &config,
-                         const std::string &dict,
-                         const std::string &lang,
-                         const std::string &key,
-                         std::string &value) const;
+    const std::string *
+    dictionaryLookup(
+        const std::string &config,
+        const std::string &dict,
+        const std::string &lang,
+        const std::string &key
+    ) const;
 
     /**
      * @short Lists supported content types.
@@ -150,16 +158,27 @@ public:
     static std::vector<std::pair<std::string, std::string>>
     listSupportedContentTypes();
 
+    /** Deprecated version of dictionaryLookup.
+     */
+    [[deprecated]] int
+    dictionaryLookup(
+        const std::string &config,
+        const std::string &dict,
+        const std::string &lang,
+        const std::string &key,
+        std::string &result
+    ) const;
+
     /** Deprecated version of listSupportedContentTypes().
      */
     [[deprecated]] static void
     listSupportedContentTypes(
         std::vector<std::pair<std::string, std::string>> &s
-    ) {for (auto &e: listSupportedContentTypes()) s.push_back(e);};
+    );
 
 private:
     using CachePtr_t = std::unique_ptr<TemplateCache_t>;
-    std::string root;         //!< root of relative paths
+    std::string fs_root;      //!< root of relative paths
     CachePtr_t templateCache; //!< cache of dicts and templates
 };
 

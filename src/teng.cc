@@ -80,7 +80,7 @@ std::string prependBeforeExt(const std::string &str, const std::string &prep) {
 }
 
 int gen_page(
-    std::unique_ptr<Template_t> templ,
+    Template_t templ,
     const std::string &contentType,
     const std::string &encoding,
     const FragmentValue_t &data,
@@ -91,12 +91,12 @@ int gen_page(
     writer.setError(&err);
 
     // if program is valid (not empty) execute it
-    if (!templ->program->empty()) {
+    if (!templ.program->empty()) {
         Processor_t(
             err,
-            *templ->program,
-            *templ->langDictionary,
-            *templ->paramDictionary,
+            *templ.program,
+            *templ.dict,
+            *templ.params,
             encoding,
             contentType
         ).run(data, writer);
@@ -109,24 +109,24 @@ int gen_page(
     return err.max_level;
 }
 
-std::string normalize_root(std::string root) {
+std::string normalize_root(std::string fs_root) {
     // if not absolute path, prepend current working directory
-    if (root.empty() || !ISROOT(root)) {
+    if (fs_root.empty() || !ISROOT(fs_root)) {
         char cwd[2048];
         if (!getcwd(cwd, sizeof(cwd)))
             throw std::runtime_error("cannot get cwd");
-        root = std::string(cwd) + '/' + root;
+        fs_root = std::string(cwd) + '/' + fs_root;
     }
-    normalizeFilename(root);
-    return root;
+    normalizeFilename(fs_root);
+    return fs_root;
 }
 
 } // namespace
 
-Teng_t::Teng_t(const std::string &root, const Teng_t::Settings_t &settings)
-    : root(normalize_root(root)),
+Teng_t::Teng_t(const std::string &fs_root, const Teng_t::Settings_t &settings)
+    : fs_root(normalize_root(fs_root)),
       templateCache(std::make_unique<TemplateCache_t>(
-          this->root, settings.programCacheSize, settings.dictCacheSize
+          this->fs_root, settings.programCacheSize, settings.dictCacheSize
       ))
 {}
 
@@ -145,18 +145,16 @@ int Teng_t::generatePage(
     Error_t &err
 ) const {
     std::string encoding_lowerized = tolower(encoding);
-    std::unique_ptr<Template_t> templ(templateCache->createTemplate(
-        err,
-        prependBeforeExt(templateFilename, skin),
-        prependBeforeExt(dict, lang),
-        param,
-        encoding_lowerized,
-        contentType,
-        TemplateCache_t::SRC_FILE
-    ));
     return gen_page(
-        std::move(templ),
-        contentType,
+        templateCache->createTemplate(
+            err,
+            prependBeforeExt(templateFilename, skin),
+            prependBeforeExt(dict, lang),
+            param,
+            encoding_lowerized,
+            contentType,
+            TemplateCache_t::SRC_FILE
+        ), contentType,
         encoding,
         FragmentValue_t(&data),
         writer,
@@ -176,18 +174,16 @@ int Teng_t::generatePage(
     Error_t &err
 ) const {
     std::string encoding_lowerized = tolower(encoding);
-    std::unique_ptr<Template_t> templ(templateCache->createTemplate(
-        err,
-        templateString,
-        prependBeforeExt(dict, lang),
-        param,
-        encoding_lowerized,
-        contentType,
-        TemplateCache_t::SRC_STRING
-    ));
     return gen_page(
-        std::move(templ),
-        contentType,
+        templateCache->createTemplate(
+            err,
+            templateString,
+            prependBeforeExt(dict, lang),
+            param,
+            encoding_lowerized,
+            contentType,
+            TemplateCache_t::SRC_STRING
+        ), contentType,
         encoding,
         FragmentValue_t(&data),
         writer,
@@ -195,32 +191,45 @@ int Teng_t::generatePage(
     );
 }
 
-int Teng_t::dictionaryLookup(
+const std::string *Teng_t::dictionaryLookup(
     const std::string &config,
     const std::string &dict,
     const std::string &lang,
-    const std::string &key,
-    std::string &value
+    const std::string &key
 ) const {
-    // find value for key
     Error_t err;
     auto path = prependBeforeExt(dict, lang);
-    auto *dictionary = templateCache->createDictionary(err, config, path);
-    auto *foundValue = dictionary->lookup(key);
-    if (!foundValue) {
-        // not fount => error
-        value.erase();
-        return -1;
-    }
-    // found => assign
-    value = *foundValue;
-    return 0;
+    auto dictionary = templateCache->createDictionary(err, config, path);
+    return dictionary->lookup(key);
 }
 
 std::vector<std::pair<std::string, std::string>>
 Teng_t::listSupportedContentTypes() {
     return ContentType_t::listSupported();
 }
+
+int
+Teng_t::dictionaryLookup(
+    const std::string &config,
+    const std::string &dict,
+    const std::string &lang,
+    const std::string &key,
+    std::string &result
+) const {
+    if (auto *value = dictionaryLookup(config, dict, lang, key)) {
+        result = *value;
+        return 0;
+    }
+    result.clear();
+    return -1;
+}
+
+/** Deprecated version of listSupportedContentTypes().
+ */
+void
+Teng_t::listSupportedContentTypes(
+    std::vector<std::pair<std::string, std::string>> &s
+) {for (auto &e: listSupportedContentTypes()) s.push_back(e);};
 
 } // namespace Teng
 

@@ -103,7 +103,7 @@ bool SourceList_t::isChanged() const {
     for (auto &source: sources) try {
         auto new_stat = stat(source->filename);
         if (new_stat != source->stat) return true;
-    } catch (const std::exception &) {/*ignore exceptions*/}
+    } catch (const std::exception &e) {/*ignore exceptions*/}
     return false;
 }
 

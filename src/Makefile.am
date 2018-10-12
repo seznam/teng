@@ -84,9 +84,11 @@ tenglex2.lo: tenglex2impl.cc
 tengparsercontext.lo: tengsyntax.cc
 
 # test program
-EXTRA_PROGRAMS = teng-example test-teng
+EXTRA_PROGRAMS = teng-example teng-cache test-teng
 teng_example_SOURCES = example/example.cc
 teng_example_LDADD = libteng.la
+teng_cache_SOURCES = example/cache.cc
+teng_cache_LDADD = libteng.la
 
 CLEANFILES = @top_builddir@/src/tengsyntax.hh \
 	     @top_builddir@/src/tengsyntax.cc \

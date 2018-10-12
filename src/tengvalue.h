@@ -658,9 +658,9 @@ public:
         case tag::string_ref:
             return !string_ref_value.empty();
         case tag::frag_ref:
-            return frag_ref_value.ptr; // TODO(burlog): && !empty?
+            return frag_ref_value.ptr;
         case tag::list_ref:
-            return list_ref_value.ptr; // TODO(burlog): && !empty?
+            return list_ref_value.ptr;
         case tag::regex:
             return true;
         }

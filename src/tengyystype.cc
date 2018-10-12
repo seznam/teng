@@ -62,13 +62,13 @@ std::string Literal_t::extract_str(Context_t *ctx, const Token_t &token) {
     for (auto iraw = raw.begin(), eraw = raw.end(); iraw != eraw;) {
         switch (*iraw) {
         case '\\':
-            // TODO(burlog): it is impossible to get here with ++iraw
-            // equaling to eraw because '...\' backslach preceding closing
-            // quote is taken as escape sequence and so the closing quote
-            // is not closing quote but escaped quoted and string
-            // continues...
             if (++iraw == eraw) {
-                logWarning(ctx, token.pos, "Trailing backslash in stirng");
+                // It is impossible to get here with ++iraw
+                // equaling to eraw because '...\' backslach preceding closing
+                // quote is taken as escape sequence and so the closing quote
+                // is not closing quote but escaped quote and string
+                // continues...
+                logWarning(ctx, token.pos, "Trailing backslash in string");
                 return result;
             }
             switch (*iraw) {

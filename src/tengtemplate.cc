@@ -38,145 +38,116 @@
 
 namespace Teng {
 
-Template_t::~Template_t() {
-    if (owner) {
-        owner->release(program);
-        owner->release(langDictionary);
-        owner->release(paramDictionary);
-    }
-}
-
-TemplateCache_t::TemplateCache_t(const std::string &root,
-                                 unsigned int programCacheSize,
-                                 unsigned int dictCacheSize)
-    : root(root),
-      programCache(new ProgramCache_t
-                   (programCacheSize
-                    ? programCacheSize
-                    : ProgramCache_t::DEFAULT_MAXIMAL_SIZE)),
-      dictCache(new DictionaryCache_t
-                (dictCacheSize
-                 ? dictCacheSize
-                 : DictionaryCache_t::DEFAULT_MAXIMAL_SIZE)),
-      configCache(new ConfigurationCache_t
-                (dictCacheSize
-                 ? dictCacheSize
-                 : ConfigurationCache_t::DEFAULT_MAXIMAL_SIZE))
+TemplateCache_t::TemplateCache_t(
+    const std::string &fs_root,
+    unsigned int programCacheSize,
+    unsigned int dictCacheSize
+): fs_root(fs_root), programCache(programCacheSize),
+   dictCache(dictCacheSize), paramsCache(dictCacheSize)
 {}
 
-TemplateCache_t::~TemplateCache_t() {
-    delete programCache;
-    delete dictCache;
-    delete configCache;
-}
-
-Template_t *
-TemplateCache_t::createTemplate(Error_t &err,
-                                const std::string &source,
-                                const std::string &langFilename,
-                                const std::string &configFilename,
-                                const std::string &encoding,
-                                const std::string &ctype,
-                                SourceType_t sourceType)
-{
-    unsigned long int configSerial;
-
+Template_t
+TemplateCache_t::createTemplate(
+    Error_t &err,
+    const std::string &source,
+    const std::string &langFilename,
+    const std::string &configFilename,
+    const std::string &encoding,
+    const std::string &ctype,
+    SourceType_t sourceType
+) {
     // get configuration and dictionary from cache
-    const Dictionary_t *dict = nullptr;
-    const Configuration_t *params = nullptr;
-    std::tie(params, dict)
-        = getConfigAndDict(err, configFilename, langFilename, &configSerial);
+    uint64_t configSerial;
+    std::shared_ptr<Dictionary_t> dict;
+    std::shared_ptr<Configuration_t> params;
+    std::tie(params, dict, configSerial)
+        = getConfigAndDict(err, configFilename, langFilename);
 
     // create key from source file names
     std::vector<std::string> key;
     if (sourceType == SRC_STRING)
         key.push_back(createCacheKeyForString(source));
-    else key.push_back(createCacheKeyForFilename(root, source));
-    key.push_back(createCacheKeyForFilename(root, langFilename));
-    key.push_back(createCacheKeyForFilename(root, configFilename));
+    else key.push_back(createCacheKeyForFilename(fs_root, source));
+    key.push_back(createCacheKeyForFilename(fs_root, langFilename));
+    key.push_back(createCacheKeyForFilename(fs_root, configFilename));
 
     // cached program
-    unsigned long int programSerial;
-    unsigned long int dataSerial;
-    const Program_t *cached
-        = programCache->find(key, dataSerial, &programSerial);
+    uint64_t dependSerial;
+    std::shared_ptr<Program_t> program;
+    std::tie(program, dependSerial, std::ignore) = programCache.find(key);
 
     // determine whether we have to reload program
-    bool reload = !cached
-        || (configSerial != dataSerial)
-        || (params->isWatchFilesEnabled() && cached->isChanged());
+    bool reload = !program
+        || (configSerial != dependSerial)
+        || (params->isWatchFilesEnabled() && program->isChanged());
 
+    // create new program if reload requested
     if (reload) {
-        // create new program
-        auto program = (sourceType == SRC_STRING)
-            ? compile_string(err, dict, params, root, {source}, encoding, ctype)
-            : compile_file(err, dict, params, root, source, encoding, ctype);
-
-        // add program into cache
-        // TODO(burlog): cached = programCache->add(key, std::move(program), configSerial);
-        cached = programCache->add(key, program.release(), configSerial);
+        auto *d = &*dict;
+        auto *p = &*params;
+        program = (sourceType == SRC_STRING)
+            ? compile_string(err, d, p, fs_root, {source}, encoding, ctype)
+            : compile_file(err, d, p, fs_root, source, encoding, ctype);
+        programCache.add(key, program, configSerial);
     }
 
     // create template with cached sources
-    return new Template_t(cached, dict, params, this);
+    return {std::move(program), std::move(dict), std::move(params)};
 }
 
-TemplateCache_t::ConfigAndDict_t
-TemplateCache_t::getConfigAndDict(
+std::tuple<
+    std::shared_ptr<Configuration_t>,
+    std::shared_ptr<Dictionary_t>,
+    uint64_t
+> TemplateCache_t::getConfigAndDict(
     Error_t &err,
     const std::string &configFilename,
     const std::string &dictFilename,
     unsigned long int *serial)
 {
-    // find or create configuration
+    // key for config
     std::vector<std::string> key;
+    key.push_back(createCacheKeyForFilename(fs_root, configFilename));
 
-    unsigned long int configSerial = 0;
-    unsigned long int configDependSerial = 0;
-    auto *cachedCfg = configCache->find(key, configDependSerial, &configSerial);
-    bool reloadCfg = !cachedCfg
-        || (cachedCfg->isWatchFilesEnabled() && cachedCfg->isChanged());
+    // find or create configuration
+    uint64_t configSerial;
+    std::shared_ptr<Configuration_t> params;
+    std::tie(params, std::ignore, configSerial) = paramsCache.find(key);
 
-    // find or create dictionary
-    unsigned long int dictSerial = 0;
-    unsigned long int dictDependSerial = 0;
-    auto *cachedDict = dictCache->find(key, dictDependSerial, &dictSerial);
-    bool reloadDict = !cachedDict
-        || (dictDependSerial != configSerial)
-        || (cachedCfg->isWatchFilesEnabled() && cachedDict->isChanged());
-
-    // reuse key for config
-    key.push_back(createCacheKeyForFilename(root, configFilename));
+    // determine whether we have to reload params
+    bool reload_params = !params
+        || (params->isWatchFilesEnabled() && params->isChanged());
 
     // reload params if needed
-    if (reloadCfg) {
-        // not found or changed -> create new configionary
-        Configuration_t *config = new Configuration_t(err, root);
-        // parse file
-        if (!configFilename.empty()) config->parse(configFilename);
-        // add configionary to cache and return it
-        cachedCfg = configCache->add(key, config, 0, &configSerial);
+    if (reload_params) {
+        params = std::make_shared<Configuration_t>(err, fs_root);
+        if (!configFilename.empty()) params->parse(configFilename);
+        configSerial = paramsCache.add(key, params);
     }
 
     // reuse key for dictionary
-    key.push_back(createCacheKeyForFilename(root, dictFilename));
+    key.push_back(createCacheKeyForFilename(fs_root, dictFilename));
+
+    // find or create dictionary
+    uint64_t dictSerial = 0;
+    uint64_t dependSerial = 0;
+    std::shared_ptr<Dictionary_t> dict;
+    std::tie(dict, dependSerial, dictSerial) = dictCache.find(key);
+
+    // determine whether we have to reload dict
+    bool reload_dict = !dict
+        || (configSerial != dependSerial)
+        || (params->isWatchFilesEnabled() && dict->isChanged());
 
     // reload lang dict if needed
-    if (reloadDict) {
-        // not found or changed -> create new dictionary
-        Dictionary_t *dict = new Dictionary_t(err, root);
-        // parse file
+    if (reload_dict) {
+        dict = std::make_shared<Dictionary_t>(err, fs_root);
         if (!dictFilename.empty()) dict->parse(dictFilename);
-        // add dictionary to cache and return it
-        // (dict depends on config serial number)
-        cachedDict = dictCache->add(key, dict, configSerial, &dictSerial);
+        dictCache.add(key, dict, configSerial);
     }
 
-    // set config-dict serial number (it's dict's serial number)
-    if (serial) *serial = dictSerial;
-
     // return data
-    return ConfigAndDict_t(cachedCfg, cachedDict);
+    return {std::move(params), std::move(dict), configSerial};
 }
 
 } // namespace Teng

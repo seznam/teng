@@ -43,6 +43,10 @@
 #include <fstream>
 #include <algorithm>
 
+#ifdef DEBUG
+#include <iostream>
+#endif /* DEBUG */
+
 #include "tengaux.h"
 #include "tenglogging.h"
 #include "tengplatform.h"
@@ -609,6 +613,10 @@ void Dictionary_t::parse(const std::string &filename) {
             return new_entry(std::move(name), std::move(value));
         }
     );
+#ifdef DEBUG
+    std::cerr << "Dictionary or configuration file " << filename << " parsed."
+              << std::endl;
+#endif /* DEBUG */
 }
 
 } // namespace Teng
