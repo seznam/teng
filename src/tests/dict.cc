@@ -222,7 +222,7 @@ SCENARIO(
 
             THEN("Replaced with dict entry name") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 3},
                     "Dictionary item 'hello_world_missing' was not found"
                 }};
@@ -250,7 +250,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 2},
                     "Runtime: Dictionary item 'hello_world_missing' "
                     "was not found"
@@ -302,7 +302,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 3},
                     "Dictionary item 'hello_world_missing' was not found"
                 }};
@@ -330,7 +330,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 2},
                     "Runtime: Dictionary item 'hello_world_missing' "
                     "was not found"
@@ -377,7 +377,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 3},
                     "Dictionary item 'hello_world_missing' was not found"
                 }};
@@ -405,7 +405,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 2},
                     "Runtime: Dictionary item 'hello_world_missing' "
                     "was not found"

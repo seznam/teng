@@ -487,7 +487,7 @@ void Processor_t::run(const FragmentValue_t &data, Writer_t &writer) {
         logError(
             err,
             "Invalid content-type in argument of Teng::generatePage(): "
-            + contentType
+            + contentType + "; using default"
         );
         desc = ContentType_t::getDefault();
     }

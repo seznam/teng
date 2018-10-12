@@ -143,7 +143,7 @@ SCENARIO(
 
             THEN("The format is applied") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 1},
                     "The closing directive of this <?teng format?> directive "
                     "is missing"
@@ -170,7 +170,7 @@ SCENARIO(
 
             THEN("The format is applied") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 0},
                     "The closing directive of this <?teng format?> directive "
                     "is missing"
@@ -196,7 +196,7 @@ SCENARIO(
 
             THEN("The format is applied") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 60},
                     "The closing directive of this <?teng format?> directive "
                     "is missing"
@@ -222,12 +222,12 @@ SCENARIO(
 
             THEN("The format is applied") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 0},
                     "The closing directive of this <?teng format?> directive "
                     "is missing"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 42},
                     "The closing directive of this <?teng format?> directive "
                     "is missing"
@@ -384,7 +384,7 @@ SCENARIO(
 
             THEN("The space formatting is applied") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 37},
                     "Ignoring invalid excessive tokens in <?teng endformat?> "
                     "directive"
@@ -434,7 +434,7 @@ SCENARIO(
 
             THEN("It contains text from template") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 1},
                     "The <?teng endformat?> directive closes unopened "
                     "format block"
@@ -455,12 +455,12 @@ SCENARIO(
 
             THEN("It contains text from template") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 1},
                     "The <?teng endformat?> directive closes unopened "
                     "format block"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 21},
                     "The <?teng endformat?> directive closes unopened "
                     "format block"
@@ -482,7 +482,7 @@ SCENARIO(
 
             THEN("It contains text from template") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 1},
                     "The <?teng endformat?> directive closes unopened "
                     "format block"
@@ -504,7 +504,7 @@ SCENARIO(
 
             THEN("It contains text from template") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 58},
                     "The <?teng endformat?> directive closes unopened "
                     "format block"

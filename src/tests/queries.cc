@@ -1671,7 +1671,7 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 10},
                     "Runtime: This fragment doesn't contain any value for "
                     "key 'missing' [open_frags=., iteration=0]"
@@ -1803,7 +1803,7 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 12},
                     "Runtime: This fragment doesn't contain any value for "
                     "key 'missing' [open_frags=., iteration=0]"

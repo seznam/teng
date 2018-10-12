@@ -86,7 +86,7 @@ SCENARIO(
 
             THEN("The result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 2},
                     "isenabled(): Unknown feature 'unknown-option'"
                 }};

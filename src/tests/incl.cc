@@ -240,11 +240,36 @@ SCENARIO(
                     Teng::Error_t::ERROR,
                     {1, 0},
                     "Invalid or excessive tokens in <?teng include?>; "
-                    "ignoring them"
+                    "ignoring the include directive"
                 }, {
                     Teng::Error_t::ERROR,
                     {1, 15},
                     "Unexpected token: name=DEC_INT, view=1"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "");
+            }
+        }
+    }
+
+    GIVEN("Template with premature end of include directive") {
+        auto t = "<?teng include file=?>";
+
+        WHEN("Generated with none data") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            auto result = g(err, t, root);
+
+            THEN("It is empty string") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 0},
+                    "Premature end of <?teng include?> directive; "
+                    "ignoring the include directive"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 20},
+                    "Unexpected token: name=END, view=?>"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "");

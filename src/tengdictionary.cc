@@ -294,7 +294,7 @@ void DictParser_t::parse(type1_t new_directive, type2_t new_entry) {
                 std::string value = parse_entry_value(value_view, value_pos);
                 last_inserted_value->push_back(' ');
                 last_inserted_value->append(value);
-            } else logError(err, pos, "No dict entry to concatenate with");
+            } else logWarning(err, pos, "No dict entry to concatenate with");
             break;
 
         case '.': case '_':
@@ -306,7 +306,7 @@ void DictParser_t::parse(type1_t new_directive, type2_t new_entry) {
 
         default:
             last_inserted_value = nullptr;
-            logError(err, pos, "Illegal identifier: line=" + line.str());
+            logWarning(err, pos, "Illegal identifier: line=" + line.str());
         }
     }
 }
@@ -344,7 +344,7 @@ std::string *DictParser_t::process_entry(type_t new_entry, string_view_t line) {
     if ((ivalue != line.end()) && (!isspace(*ivalue))) {
         Pos_t tmp_pos = pos;
         tmp_pos.advanceColumn(std::distance(line.begin(), ivalue));
-        logError(err, tmp_pos, "Invalid character in identifier");
+        logWarning(err, tmp_pos, "Invalid character in identifier");
         return nullptr;
     }
 
@@ -380,7 +380,7 @@ DictParser_t::parse_entry_value(string_view_t value, Pos_t value_pos) {
         // escape sequence
         case '\\':
             if (++ivalue == evalue) {
-                logError(err, make_pos(ivalue), "Escaping of EOL not allowed");
+                logWarning(err, make_pos(ivalue), "EOL escaping not allowed");
                 result.push_back('\\');
             }
             // escape -> interpret next char
@@ -399,7 +399,7 @@ DictParser_t::parse_entry_value(string_view_t value, Pos_t value_pos) {
                 result.push_back('"');
             default:
                 // other chars are not allowed to be escaped
-                logError(err, make_pos(ivalue), "Invalid escape sequence");
+                logWarning(err, make_pos(ivalue), "Invalid escape sequence");
                 result.push_back(*ivalue);
             }
             break;
@@ -410,8 +410,13 @@ DictParser_t::parse_entry_value(string_view_t value, Pos_t value_pos) {
                 quoted = true;
                 break;
             } else if (quoted) {
-                if (!contains_spaces_only(++ivalue, evalue))
-                    logError(err, make_pos(ivalue), "Text after closing quote");
+                if (!contains_spaces_only(++ivalue, evalue)) {
+                    logWarning(
+                        err,
+                        make_pos(ivalue),
+                        "Text after closing quote"
+                    );
+                }
                 return expandVars? expand_value(result, value_pos): result;
             }
             result.push_back(*ivalue);
@@ -425,7 +430,7 @@ DictParser_t::parse_entry_value(string_view_t value, Pos_t value_pos) {
     }
 
     // if value is still quoted => quote not closed
-    if (quoted) logError(err, make_pos(value.end()), "Missing closing quote");
+    if (quoted) logWarning(err, make_pos(value.end()), "Missing closing quote");
     return expandVars? expand_value(result, value_pos): result;
 }
 
@@ -455,7 +460,7 @@ std::string DictParser_t::expand_value(string_view_t value, Pos_t value_pos) {
         // find name closing
         auto iclose = std::find(iopen, value.end(), '}');
         if (iclose == value.end()) {
-            logError(err, make_pos(value.end()), "Unterminated #{} variable");
+            logWarning(err, make_pos(value.end()), "Unterminated #{} variable");
             expanded.append(iopen, value.end());
             return expanded;
         }
@@ -472,7 +477,11 @@ std::string DictParser_t::expand_value(string_view_t value, Pos_t value_pos) {
             expanded.append("#{");
             expanded.append(key);
             expanded.push_back('}');
-            logError(err, make_pos(iopen), "Dict item '" + key + "' not found");
+            logWarning(
+                err,
+                make_pos(iopen),
+                "Dict item '" + key + "' not found"
+            );
         }
     }
     return expanded;
@@ -501,7 +510,7 @@ void DictParser_t::include_file(
     if (!filename_view.empty()) {
         DictParser_t parser(*this, filename, incl_pos);
         parser.parse(new_directive, new_entry);
-    } else logError(err, incl_pos, "Missing filename to include");
+    } else logWarning(err, incl_pos, "Missing filename to include");
 }
 
 } // namespace
@@ -574,7 +583,7 @@ void Dictionary_t::parse(const std::string &filename) {
             case error_code::none:
                 break;
             case error_code::invalid_number:
-                logError(
+                logWarning(
                     err,
                     value_pos,
                     "Invalid numeric value of " + name
@@ -582,7 +591,7 @@ void Dictionary_t::parse(const std::string &filename) {
                 );
                 break;
             case error_code::invalid_bool:
-                logError(
+                logWarning(
                     err,
                     value_pos,
                     "Invalid bool value of " + name
@@ -591,21 +600,21 @@ void Dictionary_t::parse(const std::string &filename) {
                 );
                 break;
             case error_code::invalid_enable:
-                logError(
+                logWarning(
                     err,
                     value_pos,
                     "You can't enable unknown '" + value + "' feature"
                 );
                 break;
             case error_code::invalid_disable:
-                logError(
+                logWarning(
                     err,
                     value_pos,
                     "You can't disable unknown '" + value + "' feature"
                 );
                 break;
             case error_code::unknown_directive:
-                logError(err, name_pos, "Unknown procesing directive");
+                logWarning(err, name_pos, "Unknown procesing directive");
                 break;
             }
 

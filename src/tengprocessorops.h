@@ -98,7 +98,7 @@ template <typename operation_t>
 struct lhs_checker_t<operation_t, is_bit_op<operation_t>> {
     static bool is_valid(EvalCtx_t *ctx, Value_t &lhs) {
         if (lhs.is_integral()) return true;
-        logError(
+        logWarning(
             *ctx,
             "The left operand of " + to_string(operation_t())
             + " numeric operator is a " + lhs.type_str()
@@ -114,7 +114,7 @@ template <typename operation_t>
 struct rhs_checker_t<operation_t, is_bit_op<operation_t>> {
     static bool is_valid(EvalCtx_t *ctx, Value_t &rhs) {
         if (rhs.is_integral()) return true;
-        logError(
+        logWarning(
             *ctx,
             "The right operand of " + to_string(operation_t())
             + " numeric operator is a " + rhs.type_str()
@@ -142,7 +142,10 @@ struct rhs_checker_t<operation_t, needs_rhs_non_zero<operation_t>> {
         static const std::string S = to_string(operation_t());
         if (is_modulus && rhs.integral()) return true;
         else if (!is_modulus && rhs.real()) return true;
-        logError(*ctx, "Right operand of " + S + " division operator is zero");
+        logWarning(
+            *ctx,
+            "Right operand of " + S + " division operator is zero"
+        );
         return false;
     }
 };
@@ -157,13 +160,17 @@ Result_t numop(EvalCtx_t *ctx, Value_t &lhs, Value_t &rhs, operation_t op) {
 
     // report invalid operands
     if (!lhs.is_number()) {
-        auto tp = lhs.type_str();
-        logError(*ctx, "Left operand of " + S + " numeric operator is " + tp);
+        logWarning(
+            *ctx,
+            "Left operand of " + S + " numeric operator is " + lhs.type_str()
+        );
         return Result_t();
     }
     if (!rhs.is_number()) {
-        auto tp = rhs.type_str();
-        logError(*ctx, "Right operand of " + S + " numeric operator is " + tp);
+        logWarning(
+            *ctx,
+            "Right operand of " + S + " numeric operator is " + rhs.type_str()
+        );
         return Result_t();
     }
 
@@ -175,7 +182,7 @@ Result_t numop(EvalCtx_t *ctx, Value_t &lhs, Value_t &rhs, operation_t op) {
 
     // prepare error callback for floating point calculation
     auto fp_error = [&] {
-        logError(*ctx, "Floating point operation failed");
+        logWarning(*ctx, "Floating point operation failed");
         return Result_t();
     };
 
@@ -261,7 +268,7 @@ Result_t bit_not(EvalCtx_t *ctx, GetArg_t get_arg) {
     Value_t arg = get_arg();
     if (arg.is_integral())
         return Result_t(~arg.as_int());
-    logError(*ctx, "operand of bit ~ operator is not int");
+    logWarning(*ctx, "Operand of bit ~ operator is not int");
     return Result_t();
 }
 
@@ -275,7 +282,7 @@ Result_t unary_plus(EvalCtx_t *ctx, GetArg_t get_arg) {
     case Value_t::tag::real:
         return Result_t(arg.as_real());
     default:
-        logError(*ctx, "operand of unary + operator is not number");
+        logWarning(*ctx, "Operand of unary + operator is not number");
         return Result_t();
     }
 }
@@ -290,7 +297,7 @@ Result_t unary_minus(EvalCtx_t *ctx, GetArg_t get_arg) {
     case Value_t::tag::real:
         return Result_t(-arg.as_real());
     default:
-        logError(*ctx, "operand of unary - operator is not number");
+        logWarning(*ctx, "Operand of unary - operator is not number");
         return Result_t();
     }
 }
@@ -305,13 +312,24 @@ Result_t repeat_string(EvalCtx_t *ctx, GetArg_t get_arg) {
 
     // check args
     if (!rhs.is_integral()) {
-        logError(*ctx, "Right operand of repeat string operator is not int");
+        logWarning(
+            *ctx,
+            "Right operand of repeat string operator is not int"
+        );
         return Result_t();
+
     } else if (rhs.as_int() < 0) {
-        logError(*ctx, "Right operand of repeat string operator is negative");
+        logWarning(
+            *ctx,
+            "Right operand of repeat string operator is negative"
+        );
         return Result_t();
+
     } else if (!lhs.is_string_like()) {
-        logError(*ctx, "Left operand of repeat string operator is not string");
+        logWarning(
+            *ctx,
+            "Left operand of repeat string operator is not string"
+        );
         return Result_t();
     }
 

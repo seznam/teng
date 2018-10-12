@@ -105,7 +105,7 @@ SCENARIO(
 
             THEN("Dangerous characters are escaped") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 6},
                     "The closing directive of this <?teng ctype?> directive "
                     "is missing"
@@ -133,7 +133,7 @@ SCENARIO(
 
             THEN("Dangerous characters are escaped") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 0},
                     "The closing directive of this <?teng ctype?> directive "
                     "is missing"
@@ -160,7 +160,7 @@ SCENARIO(
 
             THEN("Dangerous characters are escaped") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 56},
                     "The closing directive of this <?teng ctype?> directive "
                     "is missing"
@@ -187,12 +187,12 @@ SCENARIO(
 
             THEN("Dangerous characters are escaped") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 6},
                     "The closing directive of this <?teng ctype?> directive "
                     "is missing"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 45},
                     "The closing directive of this <?teng ctype?> directive "
                     "is missing"
@@ -307,7 +307,7 @@ SCENARIO(
 
             THEN("The space formatting is applied") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 40},
                     "Ignoring invalid excessive tokens in <?teng endctype?> "
                     "directive"
@@ -361,7 +361,7 @@ SCENARIO(
 
             THEN("It contains text from template") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 1},
                     "The <?teng endctype?> directive closes unopened "
                     "ctype block"
@@ -383,12 +383,12 @@ SCENARIO(
 
             THEN("It contains text from template") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 1},
                     "The <?teng endctype?> directive closes unopened "
                     "ctype block"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 20},
                     "The <?teng endctype?> directive closes unopened "
                     "ctype block"
@@ -411,7 +411,7 @@ SCENARIO(
 
             THEN("It contains text from template") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 1},
                     "The <?teng endctype?> directive closes unopened "
                     "ctype block"
@@ -434,7 +434,7 @@ SCENARIO(
 
             THEN("It contains text from template") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 59},
                     "The <?teng endctype?> directive closes unopened "
                     "ctype block"

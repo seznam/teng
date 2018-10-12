@@ -574,7 +574,7 @@ void close_frag(Context_t *ctx, const Pos_t &pos, bool invalid) {
         // if fragment hasn't been created as part of auto fragments then stop
         if (!frag.auto_close) return;
     }
-    logError(ctx, pos, "Closing frag requested but no one opened!");
+    logWarning(ctx, pos, "Closing frag requested but no one opened!");
 }
 
 void close_inv_frag(Context_t *ctx, const Pos_t &pos) {
@@ -591,7 +591,7 @@ void close_inv_frag(Context_t *ctx, const Pos_t &pos) {
 void
 close_unclosed_frag(Context_t *ctx, const Pos_t &pos, const Token_t &token) {
     close_frag(ctx, token.pos);
-    logError(
+    logWarning(
         ctx,
         pos,
         "The closing directive of this <?teng frag?> directive is missing"
@@ -648,8 +648,11 @@ void generate_dict_lookup(Context_t *ctx, const Token_t &token) {
         return generate<Val_t>(ctx, *item, token.pos);
 
     // use ident as result value
-    auto msg = "Dictionary item '" + token.view() + "' was not found";
-    logError(ctx, token.pos, msg);
+    logWarning(
+        ctx,
+        token.pos,
+        "Dictionary item '" + token.view() + "' was not found"
+    );
     generate<Val_t>(ctx, token.str(), token.pos);
 }
 
@@ -776,12 +779,25 @@ void ignore_include(Context_t *ctx, const Token_t &token, bool empty) {
             "Missing filename to include; ignoring the include directive"
         );
     } else {
-        logError(
-            ctx,
-            token.pos,
-            "Invalid or excessive tokens in <?teng include?>; ignoring them"
-        );
-        // TODO(burlog): better error message according to unexpected_token
+        switch (ctx->unexpected_token) {
+        case LEX2_EOF:
+        case LEX2::END:
+            logError(
+                ctx,
+                token.pos,
+                "Premature end of <?teng include?> directive; "
+                "ignoring the include directive"
+            );
+            break;
+        default:
+            logError(
+                ctx,
+                token.pos,
+                "Invalid or excessive tokens in <?teng include?>; "
+                "ignoring the include directive"
+            );
+            break;
+        }
         reset_error(ctx);
     }
 }
@@ -950,7 +966,7 @@ void close_format(Context_t *ctx, const Pos_t &pos) {
 
 void close_inv_format(Context_t *ctx, const Pos_t &pos) {
     close_format(ctx, pos);
-    logError(
+    logWarning(
         ctx,
         pos,
         "Ignoring invalid excessive tokens in <?teng endformat?> directive"
@@ -961,7 +977,7 @@ void close_inv_format(Context_t *ctx, const Pos_t &pos) {
 void
 close_unclosed_format(Context_t *ctx, const Pos_t &pos, const Token_t &token) {
     close_format(ctx, token.pos);
-    logError(
+    logWarning(
         ctx,
         pos,
         "The closing directive of this <?teng format?> directive is missing"
@@ -1022,8 +1038,7 @@ void close_ctype(Context_t *ctx, const Pos_t &pos) {
 
 void close_inv_ctype(Context_t *ctx, const Pos_t &pos) {
     close_ctype(ctx, pos);
-    // TODO(burlog): nemelo by tady byt spise logWarning protoze "vsechno funguje jak ma"
-    logError(
+    logWarning(
         ctx,
         pos,
         "Ignoring invalid excessive tokens in <?teng endctype?> directive"
@@ -1034,7 +1049,7 @@ void close_inv_ctype(Context_t *ctx, const Pos_t &pos) {
 void
 close_unclosed_ctype(Context_t *ctx, const Pos_t &pos, const Token_t &token) {
     close_ctype(ctx, token.pos);
-    logError(
+    logWarning(
         ctx,
         pos,
         "The closing directive of this <?teng ctype?> directive is missing"
@@ -1112,7 +1127,7 @@ void finalize_if(Context_t *ctx) {
 
 void finalize_inv_if(Context_t *ctx, const Pos_t &pos) {
     finalize_if(ctx);
-    logError(
+    logWarning(
         ctx,
         pos,
         "Ignoring invalid excessive tokens in <?teng endif?> directive"
@@ -1128,7 +1143,7 @@ void generate_else(Context_t *ctx, const Token_t &token) {
 
 void generate_inv_else(Context_t *ctx, const Token_t &token) {
     generate_else(ctx, token);
-    logError(
+    logWarning(
         ctx,
         token.pos,
         "Ignoring invalid excessive tokens in <?teng else?> directive"
@@ -1281,6 +1296,7 @@ Regex_t generate_regex(Context_t *ctx, const Token_t &regex) {
     regex_flags_t flags;
     auto i = regex.view().size() - 1;
     for (; regex.view()[i] != '/'; --i) {
+        // TODO(burlog): regex flags!
         switch (regex.view()[i]) {
         case 'i': flags.ignore_case = true; break;
         case 'I': flags.ignore_case = false; break;
@@ -1348,7 +1364,6 @@ void debug_frag(Context_t *ctx, const Pos_t &pos, bool warn) {
             pos,
             "Invalid or excessive tokens in <?teng debug?>; ignoring them"
         );
-        // TODO(burlog): better error message according to unexpected_token
         reset_error(ctx);
     }
 }
@@ -1362,7 +1377,6 @@ void bytecode_frag(Context_t *ctx, const Pos_t &pos, bool warn) {
             "Invalid or excessive tokens in <?teng bytecode?>; "
             "ignoring them"
         );
-        // TODO(burlog): better error message according to unexpected_token
         reset_error(ctx);
     }
 }

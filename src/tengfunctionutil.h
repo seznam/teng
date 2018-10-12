@@ -98,7 +98,7 @@ struct string_ptr_t {
 /** Convenient function for reporting error.
  */
 Result_t failed(Ctx_t &ctx, const char *fun, const std::string &msg) {
-    logError(ctx.err, ctx.pos, std::string(fun) + "(): " + msg);
+    logWarning(ctx.err, ctx.pos, std::string(fun) + "(): " + msg);
     return Result_t();
 }
 

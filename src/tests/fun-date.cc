@@ -80,7 +80,7 @@ SCENARIO(
                     "parseDateTime(): invalid format of month; "
                     "use YYYY-MM-DD[ HH:MM:SS[+ZHZM]] format"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 2},
                     "timestamp(): Can't parse date"
                 }};
@@ -101,7 +101,7 @@ SCENARIO(
                     "parseDateTime(): invalid format of day; "
                     "use YYYY-MM-DD[ HH:MM:SS[+ZHZM]] format"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 2},
                     "timestamp(): Can't parse date"
                 }};
@@ -134,7 +134,7 @@ SCENARIO(
                     "parseDateTime(): expected ':' as hour/minute separator; "
                     "use YYYY-MM-DD[ HH:MM:SS[+ZHZM]] format"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 2},
                     "timestamp(): Can't parse date"
                 }};
@@ -155,7 +155,7 @@ SCENARIO(
                     "parseDateTime(): expected ':' as minute/second separator; "
                     "use YYYY-MM-DD[ HH:MM:SS[+ZHZM]] format"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 2},
                     "timestamp(): Can't parse date"
                 }};

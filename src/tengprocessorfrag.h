@@ -248,14 +248,14 @@ Result_t push_attr(Ctx_t *ctx, GetArg_t get_arg) {
     if (result.is_undefined()) {
         auto i = ctx->frames_ptr->current_list_i();
         if (instr.path.empty()) {
-            logError(
+            logWarning(
                 *ctx,
                 "This fragment doesn't contain any value for key '" + instr.name
                 + "' [open_frags=" + ctx->frames_ptr->current_path()
                 + ", iteration=" + std::to_string(i) + "]"
             );
         } else {
-            logError(
+            logWarning(
                 *ctx,
                 "The path expression '" + instr.path + "' references fragment "
                 "that doesn't contain any value for key '" + instr.name
@@ -353,7 +353,7 @@ Result_t push_attr_at(EvalCtx_t *ctx, GetArg_t get_arg) {
 /** Pops the last segment of path.
  */
 Result_t pop_attr(EvalCtx_t *ctx, GetArg_t get_arg) {
-    logError(*ctx, "Not implemented yet - _parent segment ignored");
+    logWarning(*ctx, "Not implemented yet - _parent segment ignored");
     return get_arg();
 }
 

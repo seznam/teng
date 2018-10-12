@@ -502,7 +502,7 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 7},
                     "Runtime: The left operand of | numeric operator is a "
                     "real but an integer is expected"
@@ -529,7 +529,7 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 7},
                     "Runtime: The left operand of ^ numeric operator is a "
                     "real but an integer is expected"
@@ -556,7 +556,7 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 7},
                     "Runtime: The left operand of & numeric operator is a "
                     "real but an integer is expected"
@@ -786,7 +786,7 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 6},
                     "Runtime: Right operand of / division operator is zero"
                 }};
@@ -847,7 +847,7 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 6},
                     "Runtime: Right operand of % division operator is zero"
                 }};
@@ -927,9 +927,9 @@ SCENARIO(
 
             THEN("Result of: ~zero") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 2},
-                    "Runtime: operand of bit ~ operator is not int"
+                    "Runtime: Operand of bit ~ operator is not int"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");

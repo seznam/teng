@@ -171,7 +171,7 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 7},
                     "Runtime: Left operand of - numeric operator is string_ref"
                 }};
@@ -187,11 +187,11 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 5},
                     "Runtime: Right operand of % division operator is zero"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 10},
                     "Runtime: Left operand of + numeric operator is undefined"
                 }};

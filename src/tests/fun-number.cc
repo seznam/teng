@@ -74,7 +74,7 @@ SCENARIO(
 
             THEN("The result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 2},
                     "numformat(): the function expects from 2 to 4 args"
                 }};
@@ -90,7 +90,7 @@ SCENARIO(
 
             THEN("The result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 2},
                     "numformat(): the function expects from 2 to 4 args"
                 }};
@@ -196,11 +196,11 @@ SCENARIO(
 
             THEN("The result is a number") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 2},
                     "int(): can't convert string to int"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 17},
                     "Runtime: Left operand of + numeric operator is undefined"
                 }};
@@ -216,11 +216,11 @@ SCENARIO(
 
             THEN("The result is a number") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 2},
                     "int(): can't convert string to int"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 20},
                     "Runtime: Left operand of + numeric operator is undefined"
                 }};

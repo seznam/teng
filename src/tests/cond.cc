@@ -1089,12 +1089,12 @@ SCENARIO(
                     "The <?teng if?> block crosses the parent fragment block "
                     "ending at=(no file):1:39; discarding whole if statement"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 39},
                     "The <?teng endfrag?> directive closes unopened fragment "
                     "block"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 56},
                     "The <?teng endif?> directive closes unopened if block"
                 }};
@@ -1116,12 +1116,12 @@ SCENARIO(
                     "The <?teng if?> block crosses the parent fragment block "
                     "ending at=(no file):1:39; discarding whole if statement"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 39},
                     "The <?teng endfrag?> directive closes unopened fragment "
                     "block"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 56},
                     "The <?teng endif?> directive closes unopened if block"
                 }};
@@ -1149,12 +1149,12 @@ SCENARIO(
                     "The <?teng if?> block crosses the parent fragment block "
                     "ending at=(no file):1:64; discarding whole if statement"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 64},
                     "The <?teng endfrag?> directive closes unopened fragment "
                     "block"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 81},
                     "The <?teng endif?> directive closes unopened if block"
                 }};
@@ -1176,12 +1176,12 @@ SCENARIO(
                     "The <?teng if?> block crosses the parent fragment block "
                     "ending at=(no file):1:64; discarding whole if statement"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 64},
                     "The <?teng endfrag?> directive closes unopened fragment "
                     "block"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 81},
                     "The <?teng endif?> directive closes unopened if block"
                 }};
@@ -1209,12 +1209,12 @@ SCENARIO(
                     "The <?teng if?> block crosses the parent fragment block "
                     "ending at=(no file):1:65; discarding whole if statement"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 65},
                     "The <?teng endfrag?> directive closes unopened fragment "
                     "block"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 82},
                     "The <?teng endif?> directive closes unopened if block"
                 }};
@@ -1236,12 +1236,12 @@ SCENARIO(
                     "The <?teng if?> block crosses the parent fragment block "
                     "ending at=(no file):1:65; discarding whole if statement"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 65},
                     "The <?teng endfrag?> directive closes unopened fragment "
                     "block"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 82},
                     "The <?teng endif?> directive closes unopened if block"
                 }};
@@ -1263,12 +1263,12 @@ SCENARIO(
                     "The <?teng if?> block crosses the parent fragment block "
                     "ending at=(no file):1:65; discarding whole if statement"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 65},
                     "The <?teng endfrag?> directive closes unopened fragment "
                     "block"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 82},
                     "The <?teng endif?> directive closes unopened if block"
                 }};
@@ -1290,12 +1290,12 @@ SCENARIO(
                     "The <?teng if?> block crosses the parent fragment block "
                     "ending at=(no file):1:65; discarding whole if statement"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 65},
                     "The <?teng endfrag?> directive closes unopened fragment "
                     "block"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 82},
                     "The <?teng endif?> directive closes unopened if block"
                 }};
@@ -1489,7 +1489,7 @@ SCENARIO(
 
             THEN("The result is empty") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 24},
                     "Ignoring invalid excessive tokens in <?teng else?> "
                     "directive"
@@ -1514,7 +1514,7 @@ SCENARIO(
 
             THEN("The result is empty") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 24},
                     "Ignoring invalid excessive tokens in <?teng endif?> "
                     "directive"

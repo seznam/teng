@@ -80,7 +80,7 @@ Result_t dict(RunCtxPtr_t ctx, GetArg_t get_arg) {
         // saves some allocation, params lives longer than value
         return Result_t(string_view_t(*item));
 
-    logError(*ctx, "Dictionary item '" + arg.string() + "' was not found");
+    logWarning(*ctx, "Dictionary item '" + arg.string() + "' was not found");
     return arg;
 }
 

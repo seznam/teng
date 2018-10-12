@@ -706,14 +706,14 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs {{
                     Teng::Error_t::WARNING,
                     {1, 2},
+                    "Runtime: This fragment doesn't contain any value for key "
+                    "'missing' [open_frags=., iteration=0]"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 2},
                     "Runtime: The path expression references object of "
                     "'undefined' type with value 'undefined' for which "
                     "count() query is undefined [open_frags=., iteration=0]"
-                }, {
-                    Teng::Error_t::ERROR,
-                    {1, 2},
-                    "Runtime: This fragment doesn't contain any value for key "
-                    "'missing' [open_frags=., iteration=0]"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -974,7 +974,7 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 46},
                     "Runtime: This fragment doesn't contain any value for "
                     "key 'invalid' [open_frags=.nested_1.nested_2, iteration=0]"
@@ -1012,7 +1012,7 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 46},
                     "Runtime: The path expression '.nested_1' references "
                     "fragment that doesn't contain any value for key 'invalid' "
@@ -1358,7 +1358,7 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 46},
                     "Runtime: This fragment doesn't contain any value for "
                     "key 'invalid' [open_frags=.nested_1.nested_2, iteration=0]"
@@ -1379,7 +1379,7 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 46},
                     "Runtime: This fragment doesn't contain any value for "
                     "key 'invalid' [open_frags=.nested_1.nested_2, iteration=0]"
@@ -1660,13 +1660,13 @@ SCENARIO(
                     "Runtime: Variable '.nested_1.var_set' is undefined "
                     "[open_frags=.nested_1, iteration=0]"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 369},
                     "Runtime: The path expression 'nested_2' references "
                     "fragment that doesn't contain any value for key 'var_set' "
                     "[open_frags=.nested_1, iteration=0]"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 389},
                     "Runtime: The path expression '.nested_1.nested_2' "
                     "references fragment that doesn't contain any value for "
@@ -1990,7 +1990,7 @@ SCENARIO(
 
             THEN("The error report contains valid path") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 5},
                     "Runtime: The path expression '.' references fragment "
                     "that doesn't contain any value for key 'var' "
@@ -2008,7 +2008,7 @@ SCENARIO(
 
             THEN("The error report contains valid path") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 11},
                     "Runtime: The path expression '.first' references fragment "
                     "that doesn't contain any value for key 'var' "
@@ -2026,7 +2026,7 @@ SCENARIO(
 
             THEN("The error report contains valid path") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 18},
                     "Runtime: The path expression '.first.second' references "
                     "fragment that doesn't contain any value for key 'var' "
@@ -2044,7 +2044,7 @@ SCENARIO(
 
             THEN("The error report contains valid path") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 24},
                     "Runtime: The path expression '.first.second.third' "
                     "references fragment that doesn't contain any value for "
@@ -2062,7 +2062,7 @@ SCENARIO(
 
             THEN("The error report contains valid path") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 11},
                     "Runtime: The path expression '.first' references fragment "
                     "that doesn't contain any value for key 'missing' "
@@ -2092,7 +2092,7 @@ SCENARIO(
 
             THEN("The error report contains valid path") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 4},
                     "Runtime: This fragment doesn't contain any value for key "
                     "'var' [open_frags=., iteration=0]"
@@ -2109,7 +2109,7 @@ SCENARIO(
 
             THEN("The error report contains valid path") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 23},
                     "Runtime: This fragment doesn't contain any value for key "
                     "'var' [open_frags=.first, iteration=0]"
@@ -2126,7 +2126,7 @@ SCENARIO(
 
             THEN("The error report contains valid path") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 30},
                     "Runtime: The path expression 'second' references "
                     "fragment that doesn't contain any value for key 'var' "
@@ -2144,7 +2144,7 @@ SCENARIO(
 
             THEN("The error report contains valid path") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 21},
                     "Runtime: The path expression 'second' references "
                     "fragment that doesn't contain any value for key 'var' "
@@ -2162,7 +2162,7 @@ SCENARIO(
 
             THEN("The error report contains valid path") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 21},
                     "Runtime: This fragment doesn't contain any value for key "
                     "'missing' [open_frags=.first, iteration=0]"
@@ -2195,12 +2195,12 @@ SCENARIO(
 
             THEN("The error report contains valid path") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 23},
                     "Runtime: This fragment doesn't contain any value for "
                     "key 'one' [open_frags=.first, iteration=1]"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 23},
                     "Runtime: This fragment doesn't contain any value for "
                     "key 'one' [open_frags=.first, iteration=2]"
@@ -2217,12 +2217,12 @@ SCENARIO(
 
             THEN("The error report contains valid path") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 21},
                     "Runtime: This fragment doesn't contain any value for "
                     "key 'second' [open_frags=.first, iteration=1]"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 21},
                     "Runtime: This fragment doesn't contain any value for "
                     "key 'second' [open_frags=.first, iteration=2]"
@@ -2364,7 +2364,7 @@ SCENARIO(
 
             THEN("The error report contains valid path") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 14},
                     "Runtime: The path expression '.first[0]' references "
                     "fragment that doesn't contain any value for key 'var' "
@@ -2382,7 +2382,7 @@ SCENARIO(
 
             THEN("The error report contains valid path") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 14},
                     "Runtime: The path expression '.first[2]' references "
                     "fragment that doesn't contain any value for key 'var' "
@@ -2400,7 +2400,7 @@ SCENARIO(
 
             THEN("The error report contains valid path") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 18},
                     "Runtime: The path expression '.first[2 - 2]' references "
                     "fragment that doesn't contain any value for key 'var' "
@@ -2418,7 +2418,7 @@ SCENARIO(
 
             THEN("The error report contains valid path") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 20},
                     "Runtime: The path expression '.first[$$.zero]' "
                     "references fragment that doesn't contain any value for "

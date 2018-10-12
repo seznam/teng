@@ -119,7 +119,7 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 8},
                     "Runtime: Left operand of | numeric operator "
                     "is string_ref"
@@ -135,7 +135,7 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 8},
                     "Runtime: Left operand of ^ numeric operator "
                     "is string_ref"
@@ -151,7 +151,7 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 8},
                     "Runtime: Left operand of & numeric operator "
                     "is string_ref"
@@ -424,7 +424,7 @@ SCENARIO(
 
             THEN("Result of: zero - three") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 7},
                     "Runtime: Left operand of - numeric operator is string_ref"
                 }};
@@ -483,7 +483,7 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 7},
                     "Runtime: Left operand of * numeric operator is string_ref"
                 }};
@@ -509,7 +509,7 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 7},
                     "Runtime: Left operand of / numeric operator is string_ref"
                 }};
@@ -535,7 +535,7 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 7},
                     "Runtime: Left operand of % numeric operator is string_ref"
                 }};
@@ -572,7 +572,7 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 7},
                     "Runtime: Right operand of repeat string operator "
                     "is not int"
@@ -631,9 +631,9 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 2},
-                    "Runtime: operand of bit ~ operator is not int"
+                    "Runtime: Operand of bit ~ operator is not int"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -656,9 +656,9 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 2},
-                    "Runtime: operand of unary - operator is not number"
+                    "Runtime: Operand of unary - operator is not number"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");
@@ -681,9 +681,9 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 2},
-                    "Runtime: operand of unary + operator is not number"
+                    "Runtime: Operand of unary + operator is not number"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");

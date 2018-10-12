@@ -52,7 +52,7 @@ OpenFrames_t::~OpenFrames_t() {
     while (true) {
         while (!top().empty()) {
             auto frag = top().close_frag();
-            logError(
+            logWarning(
                 program.getErrors(),
                 program[frag.addr].pos(),
                 "Unclosed <?teng frag " + frag.name + "?> directive"

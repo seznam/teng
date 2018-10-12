@@ -123,12 +123,12 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 0},
                     "The <?teng endfrag?> directive closes unopened fragment "
                     "block"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 16},
                     "The closing directive of this <?teng frag?> directive "
                     "is missing"

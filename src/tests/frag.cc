@@ -374,7 +374,7 @@ SCENARIO(
 
             THEN("It contains text from template") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 1},
                     "The <?teng endfrag?> directive closes unopened "
                     "fragment block"
@@ -431,7 +431,7 @@ SCENARIO(
 
             THEN("The fragment is preserved") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 1},
                     "The closing directive of this <?teng frag?> directive "
                     "is missing"
@@ -460,7 +460,7 @@ SCENARIO(
 
             THEN("The fragment is preserved") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 0},
                     "The closing directive of this <?teng frag?> directive "
                     "is missing"
@@ -487,7 +487,7 @@ SCENARIO(
 
             THEN("The fragment is preserved") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 39},
                     "The closing directive of this <?teng frag?> directive "
                     "is missing"
@@ -515,12 +515,12 @@ SCENARIO(
 
             THEN("The fragment is preserved") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 0},
                     "The closing directive of this <?teng frag?> directive "
                     "is missing"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 24},
                     "The closing directive of this <?teng frag?> directive "
                     "is missing"
@@ -545,17 +545,17 @@ SCENARIO(
 
             THEN("It contains text from template") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
-                    {1, 1},
-                    "Invalid fragment identifier; "
-                    "discarding fragment block content"
-                }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 1},
                     "The closing directive of this <?teng frag?> "
                     "directive is missing"
                 }, {
                     Teng::Error_t::ERROR,
+                    {1, 1},
+                    "Invalid fragment identifier; "
+                    "discarding fragment block content"
+                }, {
+                    Teng::Error_t::WARNING,
                     {1, 12},
                     "The <?teng endfrag?> directive closes unopened "
                     "fragment block"
@@ -585,7 +585,7 @@ SCENARIO(
 
             THEN("It contains text from template") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 1},
                     "The <?teng endfrag?> directive closes unopened "
                     "fragment block"
@@ -606,12 +606,12 @@ SCENARIO(
 
             THEN("It contains text from template") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 1},
                     "The <?teng endfrag?> directive closes unopened "
                     "fragment block"
                 }, {
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 19},
                     "The <?teng endfrag?> directive closes unopened "
                     "fragment block"
@@ -634,7 +634,7 @@ SCENARIO(
 
             THEN("It contains text from template") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 1},
                     "The <?teng endfrag?> directive closes unopened "
                     "fragment block"
@@ -657,7 +657,7 @@ SCENARIO(
 
             THEN("It contains text from template") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 40},
                     "The <?teng endfrag?> directive closes unopened "
                     "fragment block"

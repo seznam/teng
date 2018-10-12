@@ -477,7 +477,7 @@ SCENARIO(
 
             THEN("The result format string") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
-                    Teng::Error_t::ERROR,
+                    Teng::Error_t::WARNING,
                     {1, 2},
                     "reorder(): invalid or missing index in format '%{2}'"
                 }};

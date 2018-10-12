@@ -346,7 +346,7 @@ Result_t reorder(Ctx_t &ctx, const Args_t &args) {
                 break;
 
             case STATUS::NUMBER:
-                logError(
+                logWarning(
                     ctx.err,
                     ctx.pos,
                     "reorder(): '%' not allowed inside '%{}'"
@@ -397,7 +397,7 @@ Result_t reorder(Ctx_t &ctx, const Args_t &args) {
 
             case STATUS::NUMBER:
                 // ? inside number => error
-                logError(
+                logWarning(
                     ctx.err,
                     ctx.pos,
                     "reorder(): '{' not allowed inside '%{}'"
@@ -412,7 +412,7 @@ Result_t reorder(Ctx_t &ctx, const Args_t &args) {
             switch (status) {
             case STATUS::FORMAT:
                 // } after % => error
-                logError(
+                logWarning(
                     ctx.err,
                     ctx.pos,
                     "reorder(): '}' not allowed after '%'"
@@ -444,7 +444,7 @@ Result_t reorder(Ctx_t &ctx, const Args_t &args) {
             case STATUS::FORMAT:
             case STATUS::NUMBER:
                 // unterminated format
-                logError(
+                logWarning(
                     ctx.err,
                     ctx.pos,
                     "reorder(): runaway argument"
@@ -461,7 +461,7 @@ Result_t reorder(Ctx_t &ctx, const Args_t &args) {
             case STATUS::NUMBER: {
                 // ? after % => error
                 char tc = c;
-                logError(
+                logWarning(
                     ctx.err,
                     ctx.pos,
                     "reorder(): '" + std::string(&tc, 1)
@@ -483,7 +483,7 @@ Result_t reorder(Ctx_t &ctx, const Args_t &args) {
         if (replace) {
             if (!index || (index >= args.size())) {
                 // invalid index => do not expand and report error
-                logError(
+                logWarning(
                     ctx.err,
                     ctx.pos,
                     "reorder(): invalid or missing index in format '"
