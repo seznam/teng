@@ -89,6 +89,16 @@ inline uint32_t to_pcre_flags(regex_flags_t flags) {
         result |= PCRE_GLOBAL;
     if (flags.multiline)
         result |= PCRE_MULTILINE;
+    if (flags.extended)
+        result |= PCRE_EXTENDED;
+    if (flags.extra)
+        result |= PCRE_EXTRA;
+    if (flags.ungreedy)
+        result |= PCRE_UNGREEDY;
+    if (flags.anchored)
+        result |= PCRE_ANCHORED;
+    if (flags.dollar_endonly)
+        result |= PCRE_DOLLAR_ENDONLY;
     return result;
 }
 

@@ -1296,14 +1296,15 @@ Regex_t generate_regex(Context_t *ctx, const Token_t &regex) {
     regex_flags_t flags;
     auto i = regex.view().size() - 1;
     for (; regex.view()[i] != '/'; --i) {
-        // TODO(burlog): regex flags!
         switch (regex.view()[i]) {
         case 'i': flags.ignore_case = true; break;
-        case 'I': flags.ignore_case = false; break;
         case 'g': flags.global = true; break;
-        case 'G': flags.global = false; break;
         case 'm': flags.multiline = true; break;
-        case 'M': flags.multiline = false; break;
+        case 'e': flags.extended = true; break;
+        case 'X': flags.extra = true; break;
+        case 'U': flags.ungreedy = true; break;
+        case 'A': flags.anchored = true; break;
+        case 'D': flags.dollar_endonly = true; break;
         default:
             logWarning(
                 ctx,
@@ -1311,7 +1312,7 @@ Regex_t generate_regex(Context_t *ctx, const Token_t &regex) {
                 "Ignoring unknown regex flag '"
                 + std::string(1, regex.view()[i])
                 + "'"
-                );
+            );
         }
     }
     return {{regex.view().data() + 1, regex.view().data() + i}, flags};

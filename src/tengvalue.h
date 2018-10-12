@@ -57,10 +57,19 @@ class FragmentValue_t;
 /** The possible regex flags.
  */
 struct regex_flags_t {
-    regex_flags_t(): ignore_case(false), global(false), multiline(false) {}
+    regex_flags_t()
+        : ignore_case(false), global(false), multiline(false), extended(false),
+          extra(false), ungreedy(false), anchored(false), dollar_endonly(false)
+    {}
     bool ignore_case:1;
     bool global:1;
     bool multiline:1;
+    bool extended:1;
+    bool extra:1;
+    bool ungreedy:1;
+    bool anchored:1;
+    bool dollar_endonly:1;
+
 };
 
 /** The regular expression pattern
