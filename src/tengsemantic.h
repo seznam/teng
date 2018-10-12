@@ -248,7 +248,7 @@ void finalize_case_branch(Context_t *ctx, const Token_t &token);
  *
  * You could noticed that jump instruction has set invalid offsets. They can't
  * be calculated during generating instructions because the offset aren't
- * known at the time. Therefore, the ctx->branch_start_addrs stack of jpm
+ * known at the time. Therefore, the ctx->branch_addrs stack of jpm
  * instructions is used to store the addresses of all instructions, and the
  * offsets are immediately updated as they are known.
  *
@@ -495,7 +495,7 @@ inline void generate_inv_print(Context_t *ctx, const Token_t &inv) {
  */
 template <typename Instr_t>
 void generate_bin_op(Context_t *ctx, const Token_t &token) {
-    ctx->branch_start_addrs.top().push(ctx->program->size());
+    ctx->branch_addrs.top().push(ctx->program->size());
     generate<Instr_t>(ctx, token.pos);
 }
 
@@ -503,7 +503,7 @@ void generate_bin_op(Context_t *ctx, const Token_t &token) {
  */
 template <typename Instr_t>
 void finalize_bin_op(Context_t *ctx) {
-    int32_t bin_op_addr = ctx->branch_start_addrs.top().pop();
+    int32_t bin_op_addr = ctx->branch_addrs.top().pop();
     auto addr_offset = ctx->program->size() - bin_op_addr - 1;
     (*ctx->program)[bin_op_addr].as<Instr_t>().addr_offset = addr_offset;
 }

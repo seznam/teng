@@ -681,7 +681,7 @@ void discard_expr(Context_t *ctx) {
     );
 
     // fix bin/tern/case operator's stack of addresses
-    ctx->branch_start_addrs.pop();
+    ctx->branch_addrs.pop();
 
     // also reset optimization points
     // (yes, it clears even nested points - we don't trust its because of error)
@@ -694,22 +694,22 @@ void discard_expr(Context_t *ctx) {
 void finish_expr(Context_t *ctx) {
     ctx->expr_start_point.update_allowed = true;
     ctx->expr_diag.clear();
-    ctx->branch_start_addrs.pop();
+    ctx->branch_addrs.pop();
 }
 
 void generate_tern_op(Context_t *ctx, const Token_t &token) {
-    ctx->branch_start_addrs.top().push(ctx->program->size());
+    ctx->branch_addrs.top().push(ctx->program->size());
     generate<JmpIfNot_t>(ctx, token.pos);
     expr_diag(ctx, diag_code::tern_true_branch, false);
 }
 
 void finalize_tern_op_true_branch(Context_t *ctx, const Token_t &token) {
     // calculate jump from begin of tern op to false branch
-    int32_t cond_addr = ctx->branch_start_addrs.top().pop();
+    int32_t cond_addr = ctx->branch_addrs.top().pop();
     int32_t false_branch_offset = ctx->program->size() - cond_addr;
 
     // store address of jump from true branch
-    ctx->branch_start_addrs.top().push(ctx->program->size());
+    ctx->branch_addrs.top().push(ctx->program->size());
     generate<Jmp_t>(ctx, token.pos);
 
     // fix conditional jump offset (relative addr)
@@ -721,7 +721,7 @@ void finalize_tern_op_true_branch(Context_t *ctx, const Token_t &token) {
 }
 
 void finalize_tern_op_false_branch(Context_t *ctx) {
-    int32_t true_branch_jump_addr = ctx->branch_start_addrs.top().pop();
+    int32_t true_branch_jump_addr = ctx->branch_addrs.top().pop();
     auto tern_op_end_offset = ctx->program->size() - true_branch_jump_addr - 1;
     auto &instr = (*ctx->program)[true_branch_jump_addr].as<Jmp_t>();
     instr.addr_offset = tern_op_end_offset;
@@ -835,34 +835,34 @@ uint32_t generate_case_cmp(Context_t *ctx, Literal_t &literal) {
 void update_case_jmp(Context_t *ctx, const Token_t &token, uint32_t alts) {
     expr_diag(ctx, diag_code::case_option_branch);
     for (; alts; --alts) {
-        auto addr = ctx->branch_start_addrs.top().pop();
+        auto addr = ctx->branch_addrs.top().pop();
         auto &instr = (*ctx->program)[addr].as<Or_t>();
         instr.addr_offset = ctx->program->size() - addr - 1;
     }
-    ctx->branch_start_addrs.top().push(ctx->program->size());
+    ctx->branch_addrs.top().push(ctx->program->size());
     generate<JmpIfNot_t>(ctx, token.pos);
 }
 
 uint32_t
 generate_case_next(Context_t *ctx, Literal_t &literal, uint32_t alts) {
-    ctx->branch_start_addrs.top().push(ctx->program->size());
+    ctx->branch_addrs.top().push(ctx->program->size());
     generate<Or_t>(ctx, literal.pos);
     generate_case_cmp(ctx, literal);
     return alts + 1;
 }
 
 void finalize_case_branch(Context_t *ctx, const Token_t &token) {
-    auto branch_case_addr = ctx->branch_start_addrs.top().pop();
+    auto branch_case_addr = ctx->branch_addrs.top().pop();
     auto &instr = (*ctx->program)[branch_case_addr].as<JmpIfNot_t>();
     instr.addr_offset = ctx->program->size() - branch_case_addr;
-    ctx->branch_start_addrs.top().push(ctx->program->size());
+    ctx->branch_addrs.top().push(ctx->program->size());
     generate<Jmp_t>(ctx, token.pos);
 }
 
 NAryExpr_t finalize_case(Context_t *ctx, const Token_t &token, uint32_t arity) {
     // update addr offsets of jmp instruction at the end of all branches
     for (auto tmp_arity = arity; --tmp_arity;) {
-        auto branch_end_addr = ctx->branch_start_addrs.top().pop();
+        auto branch_end_addr = ctx->branch_addrs.top().pop();
         auto &instr = (*ctx->program)[branch_end_addr].as<Jmp_t>();
         instr.addr_offset = ctx->program->size() - branch_end_addr - 1;
     }
@@ -1059,7 +1059,7 @@ close_unclosed_ctype(Context_t *ctx, const Pos_t &pos, const Token_t &token) {
 }
 
 void prepare_if(Context_t *ctx, const Pos_t &pos) {
-    ctx->branch_start_addrs.push();
+    ctx->branch_addrs.push();
     ctx->if_stmnt_start_point = {
         pos,
         static_cast<int32_t>(ctx->program->size()),
@@ -1069,7 +1069,7 @@ void prepare_if(Context_t *ctx, const Pos_t &pos) {
 
 void generate_if(Context_t *ctx, const Token_t &token, bool valid_expr) {
     // generate if condition
-    ctx->branch_start_addrs.top().push(ctx->program->size());
+    ctx->branch_addrs.top().push(ctx->program->size());
     generate<JmpIfNot_t>(ctx, token.pos);
 
     // warn about invalid expression
@@ -1099,7 +1099,7 @@ void finalize_if_branch(Context_t *ctx, int32_t shift) {
     // TODO(burlog): optimalize if
 
     // calculate real jump address for last elif/else branch
-    auto branch_addr = ctx->branch_start_addrs.top().pop();
+    auto branch_addr = ctx->branch_addrs.top().pop();
     switch ((*ctx->program)[branch_addr].opcode()) {
     case OPCODE::JMP: {
         auto &instr = (*ctx->program)[branch_addr].as<Jmp_t>();
@@ -1118,8 +1118,8 @@ void finalize_if_branch(Context_t *ctx, int32_t shift) {
 
 void finalize_if(Context_t *ctx) {
     finalize_if_branch(ctx, 1);
-    while (!ctx->branch_start_addrs.top().empty()) {
-        auto branch_addr = ctx->branch_start_addrs.top().pop();
+    while (!ctx->branch_addrs.top().empty()) {
+        auto branch_addr = ctx->branch_addrs.top().pop();
         auto &instr = (*ctx->program)[branch_addr].as<Jmp_t>();
         instr.addr_offset = ctx->program->size() - branch_addr - 1;
     }
@@ -1137,7 +1137,7 @@ void finalize_inv_if(Context_t *ctx, const Pos_t &pos) {
 
 void generate_else(Context_t *ctx, const Token_t &token) {
     finalize_if_branch(ctx, 0);
-    ctx->branch_start_addrs.top().push(ctx->program->size());
+    ctx->branch_addrs.top().push(ctx->program->size());
     generate<Jmp_t>(ctx, token.pos);
 }
 
@@ -1153,12 +1153,12 @@ void generate_inv_else(Context_t *ctx, const Token_t &token) {
 
 void generate_elif(Context_t *ctx, const Token_t &token) {
     finalize_if_branch(ctx, 0);
-    ctx->branch_start_addrs.top().push(ctx->program->size());
+    ctx->branch_addrs.top().push(ctx->program->size());
     generate<Jmp_t>(ctx, token.pos);
 }
 
 void finalize_if_stmnt(Context_t *ctx) {
-    ctx->branch_start_addrs.pop();
+    ctx->branch_addrs.pop();
 }
 
 void finalize_inv_if_stmnt(Context_t *ctx, const Token_t &token) {
@@ -1205,7 +1205,7 @@ void finalize_inv_if_stmnt(Context_t *ctx, const Token_t &token) {
         );
         break;
     }
-    ctx->branch_start_addrs.pop();
+    ctx->branch_addrs.pop();
     ctx->program->erase_from(ctx->if_stmnt_start_point.addr);
     note_error(ctx, token);
     reset_error(ctx);
@@ -1400,7 +1400,7 @@ void new_option(Context_t *ctx, const Token_t &name, Literal_t &&literal) {
 }
 
 void prepare_expr(Context_t *ctx, const Pos_t &pos) {
-    ctx->branch_start_addrs.push();
+    ctx->branch_addrs.push();
 }
 
 void generate_rtvar_segment(Context_t *ctx, const Token_t &token) {

@@ -226,8 +226,7 @@ struct Context_t {
     expr_start_t expr_start_point;      //!< address and pos where exprs starts
     expr_start_t if_stmnt_start_point;  //!< address where if stmnt starts
     rtvar_strings_t rtvar_strings;      //!< positions where rtvar starts
-    // TODO(burlog): proc je tu slovo start, podle me staci branch_addrs
-    addrs_stack_t branch_start_addrs;   //!< addresses of unfinished jumps
+    addrs_stack_t branch_addrs;         //!< addresses of unfinished jumps
     addrs_stack_t case_option_addrs;    //!< the list of addrs of case options
     optim_points_t optimization_points; //!< adresses of "value generators"
     ExprDiag_t expr_diag;               //!< list of expression diagnostic codes

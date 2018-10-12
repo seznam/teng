@@ -160,7 +160,7 @@ Context_t::Context_t(
    open_frames(*program), var_sym(), opts_sym(),
    error_occurred(false), unexpected_token{LEX2::INV, {}, {}},
    expr_start_point{{}, -1, true}, if_stmnt_start_point{{}, -1, true},
-   branch_start_addrs(), case_option_addrs(), optimization_points(),
+   branch_addrs(), case_option_addrs(), optimization_points(),
    escaper(ContentType_t::find(contentType))
 {}
 
