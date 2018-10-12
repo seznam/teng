@@ -121,6 +121,7 @@ template <typename Ctx_t>
 bool
 process(Ctx_t *ctx, std::vector<Value_t> &stack, const SubProgram_t &program) {
     std::vector<Value_t> prg_stack;
+    prg_stack.reserve(128);
     DBG(dump_program(ctx, program, std::cerr));
 
     // syntactic sugar
@@ -495,6 +496,7 @@ void Processor_t::run(const FragmentValue_t &data, Writer_t &writer) {
 
     // run the program
     std::vector<Value_t> stack;
+    stack.reserve(128);
     Formatter_t output(writer);
     RunCtx_t ctx{err, program, dict, params, encoding, ct, data, output};
     process(&ctx, stack, {0, static_cast<int32_t>(program.size()), program});
@@ -511,6 +513,7 @@ Processor_t::eval(const OFFApi_t *frames, int32_t start) {
 
     // init processor context (no run context - we are in compile time)
     std::vector<Value_t> stack;
+    stack.reserve(128);
     Error_t opt_err;
     EvalCtx_t ctx{opt_err, program, dict, params, encoding, frames};
 

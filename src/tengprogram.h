@@ -62,8 +62,7 @@ public:
     /** @short Create new program. */
     Program_t(Error_t &error)
         : sources(), error(error), instrs()
-    {}
-    // TODO(burlog): {instrs.reserve(1024);}
+    {instrs.reserve(1024);}
 
     /** Print whole program into file stream.
      * @param fp File stream for output. */

@@ -162,9 +162,7 @@ Context_t::Context_t(
    expr_start_point{{}, -1, true}, if_stmnt_start_point{{}, -1, true},
    branch_start_addrs(), case_option_addrs(), optimization_points(),
    escaper(ContentType_t::find(contentType))
-{
-    // TODO(burlog): zvazit predalokaci stacku na nejakou "velikost" v 2.0 byla na 100
-}
+{}
 
 Context_t::~Context_t() = default;
 
