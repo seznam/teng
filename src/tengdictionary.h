@@ -137,7 +137,8 @@ protected:
      *
      * Doesn't replace existing entry unless replaceEntries is set to true.
      */
-    virtual std::string *new_entry(std::string name, std::string value);
+    virtual std::string *
+    new_entry(const std::string &name, const std::string &value);
 
     /** Called when new directive parsed.
      */
@@ -148,7 +149,8 @@ protected:
     );
 
     // type for dictionary entries
-    using Entries_t = std::map<std::string, std::string>;
+    struct LocalCmp_t: std::less<string_view_t> {struct is_transparent {};};
+    using Entries_t = std::map<std::string, std::string, LocalCmp_t>;
 
     Entries_t entries;    //!< the dictionary entries
     SourceList_t sources; //!< source files of dictionary entries

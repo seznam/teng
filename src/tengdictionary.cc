@@ -466,7 +466,7 @@ std::string DictParser_t::expand_value(string_view_t value, Pos_t value_pos) {
         }
 
         // compose dict value key
-        std::string key = {iopen + 2, iclose - 1};
+        string_view_t key = {iopen + 2, iclose - 1};
         ivalue = iclose + 1;
 
         // try to find key in so far parsed entries
@@ -475,7 +475,7 @@ std::string DictParser_t::expand_value(string_view_t value, Pos_t value_pos) {
 
         } else {
             expanded.append("#{");
-            expanded.append(key);
+            expanded.append(key.begin(), key.end());
             expanded.push_back('}');
             logWarning(
                 err,
@@ -516,8 +516,7 @@ void DictParser_t::include_file(
 } // namespace
 
 const std::string *Dictionary_t::lookup(const string_view_t &key) const {
-    // TODO(burlog): find bez stringu?
-    auto ientry = entries.find(key.str());
+    auto ientry = entries.find(key);
     return ientry == entries.end()
          ? (key == "_tld"? &get_tld(): nullptr)
          : &ientry->second;
@@ -537,11 +536,10 @@ void Dictionary_t::dump(std::ostream &out) const {
 }
 
 std::string *
-Dictionary_t::new_entry(std::string name, std::string value) {
+Dictionary_t::new_entry(const std::string &name, const std::string &value) {
     return replaceEntries
-        ? &(entries[std::move(name)] = std::move(value))
-        : &entries.emplace(std::move(name), std::move(value))
-          .first->second;
+        ? &(entries[name] = value)
+        : &entries.emplace(name, value).first->second;
 }
 
 Dictionary_t::error_code
@@ -574,7 +572,7 @@ Dictionary_t::new_directive(
 void Dictionary_t::parse(const std::string &filename) {
     DictParser_t parser{this, err, sources, fs_root, expandVars, filename};
     parser.parse(
-        [&] (auto &&name, auto && value, Pos_t name_pos, Pos_t value_pos) {
+        [&] (auto &&name, auto &&value, Pos_t name_pos, Pos_t value_pos) {
             auto result = this->new_directive(
                 name.data(), name.size(),
                 value.data(), value.size()
@@ -618,8 +616,8 @@ void Dictionary_t::parse(const std::string &filename) {
                 break;
             }
 
-        }, [&] (std::string name, std::string value) {
-            return new_entry(std::move(name), std::move(value));
+        }, [&] (const std::string &name, const std::string &value) {
+            return new_entry(name, value);
         }
     );
 #ifdef DEBUG
