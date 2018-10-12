@@ -97,7 +97,6 @@ Result_t round_real(double number, int64_t precision) {
     number *= pow10[precision];
     number = round(number);
     number /= pow10[precision];
-    // TODO(burlog): result.setReal(number, precision);
     return Result_t(number);
 }
 

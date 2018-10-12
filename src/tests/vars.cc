@@ -2231,6 +2231,42 @@ SCENARIO(
                 REQUIRE(result == "TESTundefinedundefined");
             }
         }
+
+        WHEN("Dot syntax is used for list with more frags") {
+            Teng::Error_t err;
+            auto t = "${$$.first.var}";
+            auto result = g(err, t, root);
+
+            THEN("The error report contains valid path") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 11},
+                    "Runtime: The path expression '.first' references "
+                    "fragment list of '3' fragments; "
+                    "the expression is ambiguous [open_frags=., iteration=0]"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "undefined");
+            }
+        }
+
+        WHEN("Dot syntax is used for list with more frags") {
+            Teng::Error_t err;
+            auto t = "${$$.first.var}";
+            auto result = g(err, t, root);
+
+            THEN("The error report contains valid path") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 11},
+                    "Runtime: The path expression '.first' references "
+                    "fragment list of '3' fragments; "
+                    "the expression is ambiguous [open_frags=., iteration=0]"
+                }};
+                REQUIRE(err.getEntries() == errs);
+                REQUIRE(result == "undefined");
+            }
+        }
     }
 }
 
@@ -2294,9 +2330,8 @@ SCENARIO(
                     Teng::Error_t::WARNING,
                     {1, 10},
                     "Runtime: The path expression '.first' references "
-                    "fragment lists which can't be subscripted by values "
-                    "of 'string_ref' type with value 'invalid' "
-                    "[open_frags=., iteration=0]"
+                    "fragment list of '3' fragments; the expression is "
+                    "ambiguous [open_frags=., iteration=0]"
                 }};
                 REQUIRE(err.getEntries() == errs);
                 REQUIRE(result == "undefined");

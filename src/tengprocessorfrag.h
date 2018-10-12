@@ -40,6 +40,7 @@
 #define TENGPROCESSORFRAG_H
 
 #include <sstream>
+#include <limits>
 
 #include "tengprocessorcontext.h"
 
@@ -243,27 +244,57 @@ Result_t push_attr(Ctx_t *ctx, GetArg_t get_arg) {
         return Result_t();
 
     // attempt to get value for desired name
+    std::size_t ambiguous = std::numeric_limits<std::size_t>::infinity();
     auto &instr = ctx->instr->template as<PushAttr_t>();
-    auto result = ctx->frames_ptr->frag_attr(arg, instr.name);
-    if (result.is_undefined()) {
-        auto i = ctx->frames_ptr->current_list_i();
-        if (instr.path.empty()) {
+    auto result = ctx->frames_ptr->value_at(arg, instr.name, ambiguous);
+
+    // attribute has been found
+    if (!result.is_undefined())
+        return result;
+    auto i = ctx->frames_ptr->current_list_i();
+
+    // current fragment does not contain attribute
+    if (instr.path.empty()) {
+        if (ambiguous != std::numeric_limits<std::size_t>::infinity()) {
             logWarning(
                 *ctx,
-                "This fragment doesn't contain any value for key '" + instr.name
-                + "' [open_frags=" + ctx->frames_ptr->current_path()
+                "The key '" + instr.name + "' references frament list of '"
+                + std::to_string(ambiguous) + "' fragments; the expression "
+                "is ambiguous [open_frags=" + ctx->frames_ptr->current_path()
                 + ", iteration=" + std::to_string(i) + "]"
             );
-        } else {
-            logWarning(
-                *ctx,
-                "The path expression '" + instr.path + "' references fragment "
-                "that doesn't contain any value for key '" + instr.name
-                + "' [open_frags=" + ctx->frames_ptr->current_path()
-                + ", iteration=" + std::to_string(i) + "]"
-            );
+            return result;
         }
+        logWarning(
+            *ctx,
+            "This fragment doesn't contain any value for key '" + instr.name
+            + "' [open_frags=" + ctx->frames_ptr->current_path()
+            + ", iteration=" + std::to_string(i) + "]"
+        );
+        return result;
     }
+
+    // the expression is ambiguous
+    if (ambiguous != std::numeric_limits<std::size_t>::infinity()) {
+        logWarning(
+            *ctx,
+            "The path expression '" + instr.path + "' references fragment list "
+            "of '" + std::to_string(ambiguous) + "' fragments; "
+            "the expression is ambiguous"
+            + " [open_frags=" + ctx->frames_ptr->current_path()
+            + ", iteration=" + std::to_string(i) + "]"
+        );
+        return result;
+    }
+
+    // attribute hasn't been found
+    logWarning(
+        *ctx,
+        "The path expression '" + instr.path + "' references fragment "
+        "that doesn't contain any value for key '" + instr.name
+        + "' [open_frags=" + ctx->frames_ptr->current_path()
+        + ", iteration=" + std::to_string(i) + "]"
+    );
     return result;
 }
 
@@ -278,74 +309,92 @@ Result_t push_attr_at(EvalCtx_t *ctx, GetArg_t get_arg) {
         return Result_t();
 
     // attempt to get value for desired index
+    std::size_t ambiguous = std::numeric_limits<std::size_t>::infinity();
     auto &instr = ctx->instr->template as<PushAttrAt_t>();
-    auto result = ctx->frames_ptr->value_at(arg, index);
-    if (result.is_undefined()) {
-        auto i = ctx->frames_ptr->current_list_i();
-        switch (arg.type()) {
-        case Value_t::tag::string:
-        case Value_t::tag::string_ref:
-        case Value_t::tag::undefined:
-        case Value_t::tag::integral:
-        case Value_t::tag::real:
-        case Value_t::tag::regex:
+    auto result = ctx->frames_ptr->value_at(arg, index, ambiguous);
+
+    // attribute has been found
+    if (!result.is_undefined())
+        return result;
+    auto i = ctx->frames_ptr->current_list_i();
+
+    // the expression is ambiguous
+    if (ambiguous != std::numeric_limits<std::size_t>::infinity()) {
+        logWarning(
+            *ctx,
+            "The path expression '" + instr.path + "' references fragment list "
+            "of '" + std::to_string(ambiguous) + "' fragments; "
+            "the expression is ambiguous"
+            " [open_frags=" + ctx->frames_ptr->current_path()
+            + ", iteration=" + std::to_string(i) + "]"
+        );
+        return result;
+    }
+
+    // attribute hasn't been found
+    switch (arg.type()) {
+    case Value_t::tag::string:
+    case Value_t::tag::string_ref:
+    case Value_t::tag::undefined:
+    case Value_t::tag::integral:
+    case Value_t::tag::real:
+    case Value_t::tag::regex:
+        logWarning(
+            *ctx,
+            "The path expression '" + instr.path + "' references object "
+            "of '" + arg.type_str() + "' type with value '"
+            + arg.printable() + "' that is not subscriptable"
+            + " [open_frags=" + ctx->frames_ptr->current_path()
+            + ", iteration=" + std::to_string(i) + "]"
+        );
+        break;
+
+    case Value_t::tag::frag_ref:
+        if (index.is_string_like()) {
             logWarning(
                 *ctx,
-                "The path expression '" + instr.path + "' references object "
-                "of '" + arg.type_str() + "' type with value '"
-                + arg.printable() + "' that is not subscriptable"
+                "The path expression '" + instr.path + "' references "
+                "fragment that doesn't contain any value for key '"
+                + index.string()
+                + "' [open_frags=" + ctx->frames_ptr->current_path()
+                + ", iteration=" + std::to_string(i) + "]"
+            );
+        } else {
+            logWarning(
+                *ctx,
+                "The path expression '" + instr.path + "' references "
+                "fragment which can't be subscripted by values of '"
+                + index.type_str() + "' type with value '"
+                + index.printable()
+                + "' [open_frags=" + ctx->frames_ptr->current_path()
+                + ", iteration=" + std::to_string(i) + "]"
+            );
+        }
+        break;
+    case Value_t::tag::list_ref:
+        if (index.is_number()) {
+            logWarning(
+                *ctx,
+                "The index '" + index.printable() + "' is out of valid "
+                "range <0, "
+                + std::to_string(arg.as_list_ref().ptr->size())
+                + ") of the fragments list referenced by this path "
+                "expression " + instr.path
                 + " [open_frags=" + ctx->frames_ptr->current_path()
                 + ", iteration=" + std::to_string(i) + "]"
             );
-            break;
-
-        case Value_t::tag::frag_ref:
-            if (index.is_string_like()) {
-                logWarning(
-                    *ctx,
-                    "The path expression '" + instr.path + "' references "
-                    "fragment that doesn't contain any value for key '"
-                    + index.string()
-                    + "' [open_frags=" + ctx->frames_ptr->current_path()
-                    + ", iteration=" + std::to_string(i) + "]"
-                );
-            } else {
-                logWarning(
-                    *ctx,
-                    "The path expression '" + instr.path + "' references "
-                    "fragment which can't be subscripted by values of '"
-                    + index.type_str() + "' type with value '"
-                    + index.printable()
-                    + "' [open_frags=" + ctx->frames_ptr->current_path()
-                    + ", iteration=" + std::to_string(i) + "]"
-                );
-            }
-            break;
-        case Value_t::tag::list_ref:
-            if (index.is_number()) {
-                logWarning(
-                    *ctx,
-                    "The index '" + index.printable() + "' is out of valid "
-                    "range <0, "
-                    + std::to_string(arg.as_list_ref().ptr->size())
-                    + ") of the fragments list referenced by this path "
-                    "expression " + instr.path
-                    + " [open_frags=" + ctx->frames_ptr->current_path()
-                    + ", iteration=" + std::to_string(i) + "]"
-                );
-            } else {
-                logWarning(
-                    *ctx,
-                    "The path expression '" + instr.path + "' references "
-                    "fragment lists which can't be subscripted by values "
-                    "of '" + index.type_str() + "' type with value '"
-                    + index.printable()
-                    + "' [open_frags=" + ctx->frames_ptr->current_path()
-                    + ", iteration=" + std::to_string(i) + "]"
-                );
-            }
-            break;
+        } else {
+            logWarning(
+                *ctx,
+                "The path expression '" + instr.path + "' references "
+                "fragment lists which can't be subscripted by values "
+                "of '" + index.type_str() + "' type with value '"
+                + index.printable()
+                + "' [open_frags=" + ctx->frames_ptr->current_path()
+                + ", iteration=" + std::to_string(i) + "]"
+            );
         }
+        break;
     }
     return result;
 }

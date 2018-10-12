@@ -154,7 +154,8 @@ Context_t::Context_t(
     const std::string &contentType
 ): utf8(encoding == "utf-8"),
    program(std::make_unique<Program_t>(err)), dict(dict), params(params),
-   fs_root(fs_root), source_codes(), lex1_stack(), lex2_value(err),
+   fs_root(fs_root), source_codes(), lex1_stack(),
+   lex2_value(params, utf8, err),
    coproc_err(), coproc(coproc_err, *program, *dict, *params),
    open_frames(*program), var_sym(), opts_sym(),
    error_occurred(false), unexpected_token{LEX2::INV, {}, {}},

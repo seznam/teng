@@ -156,10 +156,9 @@ auto scan(flex_string_view_t &d, void *yyscanner) {
 
 } // namespace
 
-Lex2_t::Lex2_t(Error_t &err)
-  : yyscanner(nullptr), buffer(nullptr),
-    err(err), pos(), token_pos(), token_ipos(nullptr),
-    directive(empty_directive)
+Lex2_t::Lex2_t(const Configuration_t *params, bool utf8, Error_t &err)
+  : yyscanner(nullptr), buffer(nullptr), err(err), params(params), utf8(utf8),
+    pos(), token_pos(), token_ipos(nullptr), directive(empty_directive)
 {
     if (teng_lex_init(&yyscanner))
         throw std::runtime_error("can't initalize lex2: " + strerr(errno));

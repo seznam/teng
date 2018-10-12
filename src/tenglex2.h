@@ -88,7 +88,7 @@ class Lex2_t {
 public:
     /** C'tor.
      */
-    Lex2_t(Error_t &err);
+    Lex2_t(const Configuration_t *params, bool utf8, Error_t &err);
 
     /** D'tor.
      */
@@ -152,13 +152,15 @@ protected:
     Lex2_t(const Lex2_t &) = delete;
     Lex2_t &operator=(const Lex2_t &) = delete;
 
-    void *yyscanner;              //!< reentrant flex lexer instance
-    void *buffer;                 //!< buffer for flex lexer
-    Error_t &err;                 //!< error log
-    Pos_t pos;                    //!< current pos on "page"
-    Pos_t token_pos;              //!< start pos of not yet fully parsed token
-    const char *token_ipos;       //!< ptr to first char of not yet fully ...
-    flex_string_view_t directive; //!< the teng directive source code
+    void *yyscanner;               //!< reentrant flex lexer instance
+    void *buffer;                  //!< buffer for flex lexer
+    Error_t &err;                  //!< error log
+    const Configuration_t *params; //!< configuration
+    bool utf8;                     //!< true if template is in utf8 encoding
+    Pos_t pos;                     //!< current pos on "page"
+    Pos_t token_pos;               //!< start pos of not yet fully parsed token
+    const char *token_ipos;        //!< ptr to first char of not yet fully ...
+    flex_string_view_t directive;  //!< the teng directive source code
 };
 
 } // namespace Parser

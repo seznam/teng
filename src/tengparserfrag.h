@@ -222,7 +222,11 @@ public:
      * that expression is unoptimizable.
      */
     Value_t
-    frag_attr(const Value_t &offsets, string_view_t name) const override {
+    value_at(
+        const Value_t &offsets,
+        const string_view_t &name,
+        std::size_t &
+    ) const override {
         return evaluate(
             offsets,
             [&] (auto &frag_rec, uint16_t frame_offset, uint16_t frag_offset) {
@@ -238,7 +242,11 @@ public:
      * to i-th frag name then the index to next frag is returned.
      */
     Value_t
-    value_at(const Value_t &offsets, const Value_t &idx) const override {
+    value_at(
+        const Value_t &offsets,
+        const Value_t &idx,
+        std::size_t &ambiguous
+    ) const override {
         if (offsets.is_undefined())
             throw runtime_ctx_needed_t();
         switch (idx.type()) {
@@ -253,9 +261,9 @@ public:
                 return offsets;
             throw runtime_ctx_needed_t();
         case Value_t::tag::string:
-            return frag_attr(offsets, idx.string());
+            return value_at(offsets, idx.string(), ambiguous);
         case Value_t::tag::string_ref:
-            return frag_attr(offsets, idx.string());
+            return value_at(offsets, idx.string(), ambiguous);
         case Value_t::tag::frag_ref:
             throw runtime_ctx_needed_t();
         case Value_t::tag::list_ref:
@@ -375,7 +383,7 @@ protected:
         return frag_ident | 0xffff;
     }
 
-    /** Calls desired callback with valied frame and frag offsets.
+    /** Calls desired callback with valid frame and frag offsets.
      */
     template <typename call_t>
     Value_t evaluate(const Value_t &offsets, call_t &&call) const {

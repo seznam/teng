@@ -278,7 +278,6 @@ Lex1_t::Token_t Lex1_t::next() {
     int32_t start_column = pos.colno;
 
     auto incr_pos = [&] {
-        // TODO(burlog): move this branch somewhere at the begin of Lex1_t c'tor?
         if (utf8) {
             auto byte = static_cast<uint8_t>(source_code[offset]);
             switch (byte >> 4) {

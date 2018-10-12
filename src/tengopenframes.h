@@ -110,7 +110,8 @@ inline const Fragment_t *get_frag(const Value_t &self) {
  * The implicit conversion of one-length-list to frags allows simplyfied dot
  * syntax of runtime variables e.g. "$$a.b.c" instead of e.g. "$$a[0].b[0].c".
  */
-inline const Fragment_t *get_lone_frag(const Value_t &self) {
+inline const Fragment_t *
+get_lone_frag(const Value_t &self, std::size_t &ambiguous) {
     switch (self.type()) {
     case Value_t::tag::undefined:
     case Value_t::tag::integral:
@@ -124,7 +125,7 @@ inline const Fragment_t *get_lone_frag(const Value_t &self) {
     case Value_t::tag::list_ref:
         if (self.as_list_ref().ptr->size() == 1)
             return self.as_list_ref().ptr->begin()->fragment();
-        // TODO(burlog): tell the user that the expression is ambigous
+        ambiguous = self.as_list_ref().ptr->size();
         return nullptr;
     }
 }
@@ -505,15 +506,23 @@ public:
 
     /** Returns the value for desired name.
      */
-    Value_t frag_attr(const Value_t &arg, string_view_t name) const override {
-        return get_attr(get_lone_frag(arg), name);
-    }
+    Value_t
+    value_at(
+        const Value_t &arg,
+        const string_view_t &name,
+        std::size_t &ambiguous
+    ) const override {return get_attr(get_lone_frag(arg, ambiguous), name);}
 
     /** If the idx argument is numeric and arg is list then idx-th list item is
      * returned. Or if the idx argument is string and arg is convertible to
      * fragment then the value for the name stored in idx.
      */
-    Value_t value_at(const Value_t &arg, const Value_t &idx) const override {
+    Value_t
+    value_at(
+        const Value_t &arg,
+        const Value_t &idx,
+        std::size_t &ambiguous
+    ) const override {
         switch (idx.type()) {
         case Value_t::tag::undefined:
             return Value_t();
@@ -522,9 +531,9 @@ public:
         case Value_t::tag::real:
             return get_value_at(arg, idx.as_real());
         case Value_t::tag::string:
-            return frag_attr(arg, idx.as_string());
+            return value_at(arg, idx.as_string(), ambiguous);
         case Value_t::tag::string_ref:
-            return frag_attr(arg, idx.as_string_ref());
+            return value_at(arg, idx.as_string_ref(), ambiguous);
         case Value_t::tag::frag_ref:
             return Value_t();
         case Value_t::tag::list_ref:

@@ -49,25 +49,44 @@ namespace Teng {
  */
 struct runtime_ctx_needed_t {};
 
-/** 
+/** The API that implements common functionality accessing of fragments. It is
+ * used to simulate fragmnets tree during parsing to allow expression
+ * optimalizer optimalize exressions.
  */
 struct OFFApi_t {
     /** D'tor.
      */
     virtual ~OFFApi_t() noexcept = default;
 
-    virtual Value_t frag(uint16_t frame_offset, uint16_t frag_offset) const = 0;
+    /** Returns fragments at given open frame/fragments offsets.
+     */
+    virtual Value_t
+    frag(uint16_t frame_offset, uint16_t frag_offset) const = 0;
 
-    virtual Value_t frag_attr(const Value_t &, string_view_t) const = 0;
+    /** Returns fragment value of desired name.
+     */
+    virtual Value_t
+    value_at(const Value_t &, const string_view_t &, std::size_t &) const = 0;
 
-    virtual Value_t value_at(const Value_t &, const Value_t &) const = 0;
+    /** Returns fragment/list value of desire name/index.
+     */
+    virtual Value_t
+    value_at(const Value_t &, const Value_t &, std::size_t &) const = 0;
 
+    /** Returns names of open fragments in current frame joined by dots.
+     */
     virtual std::string current_path() const = 0;
 
+    /** Returns index of the current fragmnet in current openerd fragment list.
+     */
     virtual std::size_t current_list_i() const = 0;
 
+    /** Returns "representation" of desired value.
+     */
     virtual Value_t repr(const Value_t &) const = 0;
 
+    /** Returns true if value is not "undefined" value.
+     */
     virtual Value_t exists(const Value_t &) const = 0;
 };
 

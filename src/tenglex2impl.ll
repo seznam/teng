@@ -771,7 +771,8 @@ UTF_CHAR    {UTF_2_CHAR}|{UTF_3_CHAR}|{UTF_4_CHAR}|{UTF_5_CHAR}|{UTF_6_CHAR}
     // TODO(burlog): fix the error message for utf-8 == false
     // utf-8 character rule
     std::string tmp(yytext, yyleng);
-    logError(err, pos, "Unexpected utf-8 encoded character '" + tmp + "'");
+    if (utf8) logError(err, pos, "Unexpected utf-8 encoded character '" + tmp + "'");
+    else  logError(err, pos, "Unexpected binary character '" + tmp + "'");
     return make_token(LEX2::INV, yytext, yytext + yyleng);
 }
 
