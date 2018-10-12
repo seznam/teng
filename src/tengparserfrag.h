@@ -153,7 +153,7 @@ public:
         std::string result = ".";
         for (auto i = 1u; i < frags.size(); ++i) {
             if (i > 1) result.push_back('.');
-            result.append(frags[i].name.str());
+            result.append(frags[i].name.data(), frags[i].name.size());
         }
         return result;
     }

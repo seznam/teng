@@ -640,11 +640,11 @@ void generate_val(Context_t *ctx, const Pos_t &pos, Value_t value) {
 
 void generate_dict_lookup(Context_t *ctx, const Token_t &token) {
     // find item in dictionary
-    if (auto *item = ctx->dict->lookup(token.str()))
+    if (auto *item = ctx->dict->lookup(token.view()))
         return generate<Val_t>(ctx, *item, token.pos);
 
     // find item in param/config dictionary
-    if (auto *item = ctx->params->lookup(token.str()))
+    if (auto *item = ctx->params->lookup(token.view()))
         return generate<Val_t>(ctx, *item, token.pos);
 
     // use ident as result value

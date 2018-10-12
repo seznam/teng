@@ -72,8 +72,7 @@ inline int64_t fix_negative_i(int64_t i, std::size_t max_i) {
 inline Value_t get_attr(const Fragment_t *frag, const string_view_t &name) {
     if (!frag)
         return Value_t();
-    // TODO(burlog): nejaky zpusob, jak hledat bez vytvareni stringu?
-    auto ivalue = frag->find(name.str());
+    auto ivalue = frag->find(name);
     if (ivalue == frag->end())
         return Value_t();
     return Value_t(&ivalue->second);
@@ -328,7 +327,7 @@ struct FrameRec_t {
         std::string result = ".";
         for (auto i = 1u; i < open_frags.size(); ++i) {
             if (i > 1) result.push_back('.');
-            result.append(open_frags[i].name.str());
+            result.append(open_frags[i].name.data(), open_frags[i].name.size());
         }
         return result;
     }

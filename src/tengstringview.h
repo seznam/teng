@@ -104,7 +104,7 @@ bool operator==(
     const string_view_facade_t<rhs_char_t> &rhs
 ) {
     return (lhs.size() == rhs.size())
-        && (strncmp(lhs.data(), rhs.data(), lhs.size()) == 0);
+        && !std::char_traits<char>::compare(lhs.data(), rhs.data(), lhs.size());
 }
 
 /** Returns true if two views represents other strings.
@@ -124,8 +124,9 @@ bool operator<(
     const string_view_facade_t<lhs_char_t> &lhs,
     const string_view_facade_t<rhs_char_t> &rhs
 ) {
+    using traits = std::char_traits<char>;
     auto min_size = std::min(lhs.size(), rhs.size());
-    if (auto res = strncmp(lhs.data(), rhs.data(), min_size))
+    if (auto res = traits::compare(lhs.data(), rhs.data(), min_size))
         return res < 0;
     return lhs.size() < rhs.size();
 }
@@ -304,13 +305,23 @@ public:
  */
 inline bool operator==(const string_view_t &lhs, const string_view_t &rhs) {
     return (lhs.size() == rhs.size())
-        && (strncmp(lhs.data(), rhs.data(), lhs.size()) == 0);
+        && !std::char_traits<char>::compare(lhs.data(), rhs.data(), lhs.size());
 }
 
 /** Returns true if two views represents other strings.
  */
 inline bool operator!=(const string_view_t &lhs, const string_view_t &rhs) {
     return !(lhs == rhs);
+}
+
+/** Returns true if two views represents same strings.
+ */
+inline bool operator<(const string_view_t &lhs, const string_view_t &rhs) {
+    using traits = std::char_traits<char>;
+    auto min_size = std::min(lhs.size(), rhs.size());
+    if (auto res = traits::compare(lhs.data(), rhs.data(), min_size))
+        return res < 0;
+    return lhs.size() < rhs.size();
 }
 
 /** Represent string view that optionaly can hold the data.

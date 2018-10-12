@@ -50,6 +50,14 @@ class Fragment_t;
 class FragmentValue_t;
 class FragmentList_t;
 
+/** Transparent string comparator.
+ */
+struct StrCmp_t {
+    template <typename Lhs_t, typename Rhs_t>
+    bool operator()(Lhs_t &&lhs, Rhs_t &&rhs) const {return lhs < rhs;}
+    struct is_transparent {};
+};
+
 /**
  * @short Single fragment. Maps names to variables and nested fragments.
  */
@@ -57,7 +65,7 @@ class Fragment_t {
 public:
     // types
     using Item_t = FragmentValue_t;
-    using Items_t = std::map<std::string, Item_t>;
+    using Items_t = std::map<std::string, Item_t, StrCmp_t>;
     using const_iterator = Items_t::const_iterator;
     using iterator = Items_t::iterator;
 
@@ -158,8 +166,8 @@ public:
     /**
      * @short Returns iterator to fragment item of desired name.
      */
-    const_iterator
-    find(const std::string &name) const {return items.find(name);}
+    template <typename Type_t>
+    const_iterator find(Type_t &&name) const {return items.find(name);}
 
     /**
      * @short Returns iterator to fragment item of desired name.
