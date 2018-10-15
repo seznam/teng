@@ -46,10 +46,10 @@ Template_t::~Template_t() {
     }
 }
 
-TemplateCache_t::TemplateCache_t(const std::string &root,
+TemplateCache_t::TemplateCache_t(const FilesystemInterface_t *filesystem,
                                  unsigned int programCacheSize,
                                  unsigned int dictCacheSize)
-    : root(root),
+    : filesystem(filesystem),
       programCache(new ProgramCache_t
                    (programCacheSize
                     ? programCacheSize
@@ -86,9 +86,9 @@ TemplateCache_t::createTemplate(const std::string &templateSource,
     // create key from source file names
     std::vector<std::string> key;
     if (sourceType == SRC_STRING) tengCreateStringKey(templateSource, key);
-    else tengCreateKey(root, templateSource, key);
-    tengCreateKey(root, langFilename, key);
-    tengCreateKey(root, configFilename, key);
+    else tengCreateKey(templateSource, key);
+    tengCreateKey(langFilename, key);
+    tengCreateKey(configFilename, key);
 
     // cached program
     unsigned long int programSerial;
@@ -100,16 +100,16 @@ TemplateCache_t::createTemplate(const std::string &templateSource,
     bool reload = (!cachedProgram
                    || (configSerial != programDependSerial)
                    || (configAndDict.first->isWatchFilesEnabled()
-                       && cachedProgram->check()));
+                       && cachedProgram->check(filesystem)));
 
     if (reload) {
         // create new program
         Program_t *program = (sourceType == SRC_STRING)
             ?
-            ParserContext_t(configAndDict.second, configAndDict.first, root)
+            ParserContext_t(configAndDict.second, configAndDict.first, filesystem)
             .createProgramFromString(templateSource)
             :
-            ParserContext_t(configAndDict.second, configAndDict.first, root)
+            ParserContext_t(configAndDict.second, configAndDict.first, filesystem)
             .createProgramFromFile(templateSource);
 
         // add program into cache
@@ -130,7 +130,7 @@ TemplateCache_t::getConfigAndDict(const std::string &configFilename,
 {
     // find or create configuration
     std::vector<std::string> key;
-    tengCreateKey(root, configFilename, key);
+    tengCreateKey(configFilename, key);
 
     unsigned long int configSerial = 0;
     unsigned long int configDependSerial = 0;
@@ -139,7 +139,7 @@ TemplateCache_t::getConfigAndDict(const std::string &configFilename,
     if (!cachedConfig
         || (cachedConfig->isWatchFilesEnabled() && cachedConfig->check())) {
         // not found or changed -> create new configionary
-        Configuration_t *config = new Configuration_t(root);
+        Configuration_t *config = new Configuration_t(filesystem);
         // parse file
         if (!configFilename.empty()) config->parse(configFilename);
         // add configionary to cache and return it
@@ -147,7 +147,7 @@ TemplateCache_t::getConfigAndDict(const std::string &configFilename,
     }
 
     // reuse key for dictionary
-    tengCreateKey(root, dictFilename, key);
+    tengCreateKey(dictFilename, key);
 
     // find or create dictionary
     unsigned long int dictSerial = 0;
@@ -158,7 +158,7 @@ TemplateCache_t::getConfigAndDict(const std::string &configFilename,
     if (!cachedDict || (dictDependSerial != configSerial)
         || (cachedConfig->isWatchFilesEnabled() && cachedDict->check())) {
         // not found or changed -> create new dictionary
-        Dictionary_t *dict = new Dictionary_t(root);
+        Dictionary_t *dict = new Dictionary_t(filesystem);
         // parse file
         if (!dictFilename.empty()) dict->parse(dictFilename);
         // add dictionary to cache and return it

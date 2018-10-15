@@ -50,6 +50,8 @@
 
 namespace Teng {
 
+class FilesystemInterface_t;
+
 /** Parser context contains all necessary parsing-time data. */
 struct ParserContext_t {
 
@@ -62,7 +64,7 @@ struct ParserContext_t {
      * @param root Application's root path for teng files. */
     ParserContext_t(const Dictionary_t *langDictionary,
                     const Configuration_t *paramDictionary,
-                    const std::string &root);
+                    const FilesystemInterface_t *filesystem);
 
     /** Delete lexical analyzer objects left on the stack. */
     ~ParserContext_t();
@@ -124,8 +126,7 @@ struct ParserContext_t {
     /** Language-independent dictionary (param.conf). */
     const Configuration_t *paramDictionary;
 
-    /** Application root path (templates and dictionaries) */
-    std::string root;
+    const FilesystemInterface_t* filesystem;
 
     /** Lexical analyzer (level 1) object. */
     std::stack<Lex1_t *> lex1;

@@ -40,13 +40,14 @@
 
 #include <string>
 #include <vector>
-#include <cstdio>
 #include <map>
 
 #include "tengerror.h"
 #include "tengsourcelist.h"
 
 namespace Teng {
+
+class FilesystemInterface_t;
 
 /**
  * @short Dictionary -- mapping of string to string value.
@@ -60,8 +61,8 @@ public:
      *
      * @param root path of root for locating files
      */
-    Dictionary_t(const std::string &root)
-        : root(root), level(0), sources(), err(), expandValue(false),
+    Dictionary_t(const FilesystemInterface_t *filesystem)
+        : filesystem(filesystem), level(0), sources(), err(), expandValue(false),
         replaceValue(false)
     {}
 
@@ -102,7 +103,7 @@ public:
      * @return 0 OK !0 changed
      */
     inline int check() const {
-        return sources.isChanged();
+        return sources.isChanged(filesystem);
     }
 
     /**
@@ -139,7 +140,8 @@ protected:
      * @param pos position in current file
      * @return 0 OK !0 error
      */
-    virtual int parseString(const std::string &data, Error_t::Position_t &pos);
+    virtual int parseString(const std::string &data,
+                            Error_t::Position_t &pos);
 
     /**
      * @short Parses value line.
@@ -197,7 +199,8 @@ protected:
      * @param pos position in current file
      * @return 0 OK !0 error
      */
-    int parse(const std::string &filename, Error_t::Position_t &pos);
+    int parse(const std::string &filename,
+              Error_t::Position_t &pos);
 
     /**
      * @short Maximal number of dictionary file inclusion.
@@ -205,9 +208,9 @@ protected:
     static const unsigned int MAX_RECURSION_LEVEL = 10;
 
     /**
-     * @short Root directory for file lookup.
+     * @short Filesystem for file lookup.
      */
-    std::string root;
+    const FilesystemInterface_t *filesystem;
 
     /**
      * @short Current level of recursion. Valid only when parsing.
@@ -236,15 +239,6 @@ private:
      *        disabled.
      */
     Dictionary_t operator=(const Dictionary_t&);
-
-    /**
-     * @short Parses dicionary from given file. Worker function.
-     *
-     * @param file file open for reading
-     * @param pos position in current file
-     * @return 0 OK !0 error
-     */
-    int parse(FILE *file, Error_t::Position_t &pos);
 
     /**
      * @short The dictionary itself.

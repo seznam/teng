@@ -43,6 +43,8 @@
 #include "tengdictionary.h"
 
 namespace Teng {
+    
+class FilesystemInterface_t;
 
 /**
  * @short Configuration -- language independed dictionary and
@@ -55,7 +57,7 @@ public:
      *
      * @param root path of root for locating files
      */
-    Configuration_t(const std::string &root = std::string());
+    Configuration_t(const FilesystemInterface_t *filesystem);
 
     /**
      * @short Destroy dictionary object.

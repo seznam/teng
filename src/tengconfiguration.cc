@@ -43,8 +43,8 @@
 
 namespace Teng {
 
-Configuration_t::Configuration_t(const std::string &root)
-    : Dictionary_t(root), debug(false), errorFragment(false),
+Configuration_t::Configuration_t(const FilesystemInterface_t *filesystem)
+    : Dictionary_t(filesystem), debug(false), errorFragment(false),
       logToOutput(false), bytecode(false), watchFiles(true),
       alwaysEscape(true), shortTag(false), maxIncludeDepth(10),
       format(true), maxDebugValLength(40)

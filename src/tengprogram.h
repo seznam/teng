@@ -62,8 +62,8 @@ public:
 
     /** @short Check source files for change.
       * @return 0=OK !0=changed. */
-    inline int check() const {
-        return sources.isChanged();
+    inline int check(const FilesystemInterface_t* filesystem) const {
+        return sources.isChanged(filesystem);
     }
 
     /** @short Return error log.
@@ -81,9 +81,10 @@ public:
     /** @short Adds new source into the list.
       * @param source Filename of source.
       * @param pos Position in current file. */
-    inline unsigned int addSource(const std::string &source,
+    inline unsigned int addSource(const FilesystemInterface_t* filesystem,
+                           const std::string &source,
                            const Error_t::Position_t &pos) {
-        return sources.addSource(source, pos, error);
+        return sources.addSource(filesystem,source, pos, error);
     }
 
     /** Get source's filename based on index in source list.

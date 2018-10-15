@@ -60,8 +60,7 @@ typedef std::vector<std::string> Key_t;
  * @param key key vector (result)
  * @return 0 OK !0 error
  */
-int tengCreateKey(const std::string &root,
-                  const std::string &filename, std::vector<std::string> &key);
+int tengCreateKey(const std::string &filename, std::vector<std::string> &key);
 
 /**
  * @short

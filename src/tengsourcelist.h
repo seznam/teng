@@ -44,6 +44,7 @@
 #include <sys/types.h>
 
 #include "tengerror.h"
+#include "tengfilesystem.h"
 
 namespace Teng {
 
@@ -59,8 +60,7 @@ struct FileStat_t {
      * @param filename associated file name.
      */
     FileStat_t(const std::string &filename = std::string())
-        : filename(filename), inode(0), size(0),
-          mtime(0), ctime(0), valid(false)
+        : filename(filename), hash(0), valid(false)
     {}
 
 
@@ -71,7 +71,8 @@ struct FileStat_t {
      * @param err error logger
      * @return 0 OK !0 error
      */
-    int stat(const Error_t::Position_t &pos,
+    int stat(const FilesystemInterface_t* filesystem,
+             const Error_t::Position_t &pos,
              Error_t &err);
 
     /**
@@ -81,9 +82,7 @@ struct FileStat_t {
      * @return true if values are the same false otherwise
      */
     bool operator==(const FileStat_t &fs) const {
-        return ((filename == fs.filename) && (inode == fs.inode) &&
-                (size == fs.size) && (mtime == fs.mtime) &&
-                (ctime == fs.ctime));
+        return ((filename == fs.filename) && (hash == fs.hash));
     }
 
     /**
@@ -112,24 +111,9 @@ struct FileStat_t {
     std::string filename;
 
     /**
-     * @short Inode of file.
+     * @short Hash of file.
      */
-    ino_t inode;
-
-    /**
-     * @short Size of file.
-     */
-    off_t size;
-
-    /**
-     * @short Last modification of file.
-     */
-    time_t mtime;
-
-    /**
-     * @short Last attribute modification of file.
-     */
-    time_t ctime;
+    size_t hash;
 
     /**
      * @short Indicates that data came from stat(2).
@@ -155,7 +139,8 @@ public:
      * @param err error logger
      * @return position of added source in list
      */
-    unsigned int addSource(const std::string &source,
+    unsigned int addSource(const FilesystemInterface_t* filesystem,
+                           const std::string &source,
                            const Error_t::Position_t &pos,
                            Error_t &err);
 
@@ -165,7 +150,7 @@ public:
      *
      * @return true means modified; false not modified or error
      */
-    bool isChanged() const;
+    bool isChanged(const FilesystemInterface_t* filesystem) const;
 
     /** @short Get source by given index.
      *

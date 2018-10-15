@@ -534,12 +534,8 @@ teng_include:
                 ERR(ERROR, $1.pos, "Cannot include a file; template "
                         "nesting level is too deep");
             } else {
-                // glue filename
-                std::string fname = i->second;
-                if (!CONTEXT->root.empty() && !fname.empty() && fname[0] != '/')
-                    fname = CONTEXT->root + "/" + fname;
                 // create new level #1 lex analyzer with file input
-                CONTEXT->lex1.push(new Lex1_t(fname,
+                CONTEXT->lex1.push(new Lex1_t(CONTEXT->filesystem, i->second,
                         CONTEXT->lex1.top()->getPosition(),
                         CONTEXT->program->getErrors())); //new lex1
                 // lex2 state should be 0 now (or after a while)
@@ -547,7 +543,7 @@ teng_include:
                 CONTEXT->lex2 = 0; //for sure
                 // append source list
                 CONTEXT->sourceIndex.push( //remember source index
-                        CONTEXT->program->addSource(fname,
+                        CONTEXT->program->addSource(CONTEXT->filesystem, i->second,
                         CONTEXT->lex1.top()->getPosition()));
             }
         }

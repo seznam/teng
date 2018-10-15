@@ -43,8 +43,10 @@
 
 #include "teng.h"
 #include "tengudf.h"
+#include "tengfilesystem.h"
 
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 
 #if PY_VERSION_HEX < 0x02050000 && !defined(PY_SSIZE_T_MIN)
@@ -72,6 +74,133 @@ static const std::string DEFAULT_DEFAULT_ENCODING = "utf-8";
 
 /** @short Format used when no format supplied */
 static const std::string DEFAULT_DEFAULT_CONTENT_TYPE = "";
+
+
+static int stringFromPythonString(PyObject *pystr, std::string &str) {
+#if MY_PYTHON_VER < 16
+    // get plain string
+    char *value = PyString_AsString(pystr);
+    if (!value) return -1;
+    // append it to given string
+    str.append(value);
+#else
+    // get plain string
+    char *value;
+    Py_ssize_t valueLength;
+    if (PyString_AsStringAndSize(pystr, &value, &valueLength))
+        return -1;
+    // append it to given string
+    str.append(value, valueLength);
+#endif
+    // OK
+    return 0;
+}
+
+
+class FilesystemWrapper_t : public FilesystemInterface_t {
+    PyObject* callback;
+
+public:
+    FilesystemWrapper_t(PyObject* callback)
+        : callback(callback)
+    {
+        Py_XINCREF(callback);
+    }
+
+    ~FilesystemWrapper_t() { Py_XDECREF(callback); }
+    
+    static bool checkObject(PyObject* callback)
+    {
+        PyObject* func_name = PyString_FromString("read");
+        if (!PyObject_HasAttr(callback, func_name)) {
+            Py_XINCREF(func_name);
+            PyErr_SetString(PyExc_TypeError, "parameter fileSystem must have function read(name)");
+            return false;
+        }
+        Py_XINCREF(func_name);
+        
+        func_name = PyString_FromString("hash");
+        if (!PyObject_HasAttr(callback, func_name)) {
+            Py_XINCREF(func_name);
+            PyErr_SetString(PyExc_TypeError, "parameter fileSystem must have function hash(name)");
+            return false;
+        }
+        Py_XINCREF(func_name);
+        
+        return true;
+    }
+
+    virtual std::string read(const std::string& filename) const
+    {
+        std::string result;
+
+        PyObject* str = PyObject_CallMethod(callback, "read", "z", filename.c_str());
+        if (!str) {
+            throw std::runtime_error("Failed to call python fileSystem.read callback.");
+        }
+
+        int res = getString(result, str);
+
+        if (res != 0) {
+            Py_DECREF(str);
+            if (res == -2) {
+                throw std::runtime_error("No such file '" + filename
+                                         + " in python fileSystem callback.");
+            }
+            throw std::runtime_error("Result of fileSystem callback is not string or None.");
+        }
+
+        Py_DECREF(str);
+        return result;
+    }
+    
+    virtual size_t hash(const std::string& filename) const
+    {
+        size_t result = 0;
+        
+        PyObject* data = PyObject_CallMethod(callback, "hash", "z", filename.c_str());
+        if (!data) {
+            throw std::runtime_error("Failed to call python fileSystem.hash callback.");
+        }
+        
+        if (PyInt_Check(data)) {
+            result = PyInt_AsLong(data);
+        } else if (PyLong_Check(data)) {
+            result = PyLong_AsLongLong(data);
+        }
+        else {
+            Py_DECREF(data);
+            throw std::runtime_error("Result of fileSystem.hash callback is not integer.");
+        }
+        if (PyErr_Occurred()) {
+            Py_DECREF(data);
+            throw std::runtime_error("Failed to convert result of python fileSystem.hash callback.");
+        }
+        Py_DECREF(data);
+        return result;
+    }
+
+    static int getString(std::string& value, PyObject* data)
+    {
+        if (PyString_Check(data)) {
+            return stringFromPythonString(data, value);
+#if MY_PYTHON_VER > 15
+        } else if (PyUnicode_Check(data)) {
+            PyObject* str = PyUnicode_AsEncodedString(data, "utf-8", "replace");
+            if (!str) return -1;
+            if (stringFromPythonString(str, value)) {
+                Py_XDECREF(str);
+                return -1;
+            }
+            Py_XDECREF(str);
+            return 0;
+#endif
+        } else if (data == Py_None) {
+            return -2;
+        }
+        return -1;
+    }
+};
 
 /**
  * @short Python Teng object (teng.Teng).
@@ -173,7 +302,7 @@ PyObject* Teng_Teng(TengObject *self, PyObject *args, PyObject *keywds) {
     static const char *kwlist[] = {"root", "encoding", "contentType",
                                    "logToOutput", "errorFragment",
                                    "validate", "templateCacheSize",
-                                   "dictionaryCacheSize", 0};
+                                   "dictionaryCacheSize", "fileSystem", 0};
 
     // argument values
     const char *root = 0;
@@ -184,15 +313,22 @@ PyObject* Teng_Teng(TengObject *self, PyObject *args, PyObject *keywds) {
     int validate = 0;
     int templateCacheSize = 0;
     int dictionaryCacheSize = 0;
+    PyObject* fileSystem = 0;
 
     // parse arguments
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "|zzziiiii:Teng",
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "|zzziiiiiO:Teng",
                                     (char **)kwlist,
                                      &root, &encoding, &contentType,
                                      &logToOutput, &errorFragment,
                                      &validate, &templateCacheSize,
-                                     &dictionaryCacheSize))
+                                     &dictionaryCacheSize, &fileSystem))
         return 0;
+
+    if (fileSystem) {
+        if (!FilesystemWrapper_t::checkObject(fileSystem)) {
+            return 0;
+        }
+    }
 
     if (templateCacheSize < 0) templateCacheSize = 0;
     if (dictionaryCacheSize < 0) dictionaryCacheSize = 0;
@@ -214,7 +350,14 @@ PyObject* Teng_Teng(TengObject *self, PyObject *args, PyObject *keywds) {
 
     try {
         // create teng object
-        new (&s->teng) Teng_t((root) ? root : std::string(), settings);
+        if (fileSystem) {
+            std::auto_ptr<FilesystemInterface_t> fsInterface(new FilesystemWrapper_t(fileSystem));
+            new (&s->teng) Teng_t(fsInterface.get(), settings);
+            fsInterface.release();
+        }
+        else {
+            new (&s->teng) Teng_t((root) ? root : std::string(), settings);
+        }
 
         // set default encoding
         new (&s->defaultEncoding) std::string(encoding ? encoding
@@ -231,26 +374,6 @@ PyObject* Teng_Teng(TengObject *self, PyObject *args, PyObject *keywds) {
 
     // return created teng object
     return reinterpret_cast<PyObject*>(s);
-}
-
-static int stringFromPythonString(PyObject *pystr, std::string &str) {
-#if MY_PYTHON_VER < 16
-    // get plain string
-    char *value = PyString_AsString(pystr);
-    if (!value) return -1;
-    // append it to given string
-    str.append(value);
-#else
-    // get plain string
-    char *value;
-    Py_ssize_t valueLength;
-    if (PyString_AsStringAndSize(pystr, &value, &valueLength))
-        return -1;
-    // append it to given string
-    str.append(value, valueLength);
-#endif
-    // OK
-    return 0;
 }
 
 /**
