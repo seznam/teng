@@ -53,6 +53,8 @@ AC_CONFIG_FILES([tests/Makefile])
 
 # check for C++ compiler
 AC_PROG_CXX
+AC_LANG_CPLUSPLUS
+AX_CHECK_COMPILE_FLAG([-std=c++11], [],[AC_MSG_ERROR([Compiler without c++11])])
 
 # pkg config
 PKG_PROG_PKG_CONFIG([0.25])
@@ -145,7 +147,6 @@ AC_CHECK_HEADERS(fenv.h)
 AC_CHECK_LIB(m, floor)
 AC_REPLACE_FUNCS([trunc round])
 
-AC_LANG_CPLUSPLUS
 AC_CHECK_LIB([pcre++], [_init],,AC_MSG_ERROR([pcre++ not installed]))
 
 AX_CHECK_COMPILE_FLAG([-std=c++14], [

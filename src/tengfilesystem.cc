@@ -20,14 +20,13 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <functional>
 #include <stdexcept>
 #include <stdio.h>
 
 #include "tengfilesystem.h"
-#include "tengutil.h"
 #include "tengplatform.h"
-
-#include <boost/functional/hash.hpp>
+#include "tengutil.h"
 
 namespace Teng {
     
@@ -40,6 +39,13 @@ static std::string makeFilename(const std::string& root, const std::string& file
 
     tengNormalizeFilename(filename);
     return filename;
+}
+
+template<class S>
+static void hashCombine(std::size_t& seed, S const& value)
+{
+    std::size_t hash = std::hash<S>{}(value);
+    seed ^= hash + 0x9e3779b9 + (seed<<6) + (seed>>2); // or use boost::hash_combine
 }
 
 Filesystem_t::Filesystem_t(const std::string& root_)
@@ -96,10 +102,10 @@ size_t Filesystem_t::hash(const std::string& filename_) const
         throw std::runtime_error("File '" + filename + "' is a directory");
     }
 
-    boost::hash_combine(seed, buf.st_ino);
-    boost::hash_combine(seed, buf.st_size);
-    boost::hash_combine(seed, buf.st_mtime);
-    boost::hash_combine(seed, buf.st_ctime);
+    hashCombine(seed, buf.st_ino);   // unsigned long int - inode number
+    hashCombine(seed, buf.st_size);  // long - total size, in bytes
+    hashCombine(seed, buf.st_mtime); // long - time of last modification
+    hashCombine(seed, buf.st_ctime); // long - time of last status change
 
     return seed;
 }

@@ -39,7 +39,7 @@
 AM_CXXFLAGS = -Wall
 
 # extra compiler options
-AM_CPPFLAGS = -D_ISOC99_SOURCE -fPIC ${DEPENS_CFLAGS}
+AM_CPPFLAGS = -std=c++11 -D_ISOC99_SOURCE -fPIC ${DEPENS_CFLAGS}
 
 # these are generated and thus ought to be prepared before anything else
 BUILT_SOURCES = tenglex2.cc tengsyntax.cc
