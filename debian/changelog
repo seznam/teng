@@ -1,3 +1,13 @@
+libteng (2.3.23) stable; urgency=low
+
+  * Custom filesystem support (#8)
+  * 
+  * * git ignore for generated files
+  * * Add FilesystemInterface_t support
+  * * use std::hash and C++11
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Mon, 22 Oct 2018 06:40:54 +0100
+
 libteng (2.3.22) stable; urgency=low
 
   * fix calling udf
