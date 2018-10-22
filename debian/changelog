@@ -1,3 +1,9 @@
+libteng (2.3.24) stable; urgency=low
+
+  * add autoconf-archive to build-depends
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Mon, 22 Oct 2018 07:16:09 +0100
+
 libteng (2.3.23) stable; urgency=low
 
   * Custom filesystem support (#8)
