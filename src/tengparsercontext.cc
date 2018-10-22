@@ -56,9 +56,9 @@ extern std::string tengSyntax_lastErrorMessage;
   * Also creates some dynamic objects (fragment stack and error-log). */
 ParserContext_t::ParserContext_t(const Dictionary_t *langDictionary,
                                  const Configuration_t *paramDictionary,
-                                 const std::string &root)
+                                 const FilesystemInterface_t *filesystem)
     : langDictionary(langDictionary), paramDictionary(paramDictionary),
-      root(root), lex2(0), program(0),
+      filesystem(filesystem), lex2(0), program(0),
       lowestValPrintAddress(0), evalProcessor(0)
 {
 }
@@ -105,18 +105,12 @@ Program_t* ParserContext_t::createProgramFromFile(
             "", //encoding (program is invariant to it)
             ContentType_t::getDefault()->contentType); //content-type (invariant)
 
-    // prepend root if filename not absolute path
-    std::string path;
-    if (!root.empty() && !filename.empty() && !ISROOT(filename))
-        path = root + "/" + filename;
-    else
-        path = filename;
     // add source to source list -- main template will always have index 0
     // and also remember returned sourceindex
-    sourceIndex.push(program->addSource(path, Error_t::Position_t()));
+    sourceIndex.push(program->addSource(filesystem, filename, Error_t::Position_t()));
 
     // create first level-1 lexical analyzer (from file)
-    lex1.push(new Lex1_t(path, Error_t::Position_t("", 0, 0),
+    lex1.push(new Lex1_t(filesystem, filename, Error_t::Position_t("", 0, 0),
                          program->getErrors()));
     // reset lex2
     lex2 = 0;

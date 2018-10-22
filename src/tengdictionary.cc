@@ -42,15 +42,15 @@
 #include <ctype.h>
 #include <errno.h>
 
-#include <stdio.h>
-
 #include "tengdictionary.h"
+#include "tengfilesystem.h"
 #include "tengplatform.h"
 #include "tengaux.h"
 
 namespace Teng {
 
-int Dictionary_t::parse(const std::string &filename) {
+int Dictionary_t::parse(const std::string &filename)
+{
     level = MAX_RECURSION_LEVEL;
     Error_t::Position_t pos(filename);
     return parse(filename, pos);
@@ -412,55 +412,20 @@ int Dictionary_t::parseString(const std::string &data,
     return ret;
 }
 
-int Dictionary_t::parse(const std::string &infilename,
+int Dictionary_t::parse(const std::string &filename,
                         Error_t::Position_t &pos)
 {
-    // if relative path => prepend root
-    std::string filename = infilename;
-    if (!filename.empty() && !ISROOT(filename) && (!root.empty()))
-        filename = root + '/' + filename;
-
     // insert source into source list
-    sources.addSource(filename, pos, err);
+    sources.addSource(filesystem, filename, pos, err);
 
-    // open file
-    FILE *file = fopen(filename.c_str(), "r");
-    if (!file) {
-        // on error, log it
-        err.logSyscallError(Error_t::LL_ERROR, pos,
-                            "Cannot open file '" + filename + "'");
-        return -1;
+    try {
+        Error_t::Position_t newPos(filename, 1);
+        return parseString(filesystem->read(filename), newPos);
     }
-
-    // create new positioner
-    Error_t::Position_t newPos(filename, 1);
-    // parse file
-    int status = parse(file, newPos);
-    // close file
-    fclose(file);
-    // return status
-    return status;
-}
-
-int Dictionary_t::parse(FILE *file, Error_t::Position_t &pos) {
-    // loaded string
-    std::string str;
-    // read whole file into memory
-    while (!(feof(file) || ferror(file))) {
-        char buff[1024];
-        size_t r = fread(buff, 1, 1024, file);
-        if (r)
-            str.append(buff, r);
+    catch (const std::exception &e) {
+        err.logSyscallError(Error_t::LL_ERROR, pos, e.what());
     }
-
-    // on error report it and terminate processing
-    if (ferror(file)) {
-        err.logSyscallError(Error_t::LL_ERROR, pos, "Error reading file");
-        return -1;
-    }
-
-    // parse loaded string
-    return parseString(str, pos);
+    return -1;
 }
 
 int Dictionary_t::processDirective(const std::string &directive,

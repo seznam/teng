@@ -43,6 +43,8 @@
 
 namespace Teng {
 
+class FilesystemInterface_t;
+
 class Lex1_t {
 public:
 
@@ -76,10 +78,12 @@ public:
     Lex1_t(const std::string &input, const std::string &filename);
 
     /** Initialize lexical analyzer from file.
+      * @param filesystem Filesystem to use.
       * @param filename Input file to read.
       * @param position Position in source file.
       * @param error Error log class for dumping possible errors. */
-    Lex1_t(const std::string &filename,
+    Lex1_t(const FilesystemInterface_t *filesystem,
+           const std::string &filename,
            const Error_t::Position_t &position,
            Error_t &error);
 

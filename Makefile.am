@@ -34,8 +34,8 @@
 #                   Created.
 #
 
-SUBDIRS = src
-# directories temporarily out of order: 'test', 'doc'
+SUBDIRS = . src tests
+# directories temporarily out of order: 'doc'
 
 #
 # Removed due to this request:

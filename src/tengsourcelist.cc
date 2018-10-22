@@ -45,47 +45,32 @@
 
 namespace Teng {
 
-int FileStat_t::stat(const Error_t::Position_t &pos,
+int FileStat_t::stat(const FilesystemInterface_t* filesystem,
+                     const Error_t::Position_t &pos,
                      Error_t &err)
 {
     // invalidate data;
     valid = false;
-
-    // stat given file
-    struct stat buf;
-    if (::stat(filename.c_str(), &buf)) {
-        err.logSyscallError(Error_t::LL_ERROR, pos, "Cannot stat file '" +
-                            filename +"'");
+    
+    try {
+        hash = filesystem->hash(filename);
+    }
+    catch(std::exception& ex) {
+        err.logSyscallError(Error_t::LL_ERROR, pos, ex.what());
         return -1;
     }
-
-    // check if not dir
-    if (S_ISDIR(buf.st_mode)) {
-        err.logError(Error_t::LL_ERROR, pos, "File '" + filename +
-                     "' is a directory");
-        return -1;
-    }
-
-    // populate members of fileInfo from stat
-    inode = buf.st_ino;
-    size = buf.st_size;
-    mtime = buf.st_mtime;
-    ctime = buf.st_ctime;
-
+   
     // validate data
     valid = true;
     // OK
     return 0;
 }
 
-unsigned int SourceList_t::addSource(const std::string &_source,
+unsigned int SourceList_t::addSource(const FilesystemInterface_t* filesystem,
+                                     const std::string &source,
                                      const Error_t::Position_t &pos,
                                      Error_t &err)
 {
-    // normalize filename
-    std::string source = _source;
-    tengNormalizeFilename(source);
-
     // create source info
     FileStat_t fs(source);
 
@@ -98,14 +83,14 @@ unsigned int SourceList_t::addSource(const std::string &_source,
     }
 
     // stat file
-    fs.stat(pos, err);
+    fs.stat(filesystem, pos, err);
 
     // push info into source list
     sources.push_back(fs);
     return sources.size() - 1;
 }
 
-bool SourceList_t::isChanged() const {
+bool SourceList_t::isChanged(const FilesystemInterface_t* filesystem) const {
     Error_t err;
     Error_t::Position_t pos;
     // run through source list
@@ -113,7 +98,7 @@ bool SourceList_t::isChanged() const {
          isources != sources.end(); ++isources) {
         // stat file
         FileStat_t fs(isources->filename);
-        if (fs.stat(pos, err) && isources->valid)
+        if (fs.stat(filesystem, pos, err) && isources->valid)
             return true;
         // compare with cached value
         if (fs != *isources) return true;

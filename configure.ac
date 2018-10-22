@@ -49,9 +49,12 @@ AM_SILENT_RULES
 
 # tell autoconf where to find sources
 AC_CONFIG_SRCDIR([src/teng.cc])
+AC_CONFIG_FILES([tests/Makefile])
 
 # check for C++ compiler
 AC_PROG_CXX
+AC_LANG_CPLUSPLUS
+AX_CHECK_COMPILE_FLAG([-std=c++11], [],[AC_MSG_ERROR([Compiler without c++11])])
 
 # pkg config
 PKG_PROG_PKG_CONFIG([0.25])
@@ -129,6 +132,14 @@ AC_ARG_ENABLE(lock-udf,[ --disable-udf-locks compile without thread safe UDF],[
 AM_PROG_LEX
 AC_PROG_YACC
 
+AX_BOOST_BASE([1.48],, [AC_MSG_ERROR([tests needs Boost, but it was not found in your system])])
+AX_BOOST_SYSTEM
+AX_BOOST_FILESYSTEM
+AX_BOOST_UNIT_TEST_FRAMEWORK
+AC_SUBST(BOOST_FILESYSTEM_LIB)
+AC_SUBST(BOOST_SYSTEM_LIB)
+AC_SUBST(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+
 # check for special header files
 AC_CHECK_HEADERS(fenv.h)
 
@@ -136,8 +147,14 @@ AC_CHECK_HEADERS(fenv.h)
 AC_CHECK_LIB(m, floor)
 AC_REPLACE_FUNCS([trunc round])
 
-AC_LANG_CPLUSPLUS
 AC_CHECK_LIB([pcre++], [_init],,AC_MSG_ERROR([pcre++ not installed]))
+
+AX_CHECK_COMPILE_FLAG([-std=c++14], [
+    check_cpp14="true"
+    AC_MSG_NOTICE([Compiler with c++14, test are enabled.])
+],[AC_MSG_NOTICE([Compiler without c++14, test are disabled.])])
+
+AM_CONDITIONAL([CPP14], [test x$check_cpp14 == xtrue])
 
 AS_IF([test x$check_pthreads == xyes], [
     # Check for nonglibc header from serr library. The library is not

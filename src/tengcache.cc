@@ -46,17 +46,9 @@
 
 namespace Teng {
 
-int tengCreateKey(const std::string &root,
-                  const std::string &_filename,
+int tengCreateKey(const std::string &filename,
                   std::vector<std::string> &key)
 {
-    std::string filename = _filename;
-    // if filename is relative prepend root
-    if (!filename.empty() && !ISROOT(filename))
-        filename = root + '/' + filename;
-
-    // normalize filename
-    tengNormalizeFilename(filename);
     // add it to the key
     key.push_back(filename);
     return 0;

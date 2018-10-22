@@ -39,13 +39,14 @@
 AM_CXXFLAGS = -Wall
 
 # extra compiler options
-AM_CPPFLAGS = -D_ISOC99_SOURCE -fPIC ${DEPENS_CFLAGS}
+AM_CPPFLAGS = -std=c++11 -D_ISOC99_SOURCE -fPIC ${DEPENS_CFLAGS}
 
 # these are generated and thus ought to be prepared before anything else
 BUILT_SOURCES = tenglex2.cc tengsyntax.cc
 
 # install these headers
-include_HEADERS = teng.h tengstructs.h tengwriter.h tengerror.h tengconfig.h tengudf.h
+include_HEADERS = teng.h tengfilesystem.h tengstructs.h tengwriter.h \
+                  tengerror.h tengconfig.h tengudf.h
 
 noinst_HEADERS = tengcache.h tengcode.h tengcontenttype.h \
                  tengdictionary.h tengformatter.h tengfragmentstack.h \
@@ -60,8 +61,9 @@ lib_LTLIBRARIES = libteng.la
 
 # from the these sources
 libteng_la_SOURCES = teng.cc tengstructs.cc tengutil.cc tengcache.cc \
-                     tengsourcelist.cc tengdictionary.cc tenginstruction.cc \
-                     tengparservalue.cc tengparsercontext.cc tengprogram.cc \
+                     tengsourcelist.cc tengdictionary.cc tengfilesystem.cc \
+                     tenginstruction.cc tengparservalue.cc \
+                     tengparsercontext.cc tengprogram.cc \
                      tengfunction.cc tengprocessor.cc tengwriter.cc \
                      tengformatter.cc tengcontenttype.cc \
                      tengtemplate.cc tenglex1.cc tengsyntax.yy \

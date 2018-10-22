@@ -50,6 +50,7 @@
 namespace Teng {
 
 class TemplateCache_t;
+class FilesystemInterface_t;
 
 /** @short Templating engine.
  */
@@ -84,6 +85,12 @@ public:
      *  @param settings teng options
      */
     Teng_t(const std::string &root, const Settings_t &settings);
+
+    /** @short Create new engine.
+     *  @param settings teng options
+     *  @param filesystem Filesystem to use; ownership is transferred
+     */
+    Teng_t(FilesystemInterface_t *filesystem, const Settings_t &settings);
 
     /** @short Destroy engine.
      */
@@ -171,9 +178,9 @@ private:
 
     void init(const Settings_t &settings);
 
-    /** @short Root of relative paths.
+    /** @short Holds filesystem implementation.
      */
-    std::string root;
+    FilesystemInterface_t *filesystem;
 
     /** @short Cache of templates.
      */
