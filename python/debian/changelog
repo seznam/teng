@@ -1,3 +1,9 @@
+python-teng (2.3.12) stable; urgency=low
+
+  * python (build) depends on libteng-dev (>= 2.3.24)
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Mon, 29 Oct 2018 07:18:35 +0100
+
 python-teng (2.3.11) stable; urgency=low
 
   * Custom filesystem support (#8)
