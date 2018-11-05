@@ -62,7 +62,7 @@ SCENARIO(
                     {1, 10},
                     "Unexpected token: name=BITXOR, view=^"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "žžžundefinedššš");
             }
         }
@@ -105,7 +105,7 @@ SCENARIO(
                     {1, 4},
                     "Unexpected token: name=INV, view=š"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -126,7 +126,7 @@ SCENARIO(
 
             THEN("The precedence of parentheses is respected") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "2");
             }
         }
@@ -138,7 +138,7 @@ SCENARIO(
 
             THEN("The precedence of operators is respected") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "4");
             }
         }
@@ -150,7 +150,7 @@ SCENARIO(
 
             THEN("The precedence of operators is respected") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "-4");
             }
         }
@@ -175,7 +175,7 @@ SCENARIO(
                     {1, 7},
                     "Runtime: Left operand of - numeric operator is string_ref"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefinedc");
             }
         }
@@ -195,7 +195,7 @@ SCENARIO(
                     {1, 10},
                     "Runtime: Left operand of + numeric operator is undefined"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -216,7 +216,7 @@ SCENARIO(
                     {1, 6},
                     "Unexpected token: name=R_PAREN, view=)"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -250,7 +250,7 @@ SCENARIO(
                     "Invalid expression, fix it please; replacing whole "
                     "expression with undefined value"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(res == "undefinedhi");
             }
         }
@@ -274,7 +274,7 @@ SCENARIO(
                     {1, 3},
                     "Unexpected token: name=INV, view=/*1}"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(res == "1hi");
             }
         }
@@ -299,7 +299,7 @@ SCENARIO(
                     "Invalid expression, fix it please; replacing whole "
                     "expression with undefined value"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(res == "undefinedhi");
             }
         }
@@ -323,7 +323,7 @@ SCENARIO(
                     {1, 13},
                     "Unexpected token: name=INV, view=/*1?>"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(res == "1hi");
             }
         }

@@ -55,7 +55,7 @@ OpenFrames_t::~OpenFrames_t() {
             logWarning(
                 program.getErrors(),
                 program[frag.addr].pos(),
-                "Unclosed <?teng frag " + frag.name + "?> directive"
+                "Unclosed <?teng frag " + frag.name() + "?> directive"
             );
         }
         if (size() == 1) return;

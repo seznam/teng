@@ -53,7 +53,7 @@ SCENARIO(
 
             THEN("The result is number up to 3") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == Approx(3).epsilon(1));
             }
         }
@@ -78,7 +78,7 @@ SCENARIO(
                     {1, 2},
                     "numformat(): the function expects from 2 to 4 args"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -94,7 +94,7 @@ SCENARIO(
                     {1, 2},
                     "numformat(): the function expects from 2 to 4 args"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -106,7 +106,7 @@ SCENARIO(
 
             THEN("The result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "123.123,5");
             }
         }
@@ -127,7 +127,7 @@ SCENARIO(
 
             THEN("The result is integral part") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "3.0");
             }
         }
@@ -139,7 +139,7 @@ SCENARIO(
 
             THEN("The result is integral part plus one") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "4.0");
             }
         }
@@ -160,7 +160,7 @@ SCENARIO(
 
             THEN("The result is a number") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "3");
             }
         }
@@ -172,7 +172,7 @@ SCENARIO(
 
             THEN("The result is a number") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "3");
             }
         }
@@ -184,7 +184,7 @@ SCENARIO(
 
             THEN("The result is a number") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "3");
             }
         }
@@ -204,7 +204,7 @@ SCENARIO(
                     {1, 17},
                     "Runtime: Left operand of + numeric operator is undefined"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -224,7 +224,7 @@ SCENARIO(
                     {1, 20},
                     "Runtime: Left operand of + numeric operator is undefined"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -245,7 +245,7 @@ SCENARIO(
 
             THEN("The result is true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -257,7 +257,7 @@ SCENARIO(
 
             THEN("The result is true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -269,7 +269,7 @@ SCENARIO(
 
             THEN("The result is false") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -281,7 +281,7 @@ SCENARIO(
 
             THEN("The result is false") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }

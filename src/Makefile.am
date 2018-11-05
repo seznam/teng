@@ -110,7 +110,8 @@ test_teng_SOURCES = tests/main.cc tests/old.cc tests/fun-escaping.cc \
 		    tests/expr-regex.cc tests/ctype.cc tests/cond.cc \
 		    tests/expr-tern.cc tests/expr-case.cc tests/fun-date.cc \
 		    tests/fun-number.cc tests/fun-string.cc tests/fun-other.cc \
-		    tests/queries.cc tests/debug.cc
+		    tests/queries.cc tests/debug.cc tests/rtvars.cc \
+		    tests/builtin-vars.cc
 
 AM_COLOR_TESTS = always
 TESTS = test-teng

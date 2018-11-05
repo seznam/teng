@@ -91,7 +91,7 @@ SCENARIO(
 
             THEN("Dangerous characters are escaped") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "some&lt;b&gt;text&amp;'&quot;");
             }
         }
@@ -109,7 +109,7 @@ SCENARIO(
 
             THEN("Dangerous characters are escaped") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "some<b>#text&\\'\\\"");
             }
         }
@@ -130,7 +130,7 @@ SCENARIO(
 
             THEN("Dangerous characters are unescaped") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "some<b>text&'\"");
             }
         }
@@ -148,7 +148,7 @@ SCENARIO(
 
             THEN("Dangerous characters are unescaped") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "some<b>#text&'\"");
             }
         }
@@ -169,7 +169,7 @@ SCENARIO(
 
             THEN("The 'quoted string' characters are escaped") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "some<b>text&\\'\\\"\\n");
             }
         }
@@ -187,7 +187,7 @@ SCENARIO(
 
             THEN("The 'quoted string' characters are escaped") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "some<b>text&\\'\\\"\\n");
             }
         }
@@ -209,7 +209,7 @@ SCENARIO(
 
             THEN("%{} directives are handled as regular text") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "%{unescape('s&lt;b&gt;t&amp;\\'&quot;')}");
             }
         }
@@ -228,7 +228,7 @@ SCENARIO(
 
             THEN("%{} directives are handled as regular text") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "%{unescape('some<b>#text&\\'\\\"')}");
             }
         }
@@ -244,7 +244,7 @@ SCENARIO(
 
             THEN("Dangerous characters are escaped") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "some&lt;b&gt;text&amp;'&quot;");
             }
         }
@@ -262,7 +262,7 @@ SCENARIO(
 
             THEN("Dangerous characters are escaped") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "some<b>#text&\\'\\\"");
             }
         }

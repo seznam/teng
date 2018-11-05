@@ -43,6 +43,8 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "tengfragmentvalue.h"
+#include "tengfragmentlist.h"
 #include "tengposition.h"
 #include "tengerror.h"
 
@@ -75,37 +77,14 @@ translate(
     return filenames.back().second;
 }
 
-} // namespace
-
-Error_t::~Error_t() noexcept {
-    for (auto item: filenames)
-        free(item.second);
-}
-
-std::string Error_t::Entry_t::getLogLine() const {
-    std::ostringstream out;
-    dump(out);
-    out << '\n';
-    return out.str();
-}
-
-void Error_t::Entry_t::dump(std::ostream &out) const {
-    static const char *LS[] = {"Debug", "Warning", "Diag", "Error", "Fatal"};
-    out << to_pos_t(pos) << " " << LS[level] << ": " << msg;
-}
-
-void Error_t::dump(std::ostream &out) const {
-    for (auto &entry: getEntries())
-        out << entry << std::endl;
-}
-
-std::vector<Error_t::Entry_t> Error_t::getEntries() const {
-    using Record_t = decltype(records)::value_type;
-    using Message_t = RecordValue_t::Message_t;
+template <typename Records_t>
+std::vector<Error_t::Entry_t> make_error_log(const Records_t &records) {
+    using Record_t = typename Records_t::value_type;
+    using Message_t = typename Records_t::mapped_type::Message_t;
 
     // lambda converting record to entry
     auto make_entry = [] (const Record_t *record, const Message_t &msg) {
-        return Entry_t{
+        return Error_t::Entry_t{
             msg.level,
             {record->first.filename, record->first.lineno, record->first.colno},
             msg.text
@@ -114,8 +93,8 @@ std::vector<Error_t::Entry_t> Error_t::getEntries() const {
 
     // lambda creating message for the number of ignored messages
     auto make_ignored = [] (const Record_t *record) {
-        return Entry_t{
-            Level_t::WARNING,
+        return Error_t::Entry_t{
+            Error_t::Level_t::WARNING,
             {record->first.filename, record->first.lineno, record->first.colno},
             "The " + std::to_string(record->second.ignored)
             + " other error message(s) for this source code position "
@@ -124,7 +103,7 @@ std::vector<Error_t::Entry_t> Error_t::getEntries() const {
     };
 
     // appends entry to log with according to source code positions
-    auto push_back = [] (auto &&result, Entry_t &&entry) {
+    auto push_back = [] (auto &&result, Error_t::Entry_t &&entry) {
         result.push_back(std::move(entry));
         for (auto i = result.size() - 1; i > 0; --i) {
             auto &lhs = result[i - 1];
@@ -153,16 +132,58 @@ std::vector<Error_t::Entry_t> Error_t::getEntries() const {
 
     // generate error entries according records order
     std::vector<Error_t::Entry_t> result;
-    result.reserve(records.size() * max_messages_per_pos);
+    result.reserve(records.size() * Error_t::max_messages_per_pos);
     for (auto *record: ordered_records) {
         // regular entries
         for (auto &msg: record->second.messages)
             push_back(result, make_entry(record, msg));
+        // discarded entries warning
         if (record->second.ignored > 0)
             push_back(result, make_ignored(record));
     }
 
     // done
+    return result;
+}
+
+} // namespace
+
+Error_t::~Error_t() noexcept {
+    for (auto item: filenames)
+        ::free(item.second);
+}
+
+std::string Error_t::Entry_t::getLogLine() const {
+    std::ostringstream out;
+    dump(out);
+    out << '\n';
+    return out.str();
+}
+
+void Error_t::Entry_t::dump(std::ostream &out) const {
+    static const char *LS[] = {"Debug", "Warning", "Diag", "Error", "Fatal"};
+    out << to_pos_t(pos) << " " << LS[level] << ": " << msg;
+}
+
+void Error_t::dump(std::ostream &out) const {
+    for (auto &entry: getEntries())
+        out << entry << std::endl;
+}
+
+std::vector<Error_t::Entry_t> Error_t::getEntries() const {
+    return make_error_log(records);
+}
+
+FragmentList_t Error_t::getFrags() const {
+    FragmentList_t result;
+    for (auto &entry: make_error_log(records)) {
+        auto &frag = result.addFragment();
+        frag.addVariable("filename", entry.pos.filename);
+        frag.addVariable("line", entry.pos.lineno);
+        frag.addVariable("column", entry.pos.colno);
+        frag.addVariable("level", static_cast<int>(entry.level));
+        frag.addVariable("message", entry.msg);
+    }
     return result;
 }
 

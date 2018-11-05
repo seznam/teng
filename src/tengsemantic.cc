@@ -59,20 +59,6 @@ namespace Teng {
 namespace Parser {
 namespace {
 
-template <int beg_offset, int end_offset, typename type_t>
-struct interval_view_t {
-    auto begin() const {return std::next(container.begin(), beg_offset);}
-    auto end() const {return std::prev(container.end(), end_offset);}
-    type_t &container;
-};
-
-template <int n, typename type_t>
-auto skip_last_n(type_t &&container) {
-    return interval_view_t<0, n, type_t>{container};
-}
-
-// TODO(burlog): split this file to more .cc
-
 /** Generates set var instruction.
  */
 void set_var_impl(Context_t *ctx, const Variable_t &var) {
@@ -92,9 +78,18 @@ void set_var_impl(Context_t *ctx, const Variable_t &var) {
         ctx->program->erase_from(ctx->expr_start_point.addr);
         break;
 
+    case LEX2::BUILTIN_ERROR:
+        logError(
+            ctx,
+            var.pos,
+            "Builtin fragment '" + var.str() + "' can't be set"
+        );
+        ctx->program->erase_from(ctx->expr_start_point.addr);
+        break;
+
     case LEX2::VAR:   // $ident
     case LEX2::IDENT: // ident
-        if (var.ident.name().front() == '_') {
+        if (var.ident.name().view().front() == '_') {
             logWarning(
                 ctx,
                 var.pos,
@@ -112,6 +107,12 @@ void set_var_impl(Context_t *ctx, const Variable_t &var) {
     case LEX2::NE_DIGRAPH:
     case LEX2::AND_TRIGRAPH:
     case LEX2::OR_DIGRAPH:
+    case LEX2::DEFINED:
+    case LEX2::REPR:
+    case LEX2::ISEMPTY:
+    case LEX2::EXISTS:
+    case LEX2::TYPE:
+    case LEX2::COUNT:
     case LEX2::CASE:
         generate<Set_t>(ctx, var);
         break;
@@ -129,7 +130,7 @@ void set_var_impl(Context_t *ctx, const Variable_t &var) {
 
 /** Generates var instruction.
  */
-void generate_var_impl(Context_t *ctx, Variable_t &var) {
+void generate_var_impl(Context_t *ctx, const Variable_t &var) {
     // generate var instruction
     switch (var.id) {
     case LEX2::BUILTIN_FIRST:
@@ -147,8 +148,11 @@ void generate_var_impl(Context_t *ctx, Variable_t &var) {
     case LEX2::BUILTIN_COUNT:
         generate<PushFragCount_t>(ctx, var);
         break;
+    case LEX2::BUILTIN_THIS:
+        generate<PushFrag_t>(ctx, var);
+        break;
     case LEX2::BUILTIN_PARENT:
-        if (var.frag_offset >= ctx->open_frames.top().size()) {
+        if (var.offset.frag >= ctx->open_frames.top().size()) {
             logWarning(
                 ctx,
                 var.pos,
@@ -156,15 +160,18 @@ void generate_var_impl(Context_t *ctx, Variable_t &var) {
                 "converting it to _this"
             );
             generate<PushFrag_t>(ctx, var);
-        } else generate<PushFrag_t>(ctx, var, var.frag_offset + 1);
+        } else generate<PushFrag_t>(ctx, var, var.offset.frag + 1);
         break;
-    case LEX2::BUILTIN_THIS:
-        generate<PushFrag_t>(ctx, var);
+
+    case LEX2::BUILTIN_ERROR:
+        ctx->params->isErrorFragmentEnabled()
+            ? generate<PushErrorFrag_t>(ctx, false, var.pos)
+            : generate<Var_t>(ctx, var, true);
         break;
 
     case LEX2::VAR:   // $ident
     case LEX2::IDENT: // ident
-        if (var.ident.name().front() == '_') {
+        if (var.ident.name().view().front() == '_') {
             logWarning(
                 ctx,
                 var.pos,
@@ -174,6 +181,7 @@ void generate_var_impl(Context_t *ctx, Variable_t &var) {
             );
         }
         // pass through
+
     case LEX2::LT_DIGRAPH:
     case LEX2::LE_DIGRAPH:
     case LEX2::GT_DIGRAPH:
@@ -182,6 +190,12 @@ void generate_var_impl(Context_t *ctx, Variable_t &var) {
     case LEX2::NE_DIGRAPH:
     case LEX2::AND_TRIGRAPH:
     case LEX2::OR_DIGRAPH:
+    case LEX2::DEFINED:
+    case LEX2::REPR:
+    case LEX2::ISEMPTY:
+    case LEX2::EXISTS:
+    case LEX2::TYPE:
+    case LEX2::COUNT:
     case LEX2::CASE:
         generate<Var_t>(ctx, var, true);
         break;
@@ -197,15 +211,42 @@ void generate_var_impl(Context_t *ctx, Variable_t &var) {
     }
 }
 
-/** Local variables has scalar offsets.
+/** Converts relative variable to absolute.
+ *
+ * Assumption: var_sym offsets are valid
  */
-void resolve_local_var(Context_t *ctx, Variable_t &var_sym) {
-    var_sym.frame_offset = 0;
-    var_sym.frag_offset = 0;
+Identifier_t make_absolute_ident(Context_t *ctx, const Variable_t &var_sym) {
+    Identifier_t abs_ident(/*relative*/false);
+
+    // get variable frame
+    auto &frame = *(ctx->open_frames.end() - var_sym.offset.frame - 1);
+
+    // get variable open fragments prefix
+    auto path_size = frame.size() - var_sym.offset.frag;
+    auto ident_suffix_size = var_sym.ident.size() - 1; // omit variable name
+    auto root_prefix_size = path_size - ident_suffix_size;
+
+    // copy path from root to the first segment of the variable identifier
+    auto ifrag = frame.begin();
+    auto efrag = frame.begin() + root_prefix_size;
+    for (; ifrag != efrag; ++ifrag)
+        abs_ident.push_back(ifrag->token);
+
+    // then copy all segments in variable identifier
+    for (auto &segment: var_sym.ident)
+        abs_ident.push_back(segment);
+
+    return abs_ident;
+}
+
+/** Local variable has scalar offsets.
+ */
+Variable_t::Offset_t resolve_local_var(Context_t *ctx) {
+    return {0, 0};
 }
 
 /** Attemps resolve relative variable in any open frames in reverse order. It
- * does not _ANY_ check that variable is relative. The examples explains
+ * does not do _ANY_ check that variable is relative. The examples explains
  * resolution better than long explanations.
  *
  * frames: .a.b.c, .a.d, .a.b
@@ -220,7 +261,11 @@ void resolve_local_var(Context_t *ctx, Variable_t &var_sym) {
  * then ident c.x refers to .a.b.c.x in -2 frame
  * then ident a.b.c.x refers to .a.b.c.x in -2 frame
  */
-void resolve_relative_var(Context_t *ctx, Variable_t &var_sym) {
+Variable_t::Offset_t
+resolve_relative_var(Context_t *ctx, const Variable_t &var_sym) {
+    // initialied to invalid offsets
+    Variable_t::Offset_t offset;
+
     // try resolve relative variable path in any open frames
     auto irframe = ctx->open_frames.rbegin();
     auto erframe = ctx->open_frames.rend();
@@ -229,32 +274,33 @@ void resolve_relative_var(Context_t *ctx, Variable_t &var_sym) {
         // does open fragments in current frame contain our ident
         auto irel_start_at = irframe->resolve_relative(var_sym.ident);
         if (irel_start_at != irframe->end()) {
-            Identifier_t abs_ident(false);
 
-            // if so copy path from root to the first ident segment to new ident
-            auto ifrag = irframe->begin();
-            for (; ifrag != irel_start_at; ++ifrag)
-                abs_ident.push_back(ifrag->name);
+            // the size of path from root to the first var identifier
+            auto root_prefix_size = irel_start_at - irframe->begin();
 
-            // then copy all ident segments to new ident
-            for (auto &segment: var_sym.ident)
-                abs_ident.push_back(segment);
+            // the size of path from ident (omit variable name)
+            auto ident_suffix_size = var_sym.ident.size() - 1;
 
-            // and break the search (and return absolute var)
-            auto path_size = abs_ident.size() - 1;
-            var_sym.frame_offset = irframe - ctx->open_frames.rbegin();
-            var_sym.frag_offset = irframe->size() - path_size;
-            var_sym.ident = std::move(abs_ident);
-            return;
+            // the whole path is size of root prefix plus ident size
+            auto path_size = root_prefix_size + ident_suffix_size;
+
+            // calc offsets
+            offset.frame = irframe - ctx->open_frames.rbegin();
+            offset.frag = irframe->size() - path_size;
+            break;
         }
     }
+    return offset;
 }
 
 /** Absolute vars can refer to variables in any open frame and open fragment
- * but not to closed one. If absolute variable can't be resolved then it is
- * left untouched.
+ * but not to closed one.
  */
-void resolve_abs_var(Context_t *ctx, Variable_t &var_sym) {
+Variable_t::Offset_t
+resolve_abs_var(Context_t *ctx, const Variable_t &var_sym) {
+    // initialied to invalid offsets
+    Variable_t::Offset_t offset;
+
     // find frame where open frags list matches variable path (in reverse order)
     auto irframe = ctx->open_frames.rbegin();
     auto erframe = ctx->open_frames.rend();
@@ -265,9 +311,9 @@ void resolve_abs_var(Context_t *ctx, Variable_t &var_sym) {
         for (std::size_t i = 0, frag_count = irframe->size();; ++i) {
             // if we match whole identifier then we resolved the var
             if (i >= ident_size) {
-                var_sym.frame_offset = irframe - ctx->open_frames.rbegin();
-                var_sym.frag_offset = irframe->size() - i;
-                return;
+                offset.frame = irframe - ctx->open_frames.rbegin();
+                offset.frag = irframe->size() - i;
+                return offset;
             }
 
             // if identifier is longer than count of open frags then variable
@@ -278,10 +324,76 @@ void resolve_abs_var(Context_t *ctx, Variable_t &var_sym) {
             // if current identifier segment does not match open frame name
             // then variable can't be resolved in current frame, so let's try
             // another one
-            if (var_sym.ident[i] != (*irframe)[i].name)
+            if (var_sym.ident[i].view() != (*irframe)[i].name())
                 break;
-
         }
+    }
+    return offset;
+}
+
+/** Generates runtime variable path instructions for desired variable.
+ *
+ * Assumption: var_sym.ident.size() > 1.
+ */
+template <bool gen_repr>
+void
+generate_auto_rtvar_path(
+    Context_t *ctx,
+    const Variable_t &var_sym,
+    const char *path_end
+) {
+    // it is used to generate instruction for one identifier segment
+    auto path_start = var_sym.view().begin();
+
+    // generate runtime variable from regular variable
+    for (std::size_t i = 0; i < var_sym.ident.size(); ++i) {
+        auto &segment = var_sym.ident[i];
+        string_view_t path = {path_start, path_end};
+        switch (segment.token_id) {
+        case LEX2::BUILTIN_FIRST:
+            generate<PushValFirst_t>(ctx, path.str(), var_sym.pos);
+            break;
+        case LEX2::BUILTIN_INNER:
+            generate<PushValInner_t>(ctx, path.str(), var_sym.pos);
+            break;
+        case LEX2::BUILTIN_LAST:
+            generate<PushValLast_t>(ctx, path.str(), var_sym.pos);
+            break;
+        case LEX2::BUILTIN_INDEX:
+            generate<PushValIndex_t>(ctx, path.str(), var_sym.pos);
+            break;
+        case LEX2::BUILTIN_COUNT:
+            generate<PushValCount_t>(ctx, path.str(), var_sym.pos);
+            break;
+
+        case LEX2::BUILTIN_PARENT:
+            if (var_sym.ident.size() == 1) {
+                logWarning(
+                    ctx,
+                    var_sym.pos,
+                    "The builtin _parent variable has crossed root boundary; "
+                    "converting it to _this"
+                );
+            } else ctx->program->erase_from(ctx->program->size() - 1);
+            break;
+
+        case LEX2::BUILTIN_THIS:
+            break;
+
+        case LEX2::BUILTIN_ERROR:
+            if (ctx->params->isErrorFragmentEnabled()) {
+                generate<PushErrorFrag_t>(ctx, true, var_sym.pos);
+                break;
+            }
+            // pass through
+
+        default:
+            generate<PushAttr_t>(ctx, segment.str(), path.str(), var_sym.pos);
+            if (gen_repr && (i == (var_sym.ident.size() - 1)))
+                generate<Repr_t>(ctx, var_sym.pos);
+            break;
+        }
+        path_end = segment.view().end();
     }
 }
 
@@ -289,66 +401,74 @@ void resolve_abs_var(Context_t *ctx, Variable_t &var_sym) {
  *
  * Assumption: var_sym.ident.size() > 1.
  */
+template <bool gen_repr>
 void generate_auto_rtvar(Context_t *ctx, const Variable_t &var_sym) {
-    uint16_t root_offset = ctx->open_frames.top().size();
-    var_sym.ident.is_absolute()
-        ? generate<PushRootFrag_t>(ctx, root_offset, var_sym.pos)
-        : generate<PushThisFrag_t>(ctx, var_sym.pos);
-
-    // it is used to generation of one identifier segment resolution
-    auto str_start = var_sym.view().begin();
-    auto prev_str_end = str_start;
-    auto generate_push_attr = [&] (const string_view_t &segment) {
-        string_view_t path = {str_start, prev_str_end};
-        generate<PushAttr_t>(ctx, segment.str(), path.str(), var_sym.pos);
-        prev_str_end = segment.end();
-    };
-
-    // generate runtime variable from regular variable
-    for (auto &segment: skip_last_n<1>(var_sym.ident))
-        generate_push_attr(segment);
-
-    // process builtin variables
-    switch (var_sym.id) {
-    case LEX2::BUILTIN_FIRST:
-    case LEX2::BUILTIN_INNER:
-    case LEX2::BUILTIN_LAST:
-    case LEX2::BUILTIN_INDEX:
-        generate_push_attr(var_sym.ident.name());
-        logWarning(
-            ctx,
-            var_sym.pos,
-            "Using the " + var_sym.ident.name() + " builtin variable "
-            "as variable name of runtime variable does not make sense; "
-            "converting to common variable lookup"
-        );
-        generate<Repr_t>(ctx, var_sym.pos);
-        break;
-
-    case LEX2::BUILTIN_COUNT:
-        generate<LogSuppress_t>(ctx, var_sym.pos);
-        generate<ReprCount_t>(ctx, var_sym.pos);
-        break;
-
-    case LEX2::BUILTIN_PARENT:
-        if (var_sym.ident.size() == 1) {
-            logWarning(
-                ctx,
-                var_sym.pos,
-                "The builtin _parent variable has crossed root boundary; "
-                "converting it to _this"
-            );
-        } else ctx->program->erase_from(ctx->program->size() - 1);
-        break;
-
-    case LEX2::BUILTIN_THIS:
-        break;
-
-    default:
-        generate_push_attr(var_sym.ident.name());
-        generate<Repr_t>(ctx, var_sym.pos);
-        break;
+    // relative variables
+    if (var_sym.ident.is_relative()) {
+        generate<PushThisFrag_t>(ctx, var_sym.pos);
+        auto path_end = var_sym.view().begin();
+        return generate_auto_rtvar_path<gen_repr>(ctx, var_sym, path_end);
     }
+
+    // absolute variables - no open fragments
+    if (ctx->open_frames.top().empty()) {
+        generate<PushRootFrag_t>(ctx, 0, var_sym.pos);
+        auto path_end = var_sym.view().begin();
+        return generate_auto_rtvar_path<gen_repr>(ctx, var_sym, path_end);
+    }
+
+    // absolute variables - there is at least one open fragment
+    for (uint16_t i = 0;; ++i) {
+        // match common prefix (omit variable name)
+        if (i < ctx->open_frames.top().size())
+            if ((i + 1) < var_sym.ident.size())
+                if (ctx->open_frames.top()[i].name() == var_sym.ident[i].view())
+                    continue;
+        Identifier_t ident;
+        for (auto j = i; j < var_sym.ident.size(); ++j)
+            ident.push_back(var_sym.ident[j]);
+        Variable_t rel_var(var_sym, std::move(ident));
+        generate<PushThisFrag_t>(ctx, var_sym.pos);
+        auto path_end = i
+            ? var_sym.ident[i - 1].view().end()
+            : var_sym.ident[i].view().begin();
+        return generate_auto_rtvar_path<gen_repr>(ctx, rel_var, path_end);
+    }
+}
+
+/** Generates variable lookup.
+ */
+template <bool gen_repr>
+void generate_var_templ(Context_t *ctx, Variable_t var) {
+    // instruction for local variables can be generated immediately
+    if (var.ident.is_local()) {
+        var.offset = resolve_local_var(ctx);
+        return generate_var_impl(ctx, var);
+    }
+
+    // absolute variables have to be resolved prior to instruction generation
+    if (var.ident.is_absolute()) {
+        if ((var.offset = resolve_abs_var(ctx, var)))
+            return generate_var_impl(ctx, var);
+        // resolution failed so convert scalar variable to runtime
+        return generate_auto_rtvar<gen_repr>(ctx, var);
+    }
+
+    // relative variables have to be resolved prior to instruction generation
+    if ((var.offset = resolve_relative_var(ctx, var))) {
+        var.ident = make_absolute_ident(ctx, var);
+        return generate_var_impl(ctx, var);
+    }
+    // resolution failed so convert scalar variable to runtime
+    return generate_auto_rtvar<gen_repr>(ctx, var);
+}
+
+/** Generates expression open frag instruction.
+ */
+void open_frag(Context_t *ctx, const Token_t &token, const Pos_t &pos) {
+    (token == LEX2::BUILTIN_ERROR) && ctx->params->isErrorFragmentEnabled()
+        ? generate<OpenErrorFrag_t>(ctx, pos)
+        : generate<OpenFrag_t>(ctx, token.view().str(), pos);
 }
 
 } // namespace
@@ -382,27 +502,7 @@ void note_optimization_point(Context_t *ctx, bool optimizable) {
 }
 
 void generate_var(Context_t *ctx, Variable_t var) {
-    // instruction for local variables can be generated immediately
-    if (var.ident.is_local()) {
-        resolve_local_var(ctx, var);
-        return generate_var_impl(ctx, var);
-    }
-
-    // absolute variables have to be resolved prior to instruction generation
-    if (var.ident.is_absolute()) {
-        resolve_abs_var(ctx, var);
-        if (var.offsets_are_valid())
-            return generate_var_impl(ctx, var);
-        // resolution failed so convert scalar variable to runtime
-        return generate_auto_rtvar(ctx, var);
-    }
-
-    // relative variables have to be resolved prior to instruction generation
-    resolve_relative_var(ctx, var);
-    if (var.offsets_are_valid())
-        return generate_var_impl(ctx, var);
-    // resolution failed so convert scalar variable to runtime
-    return generate_auto_rtvar(ctx, var);
+    generate_var_templ<true>(ctx, std::move(var));
 }
 
 void prepare_root_variable(Context_t *ctx, const Token_t &token) {
@@ -412,7 +512,7 @@ void prepare_root_variable(Context_t *ctx, const Token_t &token) {
 void prepare_this_variable(Context_t *ctx, const Token_t &token) {
     Identifier_t result(false);
     for (auto &frag: ctx->open_frames.top())
-        result.push_back(frag.name);
+        result.push_back(frag.token);
     ctx->var_sym = Variable_t(token, std::move(result));
 }
 
@@ -420,7 +520,7 @@ void prepare_parent_variable(Context_t *ctx, const Token_t &token) {
     Identifier_t result(false);
     if (!ctx->open_frames.top().empty()) {
         for (auto i = 0lu; i < ctx->open_frames.top().size() - 1; ++i)
-            result.push_back(ctx->open_frames.top()[i].name);
+            result.push_back(ctx->open_frames.top()[i].token);
     } else logWarning(ctx, token.pos, "The _parent violates the root boundary");
     ctx->var_sym = Variable_t(token, std::move(result));
 }
@@ -452,16 +552,16 @@ void generate_print(Context_t *ctx, bool print_escape) {
         auto &print_instr = (*ctx->program)[prgsize - 2].as<Print_t>();
         auto esc = [&] (auto &&v) {return ctx->escaper.escape(v);};
         switch (int(print_escape) - int(print_instr.print_escape)) {
-        case 0:   // (true - true) || (false - false)
+        case 0:  // (true - true) || (false - false)
             first_val.append_str(second_val);
             break;
-        case -1:  // (false - true)
+        case -1: // (false - true)
             second_val.print([&] (const string_view_t &v) {
                 first_val.append_str(esc(v));
             });
             print_instr.print_escape = false;
             break;
-        case 1:   // (true - false)
+        case 1:  // (true - false)
             second_val.print([&] (const string_view_t &v2) {
                 first_val.print([&] (const string_view_t &v1) {
                     first_val = esc(v1) + v2;
@@ -494,7 +594,9 @@ void open_frag(Context_t *ctx, const Pos_t &pos, Variable_t &frag) {
 
     // for open_frag purposes local and absolute variable are sufficient
     // but the relative ones should be resolved before we open any new frag
-    if (frag.ident.is_relative()) resolve_relative_var(ctx, frag);
+    if (frag.ident.is_relative())
+        if ((frag.offset = resolve_relative_var(ctx, frag)))
+            frag.ident = make_absolute_ident(ctx, frag);
 
     // create new open-fragments frame if identifier is absolute
     auto i = 0lu;
@@ -512,7 +614,7 @@ void open_frag(Context_t *ctx, const Pos_t &pos, Variable_t &frag) {
     for (auto first_index = i; i < frag.ident.size(); ++i) {
         bool auto_close = i != first_index;
         frame->open_frag(frag.ident[i], ctx->program->size(), auto_close);
-        generate<OpenFrag_t>(ctx, frag.ident[i].str(), pos);
+        open_frag(ctx, frag.ident[i], pos);
     }
 }
 
@@ -560,7 +662,7 @@ void close_frag(Context_t *ctx, const Pos_t &pos, bool invalid) {
         close_frag_instr.open_frag_offset = -frag_routine_length;
 
         // if fragment has invalid name discard all code up to open instruction
-        if (invalid || frag.name.empty() || open_frag_instr.name.empty())
+        if (invalid || frag.name().empty() || open_frag_instr.name.empty())
             ctx->program->erase_from(frag.addr);
 
         // close frame if is empty
@@ -729,28 +831,18 @@ void finalize_tern_op_false_branch(Context_t *ctx) {
 }
 
 void generate_query(Context_t *ctx, const Variable_t &var, bool warn) {
-    uint16_t root_offset = ctx->open_frames.top().size();
-    var.ident.is_absolute()
-        ? generate<PushRootFrag_t>(ctx, root_offset, var.pos)
-        : generate<PushThisFrag_t>(ctx, var.pos);
+    generate<LogSuppress_t>(ctx, var.pos);
     note_optimization_point(ctx, true);
-
-    // generate runtime variable from regular variable
-    auto str_start = var.view().begin();
-    auto prev_str_end = str_start;
-    for (auto &segment: var.ident) {
-        string_view_t path = {str_start, prev_str_end};
-        generate<PushAttr_t>(ctx, segment.str(), path.str(), var.pos);
-        prev_str_end = segment.end();
-    }
+    generate_var_templ<false>(ctx, var);
 
     // warn if query is name($some.var)
-    if (!warn) return;
-    logWarning(
-        ctx,
-        var.pos,
-        "In query expressions the identifier should not be denoted by $ sign"
-    );
+    if (warn) {
+        logWarning(
+            ctx,
+            var.pos,
+            "In query expression the identifier shouldn't be denoted by $ sign"
+        );
+    }
 }
 
 void include_file(Context_t *ctx, const Pos_t &pos, const Options_t &opts) {
@@ -1230,14 +1322,13 @@ void set_var(Context_t *ctx, Variable_t var) {
 
     // instruction for local variables can be generated immediately
     if (var.ident.is_local()) {
-        resolve_local_var(ctx, var);
+        var.offset = resolve_local_var(ctx);
         return set_var_impl(ctx, var);
     }
 
     // absolute variables have to be resolved prior to instruction generation
     if (var.ident.is_absolute()) {
-        resolve_abs_var(ctx, var);
-        if (var.offsets_are_valid())
+        if ((var.offset = resolve_abs_var(ctx, var)))
             return set_var_impl(ctx, var);
 
         // resolution failed so report error
@@ -1252,11 +1343,13 @@ void set_var(Context_t *ctx, Variable_t var) {
     }
 
     // relative variables have to be resolved prior to instruction generation
-    resolve_relative_var(ctx, var);
-    if (var.offsets_are_valid())
+    if ((var.offset = resolve_relative_var(ctx, var))) {
+        var.ident = make_absolute_ident(ctx, var);
         return set_var_impl(ctx, var);
+    }
 
     // resolution failed so report error
+    ctx->program->erase_from(ctx->expr_start_point.addr);
     return logError(
         ctx,
         var.pos,
@@ -1287,7 +1380,7 @@ generate_rtvar_index(Context_t *ctx, const Token_t &lp, const Token_t &rp) {
     ctx->optimization_points.pop();
     ctx->optimization_points.top().optimizable &= optimizable;
 
-    // this code stays valid until the runtime variables
+    // this code remains valid until the runtime variables
     // will not be broken to more strings
     rtvar_string = {ctx->rtvar_strings.back().begin(), rp.view().end()};
 }
@@ -1403,27 +1496,101 @@ void prepare_expr(Context_t *ctx, const Pos_t &pos) {
     ctx->branch_addrs.push();
 }
 
-void generate_rtvar_segment(Context_t *ctx, const Token_t &token) {
+void
+generate_rtvar_segment(Context_t *ctx, const Token_t &token, bool is_first) {
+    // for first path segments
+    if (is_first) {
+        generate_rtvar<PushThisFrag_t>(ctx, token);
+        note_optimization_point(ctx, false);
+    }
+
+    // top level rtvar path string
     auto &rtvar_string = ctx->rtvar_strings.back();
-    generate<PushAttr_t>(ctx, token.str(), rtvar_string.str(), token.pos);
-    // this code stays valid until the runtime variables
+
+    // process builtin variables
+    switch (token) {
+    case LEX2::BUILTIN_FIRST:
+        generate<PushValFirst_t>(ctx, rtvar_string.str(), token.pos);
+        break;
+    case LEX2::BUILTIN_INNER:
+        generate<PushValInner_t>(ctx, rtvar_string.str(), token.pos);
+        break;
+    case LEX2::BUILTIN_LAST:
+        generate<PushValLast_t>(ctx, rtvar_string.str(), token.pos);
+        break;
+    case LEX2::BUILTIN_INDEX:
+        generate<PushValIndex_t>(ctx, rtvar_string.str(), token.pos);
+        break;
+    case LEX2::BUILTIN_COUNT:
+        generate<PushValCount_t>(ctx, rtvar_string.str(), token.pos);
+        break;
+    case LEX2::BUILTIN_PARENT:
+        throw std::runtime_error(__PRETTY_FUNCTION__ + std::string("-parent"));
+    case LEX2::BUILTIN_THIS:
+        throw std::runtime_error(__PRETTY_FUNCTION__ + std::string("-this"));
+    case LEX2::BUILTIN_ERROR:
+        if (ctx->params->isErrorFragmentEnabled()) {
+            generate<PushErrorFrag_t>(ctx, true, token.pos);
+            break;
+        }
+        // pass through
+    default:
+        generate<PushAttr_t>(ctx, token.str(), rtvar_string.str(), token.pos);
+        break;
+    }
+
+    // this code remains valid until the runtime variables
     // will not be broken to more strings
     rtvar_string = {rtvar_string.begin(), token.view().end()};
 }
 
-void generate_rtvar_this(Context_t *ctx, const Token_t &token) {
+void generate_rtvar_this(Context_t *ctx, const Token_t &token, bool is_first) {
+    // for first path segments
+    if (is_first) {
+        generate_rtvar<PushThisFrag_t>(ctx, token);
+        note_optimization_point(ctx, false);
+    }
+
+    // top level rtvar path string
     auto &rtvar_string = ctx->rtvar_strings.back();
-    // this code stays valid until the runtime variables
+    // this code remains valid until the runtime variables
     // will not be broken to more strings
     rtvar_string = {rtvar_string.begin(), token.view().end()};
 }
 
-void generate_rtvar_parent(Context_t *ctx, const Token_t &token) {
+void
+generate_rtvar_parent(Context_t *ctx, const Token_t &token, bool is_first) {
+    // for first path segments
+    if (is_first) {
+        generate_rtvar<PushThisFrag_t>(ctx, token);
+        if (ctx->open_frames.top().empty()) {
+            logWarning(
+                ctx,
+                token.pos,
+                "The builtin _parent variable has crossed root boundary; "
+                "converting it to _this"
+            );
+        }
+        note_optimization_point(ctx, false);
+    }
+
+    // top level rtvar path string
     auto &rtvar_string = ctx->rtvar_strings.back();
+    // remove "last" path segment
     generate<PopAttr_t>(ctx, token.pos);
-    // this code stays valid until the runtime variables
+    // this code remains valid until the runtime variables
     // will not be broken to more strings
     rtvar_string = {rtvar_string.begin(), token.view().end()};
+}
+
+void generate_local_rtvar(Context_t *ctx, const Token_t &token) {
+    generate_var(ctx, token);
+    note_optimization_point(ctx, false);
+    logWarning(
+        ctx,
+        token.pos,
+        "The runtime variable is useless; converting it to regular variable"
+    );
 }
 
 } // namespace Parser

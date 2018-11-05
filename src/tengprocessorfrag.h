@@ -39,13 +39,35 @@
 #ifndef TENGPROCESSORFRAG_H
 #define TENGPROCESSORFRAG_H
 
-#include <sstream>
 #include <limits>
+#include <sstream>
 
 #include "tengprocessorcontext.h"
 
 namespace Teng {
 namespace exec {
+namespace {
+
+/** Returns string that should be added to all errors and warnings.
+ */
+template <typename Ctx_t>
+std::string log_suffix(Ctx_t ctx) {
+    std::ostringstream out;
+    out << " [open_frags=" << ctx->frames_ptr->current_path()
+        << ", iteration=" << ctx->frames_ptr->current_list_i()
+        << "/" << ctx->frames_ptr->current_list_size()
+        << "]";
+    return out.str();
+}
+
+/** Shortcut for logWarning(ctx, msg + log_suffix(ctx)).
+ */
+template <typename Ctx_t>
+void warn(Ctx_t ctx, const string_view_t &msg) {
+    logWarning(*ctx, msg + log_suffix(ctx));
+}
+
+} // namespace
 
 /** Implementation of the variable lookup.
  */
@@ -55,13 +77,7 @@ Result_t var(RunCtxPtr_t ctx, bool escape) {
     // if variable does not exist then return empty string
     Value_t value = ctx->frames.get_var(instr);
     if (value.is_undefined()) {
-        logWarning(
-            *ctx,
-            "Variable '" + ctx->frames.path(instr)
-            + "' is undefined [open_frags="
-            + ctx->frames_ptr->current_path() + ", iteration="
-            + std::to_string(ctx->frames_ptr->current_list_i()) + "]"
-        );
+        warn(ctx, "Variable '" + ctx->frames.path(instr) + "' is undefined");
         return Result_t();
     }
 
@@ -85,16 +101,11 @@ Result_t var(RunCtxPtr_t ctx, bool escape) {
  */
 void set_var(RunCtxPtr_t ctx, GetArg_t get_arg) {
     auto &instr = ctx->instr->as<Set_t>();
-    Value_t arg = get_arg();
-
-    if (!ctx->frames.set_var(instr, std::move(arg))) {
-        logWarning(
-            *ctx,
+    if (!ctx->frames.set_var(instr, get_arg())) {
+        warn(
+            ctx,
             "Cannot rewrite variable '" + ctx->frames.path(instr)
             + "' which is already set by the application; nothing set"
-            + " [open_frags="
-            + ctx->frames_ptr->current_path() + ", iteration="
-            + std::to_string(ctx->frames_ptr->current_list_i()) + "]"
         );
     }
 }
@@ -117,8 +128,18 @@ void close_frame(RunCtxPtr_t ctx) {
 int32_t open_frag(RunCtxPtr_t ctx) {
     auto &instr = ctx->instr->as<OpenFrag_t>();
     return ctx->frames.open_frag(instr.name)
-         ? 0
-         : instr.close_frag_offset;
+        ? 0
+        : instr.close_frag_offset;
+}
+
+/** Open error fragment in current frame.
+ */
+int32_t open_error_frag(RunCtxPtr_t ctx) {
+    auto &instr = ctx->instr->as<OpenErrorFrag_t>();
+    auto enabled = ctx->params.isErrorFragmentEnabled();
+    return enabled && ctx->frames.open_error_frag(ctx->err.getFrags())
+        ? 0
+        : instr.close_frag_offset;
 }
 
 /** Pop frag from top of the stack of open frags.
@@ -136,24 +157,88 @@ Result_t frag_count(RunCtxPtr_t ctx) {
     auto &instr = ctx->instr->as<PushFragCount_t>();
     if (auto list_pos = ctx->frames.get_list_pos(instr))
         return Result_t(list_pos.size);
-    logWarning(
-        *ctx,
-        "Can't determine '" + ctx->frames.path(instr) + "' fragment size"
-    );
+    warn(ctx, "Can't determine '" + ctx->frames.path(instr) + "' frag count");
+    return Result_t();
+}
+
+/** Returns the number of fragments in current opened fragment list.
+ */
+Result_t frag_count(RunCtxPtr_t ctx, GetArg_t get_arg) {
+    auto &instr = ctx->instr->as<PushValCount_t>();
+    auto arg = get_arg();
+    switch (arg.type()) {
+    case Value_t::tag::undefined:
+        return Result_t();
+    case Value_t::tag::list_ref:
+        return Result_t(arg.as_list_ref().ptr->size());
+    case Value_t::tag::frag_ref:
+        if (ctx->frames.root_frag()->fragment() == arg.as_frag_ref().ptr)
+            return Result_t(1); // (backward compatibility)
+        // pass through
+    default:
+        warn(
+            ctx,
+            "The path expression '" + instr.path + "' references object "
+            "of '" + arg.type_str() + "' type with value '"
+            + arg.printable() + "' for which is _count builtin variable "
+            + "undefined"
+        );
+        return Result_t();
+    }
+}
+
+/** Returns index of current fragmnet in opened fragment list.
+ */
+Result_t frag_index(RunCtxPtr_t ctx) {
+    auto &instr = ctx->instr->as<PushFragIndex_t>();
+    if (auto list_pos = ctx->frames.get_list_pos(instr))
+        return Result_t(list_pos.i);
+    warn(ctx, "Can't determine '" + ctx->frames.path(instr) + "' frag index");
     return Result_t();
 }
 
 /** Returns index of current fragmnet in opened fragment list.
  */
-Result_t frag_index(RunCtxPtr_t ctx, uint32_t *size = nullptr) {
-    auto &instr = ctx->instr->as<PushFragIndex_t>();
-    if (auto list_pos = ctx->frames.get_list_pos(instr))
-        return Result_t(list_pos.i);
-    logWarning(
-        *ctx,
-        "Can't determine '" + ctx->frames.path(instr) + "' fragment index"
-    );
-    return Result_t();
+Result_t frag_index(RunCtxPtr_t ctx, GetArg_t get_arg) {
+    auto &instr = ctx->instr->as<PushValIndex_t>();
+    auto arg = get_arg();
+    switch (arg.type()) {
+    case Value_t::tag::undefined:
+        return Result_t();
+    case Value_t::tag::list_ref:
+        switch (arg.as_list_ref().ptr->size()) {
+        case 1:
+            return Result_t(0);
+        case 0:
+            warn(
+                ctx,
+                "The path '" + instr.path + "' references fragment list that "
+                "does not contain any fragment; _index variable is undefined"
+            );
+            return Result_t();
+        default:
+            warn(
+                ctx,
+                "The path '" + instr.path + "' references fragment list of "
+                + std::to_string(arg.as_list_ref().ptr->size()) + " fragments; "
+                "_index variable is undefined"
+            );
+            return Result_t();
+        }
+    case Value_t::tag::frag_ref:
+        if (ctx->frames.root_frag()->fragment() == arg.as_frag_ref().ptr)
+            return Result_t(0); // (backward compatibility)
+        // pass through
+    default:
+        warn(
+            ctx,
+            "The path expression '" + instr.path + "' references object "
+            "of '" + arg.type_str() + "' type with value '"
+            + arg.printable() + "' for which is _index builtin variable "
+            + "undefined"
+        );
+        return Result_t();
+    }
 }
 
 /** Returns true if current fragment is the first in opened fragment list.
@@ -162,11 +247,52 @@ Result_t is_first_frag(RunCtxPtr_t ctx) {
     auto &instr = ctx->instr->as<PushFragFirst_t>();
     if (auto list_pos = ctx->frames.get_list_pos(instr))
         return Result_t(list_pos.i == 0);
-    logWarning(
-        *ctx,
-        "Can't determine '" + ctx->frames.path(instr) + "' fragment index"
-    );
-    return Result_t(false);
+    warn(ctx, "Can't determine '" + ctx->frames.path(instr) + "' frag index");
+    return Result_t();
+}
+
+/** Returns true if current fragment is the first in opened fragment list.
+ */
+Result_t is_first_frag(RunCtxPtr_t ctx, GetArg_t get_arg) {
+    auto &instr = ctx->instr->as<PushValFirst_t>();
+    auto arg = get_arg();
+    switch (arg.type()) {
+    case Value_t::tag::undefined:
+        return Result_t();
+    case Value_t::tag::list_ref:
+        switch (arg.as_list_ref().ptr->size()) {
+        case 1:
+            return Result_t(arg.as_list_ref().i == 0);
+        case 0:
+            warn(
+                ctx,
+                "The path '" + instr.path + "' references fragment list that "
+                "does not contain any fragment; _first variable is undefined"
+            );
+            return Result_t();
+        default:
+            warn(
+                ctx,
+                "The path '" + instr.path + "' references fragment list of "
+                + std::to_string(arg.as_list_ref().ptr->size()) + " fragments; "
+                "_first variable is undefined"
+            );
+            return Result_t();
+        }
+    case Value_t::tag::frag_ref:
+        if (ctx->frames.root_frag()->fragment() == arg.as_frag_ref().ptr)
+            return Result_t(1); // (backward compatibility)
+        // pass through
+    default:
+        warn(
+            ctx,
+            "The path expression '" + instr.path + "' references object "
+            "of '" + arg.type_str() + "' type with value '"
+            + arg.printable() + "' for which is _first builtin variable "
+            + "undefined"
+        );
+        return Result_t();
+    }
 }
 
 /** Returns true if current fragment is the last in opened fragment list.
@@ -175,11 +301,55 @@ Result_t is_last_frag(RunCtxPtr_t ctx) {
     auto &instr = ctx->instr->as<PushFragLast_t>();
     if (auto list_pos = ctx->frames.get_list_pos(instr))
         return Result_t((list_pos.i + 1) == list_pos.size);
-    logWarning(
-        *ctx,
-        "Can't determine '" + ctx->frames.path(instr) + "' fragment index"
-    );
-    return Result_t(false);
+    warn(ctx, "Can't determine '" + ctx->frames.path(instr) + "' frag index");
+    return Result_t();
+}
+
+/** Returns true if current fragment is the last in opened fragment list.
+ */
+Result_t is_last_frag(RunCtxPtr_t ctx, GetArg_t get_arg) {
+    auto &instr = ctx->instr->as<PushValLast_t>();
+    auto arg = get_arg();
+    switch (arg.type()) {
+    case Value_t::tag::undefined:
+        return Result_t();
+    case Value_t::tag::list_ref:
+        switch (arg.as_list_ref().ptr->size()) {
+        case 1: {
+            auto i = arg.as_list_ref().i;
+            auto list_size = arg.as_list_ref().ptr->size();
+            return Result_t((i + 1) == list_size);
+        }
+        case 0:
+            warn(
+                ctx,
+                "The path '" + instr.path + "' references fragment list that "
+                "does not contain any fragment; _last variable is undefined"
+            );
+            return Result_t();
+        default:
+            warn(
+                ctx,
+                "The path '" + instr.path + "' references fragment list of "
+                + std::to_string(arg.as_list_ref().ptr->size()) + " fragments; "
+                "_last variable is undefined"
+            );
+            return Result_t();
+        }
+    case Value_t::tag::frag_ref:
+        if (ctx->frames.root_frag()->fragment() == arg.as_frag_ref().ptr)
+            return Result_t(1); // (backward compatibility)
+        // pass through
+    default:
+        warn(
+            ctx,
+            "The path expression '" + instr.path + "' references object "
+            "of '" + arg.type_str() + "' type with value '"
+            + arg.printable() + "' for which is _last builtin variable "
+            + "undefined"
+        );
+        return Result_t();
+    }
 }
 
 /** Returns true if the current fragment is not the first neither the last.
@@ -188,37 +358,99 @@ Result_t is_inner_frag(RunCtxPtr_t ctx) {
     auto &instr = ctx->instr->as<PushFragInner_t>();
     if (auto list_pos = ctx->frames.get_list_pos(instr))
         return Result_t((list_pos.i > 0) && ((list_pos.i + 1) < list_pos.size));
-    logWarning(
-        *ctx,
-        "Can't determine '" + ctx->frames.path(instr) + "' fragment index"
-    );
-    return Result_t(false);
+    warn(ctx, "Can't determine '" + ctx->frames.path(instr) + "' frag index");
+    return Result_t();
 }
 
-/** Pushes root frag to value stack.
+/** Returns true if the current fragment is not the first neither the last.
+ */
+Result_t is_inner_frag(RunCtxPtr_t ctx, GetArg_t get_arg) {
+    auto &instr = ctx->instr->as<PushValLast_t>();
+    auto arg = get_arg();
+    switch (arg.type()) {
+    case Value_t::tag::undefined:
+        return Result_t();
+    case Value_t::tag::list_ref:
+        switch (arg.as_list_ref().ptr->size()) {
+        case 1: {
+            auto i = arg.as_list_ref().i;
+            auto list_size = arg.as_list_ref().ptr->size();
+            return Result_t((i > 0) && ((i + 1) < list_size));
+        }
+        case 0:
+            warn(
+                ctx,
+                "The path '" + instr.path + "' references fragment list that "
+                "does not contain any fragment; _inner variable is undefined"
+            );
+            return Result_t();
+        default:
+            warn(
+                ctx,
+                "The path '" + instr.path + "' references fragment list of "
+                + std::to_string(arg.as_list_ref().ptr->size()) + " fragments; "
+                "_inner variable is undefined"
+            );
+            return Result_t();
+        }
+    case Value_t::tag::frag_ref:
+        if (ctx->frames.root_frag()->fragment() == arg.as_frag_ref().ptr)
+            return Result_t(0); // (backward compatibility)
+        // pass through
+    default:
+        warn(
+            ctx,
+            "The path expression '" + instr.path + "' references object "
+            "of '" + arg.type_str() + "' type with value '"
+            + arg.printable() + "' for which is _inner builtin variable "
+            + "undefined"
+        );
+        return Result_t();
+    }
+}
+
+/** Pushes root frag (regardless of the name it can be any value) to value
+ * stack.
  */
 Result_t push_root_frag(EvalCtx_t *ctx) {
     auto &instr = ctx->instr->as<PushRootFrag_t>();
-    return Result_t(ctx->frames_ptr->frag(0, instr.root_frag_offset));
+    return Result_t(ctx->frames_ptr->value_at(0, instr.root_frag_offset));
 }
 
-/** Pushes this frag to value stack.
+/** Pushes this frag (regardless of the name it can be any value) to value
+ * stack.
  */
 Result_t push_this_frag(EvalCtx_t *ctx) {
-    return Result_t(ctx->frames_ptr->frag(0, 0));
+    return Result_t(ctx->frames_ptr->value_at(0, 0));
 }
 
-/** Pushes the frag to value stack.
+/** Pushes error fragment on value stack. Error fragment is stored in current
+ * open fragment and create only if it does not exists.
+ */
+Result_t push_error_frag(RunCtxPtr_t ctx, GetArg_t get_arg) {
+    auto &instr = ctx->instr->as<PushErrorFrag_t>();
+    if (instr.discard_stack_value)
+        get_arg();
+    if (!ctx->params.isErrorFragmentEnabled())
+        return Result_t();
+    if (!ctx->frames.current_error_frag())
+        ctx->frames.store_error_frag(ctx->err.getFrags());
+    return Result_t(ctx->frames.current_error_frag());
+}
+
+/** Pushes the frag (regardless of the name it can be any value) to value stack.
  */
 Result_t push_frag(RunCtxPtr_t ctx) {
     auto &instr = ctx->instr->as<PushFrag_t>();
 
+    // TODO(burlog): it is good idea?
     // we have to lookup variable in current frame and current frag
     Value_t value = ctx->frames.get_var({instr.name});
     if (!value.is_undefined()) {
         logWarning(
             *ctx,
-            "Identifier '" + instr.name + "' is reserved, please don't use it"
+            "The '" + instr.name + "' identifier is reserved; "
+            "don't use it, please"
         );
         return value;
     }
@@ -227,7 +459,7 @@ Result_t push_frag(RunCtxPtr_t ctx) {
     // note that no name is needed because the instruction is intended to
     // accessing yet open fragments
     return Result_t(
-        ctx->frames_ptr->frag(instr.frame_offset, instr.frag_offset)
+        ctx->frames_ptr->value_at(instr.frame_offset, instr.frag_offset)
     );
 }
 
@@ -251,49 +483,42 @@ Result_t push_attr(Ctx_t *ctx, GetArg_t get_arg) {
     // attribute has been found
     if (!result.is_undefined())
         return result;
-    auto i = ctx->frames_ptr->current_list_i();
 
     // current fragment does not contain attribute
     if (instr.path.empty()) {
         if (ambiguous != std::numeric_limits<std::size_t>::infinity()) {
-            logWarning(
-                *ctx,
+            warn(
+                ctx,
                 "The key '" + instr.name + "' references frament list of '"
                 + std::to_string(ambiguous) + "' fragments; the expression "
-                "is ambiguous [open_frags=" + ctx->frames_ptr->current_path()
-                + ", iteration=" + std::to_string(i) + "]"
+                "is ambiguous"
             );
             return result;
         }
-        logWarning(
-            *ctx,
+        warn(
+            ctx,
             "This fragment doesn't contain any value for key '" + instr.name
-            + "' [open_frags=" + ctx->frames_ptr->current_path()
-            + ", iteration=" + std::to_string(i) + "]"
+            + "'"
         );
         return result;
     }
 
     // the expression is ambiguous
     if (ambiguous != std::numeric_limits<std::size_t>::infinity()) {
-        logWarning(
-            *ctx,
+        warn(
+            ctx,
             "The path expression '" + instr.path + "' references fragment list "
             "of '" + std::to_string(ambiguous) + "' fragments; "
             "the expression is ambiguous"
-            + " [open_frags=" + ctx->frames_ptr->current_path()
-            + ", iteration=" + std::to_string(i) + "]"
         );
         return result;
     }
 
     // attribute hasn't been found
-    logWarning(
-        *ctx,
+    warn(
+        ctx,
         "The path expression '" + instr.path + "' references fragment "
-        "that doesn't contain any value for key '" + instr.name
-        + "' [open_frags=" + ctx->frames_ptr->current_path()
-        + ", iteration=" + std::to_string(i) + "]"
+        "that doesn't contain any value for key '" + instr.name + "'"
     );
     return result;
 }
@@ -316,17 +541,14 @@ Result_t push_attr_at(EvalCtx_t *ctx, GetArg_t get_arg) {
     // attribute has been found
     if (!result.is_undefined())
         return result;
-    auto i = ctx->frames_ptr->current_list_i();
 
     // the expression is ambiguous
     if (ambiguous != std::numeric_limits<std::size_t>::infinity()) {
-        logWarning(
-            *ctx,
+        warn(
+            ctx,
             "The path expression '" + instr.path + "' references fragment list "
             "of '" + std::to_string(ambiguous) + "' fragments; "
             "the expression is ambiguous"
-            " [open_frags=" + ctx->frames_ptr->current_path()
-            + ", iteration=" + std::to_string(i) + "]"
         );
         return result;
     }
@@ -339,59 +561,49 @@ Result_t push_attr_at(EvalCtx_t *ctx, GetArg_t get_arg) {
     case Value_t::tag::integral:
     case Value_t::tag::real:
     case Value_t::tag::regex:
-        logWarning(
-            *ctx,
+        warn(
+            ctx,
             "The path expression '" + instr.path + "' references object "
             "of '" + arg.type_str() + "' type with value '"
             + arg.printable() + "' that is not subscriptable"
-            + " [open_frags=" + ctx->frames_ptr->current_path()
-            + ", iteration=" + std::to_string(i) + "]"
         );
         break;
 
     case Value_t::tag::frag_ref:
         if (index.is_string_like()) {
-            logWarning(
-                *ctx,
+            warn(
+                ctx,
                 "The path expression '" + instr.path + "' references "
                 "fragment that doesn't contain any value for key '"
-                + index.string()
-                + "' [open_frags=" + ctx->frames_ptr->current_path()
-                + ", iteration=" + std::to_string(i) + "]"
+                + index.string() + "'"
             );
         } else {
-            logWarning(
-                *ctx,
+            warn(
+                ctx,
                 "The path expression '" + instr.path + "' references "
                 "fragment which can't be subscripted by values of '"
                 + index.type_str() + "' type with value '"
-                + index.printable()
-                + "' [open_frags=" + ctx->frames_ptr->current_path()
-                + ", iteration=" + std::to_string(i) + "]"
+                + index.printable() + "'"
             );
         }
         break;
     case Value_t::tag::list_ref:
         if (index.is_number()) {
-            logWarning(
-                *ctx,
+            warn(
+                ctx,
                 "The index '" + index.printable() + "' is out of valid "
                 "range <0, "
                 + std::to_string(arg.as_list_ref().ptr->size())
                 + ") of the fragments list referenced by this path "
-                "expression " + instr.path
-                + " [open_frags=" + ctx->frames_ptr->current_path()
-                + ", iteration=" + std::to_string(i) + "]"
+                "expression '" + instr.path + "'"
             );
         } else {
-            logWarning(
-                *ctx,
+            warn(
+                ctx,
                 "The path expression '" + instr.path + "' references "
                 "fragment lists which can't be subscripted by values "
                 "of '" + index.type_str() + "' type with value '"
-                + index.printable()
-                + "' [open_frags=" + ctx->frames_ptr->current_path()
-                + ", iteration=" + std::to_string(i) + "]"
+                + index.printable() + "'"
             );
         }
         break;
@@ -402,14 +614,14 @@ Result_t push_attr_at(EvalCtx_t *ctx, GetArg_t get_arg) {
 /** Pops the last segment of path.
  */
 Result_t pop_attr(EvalCtx_t *ctx, GetArg_t get_arg) {
-    logWarning(*ctx, "Not implemented yet - _parent segment ignored");
+    warn(ctx, "Not implemented yet - _parent segment ignored");
     return get_arg();
 }
 
 /** Applies current escaping on the string values and other values left
  * untouched.
  */
-Result_t repr(RunCtxPtr_t ctx, GetArg_t get_arg) {
+Result_t repr(EvalCtx_t *ctx, GetArg_t get_arg) {
     auto arg = get_arg();
     switch (arg.type()) {
     case Value_t::tag::string:
@@ -417,7 +629,7 @@ Result_t repr(RunCtxPtr_t ctx, GetArg_t get_arg) {
         // no escaping needed, value will be escaped prior to printing
         return ctx->params.isPrintEscapeEnabled()
             ? arg
-            : Result_t(ctx->escaper.escape(arg.string()));
+            : Result_t(ctx->escaper_ptr->escape(arg.string()));
     case Value_t::tag::undefined:
     case Value_t::tag::integral:
     case Value_t::tag::real:
@@ -428,37 +640,35 @@ Result_t repr(RunCtxPtr_t ctx, GetArg_t get_arg) {
     };
 }
 
-/** Converts value to json.
+/** Applies current escaping on the string values and other values left
+ * untouched.
  */
-Result_t repr_jsonify(RunCtxPtr_t ctx, GetArg_t get_arg) {
+Result_t query_repr(EvalCtx_t *ctx, GetArg_t get_arg) {
     --ctx->log_suppressed;
-    auto arg = get_arg();
-    std::stringstream o;
-    arg.json(o);
-    return Result_t(o.str());
+    return repr(ctx, get_arg);
 }
 
 /** Returns the number of elements in the fragment list.
  */
-Result_t repr_count(RunCtxPtr_t ctx, GetArg_t get_arg) {
+Result_t query_count(RunCtxPtr_t ctx, GetArg_t get_arg) {
     --ctx->log_suppressed;
     auto arg = get_arg();
     switch (arg.type()) {
+    case Value_t::tag::frag_ref:
+        if (ctx->frames.root_frag()->fragment() == arg.as_frag_ref().ptr)
+            return Result_t(1); // (backward compatibility)
+        // pass through
     case Value_t::tag::string:
     case Value_t::tag::string_ref:
     case Value_t::tag::integral:
     case Value_t::tag::real:
     case Value_t::tag::regex:
     case Value_t::tag::undefined:
-    case Value_t::tag::frag_ref:
-        logWarning(
-            *ctx,
+        warn(
+            ctx,
             "The path expression references object of '" + arg.type_str() + "' "
             "type with value '" + arg.printable() + "' for which count() query "
-            "is undefined "
-            + "[open_frags=" + ctx->frames_ptr->current_path()
-            + ", iteration=" + std::to_string(ctx->frames_ptr->current_list_i())
-            + "]"
+            "is undefined"
         );
         return Result_t();
     case Value_t::tag::list_ref:
@@ -468,7 +678,7 @@ Result_t repr_count(RunCtxPtr_t ctx, GetArg_t get_arg) {
 
 /** Returns the type of desired argument.
  */
-Result_t repr_type(RunCtxPtr_t ctx, GetArg_t get_arg) {
+Result_t query_type(RunCtxPtr_t ctx, GetArg_t get_arg) {
     --ctx->log_suppressed;
     return Result_t(get_arg().type_str());
 }
@@ -477,7 +687,7 @@ Result_t repr_type(RunCtxPtr_t ctx, GetArg_t get_arg) {
  * non empty fragment list and return 0 if value is undefined or empty fragment
  * list.
  *
- * The REPR_DEFINED is incompatible with older Teng implementation because it
+ * The QUERY_DEFINED is incompatible with older Teng implementation because it
  * is schizophrenic. It returns:
  *
  * >>> t.generatePage(templateString="${defined(b)}", data={'b':''})['output']
@@ -485,9 +695,8 @@ Result_t repr_type(RunCtxPtr_t ctx, GetArg_t get_arg) {
  * >>> t.generatePage(templateString="${defined($$b)}", data={'b':''})['output']
  * '1'
  */
-Result_t repr_defined(RunCtxPtr_t ctx, GetArg_t get_arg) {
+Result_t query_defined(RunCtxPtr_t ctx, GetArg_t get_arg) {
     --ctx->log_suppressed;
-    logWarning(*ctx, "The defined() operator is deprecated");
     auto arg = get_arg();
     switch (arg.type()) {
     case Value_t::tag::string:
@@ -507,7 +716,7 @@ Result_t repr_defined(RunCtxPtr_t ctx, GetArg_t get_arg) {
 
 /** Returns true if object exists.
  */
-Result_t repr_exists(EvalCtx_t *ctx, GetArg_t get_arg) {
+Result_t query_exists(EvalCtx_t *ctx, GetArg_t get_arg) {
     --ctx->log_suppressed;
     auto arg = get_arg();
     return ctx->frames_ptr->exists(arg);
@@ -515,7 +724,7 @@ Result_t repr_exists(EvalCtx_t *ctx, GetArg_t get_arg) {
 
 /** Returns true if frag or fraglist is empty.
  */
-Result_t repr_isempty(RunCtxPtr_t ctx, GetArg_t get_arg) {
+Result_t query_isempty(RunCtxPtr_t ctx, GetArg_t get_arg) {
     --ctx->log_suppressed;
     auto arg = get_arg();
     switch (arg.type()) {
@@ -525,14 +734,11 @@ Result_t repr_isempty(RunCtxPtr_t ctx, GetArg_t get_arg) {
     case Value_t::tag::real:
     case Value_t::tag::regex:
     case Value_t::tag::undefined:
-        logWarning(
-            *ctx,
+        warn(
+            ctx,
             "The path expression references object of '" + arg.type_str() + "' "
             "type with value '" + arg.printable() + "' for which isempty() "
-            "query is undefined "
-            + "[open_frags=" + ctx->frames_ptr->current_path()
-            + ", iteration=" + std::to_string(ctx->frames_ptr->current_list_i())
-            + "]"
+            "query is undefined"
         );
         return Result_t();
     case Value_t::tag::frag_ref:

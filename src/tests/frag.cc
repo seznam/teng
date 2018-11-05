@@ -53,7 +53,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -66,7 +66,7 @@ SCENARIO(
 
             THEN("It contains data from fragment") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "content");
             }
         }
@@ -80,7 +80,7 @@ SCENARIO(
 
             THEN("It contains data from fragment") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "contentcontent");
             }
         }
@@ -93,7 +93,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -106,7 +106,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -128,7 +128,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -141,7 +141,7 @@ SCENARIO(
 
             THEN("It contains data from first fragment") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "one");
             }
         }
@@ -154,7 +154,7 @@ SCENARIO(
 
             THEN("It contains data from second fragment") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "two");
             }
         }
@@ -168,7 +168,7 @@ SCENARIO(
 
             THEN("It contains data from both fragments") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "onetwo");
             }
         }
@@ -183,7 +183,7 @@ SCENARIO(
 
             THEN("It contains two times data from first and one from second") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "oneonetwo");
             }
         }
@@ -206,7 +206,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -219,7 +219,7 @@ SCENARIO(
 
             THEN("It contains data from parent fragment") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{}");
             }
         }
@@ -233,7 +233,7 @@ SCENARIO(
 
             THEN("It contains data from parent and child fragment") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{child}");
             }
         }
@@ -248,7 +248,7 @@ SCENARIO(
 
             THEN("It contains data from parent and both children fragments") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{childchild}");
             }
         }
@@ -261,7 +261,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -274,7 +274,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -295,7 +295,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -308,7 +308,7 @@ SCENARIO(
 
             THEN("It contains data from fragment") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "content");
             }
         }
@@ -326,7 +326,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -339,7 +339,7 @@ SCENARIO(
 
             THEN("It contains data from 'both' parent fragments") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{parent}");
             }
         }
@@ -353,7 +353,7 @@ SCENARIO(
 
             THEN("It contains data from parent and child fragment") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{parent}");
             }
         }
@@ -379,7 +379,7 @@ SCENARIO(
                     "The <?teng endfrag?> directive closes unopened "
                     "fragment block"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{}");
             }
         }
@@ -409,7 +409,7 @@ SCENARIO(
                     {1, 13},
                     "Unexpected token: name=DEC_INT, view=1"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{}");
             }
         }
@@ -440,7 +440,7 @@ SCENARIO(
                     {1, 22},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{}");
             }
         }
@@ -469,7 +469,7 @@ SCENARIO(
                     {1, 62},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "({})");
             }
         }
@@ -496,7 +496,7 @@ SCENARIO(
                     {1, 60},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "(){}");
             }
         }
@@ -529,7 +529,7 @@ SCENARIO(
                     {1, 46},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "(){}");
             }
         }
@@ -564,7 +564,7 @@ SCENARIO(
                     {1, 29},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{");
             }
         }
@@ -590,7 +590,7 @@ SCENARIO(
                     "The <?teng endfrag?> directive closes unopened "
                     "fragment block"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{}");
             }
         }
@@ -616,7 +616,7 @@ SCENARIO(
                     "The <?teng endfrag?> directive closes unopened "
                     "fragment block"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{}{}");
             }
         }
@@ -639,7 +639,7 @@ SCENARIO(
                     "The <?teng endfrag?> directive closes unopened "
                     "fragment block"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{}{x}");
             }
         }
@@ -662,7 +662,7 @@ SCENARIO(
                     "The <?teng endfrag?> directive closes unopened "
                     "fragment block"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{x}{}");
             }
         }

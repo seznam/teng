@@ -41,6 +41,8 @@
 #include <vector>
 #include <cstdint>
 
+#include <tengconfig.h>
+
 namespace Teng {
 
 // forwards
@@ -86,6 +88,64 @@ public:
      * @return created fragment
      */
     Fragment_t &addFragment();
+
+    /**
+     * @short Add value to list..
+     * @param value variable value
+     */
+    void addValue(const std::string &value);
+
+    /**
+     * @short Add value to list..
+     * @param value variable value
+     */
+    template <
+        typename type_t,
+        std::enable_if_t<std::is_integral<type_t>::value, bool> = true
+    > void addValue(type_t value) {
+        addIntVariable(value);
+    }
+
+    /**
+     * @short Add value to list..
+     * @param value variable value
+     */
+    template <
+        typename type_t,
+        std::enable_if_t<std::is_floating_point<type_t>::value, bool> = true
+    > void addValue(type_t value) {
+        addRealVariable(value);
+    }
+
+    /**
+     * @short Add value to list..
+     * @param value variable value
+     */
+    void addIntValue(IntType_t value);
+
+    /**
+     * @short Add value to list..
+     * @param value variable value
+     */
+    void addRealValue(double value);
+
+    /**
+     * @short Add some frag value to fragment.
+     * @param value variable value
+     */
+    void addValue(Fragment_t &&value);
+
+    /**
+     * @short Add some frag value to fragment.
+     * @param value variable value
+     */
+    void addValue(FragmentList_t &&value);
+
+    /**
+     * @short Add some frag value to fragment.
+     * @param value variable value
+     */
+    void addValue(FragmentValue_t &&value);
 
     /**
      * @short Dump fragment list to stream.

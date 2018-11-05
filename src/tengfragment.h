@@ -152,6 +152,27 @@ public:
     FragmentList_t &addFragmentList(const std::string &name);
 
     /**
+     * @short Add some frag value to fragment.
+     * @param name variable name
+     * @param value variable value
+     */
+    void addValue(const std::string &name, Fragment_t &&value);
+
+    /**
+     * @short Add some frag value to fragment.
+     * @param name variable name
+     * @param value variable value
+     */
+    void addValue(const std::string &name, FragmentList_t &&value);
+
+    /**
+     * @short Add some frag value to fragment.
+     * @param name variable name
+     * @param value variable value
+     */
+    void addValue(const std::string &name, FragmentValue_t &&value);
+
+    /**
      * @short Dump fragment to stream.
      * @param o output stream
      */

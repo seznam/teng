@@ -56,7 +56,7 @@ SCENARIO(
 
             THEN("Replaced with raw dict entry value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "&<b>some <i>HTML</i> text</b>&");
             }
         }
@@ -68,7 +68,7 @@ SCENARIO(
 
             THEN("Replaced with raw dict entry value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "&<b>some <i>HTML</i> text</b>&");
             }
         }
@@ -80,7 +80,7 @@ SCENARIO(
 
             THEN("Replaced with escaped dict entry value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == r);
             }
         }
@@ -92,7 +92,7 @@ SCENARIO(
 
             THEN("Replaced with raw dict entry value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "&<b>some <i>HTML</i> text</b>&");
             }
         }
@@ -104,7 +104,7 @@ SCENARIO(
 
             THEN("Replaced with escaped dict entry value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == r);
             }
         }
@@ -127,7 +127,7 @@ SCENARIO(
 
             THEN("Replaced with raw dict entry value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "&<b>some <i>HTML</i> text</b>&");
             }
         }
@@ -139,7 +139,7 @@ SCENARIO(
 
             THEN("Raw print directive is printed as regular text") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "%{#html_value}");
             }
         }
@@ -151,7 +151,7 @@ SCENARIO(
 
             THEN("Replaced with raw dict entry value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "&<b>some <i>HTML</i> text</b>&");
             }
         }
@@ -163,7 +163,7 @@ SCENARIO(
 
             THEN("Raw print directive is printed as regular text") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "%{@a}");
             }
         }
@@ -175,7 +175,7 @@ SCENARIO(
 
             THEN("Replaced with raw dict entry value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "&<b>some <i>HTML</i> text</b>&");
             }
         }
@@ -198,7 +198,7 @@ SCENARIO(
 
             THEN("Replaced with dict entry value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "hello world");
             }
         }
@@ -210,7 +210,7 @@ SCENARIO(
 
             THEN("Replaced with dict entry value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "hello world");
             }
         }
@@ -226,7 +226,7 @@ SCENARIO(
                     {1, 3},
                     "Dictionary item 'hello_world_missing' was not found"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "hello_world_missing");
             }
         }
@@ -238,7 +238,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "hello world");
             }
         }
@@ -255,7 +255,7 @@ SCENARIO(
                     "Runtime: Dictionary item 'hello_world_missing' "
                     "was not found"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "hello_world_missing");
             }
         }
@@ -278,7 +278,7 @@ SCENARIO(
 
             THEN("Replaced with dict entry value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "Hello world!");
             }
         }
@@ -290,7 +290,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "Hello world!");
             }
         }
@@ -306,7 +306,7 @@ SCENARIO(
                     {1, 3},
                     "Dictionary item 'hello_world_missing' was not found"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "hello_world_missing");
             }
         }
@@ -318,7 +318,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "Hello world!");
             }
         }
@@ -335,7 +335,7 @@ SCENARIO(
                     "Runtime: Dictionary item 'hello_world_missing' "
                     "was not found"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "hello_world_missing");
             }
         }
@@ -353,7 +353,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "Ahoj svete!");
             }
         }
@@ -365,7 +365,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "Ahoj svete!");
             }
         }
@@ -381,7 +381,7 @@ SCENARIO(
                     {1, 3},
                     "Dictionary item 'hello_world_missing' was not found"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "hello_world_missing");
             }
         }
@@ -393,7 +393,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "Ahoj svete!");
             }
         }
@@ -410,7 +410,7 @@ SCENARIO(
                     "Runtime: Dictionary item 'hello_world_missing' "
                     "was not found"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "hello_world_missing");
             }
         }

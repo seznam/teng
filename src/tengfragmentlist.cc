@@ -49,6 +49,30 @@ Fragment_t &FragmentList_t::addFragment() {
     return items.back().frag_value;
 }
 
+void FragmentList_t::addValue(const std::string &value) {
+    items.emplace_back(value);
+}
+
+void FragmentList_t::addIntValue(IntType_t value) {
+    items.emplace_back(value);
+}
+
+void FragmentList_t::addRealValue(double value) {
+    items.emplace_back(value);
+}
+
+void FragmentList_t::addValue(Fragment_t &&value) {
+    items.emplace_back(std::move(value));
+}
+
+void FragmentList_t::addValue(FragmentList_t &&value) {
+    items.emplace_back(std::move(value));
+}
+
+void FragmentList_t::addValue(FragmentValue_t &&value) {
+    items.emplace_back(std::move(value));
+}
+
 void FragmentList_t::json(std::ostream &o) const {
     o << '[';
     for (auto ifrag = begin(), efrag = end(); ifrag != efrag; ++ifrag) {

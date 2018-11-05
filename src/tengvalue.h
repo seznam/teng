@@ -69,7 +69,6 @@ struct regex_flags_t {
     bool ungreedy:1;
     bool anchored:1;
     bool dollar_endonly:1;
-
 };
 
 /** The regular expression pattern
@@ -82,7 +81,12 @@ inline bool operator==(const Regex_t &lhs, const Regex_t &rhs) {
     return lhs.pattern == rhs.pattern
         && lhs.flags.ignore_case == rhs.flags.ignore_case
         && lhs.flags.global == rhs.flags.global
-        && lhs.flags.multiline == rhs.flags.multiline;
+        && lhs.flags.multiline == rhs.flags.multiline
+        && lhs.flags.extended == rhs.flags.extended
+        && lhs.flags.extra == rhs.flags.extra
+        && lhs.flags.ungreedy == rhs.flags.ungreedy
+        && lhs.flags.anchored == rhs.flags.anchored
+        && lhs.flags.dollar_endonly == rhs.flags.dollar_endonly;
 }
 
 /** Comparison operator.
@@ -116,7 +120,8 @@ public:
     /** Tags of all possible held value types.
      */
     enum class tag {
-        undefined, string, string_ref, integral, real, frag_ref, list_ref, regex
+        undefined, string, string_ref, integral, real, frag_ref, list_ref,
+        regex
     };
 
     /** Is used to mark type of the value that has been converted to printable
@@ -586,21 +591,11 @@ public:
      */
     int_type integral() const {
         switch (tag_value) {
-        case tag::undefined:
-            return 0;
         case tag::integral:
             return integral_value;
         case tag::real:
             return real_value;
-        case tag::string:
-            return 0;
-        case tag::string_ref:
-            return 0;
-        case tag::frag_ref:
-            return 0;
-        case tag::list_ref:
-            return 0;
-        case tag::regex:
+        default:
             return 0;
         }
     }
@@ -609,21 +604,11 @@ public:
      */
     real_type real() const {
         switch (tag_value) {
-        case tag::undefined:
-            return 0;
         case tag::integral:
             return integral_value;
         case tag::real:
             return real_value;
-        case tag::string:
-            return 0;
-        case tag::string_ref:
-            return 0;
-        case tag::frag_ref:
-            return 0;
-        case tag::list_ref:
-            return 0;
-        case tag::regex:
+        default:
             return 0;
         }
     }
@@ -632,21 +617,11 @@ public:
      */
     string_view_t string() const {
         switch (tag_value) {
-        case tag::undefined:
-            return {};
-        case tag::integral:
-            return {};
-        case tag::real:
-            return {};
         case tag::string:
             return string_value;
         case tag::string_ref:
             return string_ref_value;
-        case tag::frag_ref:
-            return {};
-        case tag::list_ref:
-            return {};
-        case tag::regex:
+        default:
             return {};
         }
     }
@@ -779,12 +754,7 @@ protected:
         case tag::regex:
             regex_value.~regex_type();
             break;
-        case tag::undefined:
-        case tag::integral:
-        case tag::real:
-        case tag::string_ref:
-        case tag::frag_ref:
-        case tag::list_ref:
+        default:
             /* no dynamic resources */
             break;
         }
@@ -857,24 +827,13 @@ protected:
 /** Unary minus operator.
  */
 inline Value_t operator-(const Value_t &value) {
-    using undefined_type = Value_t::undefined_type;
     switch (value.tag_value) {
-    case Value_t::tag::undefined:
-        return value;
     case Value_t::tag::integral:
         return Value_t(-value.as_int());
     case Value_t::tag::real:
         return Value_t(-value.as_real());
-    case Value_t::tag::string:
-        return Value_t(undefined_type());
-    case Value_t::tag::string_ref:
-        return Value_t(undefined_type());
-    case Value_t::tag::frag_ref:
-        return Value_t(undefined_type());
-    case Value_t::tag::list_ref:
-        return Value_t(undefined_type());
-    case Value_t::tag::regex:
-        return Value_t(undefined_type());
+    default:
+        return Value_t();
     }
 }
 

@@ -54,7 +54,7 @@ SCENARIO(
 
             THEN("The result is current timestamp") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == Approx(time(nullptr)).epsilon(0.01));
             }
         }
@@ -84,7 +84,7 @@ SCENARIO(
                     {1, 2},
                     "timestamp(): Can't parse date"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == Approx(0).epsilon(0.01));
             }
         }
@@ -105,7 +105,7 @@ SCENARIO(
                     {1, 2},
                     "timestamp(): Can't parse date"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == Approx(0).epsilon(0.01));
             }
         }
@@ -117,7 +117,7 @@ SCENARIO(
 
             THEN("The result is timestamp") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == Approx(1520035200.0).epsilon(0.01));
             }
         }
@@ -138,7 +138,7 @@ SCENARIO(
                     {1, 2},
                     "timestamp(): Can't parse date"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == Approx(0.0).epsilon(0.01));
             }
         }
@@ -159,7 +159,7 @@ SCENARIO(
                     {1, 2},
                     "timestamp(): Can't parse date"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == Approx(0.0).epsilon(0.01));
             }
         }
@@ -171,7 +171,7 @@ SCENARIO(
 
             THEN("The result is timestamp") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == Approx(1520035200.0).epsilon(0.01));
             }
         }
@@ -192,7 +192,7 @@ SCENARIO(
 
             THEN("The result is formatted time") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "03.03.2018 01:00:00");
             }
         }
@@ -213,7 +213,7 @@ SCENARIO(
 
             THEN("The result is current timestamp") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "422232:01:03");
             }
         }

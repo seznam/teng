@@ -92,6 +92,7 @@ enum class OPCODE {
     OPEN_FORMAT,     //!< Start formating block
     CLOSE_FORMAT,    //!< End of format block
     OPEN_FRAG,       //!< Start fragment block
+    OPEN_ERROR_FRAG, //!< Start error fragment block
     CLOSE_FRAG,      //!< End of fragment block
     OPEN_CTYPE,      //!< Change content type (push new)
     CLOSE_CTYPE,     //!< Change content type (pop)
@@ -104,22 +105,28 @@ enum class OPCODE {
     BYTECODE_FRAG,   //!< Print bytecode -- disassembled program
     PUSH_ROOT_FRAG,  //!< Push root frag on value stack
     PUSH_THIS_FRAG,  //!< Push current frag on value stack
+    PUSH_ERROR_FRAG, //!< Push error frag on value stack
     PUSH_FRAG,       //!< Push frag on value stack
     PUSH_FRAG_COUNT, //!< Openned fragment size ($_count) - fast access
     PUSH_FRAG_INDEX, //!< Actual fragment iteration number ($_number)
     PUSH_FRAG_FIRST, //!< Is this the first iteration ($_first)
     PUSH_FRAG_LAST,  //!< Is this the last iteration ($_last)
     PUSH_FRAG_INNER, //!< Is this inner iteration ($_inner)
+    PUSH_VAL_COUNT,  //!< Same as PUSH_FRAG_COUNT but reads arg from stack
+    PUSH_VAL_INDEX,  //!< Same as PUSH_FRAG_INDEX but reads arg from stack
+    PUSH_VAL_FIRST,  //!< Same as PUSH_FRAG_FIRST but reads arg from stack
+    PUSH_VAL_LAST,   //!< Same as PUSH_FRAG_LAST but reads arg from stack
+    PUSH_VAL_INNER,  //!< Same as PUSH_FRAG_INNER but reads arg from stack
     PUSH_ATTR,       //!< Push attr/frag on value stack
     PUSH_ATTR_AT,    //!< Push value at given index on value stack
     POP_ATTR,        //!< Push parent fragment of current value to stack
-    REPR,            //!< Convert frag value into value
-    REPR_JSONIFY,    //!< Convert frag value into value
-    REPR_COUNT,      //!< Convert frag value into value
-    REPR_TYPE,       //!< Convert frag value into value
-    REPR_DEFINED,    //!< Convert frag value into value [OBSOLETE]
-    REPR_EXISTS,     //!< Convert frag value into value
-    REPR_ISEMPTY,    //!< Convert frag value into value
+    REPR,            //!< Optionaly applies escaping
+    QUERY_REPR,      //!< Optionaly applies escaping (query version)
+    QUERY_COUNT,     //!< Push fragment list size on stak
+    QUERY_TYPE,      //!< Push type of the value on top of stack on stak
+    QUERY_DEFINED,   //!< Push the value if 'is defined' [OBSOLETE]
+    QUERY_EXISTS,    //!< Push the value if it 'exists' on stack
+    QUERY_ISEMPTY,   //!< Push true on stack if fragment resp list is empty
     REGEX_MATCH,     //!< Matching of regular expression
     LOG_SUPPRESS,    //!< Suppressing error log
 };
@@ -418,39 +425,39 @@ struct Repr_t: public Instruction_t {
     {}
 };
 
-struct ReprJsonify_t: public Instruction_t {
-    ReprJsonify_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::REPR_JSONIFY, pos)
+struct QueryRepr_t: public Instruction_t {
+    QueryRepr_t(const Pos_t &pos)
+        : Instruction_t(OPCODE::QUERY_REPR, pos)
     {}
 };
 
-struct ReprCount_t: public Instruction_t {
-    ReprCount_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::REPR_COUNT, pos)
+struct QueryCount_t: public Instruction_t {
+    QueryCount_t(const Pos_t &pos)
+        : Instruction_t(OPCODE::QUERY_COUNT, pos)
     {}
 };
 
-struct ReprType_t: public Instruction_t {
-    ReprType_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::REPR_TYPE, pos)
+struct QueryType_t: public Instruction_t {
+    QueryType_t(const Pos_t &pos)
+        : Instruction_t(OPCODE::QUERY_TYPE, pos)
     {}
 };
 
-struct ReprDefined_t: public Instruction_t {
-    ReprDefined_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::REPR_DEFINED, pos)
+struct QueryDefined_t: public Instruction_t {
+    QueryDefined_t(const Pos_t &pos)
+        : Instruction_t(OPCODE::QUERY_DEFINED, pos)
     {}
 };
 
-struct ReprExists_t: public Instruction_t {
-    ReprExists_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::REPR_EXISTS, pos)
+struct QueryExists_t: public Instruction_t {
+    QueryExists_t(const Pos_t &pos)
+        : Instruction_t(OPCODE::QUERY_EXISTS, pos)
     {}
 };
 
-struct ReprIsEmpty_t: public Instruction_t {
-    ReprIsEmpty_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::REPR_ISEMPTY, pos)
+struct QueryIsEmpty_t: public Instruction_t {
+    QueryIsEmpty_t(const Pos_t &pos)
+        : Instruction_t(OPCODE::QUERY_ISEMPTY, pos)
     {}
 };
 
@@ -464,7 +471,7 @@ struct PushFragIndex_t: public Instruction_t {
     template <typename Variable_t>
     PushFragIndex_t(const Variable_t &var)
         : Instruction_t(OPCODE::PUSH_FRAG_INDEX, var.pos),
-          frame_offset(var.frame_offset), frag_offset(var.frag_offset)
+          frame_offset(var.offset.frame), frag_offset(var.offset.frag)
     {}
     void dump_params(std::ostream &os) const;
     uint16_t frame_offset; //!< the offset of frame (NOT fragment!)
@@ -475,7 +482,7 @@ struct PushFragCount_t: public Instruction_t {
     template <typename Variable_t>
     PushFragCount_t(const Variable_t &var)
         : Instruction_t(OPCODE::PUSH_FRAG_COUNT, var.pos),
-          frame_offset(var.frame_offset), frag_offset(var.frag_offset)
+          frame_offset(var.offset.frame), frag_offset(var.offset.frag)
     {}
     void dump_params(std::ostream &os) const;
     uint16_t frame_offset; //!< the offset of frame (NOT fragment!)
@@ -486,7 +493,7 @@ struct PushFragFirst_t: public Instruction_t {
     template <typename Variable_t>
     PushFragFirst_t(const Variable_t &var)
         : Instruction_t(OPCODE::PUSH_FRAG_FIRST, var.pos),
-          frame_offset(var.frame_offset), frag_offset(var.frag_offset)
+          frame_offset(var.offset.frame), frag_offset(var.offset.frag)
     {}
     void dump_params(std::ostream &os) const;
     uint16_t frame_offset; //!< the offset of frame (NOT fragment!)
@@ -497,7 +504,7 @@ struct PushFragInner_t: public Instruction_t {
     template <typename Variable_t>
     PushFragInner_t(const Variable_t &var)
         : Instruction_t(OPCODE::PUSH_FRAG_INNER, var.pos),
-          frame_offset(var.frame_offset), frag_offset(var.frag_offset)
+          frame_offset(var.offset.frame), frag_offset(var.offset.frag)
     {}
     void dump_params(std::ostream &os) const;
     uint16_t frame_offset; //!< the offset of frame (NOT fragment!)
@@ -508,7 +515,7 @@ struct PushFragLast_t: public Instruction_t {
     template <typename Variable_t>
     PushFragLast_t(const Variable_t &var)
         : Instruction_t(OPCODE::PUSH_FRAG_LAST, var.pos),
-          frame_offset(var.frame_offset), frag_offset(var.frag_offset)
+          frame_offset(var.offset.frame), frag_offset(var.offset.frag)
     {}
     void dump_params(std::ostream &os) const;
     uint16_t frame_offset; //!< the offset of frame (NOT fragment!)
@@ -520,16 +527,61 @@ struct PushFrag_t: public Instruction_t {
     PushFrag_t(const Variable_t &var, uint16_t frag_offset)
         : Instruction_t(OPCODE::PUSH_FRAG, var.pos),
           name(var.ident.name().str()),
-          frame_offset(var.frame_offset), frag_offset(frag_offset)
+          frame_offset(var.offset.frame), frag_offset(frag_offset)
     {}
     template <typename Variable_t>
     PushFrag_t(const Variable_t &var)
-        : PushFrag_t(var, var.frag_offset)
+        : PushFrag_t(var, var.offset.frag)
     {}
     void dump_params(std::ostream &os) const;
     std::string name;      //!< the frag identifier
     uint16_t frame_offset; //!< the offset of frame (NOT fragment!)
     uint16_t frag_offset;  //!< the offset of fragment in frame
+};
+
+struct PushValCount_t: public Instruction_t {
+    PushValCount_t(std::string path, const Pos_t &pos)
+        : Instruction_t(OPCODE::PUSH_VAL_COUNT, pos),
+          path(std::move(path))
+    {}
+    void dump_params(std::ostream &os) const;
+    std::string path; //!< path from rtvar start to this attribute
+};
+
+struct PushValFirst_t: public Instruction_t {
+    PushValFirst_t(std::string path, const Pos_t &pos)
+        : Instruction_t(OPCODE::PUSH_VAL_FIRST, pos),
+          path(std::move(path))
+    {}
+    void dump_params(std::ostream &os) const;
+    std::string path; //!< path from rtvar start to this attribute
+};
+
+struct PushValLast_t: public Instruction_t {
+    PushValLast_t(std::string path, const Pos_t &pos)
+        : Instruction_t(OPCODE::PUSH_VAL_LAST, pos),
+          path(std::move(path))
+    {}
+    void dump_params(std::ostream &os) const;
+    std::string path; //!< path from rtvar start to this attribute
+};
+
+struct PushValInner_t: public Instruction_t {
+    PushValInner_t(std::string path, const Pos_t &pos)
+        : Instruction_t(OPCODE::PUSH_VAL_INNER, pos),
+          path(std::move(path))
+    {}
+    void dump_params(std::ostream &os) const;
+    std::string path; //!< path from rtvar start to this attribute
+};
+
+struct PushValIndex_t: public Instruction_t {
+    PushValIndex_t(std::string path, const Pos_t &pos)
+        : Instruction_t(OPCODE::PUSH_VAL_INDEX, pos),
+          path(std::move(path))
+    {}
+    void dump_params(std::ostream &os) const;
+    std::string path; //!< path from rtvar start to this attribute
 };
 
 struct PushRootFrag_t: public Instruction_t {
@@ -559,8 +611,8 @@ struct Var_t: public Instruction_t {
     template <typename Variable_t>
     Var_t(const Variable_t &var, bool escape)
         : Instruction_t(OPCODE::VAR, var.pos),
-          name(var.ident.name().str()), frame_offset(var.frame_offset),
-          frag_offset(var.frag_offset), escape(escape)
+          name(var.ident.name().str()), frame_offset(var.offset.frame),
+          frag_offset(var.offset.frag), escape(escape)
     {}
     void dump_params(std::ostream &os) const;
     std::string name;      //!< the variable identifier
@@ -639,9 +691,19 @@ struct OpenFrag_t: public Instruction_t {
         : Instruction_t(OPCODE::OPEN_FRAG, pos),
           name(std::move(name)), close_frag_offset(-1)
     {}
+    OpenFrag_t(OPCODE opcode, std::string name, const Pos_t &pos)
+        : Instruction_t(opcode, pos),
+          name(std::move(name)), close_frag_offset(-1)
+    {}
     void dump_params(std::ostream &os) const;
     std::string name;          //!< the fragment name
     int32_t close_frag_offset; //!< offset where to jump if frament is missing
+};
+
+struct OpenErrorFrag_t: public OpenFrag_t {
+    OpenErrorFrag_t(const Pos_t &pos)
+        : OpenFrag_t(OPCODE::OPEN_ERROR_FRAG, "_error", pos)
+    {}
 };
 
 struct CloseFrag_t: public Instruction_t {
@@ -666,8 +728,8 @@ struct Set_t: public Instruction_t {
     template <typename Variable_t>
     Set_t(const Variable_t &var)
         : Instruction_t(OPCODE::SET, var.pos),
-          name(var.ident.name().str()), frame_offset(var.frame_offset),
-          frag_offset(var.frag_offset)
+          name(var.ident.name().str()), frame_offset(var.offset.frame),
+          frag_offset(var.offset.frag)
     {}
     void dump_params(std::ostream &os) const;
     std::string name;      //!< the variable identifier
@@ -712,6 +774,15 @@ struct RegexMatch_t: public Instruction_t {
     bool matches(const string_view_t &view) const;
     Regex_t value;                               //!< the regular expression
     std::unique_ptr<FixedPCRE_t> compiled_value; //!< compiled regex
+};
+
+struct PushErrorFrag_t: public Instruction_t {
+    PushErrorFrag_t(bool discard_stack_value, const Pos_t &pos)
+        : Instruction_t(OPCODE::PUSH_ERROR_FRAG, pos),
+          discard_stack_value(discard_stack_value)
+    {}
+    void dump_params(std::ostream &os) const;
+    bool discard_stack_value; //!< if true value on the stack top is discarded
 };
 
 /** The reason of this struct is lack of explicit template parameters of c'tors

@@ -159,11 +159,6 @@ public:
     };
 };
 
-/** Symbol used for such rules where code is built without the help of semantic
- * values.
- */
-class Nil_t {};
-
 /** Represents value of syntactic symbols.
  * It is used for terminal and nonterminal symbols in bison grammer.
  */
@@ -246,39 +241,33 @@ class Variable_t: public Symbol_t {
 public:
     /** C'tor.
      */
-    Variable_t()
-        : Symbol_t(),
-          ident(), frame_offset(invalid_offset), frag_offset(invalid_offset)
-    {}
+    Variable_t(): Symbol_t(), ident() {}
 
     /** C'tor.
      */
     Variable_t(const Token_t &token)
         : Symbol_t(token),
-          ident(token.view()), frame_offset(invalid_offset),
-          frag_offset(invalid_offset)
+          ident(token)
     {}
 
     /** C'tor.
      */
     Variable_t(const Token_t &token, Identifier_t &&ident)
         : Symbol_t(token),
-          ident(std::move(ident)), frame_offset(invalid_offset),
-          frag_offset(invalid_offset)
+          ident(std::move(ident))
     {}
 
     /** C'tor.
      */
     Variable_t(const Variable_t &other, Identifier_t &&ident)
         : Symbol_t(other.id, other.pos, other.symbol_view),
-          ident(std::move(ident)), frame_offset(invalid_offset),
-          frag_offset(invalid_offset)
+          ident(std::move(ident))
     {}
 
     /** Appends new segment of variable identifier at the end of ident list.
      */
     Variable_t &push_back(const Token_t &token) {
-        ident.push_back(token.view());
+        ident.push_back(token);
         symbol_view = {symbol_view.begin(), token.token_view.end()};
         id = token.token_id;
         return *this;
@@ -288,20 +277,19 @@ public:
      */
     Variable_t &pop_back(Context_t *ctx, const Pos_t &pos);
 
-    /** Returns true if open frames and open frags offsets are resolved.
-     */
-    bool offsets_are_valid() const {
-        return (frame_offset != invalid_offset)
-            && (frag_offset != invalid_offset);
-    }
-
     /** Unresolved offset.
      */
     static constexpr auto invalid_offset = std::numeric_limits<uint16_t>::max();
 
+    struct Offset_t {
+        explicit operator bool() const {
+            return (frame != Variable_t::invalid_offset)
+                && (frag != Variable_t::invalid_offset);
+        }
+        uint16_t frame = invalid_offset;  //!< the offset of frame in stack
+        uint16_t frag = invalid_offset;   //!< the offset of frag in frame
+    } offset;
     Identifier_t ident; //!< the variable identifier
-    uint16_t frame_offset;  //!< the offset of frame (NOT fragment!)
-    uint16_t frag_offset;   //!< the offset fo frag
 };
 
 /** The symbol representing the directive options.

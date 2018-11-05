@@ -54,7 +54,7 @@ SCENARIO(
 
             THEN("Result of: 0? 1: 2") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "2");
             }
         }
@@ -66,7 +66,7 @@ SCENARIO(
 
             THEN("Result of: 3? 1: 2") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -78,7 +78,7 @@ SCENARIO(
 
             THEN("Result of: three? 1: 2") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -113,7 +113,7 @@ SCENARIO(
                     {1, 4},
                     "Unexpected token: name=SHORT_END, view=}"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -138,7 +138,7 @@ SCENARIO(
                     {1, 5},
                     "Unexpected token: name=SHORT_END, view=}"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -163,7 +163,7 @@ SCENARIO(
                     {1, 4},
                     "Unexpected token: name=COLON, view=:"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -188,7 +188,7 @@ SCENARIO(
                     {1, 6},
                     "Unexpected token: name=SHORT_END, view=}"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -213,7 +213,7 @@ SCENARIO(
                     {1, 6},
                     "Unexpected token: name=BITXOR, view=^"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -238,7 +238,7 @@ SCENARIO(
                     {1, 8},
                     "Unexpected token: name=BITXOR, view=^"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -260,7 +260,7 @@ SCENARIO(
 
             THEN("The plus operator wins precedence game") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "a");
             }
         }
@@ -272,7 +272,7 @@ SCENARIO(
 
             THEN("The negation operator wins precedence game") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "a");
             }
         }
@@ -284,7 +284,7 @@ SCENARIO(
 
             THEN("The multiplication operator wins precedence game") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "b");
             }
         }
@@ -296,7 +296,7 @@ SCENARIO(
 
             THEN("The comparison operator wins precedence game") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "b");
             }
         }
@@ -308,7 +308,7 @@ SCENARIO(
 
             THEN("The or operator wins precedence game") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "a");
             }
         }
@@ -320,7 +320,7 @@ SCENARIO(
 
             THEN("The comparison and wins precedence game") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "b");
             }
         }
@@ -343,7 +343,7 @@ SCENARIO(
 
             THEN("The second operator is 'false branch'") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "b");
             }
         }
@@ -355,7 +355,7 @@ SCENARIO(
 
             THEN("The second operator is 'false branch'") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "c");
             }
         }
@@ -367,7 +367,7 @@ SCENARIO(
 
             THEN("The second operator is 'true branch'") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "c");
             }
         }
@@ -379,7 +379,7 @@ SCENARIO(
 
             THEN("The second operator is 'true branch'") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "b");
             }
         }

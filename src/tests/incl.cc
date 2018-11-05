@@ -53,7 +53,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -72,9 +72,9 @@ SCENARIO(
                     Teng::Error_t::WARNING,
                     {TEST_ROOT "text.txt", 1, 12},
                     "Runtime: Variable '.var' is undefined "
-                    "[open_frags=., iteration=0]"
+                    "[open_frags=., iteration=0/1]"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "some text undefined\n");
             }
         }
@@ -87,7 +87,7 @@ SCENARIO(
 
             THEN("It contains data from text.txt") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "some text (var)\n");
             }
         }
@@ -104,7 +104,7 @@ SCENARIO(
 
             THEN("It contains data from text.txt") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "some text (var)\n");
             }
         }
@@ -127,7 +127,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -140,7 +140,7 @@ SCENARIO(
 
             THEN("It contains fragment data") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{}");
             }
         }
@@ -158,7 +158,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -174,9 +174,9 @@ SCENARIO(
                     Teng::Error_t::WARNING,
                     {TEST_ROOT "text.txt", 1, 12},
                     "Runtime: Variable '.sample.var' is undefined "
-                    "[open_frags=.sample, iteration=0]"
+                    "[open_frags=.sample, iteration=0/1]"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{some text undefined\n}");
             }
         }
@@ -190,7 +190,7 @@ SCENARIO(
 
             THEN("It contains data from text.txt") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{some text (var)\n}");
             }
         }
@@ -216,7 +216,7 @@ SCENARIO(
                     "Error reading file '" TEST_ROOT "missing.txt' "
                     "(No such file or directory)"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -246,7 +246,7 @@ SCENARIO(
                     {1, 15},
                     "Unexpected token: name=DEC_INT, view=1"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -271,7 +271,7 @@ SCENARIO(
                     {1, 20},
                     "Unexpected token: name=END, view=?>"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -303,17 +303,17 @@ SCENARIO(
                     Teng::Error_t::WARNING,
                     {1, 62},
                     "Runtime: Variable '.sample.before' is undefined "
-                    "[open_frags=.sample, iteration=0]"
+                    "[open_frags=.sample, iteration=0/4]"
                 }, {
                     Teng::Error_t::WARNING,
                     {1, 62},
                     "Runtime: Variable '.sample.before' is undefined "
-                    "[open_frags=.sample, iteration=1]"
+                    "[open_frags=.sample, iteration=1/4]"
                 }, {
                     Teng::Error_t::WARNING,
                     {1, 62},
                     "Runtime: Variable '.sample.before' is undefined "
-                    "[open_frags=.sample, iteration=2]"
+                    "[open_frags=.sample, iteration=2/4]"
                 }, {
                     Teng::Error_t::WARNING,
                     {1, 62},
@@ -323,17 +323,17 @@ SCENARIO(
                     Teng::Error_t::WARNING,
                     {TEST_ROOT "incl.error.txt", 2, 2},
                     "Runtime: Variable '.sample.missing' is undefined "
-                    "[open_frags=.sample, iteration=0]"
+                    "[open_frags=.sample, iteration=0/4]"
                 }, {
                     Teng::Error_t::WARNING,
                     {TEST_ROOT "incl.error.txt", 2, 2},
                     "Runtime: Variable '.sample.missing' is undefined "
-                    "[open_frags=.sample, iteration=1]"
+                    "[open_frags=.sample, iteration=1/4]"
                 }, {
                     Teng::Error_t::WARNING,
                     {TEST_ROOT "incl.error.txt", 2, 2},
                     "Runtime: Variable '.sample.missing' is undefined "
-                    "[open_frags=.sample, iteration=2]"
+                    "[open_frags=.sample, iteration=2/4]"
                 }, {
                     Teng::Error_t::WARNING,
                     {TEST_ROOT "incl.error.txt", 2, 2},
@@ -343,24 +343,24 @@ SCENARIO(
                     Teng::Error_t::WARNING,
                     {1, 139},
                     "Runtime: Variable '.sample.after' is undefined "
-                    "[open_frags=.sample, iteration=0]"
+                    "[open_frags=.sample, iteration=0/4]"
                 }, {
                     Teng::Error_t::WARNING,
                     {1, 139},
                     "Runtime: Variable '.sample.after' is undefined "
-                    "[open_frags=.sample, iteration=1]"
+                    "[open_frags=.sample, iteration=1/4]"
                 }, {
                     Teng::Error_t::WARNING,
                     {1, 139},
                     "Runtime: Variable '.sample.after' is undefined "
-                    "[open_frags=.sample, iteration=2]"
+                    "[open_frags=.sample, iteration=2/4]"
                 }, {
                     Teng::Error_t::WARNING,
                     {1, 139},
                     "The 1 other error message(s) for this source code "
                     "position have been ignored"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 std::string s = "here is missing variable before include "
                                 "undefined;some\nundefined\ntext\n;"
                                 "and here, after the include undefined;";

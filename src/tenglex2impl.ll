@@ -596,33 +596,33 @@ UTF_CHAR    {UTF_2_CHAR}|{UTF_3_CHAR}|{UTF_4_CHAR}|{UTF_5_CHAR}|{UTF_6_CHAR}
 }
 
 "defined" {
-    // match defined operator
+    // match defined query
     return make_nonewline_token(LEX2::DEFINED, yytext, yytext + yyleng);
 }
 
+"repr" {
+    // match repr query
+    return make_nonewline_token(LEX2::REPR, yytext, yytext + yyleng);
+}
+
 "isempty" {
-    // match exist operator
+    // match exist query
     return make_nonewline_token(LEX2::ISEMPTY, yytext, yytext + yyleng);
 }
 
 "exists" {
-    // match exist operator
+    // match exist query
     return make_nonewline_token(LEX2::EXISTS, yytext, yytext + yyleng);
 }
 
 "type" {
-    // match type operator
+    // match type query
     return make_nonewline_token(LEX2::TYPE, yytext, yytext + yyleng);
 }
 
 "count" {
-    // match count operator
+    // match count query
     return make_nonewline_token(LEX2::COUNT, yytext, yytext + yyleng);
-}
-
-"jsonify" {
-    // match count operator
-    return make_nonewline_token(LEX2::JSONIFY, yytext, yytext + yyleng);
 }
 
 "_first" {
@@ -653,6 +653,11 @@ UTF_CHAR    {UTF_2_CHAR}|{UTF_3_CHAR}|{UTF_4_CHAR}|{UTF_5_CHAR}|{UTF_6_CHAR}
 "_count" {
     // match builtin variable name
     return make_nonewline_token(LEX2::BUILTIN_COUNT, yytext, yytext + yyleng);
+}
+
+"_error" {
+    // match builtin fragment name
+    return make_nonewline_token(LEX2::BUILTIN_ERROR, yytext, yytext + yyleng);
 }
 
 "_this" {

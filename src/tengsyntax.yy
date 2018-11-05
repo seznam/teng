@@ -163,8 +163,8 @@
 
 // identifiers and literals
 %token <TokenSymbol_t> BUILTIN_FIRST BUILTIN_INNER BUILTIN_LAST BUILTIN_INDEX
-%token <TokenSymbol_t> BUILTIN_COUNT BUILTIN_THIS BUILTIN_PARENT
-%token <TokenSymbol_t> DEFINED ISEMPTY EXISTS JSONIFY TYPE COUNT
+%token <TokenSymbol_t> BUILTIN_COUNT BUILTIN_THIS BUILTIN_PARENT BUILTIN_ERROR
+%token <TokenSymbol_t> REPR DEFINED ISEMPTY EXISTS TYPE COUNT
 %token <TokenSymbol_t> IDENT UDF_IDENT STRING REGEX DEC_INT HEX_INT BIN_INT REAL
 
 // invalid lexical token
@@ -185,7 +185,7 @@
 %type <LiteralSymbol_t> signed_literal real_literal string_literal_fact
 
 // purpose: propagation of variable name
-%type <VariableSymbol_t> variable local_variable relative_variable set_variable
+%type <VariableSymbol_t> variable set_variable
 
 // purpose: propagation of options value
 %type <OptionsSymbol_t> options
@@ -194,33 +194,17 @@
 %type <NAryExprSymbol_t> nary_expression case_expression
 %type <NAryExprSymbol_t> function_expression query_expression
 
-// purpose: the rule value is useless
-%type <Nil_t> start template teng_directive teng_unknown ignored_options
-%type <Nil_t> teng_frag teng_frag_close
-%type <Nil_t> teng_expr teng_dict option option_list
-%type <Nil_t> teng_debug teng_bytecode teng_include
-%type <Nil_t> unary_expression expression_impl lazy_binary_expression
-%type <Nil_t> ternary_expression expression binary_expression
-%type <Nil_t> absolute_variable
-%type <Nil_t> absolute_variable_segment absolute_variable_prefix teng_set
-%type <Nil_t> rtvar_path rtvar_segment rtvar_identifier rtvar_index
-%type <Nil_t> teng_ctype teng_ctype_close block_content
-%type <Nil_t> teng_else teng_elif teng_endif teng_if_stmnt
-%type <Nil_t> query_argument_inner template_content teng_if
-%type <Nil_t> teng_format teng_format_close teng_if_stmnt_valid
-%type <Nil_t> teng_if_stmnt_invalid teng_if_stmnt_disordered case_default_option
-
 // purpose: tells the optimizer if subexpression is optimizable
 %type <bool> nullary_expression
 // purpose: tells the if generator if error occurred during expression parsing
 %type <bool> expr_up_to_end expr_up_to_end_impl
 
 // purpose: propagation of the statement start position
-%type <Pos_t> runtime_variable teng_format_open teng_frag_open teng_ctype_open
+%type <Pos_t> teng_format_open teng_frag_open teng_ctype_open
 
 // purpose: propagation of the subexpression arity to the expression optimizer
 %type <uint32_t> function_arguments case_particular_options case_values
-%type <uint32_t> query_argument case_options deprecated_binary_expression
+%type <uint32_t> query_arg case_options deprecated_binary_expression
 
  /************************************************ GRAMMAR RULES: teng syntax */
 %%
@@ -596,7 +580,7 @@ unary_expression
     | MINUS expression {generate_expr<UnaryMinus_t>(ctx, *$1);} %prec HIGHEST_PREC
     /* | expression STR_EQ REGEX {generate_match(ctx, *$2, *$3);} */
     /* | expression STR_NE REGEX {generate_match(ctx, *$2, *$3);} */
-    | runtime_variable {generate<Repr_t>(ctx, $1);}
+    | VAR VAR runtime_variable {generate<Repr_t>(ctx, $1->pos);}
     ;
 
 
@@ -714,9 +698,9 @@ identifier_relative
     | BUILTIN_LAST {$$ = std::move($1);}
     | BUILTIN_INDEX {$$ = std::move($1);}
     | BUILTIN_COUNT {$$ = std::move($1);}
+    | BUILTIN_ERROR {$$ = std::move($1);}
     | TYPE {$$ = std::move($1);}
     | COUNT {$$ = std::move($1);}
-    | JSONIFY {$$ = std::move($1);}
     | EXISTS {$$ = std::move($1);}
     | LT_DIGRAPH {$$ = std::move($1);}
     | LE_DIGRAPH {$$ = std::move($1);}
@@ -747,48 +731,13 @@ variable
     ;
 
 
-absolute_variable_prefix
-    : SELECTOR {prepare_root_variable(ctx, *$1);}
-    | BUILTIN_THIS SELECTOR {prepare_this_variable(ctx, *$1);}
-    | BUILTIN_PARENT SELECTOR {prepare_parent_variable(ctx, *$1);}
-    ;
-
-
 absolute_variable
-    : absolute_variable_prefix absolute_variable_segment identifier
-      {ctx->var_sym.push_back(*$3);}
-    ;
-
-
-absolute_variable_segment
-    : absolute_variable_segment identifier_relative SELECTOR
-      {ctx->var_sym.push_back(*$2);}
-    | absolute_variable_segment BUILTIN_THIS SELECTOR
-      {ignoring_this(ctx, $2->pos);}
-    | absolute_variable_segment BUILTIN_PARENT SELECTOR
-      {ctx->var_sym.pop_back(ctx, $2->pos);}
-    | %empty
-      {}
+    : absolute_variable_prefix variable_path variable_identifier
     ;
 
 
 relative_variable
-    : identifier_relative
-      {ctx->var_sym = Variable_t(*$1);}
-      relative_variable_segment identifier
-      {ctx->var_sym.push_back(*$4);}
-    ;
-
-
-relative_variable_segment
-    : relative_variable_segment identifier_relative SELECTOR
-      {ctx->var_sym.push_back(*$2);}
-    | relative_variable_segment BUILTIN_THIS SELECTOR
-      {ignoring_this(ctx, $2->pos);}
-    | relative_variable_segment BUILTIN_PARENT SELECTOR
-      {ctx->var_sym.pop_back(ctx, $2->pos);}
-    | SELECTOR
-      {}
+    : relative_variable_prefix variable_path variable_identifier
     ;
 
 
@@ -797,37 +746,138 @@ local_variable
     ;
 
 
- /********************************************** RULES: teng runtime variable */
-
-
-runtime_variable
-    : VAR VAR rtvar_path {$$ = $1->pos; ctx->rtvar_strings.pop_back();}
+absolute_variable_prefix
+    : SELECTOR {prepare_root_variable(ctx, *$1);}
+    | BUILTIN_THIS SELECTOR {prepare_this_variable(ctx, *$1);}
+    | BUILTIN_PARENT SELECTOR {prepare_parent_variable(ctx, *$1);}
     ;
 
 
-rtvar_path
-    : SELECTOR {generate_rtvar<PushRootFrag_t>(ctx, *$1);} rtvar_segment {}
-    | {generate_rtvar<PushThisFrag_t>(ctx, *YYLA);} rtvar_segment {}
+relative_variable_prefix
+    : identifier_relative {ctx->var_sym = Variable_t(*$1);} SELECTOR {}
     ;
 
 
-rtvar_segment
-    : rtvar_segment SELECTOR rtvar_identifier rtvar_index {}
-    | rtvar_identifier rtvar_index {}
-    ;
-
-
-rtvar_index
-    : rtvar_index L_BRACKET expression R_BRACKET
-      {generate_rtvar_index(ctx, *$2, *$4);}
+variable_path
+    : variable_path variable_segment SELECTOR {}
     | %empty {}
     ;
 
 
+variable_segment
+    : identifier_relative {ctx->var_sym.push_back(*$1);}
+    | BUILTIN_THIS {ignoring_this(ctx, $1->pos);}
+    | BUILTIN_PARENT {ctx->var_sym.pop_back(ctx, $1->pos);}
+    ;
+
+
+variable_identifier
+    : identifier {ctx->var_sym.push_back(*$1);}
+    ;
+
+
+ /********************************************** RULES: teng runtime variable */
+
+
+runtime_variable
+    : absolute_rtvar {ctx->rtvar_strings.pop_back();}
+    | relative_rtvar {ctx->rtvar_strings.pop_back();}
+    | local_rtvar {}
+    ;
+
+
+absolute_rtvar
+    : absolute_rtvar_prefix rtvar_path rtvar_segment
+    ;
+
+
+relative_rtvar
+    : relative_rtvar_prefix rtvar_path rtvar_segment
+    | relative_rtvar_this_prefix relative_rtvar_leader_with_index
+    ;
+
+
+local_rtvar
+    : relative_rtvar_this_prefix identifier {generate_local_rtvar(ctx, *$2);}
+    ;
+
+
+absolute_rtvar_prefix
+    : SELECTOR {generate_rtvar<PushRootFrag_t>(ctx, *$1);}
+    ;
+
+
+relative_rtvar_prefix
+    : relative_rtvar_this_prefix relative_rtvar_leader SELECTOR
+    ;
+
+
+relative_rtvar_this_prefix
+    : relative_rtvar_this_prefix BUILTIN_THIS SELECTOR {}
+    | %empty {}
+    ;
+
+
+relative_rtvar_leader
+    : relative_rtvar_leader_plain
+    | relative_rtvar_leader_with_index
+    ;
+
+
+relative_rtvar_leader_plain
+    : rtvar_identifier_relative
+    | rtvar_builtin_parent
+    ;
+
+
+relative_rtvar_leader_with_index
+    : rtvar_identifier_relative rtvar_index_expr rtvar_index
+    | rtvar_builtin_parent rtvar_index_expr rtvar_index
+    | rtvar_builtin_this rtvar_index_expr rtvar_index
+    ;
+
+
+rtvar_path
+    : rtvar_path rtvar_segment SELECTOR
+    | %empty {}
+    ;
+
+
+rtvar_segment
+    : rtvar_identifier rtvar_index
+    ;
+
+
+rtvar_index
+    : rtvar_index rtvar_index_expr
+    | %empty {}
+    ;
+
+
+rtvar_index_expr
+    : L_BRACKET expression R_BRACKET {generate_rtvar_index(ctx, *$1, *$3);}
+    ;
+
+
 rtvar_identifier
-    : identifier_relative {generate_rtvar_segment(ctx, *$1);}
-    | BUILTIN_THIS {generate_rtvar_this(ctx, *$1);}
-    | BUILTIN_PARENT {generate_rtvar_parent(ctx, *$1);}
+    : identifier_relative {generate_rtvar_segment(ctx, *$1, false);}
+    | BUILTIN_THIS {generate_rtvar_this(ctx, *$1, false);}
+    | BUILTIN_PARENT {generate_rtvar_parent(ctx, *$1, false);}
+    ;
+
+
+rtvar_identifier_relative
+    : identifier_relative {generate_rtvar_segment(ctx, *$1, true);}
+    ;
+
+
+rtvar_builtin_parent
+    : BUILTIN_PARENT {generate_rtvar_parent(ctx, *$1, true);}
+    ;
+
+
+rtvar_builtin_this
+    : BUILTIN_THIS {generate_rtvar_this(ctx, *$1, true);}
     ;
 
 
@@ -893,31 +943,25 @@ function_arguments
 
 
 query_expression
-    : DEFINED {generate<LogSuppress_t>(ctx, $1->pos);} query_argument
-      {$$.emplace(query_expr<ReprDefined_t>(ctx, *$1, $3));}
-    | EXISTS {generate<LogSuppress_t>(ctx, $1->pos);} query_argument
-      {$$.emplace(query_expr<ReprExists_t>(ctx, *$1, $3));}
-    | ISEMPTY {generate<LogSuppress_t>(ctx, $1->pos);} query_argument
-      {$$.emplace(query_expr<ReprIsEmpty_t>(ctx, *$1, $3));}
-    | TYPE {generate<LogSuppress_t>(ctx, $1->pos);} query_argument
-      {$$.emplace(query_expr<ReprType_t>(ctx, *$1, $3));}
-    | COUNT {generate<LogSuppress_t>(ctx, $1->pos);} query_argument
-      {$$.emplace(query_expr<ReprCount_t>(ctx, *$1, $3));}
-    | JSONIFY query_argument
-      {$$.emplace(query_expr<ReprJsonify_t>(ctx, *$1, $2));}
+    : REPR query_arg {$$.emplace(query_expr<QueryRepr_t>(ctx, *$1, $2));}
+    | DEFINED query_arg {$$.emplace(query_expr<QueryDefined_t>(ctx, *$1, $2));}
+    | EXISTS query_arg {$$.emplace(query_expr<QueryExists_t>(ctx, *$1, $2));}
+    | ISEMPTY query_arg {$$.emplace(query_expr<QueryIsEmpty_t>(ctx, *$1, $2));}
+    | TYPE query_arg {$$.emplace(query_expr<QueryType_t>(ctx, *$1, $2));}
+    | COUNT query_arg {$$.emplace(query_expr<QueryCount_t>(ctx, *$1, $2));}
     ;
 
 
-query_argument
-    : L_PAREN query_argument_inner R_PAREN {$$ = 1;}
+query_arg
+    : L_PAREN query_arg_inner R_PAREN {$$ = 1;}
     | L_PAREN error_up_to_r_paren R_PAREN {$$ = 0;}
     ;
 
 
-query_argument_inner
+query_arg_inner
     : variable {generate_query(ctx, *$1, false);}
     | VAR variable {generate_query(ctx, *$2, true);}
-    | runtime_variable {/*generates instructions itself*/}
+    | VAR VAR {generate<LogSuppress_t>(ctx, $1->pos);} runtime_variable {}
     ;
 
 

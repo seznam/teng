@@ -412,15 +412,16 @@ void prepare_expr(Context_t *ctx, const Pos_t &pos);
 /** Generates instructions implementing getting value of runtime variable for
  * desired key.
  */
-void generate_rtvar_segment(Context_t *ctx, const Token_t &token);
+void
+generate_rtvar_segment(Context_t *ctx, const Token_t &token, bool is_first);
 
 /** Generates instructions implementing getting this fragment.
  */
-void generate_rtvar_this(Context_t *ctx, const Token_t &token);
+void generate_rtvar_this(Context_t *ctx, const Token_t &token, bool is_first);
 
 /** Generates instructions implementing getting parent fragment.
  */
-void generate_rtvar_parent(Context_t *ctx, const Token_t &token);
+void generate_rtvar_parent(Context_t *ctx, const Token_t &token, bool is_first);
 
 /** Inserts new diagnostic code into diag-codes storage including the diag code
  * sentinel.
@@ -520,12 +521,31 @@ void generate_rtvar(Context_t *ctx, const Token_t &token) {
     else ctx->rtvar_strings.push_back(token.view());
 }
 
+/** Generates instructions implementing local runtime variable.
+ */
+void generate_local_rtvar(Context_t *ctx, const Token_t &token);
+
 /** Generates instructions implementing query expression.
  * If arity is not 1 then query is badly formated and instruction is not
  * generated.
  */
 template <typename Instr_t>
 NAryExpr_t query_expr(Context_t *ctx, const Token_t &token, uint32_t arity) {
+    if (std::is_same<Instr_t, QueryDefined_t>::value) {
+        logWarning(
+            ctx,
+            token.pos,
+            "The defined() query is deprecated; "
+            "use isempty() or exists() instead"
+        );
+    } else if (std::is_same<Instr_t, QueryCount_t>::value) {
+        logWarning(
+            ctx,
+            token.pos,
+            "The count() query is deprecated; "
+            "use _count builtin variable instead"
+        );
+    }
     if (arity == 1) {
         generate<Instr_t>(ctx, token.pos);
     } else {
@@ -570,6 +590,7 @@ inline void ignoring_this(Context_t *ctx, const Pos_t &pos) {
 inline void obsolete_dollar(Context_t *ctx, const Pos_t &pos) {
     logWarning(ctx, pos, "Don't use dollar sign here please");
 }
+
 } // namespace Parser
 } // namespace Teng
 

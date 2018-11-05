@@ -57,7 +57,6 @@ inline std::string g(
     return result;
 }
 
-
 inline std::string g(
     Teng::Error_t &err,
     const std::string &templ,
@@ -83,4 +82,11 @@ inline std::string g(
     );
     return result;
 }
+
+#define ERRLOG_TEST(LHS, RHS)                                                  \
+    for (int i = 0; i < std::min(LHS.size(), RHS.size()); ++i) {               \
+        INFO("i=" + std::to_string(i));                                        \
+        REQUIRE(LHS[i] == RHS[i]);                                             \
+    }                                                                          \
+    REQUIRE(LHS.size() == RHS.size())                                          \
 

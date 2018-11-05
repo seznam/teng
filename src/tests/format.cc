@@ -54,7 +54,7 @@ SCENARIO(
 
             THEN("Spaces in formated block are discarted") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == " { \t abc \t } ");
             }
         }
@@ -71,7 +71,7 @@ SCENARIO(
 
             THEN("Spaces in formated block are merged") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == " { \t  a b c  \t } ");
             }
         }
@@ -88,7 +88,7 @@ SCENARIO(
 
             THEN("No leading and trailing whitespaces") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == " { \t  a\nb\nc  \t } ");
             }
         }
@@ -105,7 +105,7 @@ SCENARIO(
 
             THEN("Spaces and newlines are merged") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == " { \t  a b c  \t } ");
             }
         }
@@ -122,7 +122,7 @@ SCENARIO(
 
             THEN("Lines that contains whitespaces only are removed") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == " { \t  a \n b \n c  \t } ");
             }
         }
@@ -152,7 +152,7 @@ SCENARIO(
                     {1, 38},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{ } ");
             }
         }
@@ -179,7 +179,7 @@ SCENARIO(
                     {1, 97},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "({ } )");
             }
         }
@@ -205,7 +205,7 @@ SCENARIO(
                     {1, 97},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "(  )  { } ");
             }
         }
@@ -236,7 +236,7 @@ SCENARIO(
                     {1, 79},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "(){ } ");
             }
         }
@@ -267,7 +267,7 @@ SCENARIO(
                     {1, 14},
                     "Unexpected token: name=END, view=?>"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "#  &  #");
             }
         }
@@ -292,7 +292,7 @@ SCENARIO(
                     {1, 15},
                     "Unexpected token: name=DEC_INT, view=1"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "#  &  #");
             }
         }
@@ -317,7 +317,7 @@ SCENARIO(
                     {1, 31},
                     "Unexpected token: name=DEC_INT, view=1"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "#  &  #");
             }
         }
@@ -338,7 +338,7 @@ SCENARIO(
                     "Formatting block has no effect; "
                     "option 'space' is not string"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "#  &  #");
             }
         }
@@ -363,7 +363,7 @@ SCENARIO(
                     {1, 15},
                     "Unexpected token: name=DEC_INT, view=1"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "#  &  #");
             }
         }
@@ -393,7 +393,7 @@ SCENARIO(
                     {1, 54},
                     "Unexpected token: name=DEC_INT, view=1"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "#&#");
             }
         }
@@ -413,7 +413,7 @@ SCENARIO(
                     {1, 54},
                     "This directive doesn't accept any options; ignoring them"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "#&#");
             }
         }
@@ -439,7 +439,7 @@ SCENARIO(
                     "The <?teng endformat?> directive closes unopened "
                     "format block"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{}");
             }
         }
@@ -465,7 +465,7 @@ SCENARIO(
                     "The <?teng endformat?> directive closes unopened "
                     "format block"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{}{}");
             }
         }
@@ -487,7 +487,7 @@ SCENARIO(
                     "The <?teng endformat?> directive closes unopened "
                     "format block"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{}{    }");
             }
         }
@@ -509,7 +509,7 @@ SCENARIO(
                     "The <?teng endformat?> directive closes unopened "
                     "format block"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{    }{}");
             }
         }

@@ -46,6 +46,7 @@
 #define TENGFUNCTIONESCAPING_H
 
 #include <string>
+#include <sstream>
 
 #include <tenghex.h>
 #include <tengplatform.h>
@@ -174,6 +175,20 @@ Result_t quoteescape(Ctx_t &ctx, const Args_t &args) {
         }
         return escaped;
     }));
+}
+
+/** Converts value to json.
+ *
+ * @param args Function arguments (list of values).
+ * @param ctx Teng function ctx.
+ * @param result Function's result value.
+ */
+Result_t jsonify(Ctx_t &ctx, const Args_t &args) {
+    if (args.size() != 1)
+        return wrongNumberOfArgs(ctx, "jsonify", 1);
+    std::stringstream out;
+    args[0].json(out);
+    return Result_t(out.str());
 }
 
 } // namespace builtin

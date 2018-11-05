@@ -54,7 +54,7 @@ SCENARIO(
 
             THEN("The result is true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -70,7 +70,7 @@ SCENARIO(
 
             THEN("The result is false") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -90,7 +90,7 @@ SCENARIO(
                     {1, 2},
                     "isenabled(): Unknown feature 'unknown-option'"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -111,7 +111,7 @@ SCENARIO(
 
             THEN("The result is true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -123,7 +123,7 @@ SCENARIO(
 
             THEN("The result is false") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -139,7 +139,7 @@ SCENARIO(
 
             THEN("The result is true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -151,7 +151,7 @@ SCENARIO(
 
             THEN("The result is false") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -167,7 +167,7 @@ SCENARIO(
 
             THEN("The result is true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -179,7 +179,7 @@ SCENARIO(
 
             THEN("The result is false") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -200,7 +200,7 @@ SCENARIO(
 
             THEN("The result is value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "value");
             }
         }
@@ -212,7 +212,7 @@ SCENARIO(
 
             THEN("The result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -224,7 +224,7 @@ SCENARIO(
 
             THEN("The result is default") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "default");
             }
         }
@@ -240,7 +240,7 @@ SCENARIO(
 
             THEN("The result is value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "value");
             }
         }
@@ -252,7 +252,7 @@ SCENARIO(
 
             THEN("The result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -264,7 +264,7 @@ SCENARIO(
 
             THEN("The result is default") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "default");
             }
         }
@@ -280,7 +280,7 @@ SCENARIO(
 
             THEN("The result is value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "value");
             }
         }
@@ -292,7 +292,7 @@ SCENARIO(
 
             THEN("The result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -304,7 +304,7 @@ SCENARIO(
 
             THEN("The result is default") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "default");
             }
         }

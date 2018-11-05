@@ -105,6 +105,19 @@ public:
 
     /** C'tor.
      */
+    explicit FragmentValue_t(Fragment_t &&value) noexcept
+        : tag_value(tag::frag), frag_value(std::move(value))
+    {}
+
+    /**
+     * @short Create empty fragment list value.
+     */
+    explicit FragmentValue_t(FragmentList_t &&value) noexcept
+        : tag_value(tag::frags), frags_value(std::move(value))
+    {}
+
+    /** C'tor.
+     */
     explicit FragmentValue_t(TypeTag_t<Fragment_t>) noexcept
         : tag_value(tag::frag), frag_value()
     {}

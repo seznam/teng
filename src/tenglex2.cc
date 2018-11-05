@@ -104,9 +104,9 @@ string_view_t l2_token_name(int token_id) {
     case LEX2::HIGHEST_PREC: return "HIGHEST_PREC";
     case LEX2::CASE: return "CASE";
     case LEX2::DEFINED: return "DEFINED";
+    case LEX2::REPR: return "REPR";
     case LEX2::ISEMPTY: return "ISEMPTY";
     case LEX2::EXISTS: return "EXISTS";
-    case LEX2::JSONIFY: return "JSONIFY";
     case LEX2::TYPE: return "TYPE";
     case LEX2::COUNT: return "COUNT";
     case LEX2::L_PAREN: return "L_PAREN";
@@ -131,6 +131,7 @@ string_view_t l2_token_name(int token_id) {
     case LEX2::BUILTIN_LAST: return "BUILTIN_LAST";
     case LEX2::BUILTIN_INDEX: return "BUILTIN_INDEX";
     case LEX2::BUILTIN_COUNT: return "BUILTIN_COUNT";
+    case LEX2::BUILTIN_ERROR: return "BUILTIN_ERROR";
     case LEX2::BUILTIN_THIS: return "BUILTIN_THIS";
     case LEX2::BUILTIN_PARENT: return "BUILTIN_PARENT";
     }

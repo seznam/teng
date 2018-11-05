@@ -45,6 +45,9 @@
 
 namespace Teng {
 
+// forwards
+class FragmentList_t;
+
 /** Storage of error messages of template parsing, processing and template
  * rendering.
  */
@@ -107,6 +110,10 @@ public:
      */
     bool empty() const {return records.empty();}
 
+    /** Returns the number of errors.
+     */
+    std::size_t size() const {return records.size();}
+
     /** Returns whether any error occurred.
      * @return true if any error occurred, false otherwise
      */
@@ -117,9 +124,12 @@ public:
     void clear() {records.clear();}
 
     /** Get raw error log.
-      * @return error log
       */
     std::vector<Entry_t> getEntries() const;
+
+    /** Get raw error log in "fragment format".
+     */
+    FragmentList_t getFrags() const;
 
     /** Appends new entry.
      * @param entry new entry to append
@@ -150,7 +160,7 @@ public:
 
     /** Maximal number of error messages per source code position.
      */
-    std::size_t max_messages_per_pos = 3;
+    static constexpr std::size_t max_messages_per_pos = 3;
 
 private:
     // don't copy

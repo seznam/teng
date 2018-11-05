@@ -120,6 +120,7 @@ void dump_instr(
 template <typename Ctx_t>
 bool
 process(Ctx_t *ctx, std::vector<Value_t> &stack, const SubProgram_t &program) {
+    std::vector<FragmentList_t> error_list;
     std::vector<Value_t> prg_stack;
     prg_stack.reserve(128);
     DBG(dump_program(ctx, program, std::cerr));
@@ -312,6 +313,11 @@ process(Ctx_t *ctx, std::vector<Value_t> &stack, const SubProgram_t &program) {
                 ip += shift;
             break;
 
+        case OPCODE::OPEN_ERROR_FRAG:
+            if (auto shift = exec::open_error_frag(ctx))
+                ip += shift;
+            break;
+
         case OPCODE::CLOSE_FRAG:
             if (auto shift = exec::close_frag(ctx))
                 ip += shift;
@@ -353,6 +359,26 @@ process(Ctx_t *ctx, std::vector<Value_t> &stack, const SubProgram_t &program) {
             push(exec::is_inner_frag(ctx));
             break;
 
+        case OPCODE::PUSH_VAL_COUNT:
+            push(exec::frag_count(ctx, get_arg));
+            break;
+
+        case OPCODE::PUSH_VAL_INDEX:
+            push(exec::frag_index(ctx, get_arg));
+            break;
+
+        case OPCODE::PUSH_VAL_FIRST:
+            push(exec::is_first_frag(ctx, get_arg));
+            break;
+
+        case OPCODE::PUSH_VAL_LAST:
+            push(exec::is_last_frag(ctx, get_arg));
+            break;
+
+        case OPCODE::PUSH_VAL_INNER:
+            push(exec::is_inner_frag(ctx, get_arg));
+            break;
+
         case OPCODE::PUSH_FRAG:
             push(exec::push_frag(ctx));
             break;
@@ -363,6 +389,10 @@ process(Ctx_t *ctx, std::vector<Value_t> &stack, const SubProgram_t &program) {
 
         case OPCODE::PUSH_THIS_FRAG:
             push(exec::push_this_frag(ctx));
+            break;
+
+        case OPCODE::PUSH_ERROR_FRAG:
+            push(exec::push_error_frag(ctx, get_arg));
             break;
 
         case OPCODE::PUSH_ATTR_AT:
@@ -381,28 +411,28 @@ process(Ctx_t *ctx, std::vector<Value_t> &stack, const SubProgram_t &program) {
             push(exec::repr(ctx, get_arg));
             break;
 
-        case OPCODE::REPR_JSONIFY:
-            push(exec::repr_jsonify(ctx, get_arg));
+        case OPCODE::QUERY_REPR:
+            push(exec::query_repr(ctx, get_arg));
             break;
 
-        case OPCODE::REPR_COUNT:
-            push(exec::repr_count(ctx, get_arg));
+        case OPCODE::QUERY_COUNT:
+            push(exec::query_count(ctx, get_arg));
             break;
 
-        case OPCODE::REPR_TYPE:
-            push(exec::repr_type(ctx, get_arg));
+        case OPCODE::QUERY_TYPE:
+            push(exec::query_type(ctx, get_arg));
             break;
 
-        case OPCODE::REPR_DEFINED:
-            push(exec::repr_defined(ctx, get_arg));
+        case OPCODE::QUERY_DEFINED:
+            push(exec::query_defined(ctx, get_arg));
             break;
 
-        case OPCODE::REPR_EXISTS:
-            push(exec::repr_exists(ctx, get_arg));
+        case OPCODE::QUERY_EXISTS:
+            push(exec::query_exists(ctx, get_arg));
             break;
 
-        case OPCODE::REPR_ISEMPTY:
-            push(exec::repr_isempty(ctx, get_arg));
+        case OPCODE::QUERY_ISEMPTY:
+            push(exec::query_isempty(ctx, get_arg));
             break;
 
         case OPCODE::LOG_SUPPRESS:

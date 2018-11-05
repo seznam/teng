@@ -55,7 +55,7 @@ SCENARIO(
 
             THEN("The right branch has been choosen") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "aaa == (aaa)");
             }
         }
@@ -67,7 +67,7 @@ SCENARIO(
 
            THEN("The right (default) branch has been choosen") {
                std::vector<Teng::Error_t::Entry_t> errs;
-               REQUIRE(err.getEntries() == errs);
+               ERRLOG_TEST(err.getEntries(), errs);
                REQUIRE(result == "(aaa)");
            }
         }
@@ -80,7 +80,7 @@ SCENARIO(
 
            THEN("The first branch has been choosen") {
                std::vector<Teng::Error_t::Entry_t> errs;
-               REQUIRE(err.getEntries() == errs);
+               ERRLOG_TEST(err.getEntries(), errs);
                REQUIRE(result == "a");
            }
         }
@@ -93,7 +93,7 @@ SCENARIO(
 
            THEN("The second branch has been choosen") {
                std::vector<Teng::Error_t::Entry_t> errs;
-               REQUIRE(err.getEntries() == errs);
+               ERRLOG_TEST(err.getEntries(), errs);
                REQUIRE(result == "b");
            }
         }
@@ -106,7 +106,7 @@ SCENARIO(
 
            THEN("The third branch has been choosen") {
                std::vector<Teng::Error_t::Entry_t> errs;
-               REQUIRE(err.getEntries() == errs);
+               ERRLOG_TEST(err.getEntries(), errs);
                REQUIRE(result == "c");
            }
         }
@@ -119,7 +119,7 @@ SCENARIO(
 
            THEN("Result is undefined") {
                std::vector<Teng::Error_t::Entry_t> errs;
-               REQUIRE(err.getEntries() == errs);
+               ERRLOG_TEST(err.getEntries(), errs);
                REQUIRE(result == "undefined");
            }
         }
@@ -133,7 +133,7 @@ SCENARIO(
 
            THEN("The right branch has been choosen") {
                std::vector<Teng::Error_t::Entry_t> errs;
-               REQUIRE(err.getEntries() == errs);
+               ERRLOG_TEST(err.getEntries(), errs);
                REQUIRE(result == "nm");
            }
         }
@@ -157,7 +157,7 @@ SCENARIO(
 
             THEN("The right branch has been choosen") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "AAA");
             }
         }
@@ -170,7 +170,7 @@ SCENARIO(
 
             THEN("The right branch has been choosen") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "yyy");
             }
         }
@@ -183,7 +183,7 @@ SCENARIO(
 
             THEN("The right branch has been choosen") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "AAA");
             }
         }
@@ -196,7 +196,7 @@ SCENARIO(
 
             THEN("The right branch has been choosen") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "yyy");
             }
         }
@@ -233,7 +233,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "aa");
                     }
                 }
@@ -244,7 +244,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "aa");
                     }
                 }
@@ -259,7 +259,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "ab");
                     }
                 }
@@ -270,7 +270,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "ab");
                     }
                 }
@@ -285,7 +285,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "ac");
                     }
                 }
@@ -296,7 +296,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "ac");
                     }
                 }
@@ -311,7 +311,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "ac");
                     }
                 }
@@ -322,7 +322,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "ac");
                     }
                 }
@@ -337,7 +337,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "az");
                     }
                 }
@@ -348,7 +348,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "az");
                     }
                 }
@@ -367,7 +367,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "ba");
                     }
                 }
@@ -378,7 +378,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "ba");
                     }
                 }
@@ -393,7 +393,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "bb");
                     }
                 }
@@ -404,7 +404,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "bb");
                     }
                 }
@@ -419,7 +419,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "bc");
                     }
                 }
@@ -430,7 +430,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "bc");
                     }
                 }
@@ -445,7 +445,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "bc");
                     }
                 }
@@ -456,7 +456,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "bc");
                     }
                 }
@@ -471,7 +471,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "bz");
                     }
                 }
@@ -482,7 +482,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "bz");
                     }
                 }
@@ -501,7 +501,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "ba");
                     }
                 }
@@ -512,7 +512,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "ba");
                     }
                 }
@@ -527,7 +527,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "bb");
                     }
                 }
@@ -538,7 +538,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "bb");
                     }
                 }
@@ -553,7 +553,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "bc");
                     }
                 }
@@ -564,7 +564,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "bc");
                     }
                 }
@@ -579,7 +579,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "bc");
                     }
                 }
@@ -590,7 +590,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "bc");
                     }
                 }
@@ -605,7 +605,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "bz");
                     }
                 }
@@ -616,7 +616,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "bz");
                     }
                 }
@@ -635,7 +635,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "ca");
                     }
                 }
@@ -646,7 +646,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "ca");
                     }
                 }
@@ -661,7 +661,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "cb");
                     }
                 }
@@ -672,7 +672,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "cb");
                     }
                 }
@@ -687,7 +687,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "cca");
                     }
                 }
@@ -698,7 +698,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "ccz");
                     }
                 }
@@ -713,7 +713,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "cca");
                     }
                 }
@@ -724,7 +724,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "ccz");
                     }
                 }
@@ -739,7 +739,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "cz");
                     }
                 }
@@ -750,7 +750,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "cz");
                     }
                 }
@@ -769,7 +769,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "z");
                     }
                 }
@@ -780,7 +780,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "z");
                     }
                 }
@@ -795,7 +795,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "z");
                     }
                 }
@@ -806,7 +806,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "z");
                     }
                 }
@@ -821,7 +821,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "z");
                     }
                 }
@@ -832,7 +832,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "z");
                     }
                 }
@@ -847,7 +847,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "z");
                     }
                 }
@@ -858,7 +858,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "z");
                     }
                 }
@@ -873,7 +873,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "z");
                     }
                 }
@@ -884,7 +884,7 @@ SCENARIO(
                     THEN("The right branch has been choosen") {
                         auto result = g(err, t, root);
                         std::vector<Teng::Error_t::Entry_t> errs;
-                        REQUIRE(err.getEntries() == errs);
+                        ERRLOG_TEST(err.getEntries(), errs);
                         REQUIRE(result == "z");
                     }
                 }
@@ -910,7 +910,7 @@ SCENARIO(
 
             THEN("The result is 'Y'") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "Y");
             }
         }
@@ -950,7 +950,7 @@ SCENARIO(
                     {1, 7},
                     "Unexpected token: name=INV, view=/*}"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -975,7 +975,7 @@ SCENARIO(
                     {1, 7},
                     "Unexpected token: name=SHORT_END, view=}"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }

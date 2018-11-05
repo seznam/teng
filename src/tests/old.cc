@@ -55,7 +55,7 @@ SCENARIO(
 
             THEN("The double quote is escaped") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(res == "&quot;");
             }
         }
@@ -70,7 +70,7 @@ SCENARIO(
 
             THEN("The doublequote is escaped") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(res == "&quot;");
             }
         }
@@ -93,7 +93,7 @@ SCENARIO(
             Teng::Error_t err;
             THEN("The exists function should return true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(
                     g(
                         err,
@@ -111,7 +111,7 @@ SCENARIO(
             Teng::Error_t err;
             THEN("The exists function should return true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(
                     g(
                         err,
@@ -128,7 +128,7 @@ SCENARIO(
             Teng::Error_t err;
             THEN("The exists function should return true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(
                     g(
                         err,
@@ -143,7 +143,7 @@ SCENARIO(
             Teng::Error_t err;
             THEN("The exists function should return true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(
                     g(
                         err,
@@ -158,7 +158,7 @@ SCENARIO(
             Teng::Error_t err;
             THEN("The exists function should return true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(
                     g(
                         "${exists($$fff)}",
@@ -172,7 +172,7 @@ SCENARIO(
             Teng::Error_t err;
             THEN("The exists function should return true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(
                     g(
                         "${exists(fff)}",
@@ -186,7 +186,7 @@ SCENARIO(
             Teng::Error_t err;
             THEN("The exists function should return false") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(
                     g(
                         "<?teng frag fff ?>"
@@ -202,7 +202,7 @@ SCENARIO(
             Teng::Error_t err;
             THEN("The exists function should return false") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(
                     g(
                         "${exists($$fff.abc)}",
@@ -216,7 +216,7 @@ SCENARIO(
             Teng::Error_t err;
             THEN("The exists function should return false") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(
                     g(
                         "${exists($$ggg)}",
@@ -230,7 +230,7 @@ SCENARIO(
             Teng::Error_t err;
             THEN("The exists function should return false") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(
                     g(
                         "${exists(ggg)}",
@@ -254,7 +254,7 @@ SCENARIO(
             auto res = g(err, templ);
             THEN("Dangerous characters are escaped") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(res == "&lt;div&gt;");
             }
         }
@@ -295,7 +295,7 @@ SCENARIO(
                     {1, 87},
                     "Don't use dollar sign here please"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 std::string result = "&amp;amp;amp;quot;kaktus&amp;amp;amp;amp;"
                                      "&amp;amp;amp;lt;&amp;amp;amp;gt;&amp;amp;"
                                      "amp;quot;";
@@ -315,7 +315,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("The result is integer part") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "22");
         }
     }
@@ -325,7 +325,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("The result is integer part") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "123");
         }
     }
@@ -339,7 +339,7 @@ SCENARIO(
                 {1, 2},
                 "int(): can't convert string to int"
             }};
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "undefined");
         }
     }
@@ -349,7 +349,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("The result is the integer") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "128");
         }
     }
@@ -365,7 +365,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("The result is true") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "1");
         }
     }
@@ -375,7 +375,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("The result is false") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "0");
         }
     }
@@ -391,7 +391,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("'leze' is replaced") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(g(templ) == "leze leze šnek");
         }
     }
@@ -407,7 +407,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("The result has two fractional digits") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "123.12");
         }
     }
@@ -417,7 +417,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("The result has three fractional digits") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "123.125");
         }
     }
@@ -433,7 +433,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("The zero time is returned") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "0:00:00");
         }
     }
@@ -443,7 +443,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("The result is some time") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "2:03:45");
         }
     }
@@ -459,7 +459,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("It is returned") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "text");
         }
     }
@@ -469,7 +469,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("It is returned") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == ":text");
         }
     }
@@ -481,7 +481,7 @@ SCENARIO(
             // prefix resp suffix are used only if left resp right end of the
             // substring is not begin resp end of the original string
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == ":text");
         }
     }
@@ -491,7 +491,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("It is returned") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "ý t");
         }
     }
@@ -501,7 +501,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("It is returned") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == ":ý t:");
         }
     }
@@ -511,7 +511,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("It is returned") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == ":ý t;");
         }
     }
@@ -521,7 +521,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("It is returned") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "ý t");
         }
     }
@@ -537,7 +537,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("The entities are expanded") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "<b>č</b>");
         }
     }
@@ -553,7 +553,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("They are replaced") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "(foo) (bar)");
         }
     }
@@ -563,7 +563,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("They are replaced") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "foo ar");
         }
     }
@@ -574,7 +574,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("They are replaced") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "velmi velké slovo ");
         }
     }
@@ -585,7 +585,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("They are replaced") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "velmiv elkésl ovo");
         }
     }
@@ -596,7 +596,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("They are replaced") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "velm ivel késl ovo");
         }
     }
@@ -606,7 +606,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("They are replaced") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "é é é ");
         }
     }
@@ -622,7 +622,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("The new lines are replaced with br tags") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "jede<br />\nmašina&amp;");
         }
     }
@@ -638,7 +638,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("Is formatted") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "1,230.457");
         }
     }
@@ -648,7 +648,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("Is formatted") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "12 304 566");
         }
     }
@@ -664,7 +664,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("They are reordered") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "c,d;c");
         }
     }
@@ -682,7 +682,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("The variable contains the right value") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "ab");
         }
     }
@@ -698,7 +698,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("All lowervase letters are converted") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "ABC ABC, 123");
         }
     }
@@ -708,7 +708,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("All lowervase letters are converted") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "ĚŠČŘŽÝÁÍÉŮÚÓŤŇ");
         }
     }
@@ -724,7 +724,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("All uppercase letters are converted") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "abc abc, 123");
         }
     }
@@ -734,7 +734,7 @@ SCENARIO(
         auto res = g(err, templ);
         THEN("All uppercase letters are converted") {
             std::vector<Teng::Error_t::Entry_t> errs;
-            REQUIRE(err.getEntries() == errs);
+            ERRLOG_TEST(err.getEntries(), errs);
             REQUIRE(res == "ěščřžýáíéůúóťň");
         }
     }

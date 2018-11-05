@@ -58,7 +58,8 @@ namespace Parser {
 /** The struct representing the open frag.
  */
 struct FragRec_t {
-    string_view_t name; //!< the fragment local name
+    const string_view_t &name() const {return token.view();}
+    Token_t token;      //!< level 2 token
     int32_t addr;       //!< the address of Frag_t instruction
     bool auto_close;    //!< if frag was created by <?teng frag ...?>
 };
@@ -89,10 +90,10 @@ public:
 
     /** Opens new fragment.
      */
-    void open_frag(string_view_t name, int32_t addr, bool auto_close) {
+    void open_frag(const Token_t &token, int32_t addr, bool auto_close) {
         if (frags.size() >= std::numeric_limits<uint16_t>::max())
             throw std::length_error("the number of open frags exceeded 65535");
-        frags.push_back({name, addr, auto_close});
+        frags.push_back({token, addr, auto_close});
     }
 
     /** Close the most recent frag.
@@ -110,7 +111,7 @@ public:
         return (size() < ident.size()) && std::equal(
             frags.begin(), frags.end(),
             ident.begin(), ident.begin() + size(),
-            [] (auto &&lhs, auto &&rhs) {return lhs.name == rhs;}
+            [] (auto &&lhs, auto &&rhs) {return lhs.name() == rhs.view();}
         );
     }
 
@@ -134,7 +135,7 @@ public:
         auto irfrag = std::search(
             frags.rbegin(), frags.rend(),
             ++ident.rbegin(), ident.rend(), // omit var name
-            [] (auto &&lhs, auto &&rhs) {return lhs.name == rhs;}
+            [] (auto &&lhs, auto &&rhs) {return lhs.name() == rhs.view();}
         );
 
         // and return
@@ -153,7 +154,7 @@ public:
         std::string result = ".";
         for (auto i = 1u; i < frags.size(); ++i) {
             if (i > 1) result.push_back('.');
-            result.append(frags[i].name.data(), frags[i].name.size());
+            result.append(frags[i].name().data(), frags[i].name().size());
         }
         return result;
     }
@@ -208,7 +209,7 @@ public:
     /** Returns frag at given offsets.
      */
     Value_t
-    frag(uint16_t frame_offset, uint16_t frag_offset) const override {
+    value_at(uint16_t frame_offset, uint16_t frag_offset) const override {
         if (frame_offset >= frames.size())
             throw runtime_ctx_needed_t();
         if (frag_offset >= frames[frames.size() - frame_offset - 1].size())
@@ -230,7 +231,7 @@ public:
         return evaluate(
             offsets,
             [&] (auto &frag_rec, uint16_t frame_offset, uint16_t frag_offset) {
-                if (frag_rec.name != name)
+                if (frag_rec.name() != name)
                     throw runtime_ctx_needed_t();
                 return Value_t(make_frag_ident(frame_offset, frag_offset + 1));
             }
@@ -285,12 +286,10 @@ public:
         throw runtime_ctx_needed_t();
     }
 
-    /** Returns 'representation' of the open fragments at given index.
+    /** Returns size of the current fragmnet list.
      */
-    Value_t repr(const Value_t &offsets) const override {
-        return evaluate(offsets, [&] (auto &, uint16_t, uint16_t) {
-            return Value_t("$frag-or-list$");
-        });
+    std::size_t current_list_size() const override {
+        throw runtime_ctx_needed_t();
     }
 
     /** Returns true if there is open fragment at given index.

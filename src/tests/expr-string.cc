@@ -53,7 +53,7 @@ SCENARIO(
 
             THEN("Result is true") {
                 std::vector<Teng::Error_t::Entry_t> errs = {};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -64,7 +64,7 @@ SCENARIO(
 
             THEN("Result is false") {
                 std::vector<Teng::Error_t::Entry_t> errs = {};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -75,7 +75,7 @@ SCENARIO(
 
             THEN("Result is true") {
                 std::vector<Teng::Error_t::Entry_t> errs = {};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -86,7 +86,7 @@ SCENARIO(
 
             THEN("Result is false") {
                 std::vector<Teng::Error_t::Entry_t> errs = {};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -97,7 +97,7 @@ SCENARIO(
 
             THEN("Result is false") {
                 std::vector<Teng::Error_t::Entry_t> errs = {};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -108,7 +108,7 @@ SCENARIO(
 
             THEN("Result is true") {
                 std::vector<Teng::Error_t::Entry_t> errs = {};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -124,7 +124,7 @@ SCENARIO(
                     "Runtime: Left operand of | numeric operator "
                     "is string_ref"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -140,7 +140,7 @@ SCENARIO(
                     "Runtime: Left operand of ^ numeric operator "
                     "is string_ref"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -156,7 +156,7 @@ SCENARIO(
                     "Runtime: Left operand of & numeric operator "
                     "is string_ref"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -179,7 +179,7 @@ SCENARIO(
 
             THEN("Result of: three =~ tri") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -190,7 +190,7 @@ SCENARIO(
 
             THEN("Result of: three =~ two") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -201,7 +201,7 @@ SCENARIO(
 
             THEN("Result of: '(three)' =~ three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -212,7 +212,7 @@ SCENARIO(
 
             THEN("Result of: three =~ '(two)'") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -235,7 +235,7 @@ SCENARIO(
 
             THEN("Result of: three !~ tri") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -246,7 +246,7 @@ SCENARIO(
 
             THEN("Result of: three !~ two") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -257,7 +257,7 @@ SCENARIO(
 
             THEN("Result of: '(three)' !~ three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -268,7 +268,7 @@ SCENARIO(
 
             THEN("Result of: three !~ '(two)'") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -291,7 +291,7 @@ SCENARIO(
 
             THEN("Result of: zero || nula") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -302,7 +302,7 @@ SCENARIO(
 
             THEN("Result of: three || zero") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "(three)");
             }
         }
@@ -313,7 +313,7 @@ SCENARIO(
 
             THEN("Result of: '' == three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "(three)");
             }
         }
@@ -324,7 +324,7 @@ SCENARIO(
 
             THEN("Result of: three || ''") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "(three)");
             }
         }
@@ -347,7 +347,7 @@ SCENARIO(
 
             THEN("Result of: zero && nula") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -358,7 +358,7 @@ SCENARIO(
 
             THEN("Result of: three && zero") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -369,7 +369,7 @@ SCENARIO(
 
             THEN("Result of: '' && three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -380,7 +380,7 @@ SCENARIO(
 
             THEN("Result of: three && 'abc'") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "abc");
             }
         }
@@ -402,7 +402,7 @@ SCENARIO(
 
             THEN("Result of: zero + three") {
                 std::vector<Teng::Error_t::Entry_t> errs = {};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "03");
             }
         }
@@ -428,7 +428,7 @@ SCENARIO(
                     {1, 7},
                     "Runtime: Left operand of - numeric operator is string_ref"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -450,7 +450,7 @@ SCENARIO(
 
             THEN("Result is concatenation of strings") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "03");
             }
         }
@@ -461,7 +461,7 @@ SCENARIO(
 
             THEN("Result is concatenation of strings") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "3");
             }
         }
@@ -487,7 +487,7 @@ SCENARIO(
                     {1, 7},
                     "Runtime: Left operand of * numeric operator is string_ref"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -513,7 +513,7 @@ SCENARIO(
                     {1, 7},
                     "Runtime: Left operand of / numeric operator is string_ref"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -539,7 +539,7 @@ SCENARIO(
                     {1, 7},
                     "Runtime: Left operand of % numeric operator is string_ref"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -561,7 +561,7 @@ SCENARIO(
 
             THEN("Result of: zero ** three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "000");
             }
         }
@@ -577,7 +577,7 @@ SCENARIO(
                     "Runtime: Right operand of repeat string operator "
                     "is not int"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -599,7 +599,7 @@ SCENARIO(
 
             THEN("Result of: !empty") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -610,7 +610,7 @@ SCENARIO(
 
             THEN("Result of: !three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -635,7 +635,7 @@ SCENARIO(
                     {1, 2},
                     "Runtime: Operand of bit ~ operator is not int"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -660,7 +660,7 @@ SCENARIO(
                     {1, 2},
                     "Runtime: Operand of unary - operator is not number"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -685,7 +685,7 @@ SCENARIO(
                     {1, 2},
                     "Runtime: Operand of unary + operator is not number"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -706,7 +706,7 @@ SCENARIO(
 
             THEN("The dangerous characters are escaped using current escaper") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "&lt;&gt;&amp;&quot;");
             }
         }
@@ -726,7 +726,7 @@ SCENARIO(
 
             THEN("They are expanded") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "['][\n][\t][\"]");
             }
         }
@@ -737,7 +737,7 @@ SCENARIO(
 
             THEN("They are either expanded") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "[e][g]");
             }
         }
@@ -752,7 +752,7 @@ SCENARIO(
                     {1, 2},
                     "Newline can't be escaped"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "prefix");
             }
         }

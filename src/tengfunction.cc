@@ -88,6 +88,7 @@ FunctionStub_t builtin_functions[] = {
     {"urlescape", builtin::urlescape},         // escape strange chars in urls
     {"urlunescape", builtin::urlunescape},     // unescape url encoding
     {"quoteescape", builtin::quoteescape},     // escape strange chars
+    {"jsonify", builtin::jsonify},             // convert and escape to json
 
     // date
     {"date", builtin::date},                   // like strftime

@@ -55,7 +55,7 @@ SCENARIO(
 
             THEN("Result of: three == tri") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -66,7 +66,7 @@ SCENARIO(
 
             THEN("Result of: three == two") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -77,7 +77,7 @@ SCENARIO(
 
             THEN("Result of: 3 == three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -88,7 +88,7 @@ SCENARIO(
 
             THEN("Result of: three == 2") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -112,7 +112,7 @@ SCENARIO(
             THEN("Result of: three != tri") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(result == "0");
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
             }
         }
 
@@ -122,7 +122,7 @@ SCENARIO(
 
             THEN("Result of: three != two") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -134,7 +134,7 @@ SCENARIO(
             THEN("Result of: 3 != three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 REQUIRE(result == "0");
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
             }
         }
 
@@ -144,7 +144,7 @@ SCENARIO(
 
             THEN("Result of: three != 2") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -167,7 +167,7 @@ SCENARIO(
 
             THEN("Result of: three >= tri") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -178,7 +178,7 @@ SCENARIO(
 
             THEN("Result of: two >= three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -189,7 +189,7 @@ SCENARIO(
 
             THEN("Result of: 4 >= three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -200,7 +200,7 @@ SCENARIO(
 
             THEN("Result of: three >= 4") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -223,7 +223,7 @@ SCENARIO(
 
             THEN("Result of: three < tri") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -234,7 +234,7 @@ SCENARIO(
 
             THEN("Result of: two < three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -245,7 +245,7 @@ SCENARIO(
 
             THEN("Result of: 2 < three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -256,7 +256,7 @@ SCENARIO(
 
             THEN("Result of: three < 2") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -279,7 +279,7 @@ SCENARIO(
 
             THEN("Result of: three <= tri") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -290,7 +290,7 @@ SCENARIO(
 
             THEN("Result of: two <= three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -301,7 +301,7 @@ SCENARIO(
 
             THEN("Result of: 4 <= three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -312,7 +312,7 @@ SCENARIO(
 
             THEN("Result of: three <= 4") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -335,7 +335,7 @@ SCENARIO(
 
             THEN("Result of: three > tri") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -346,7 +346,7 @@ SCENARIO(
 
             THEN("Result of: two > three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -357,7 +357,7 @@ SCENARIO(
 
             THEN("Result of: 2 > three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -368,7 +368,7 @@ SCENARIO(
 
             THEN("Result of: three > 2") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -391,7 +391,7 @@ SCENARIO(
 
             THEN("Result of: zero || nula") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -402,7 +402,7 @@ SCENARIO(
 
             THEN("Result of: three || zero") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "3");
             }
         }
@@ -413,7 +413,7 @@ SCENARIO(
 
             THEN("Result of: 0 == three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "3");
             }
         }
@@ -424,7 +424,7 @@ SCENARIO(
 
             THEN("Result of: three || 0") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "3");
             }
         }
@@ -447,7 +447,7 @@ SCENARIO(
 
             THEN("Result of: zero && nula") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -458,7 +458,7 @@ SCENARIO(
 
             THEN("Result of: three && zero") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -469,7 +469,7 @@ SCENARIO(
 
             THEN("Result of: 0 && three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -480,7 +480,7 @@ SCENARIO(
 
             THEN("Result of: three && 2") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "2");
             }
         }
@@ -502,7 +502,7 @@ SCENARIO(
 
             THEN("Result of: zero | three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "3");
             }
         }
@@ -513,7 +513,7 @@ SCENARIO(
 
             THEN("Result of: 98 | three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "99");
             }
         }
@@ -524,7 +524,7 @@ SCENARIO(
 
             THEN("Result of: 98 | 77") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "111");
             }
         }
@@ -546,7 +546,7 @@ SCENARIO(
 
             THEN("Result of: zero ^ three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "3");
             }
         }
@@ -557,7 +557,7 @@ SCENARIO(
 
             THEN("Result of: 98 ^ three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "97");
             }
         }
@@ -568,7 +568,7 @@ SCENARIO(
 
             THEN("Result of: 98 ^ 77") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "47");
             }
         }
@@ -590,7 +590,7 @@ SCENARIO(
 
             THEN("Result of: zero & three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -601,7 +601,7 @@ SCENARIO(
 
             THEN("Result of: 98 & three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "2");
             }
         }
@@ -612,7 +612,7 @@ SCENARIO(
 
             THEN("Result of: 98 & 77") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "64");
             }
         }
@@ -635,7 +635,7 @@ SCENARIO(
 
             THEN("Result of: zero + three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "3");
             }
         }
@@ -646,7 +646,7 @@ SCENARIO(
 
             THEN("Result of: 2 + three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "5");
             }
         }
@@ -657,7 +657,7 @@ SCENARIO(
 
             THEN("Result of: 2 + minus_three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "-1");
             }
         }
@@ -680,7 +680,7 @@ SCENARIO(
 
             THEN("Result of: zero - three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "-3");
             }
         }
@@ -691,7 +691,7 @@ SCENARIO(
 
             THEN("Result of: 2 - three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "-1");
             }
         }
@@ -702,7 +702,7 @@ SCENARIO(
 
             THEN("Result of: 2 - minus_three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "5");
             }
         }
@@ -724,7 +724,7 @@ SCENARIO(
 
             THEN("Result is concatenation of stringified integral numbers") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "03");
             }
         }
@@ -747,7 +747,7 @@ SCENARIO(
 
             THEN("Result of: zero * three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -758,7 +758,7 @@ SCENARIO(
 
             THEN("Result of: minus_three * minus_three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "9");
             }
         }
@@ -769,7 +769,7 @@ SCENARIO(
 
             THEN("Result of: 2 * three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "6");
             }
         }
@@ -780,7 +780,7 @@ SCENARIO(
 
             THEN("Result of: 2 * minus_three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "-6");
             }
         }
@@ -804,7 +804,7 @@ SCENARIO(
 
             THEN("Result of: three / two") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -815,7 +815,7 @@ SCENARIO(
 
             THEN("Result of: minus_three / three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "-1");
             }
         }
@@ -826,7 +826,7 @@ SCENARIO(
 
             THEN("Result of: 2 / three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -841,7 +841,7 @@ SCENARIO(
                     {1, 4},
                     "Runtime: Right operand of / division operator is zero"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -865,7 +865,7 @@ SCENARIO(
 
             THEN("Result of: three % two") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -876,7 +876,7 @@ SCENARIO(
 
             THEN("Result of: minus_three % two") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "-1");
             }
         }
@@ -887,7 +887,7 @@ SCENARIO(
 
             THEN("Result of: 4 % two") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -902,7 +902,7 @@ SCENARIO(
                     {1, 4},
                     "Runtime: Right operand of % division operator is zero"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -924,7 +924,7 @@ SCENARIO(
 
             THEN("Result of: zero ** three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0.00.00.0");
             }
         }
@@ -946,7 +946,7 @@ SCENARIO(
 
             THEN("Result of: !zero") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -957,7 +957,7 @@ SCENARIO(
 
             THEN("Result of: !three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -978,7 +978,7 @@ SCENARIO(
 
             THEN("Result of: ~zero") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "-1");
             }
         }
@@ -989,7 +989,7 @@ SCENARIO(
 
             THEN("Result of: ~67") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "-68");
             }
         }
@@ -1012,7 +1012,7 @@ SCENARIO(
 
             THEN("Result of: -zero") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -1023,7 +1023,7 @@ SCENARIO(
 
             THEN("Result of: -three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "-3");
             }
         }
@@ -1034,7 +1034,7 @@ SCENARIO(
 
             THEN("Result of: -minus_three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "3");
             }
         }
@@ -1045,7 +1045,7 @@ SCENARIO(
 
             THEN("Result of: --three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "3");
             }
         }
@@ -1056,7 +1056,7 @@ SCENARIO(
 
             THEN("Result of: 4 * --three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "12");
             }
         }
@@ -1079,7 +1079,7 @@ SCENARIO(
 
             THEN("Result of: +zero") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -1090,7 +1090,7 @@ SCENARIO(
 
             THEN("Result of: +three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "3");
             }
         }
@@ -1101,7 +1101,7 @@ SCENARIO(
 
             THEN("Result of: +minus_three") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "-3");
             }
         }
@@ -1112,7 +1112,7 @@ SCENARIO(
 
             THEN("Result of: +(+three)") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "3");
             }
         }
@@ -1123,7 +1123,7 @@ SCENARIO(
 
             THEN("Result of: 4 * +(+three)") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "12");
             }
         }

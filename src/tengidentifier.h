@@ -42,6 +42,7 @@
 #include <string>
 #include <vector>
 
+#include "tenglex2.h"
 #include "tengstringview.h"
 
 namespace Teng {
@@ -51,7 +52,7 @@ namespace Teng {
 struct Identifier_t {
 public:
     // types
-    using Segments_t = std::vector<string_view_t>;
+    using Segments_t = std::vector<Parser::Token_t>;
     using const_iterator = Segments_t::const_iterator;
     using const_reverse_iterator = Segments_t::const_reverse_iterator;
 
@@ -69,7 +70,7 @@ public:
 
     /** C'tor: for relative from name.
      */
-    Identifier_t(const string_view_t &name)
+    Identifier_t(const Parser::Token_t &name)
         : relative(true), path{name}
     {}
 
@@ -96,7 +97,7 @@ public:
 
     /** Returns the last segment.
      */
-    const string_view_t &name() const {return path.back();}
+    const Parser::Token_t &name() const {return path.back();}
 
     /** Returns iterator to the first identifier path segment.
      */
@@ -129,7 +130,7 @@ public:
 
     /** Appends new segment at the end of identifier path.
      */
-    void push_back(const string_view_t &segment) {path.push_back(segment);}
+    void push_back(const Parser::Token_t &segment) {path.push_back(segment);}
 
     /** Removes last path segment.
      */
@@ -137,7 +138,7 @@ public:
 
     /** Returns i-th path segment.
      */
-    const string_view_t &operator[](std::size_t i) const {return path[i];}
+    const Parser::Token_t &operator[](std::size_t i) const {return path[i];}
 
     /** Comparison.
      */
@@ -150,7 +151,7 @@ public:
         std::string result;
         if (is_absolute()) result.push_back('.');
         for (auto i = 0lu; i < size(); ++i)
-            result.append((i? ".": "") + path[i]);
+            result.append((i? ".": "") + path[i].view());
         return result;
     }
 
@@ -162,8 +163,14 @@ protected:
 /** Comparison.
  */
 inline bool operator==(const Identifier_t &lhs, const Identifier_t &rhs) {
-    return lhs.relative == rhs.relative
-        && lhs.path == rhs.path;
+    if (lhs.relative != rhs.relative)
+        return false;
+    if (lhs.size() != rhs.size())
+        return false;
+    for (std::size_t i = 0; i < lhs.path.size(); ++i)
+        if (lhs.path[i].view() != rhs.path[i].view())
+            return false;
+    return true;
 }
 
 /** Comparison.

@@ -102,5 +102,20 @@ Fragment_t::addFragmentList(const std::string &name) {
     return items.emplace_hint(iitem, name, create_list)->second.frags_value;
 }
 
+void Fragment_t::addValue(const std::string &name, Fragment_t &&value) {
+    addValue(name, FragmentValue_t(std::move(value)));
+}
+
+void Fragment_t::addValue(const std::string &name, FragmentList_t &&value) {
+    addValue(name, FragmentValue_t(std::move(value)));
+}
+
+void Fragment_t::addValue(const std::string &name, FragmentValue_t &&value) {
+    auto iitem = items.find(name);
+    if (iitem != items.end())
+        iitem->second = std::move(value);
+    else items.emplace_hint(iitem, name, std::move(value));
+}
+
 } // namespace Teng
 

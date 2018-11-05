@@ -58,10 +58,10 @@ struct OFFApi_t {
      */
     virtual ~OFFApi_t() noexcept = default;
 
-    /** Returns fragments at given open frame/fragments offsets.
+    /** Returns fragment/value at given open frame/fragments offsets.
      */
     virtual Value_t
-    frag(uint16_t frame_offset, uint16_t frag_offset) const = 0;
+    value_at(uint16_t frame_offset, uint16_t frag_offset) const = 0;
 
     /** Returns fragment value of desired name.
      */
@@ -77,13 +77,13 @@ struct OFFApi_t {
      */
     virtual std::string current_path() const = 0;
 
-    /** Returns index of the current fragmnet in current openerd fragment list.
+    /** Returns index of the current fragmnet in current opened fragment list.
      */
     virtual std::size_t current_list_i() const = 0;
 
-    /** Returns "representation" of desired value.
+    /** Returns size of the current fragmnet list.
      */
-    virtual Value_t repr(const Value_t &) const = 0;
+    virtual std::size_t current_list_size() const = 0;
 
     /** Returns true if value is not "undefined" value.
      */

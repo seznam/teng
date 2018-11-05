@@ -54,7 +54,7 @@ SCENARIO(
 
             THEN("The result is true branch") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "true-branch");
             }
         }
@@ -66,7 +66,7 @@ SCENARIO(
 
             THEN("The result is empty") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -88,7 +88,7 @@ SCENARIO(
 
             THEN("The result is true branch value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "true-branch");
             }
         }
@@ -100,7 +100,7 @@ SCENARIO(
 
             THEN("The result is false branch value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "false-branch");
             }
         }
@@ -123,7 +123,7 @@ SCENARIO(
 
             THEN("The result is first branch value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "first-branch");
             }
         }
@@ -135,7 +135,7 @@ SCENARIO(
 
             THEN("The result is first branch value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "first-branch");
             }
         }
@@ -147,7 +147,7 @@ SCENARIO(
 
             THEN("The result is second branch value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "second-branch");
             }
         }
@@ -159,7 +159,7 @@ SCENARIO(
 
             THEN("The result is empty") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -183,7 +183,7 @@ SCENARIO(
 
             THEN("The result is first branch value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "first-branch");
             }
         }
@@ -195,7 +195,7 @@ SCENARIO(
 
             THEN("The result is first branch value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "first-branch");
             }
         }
@@ -207,7 +207,7 @@ SCENARIO(
 
             THEN("The result is second branch value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "second-branch");
             }
         }
@@ -219,7 +219,7 @@ SCENARIO(
 
             THEN("The result is first branch value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "first-branch");
             }
         }
@@ -231,7 +231,7 @@ SCENARIO(
 
             THEN("The result is first branch value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "first-branch");
             }
         }
@@ -243,7 +243,7 @@ SCENARIO(
 
             THEN("The result is second branch value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "second-branch");
             }
         }
@@ -255,7 +255,7 @@ SCENARIO(
 
             THEN("The result is third branch value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "third-branch");
             }
         }
@@ -267,7 +267,7 @@ SCENARIO(
 
             THEN("The result is empty") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -291,7 +291,7 @@ SCENARIO(
 
             THEN("The result is first branch value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "first-branch");
             }
         }
@@ -303,7 +303,7 @@ SCENARIO(
 
             THEN("The result is first branch value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "first-branch");
             }
         }
@@ -315,7 +315,7 @@ SCENARIO(
 
             THEN("The result is second branch value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "second-branch");
             }
         }
@@ -327,7 +327,7 @@ SCENARIO(
 
             THEN("The result is third branch value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "third-branch");
             }
         }
@@ -380,7 +380,7 @@ SCENARIO(
 
                 THEN("The result is first branch of first nested if") {
                     std::vector<Teng::Error_t::Entry_t> errs;
-                    REQUIRE(err.getEntries() == errs);
+                    ERRLOG_TEST(err.getEntries(), errs);
                     REQUIRE(result == "aaa-first-branch");
                 }
             }
@@ -393,7 +393,7 @@ SCENARIO(
 
                 THEN("The result is second branch of first nested if") {
                     std::vector<Teng::Error_t::Entry_t> errs;
-                    REQUIRE(err.getEntries() == errs);
+                    ERRLOG_TEST(err.getEntries(), errs);
                     REQUIRE(result == "aaa-second-branch");
                 }
             }
@@ -406,7 +406,7 @@ SCENARIO(
 
                 THEN("The result is first branch of first nested if") {
                     std::vector<Teng::Error_t::Entry_t> errs;
-                    REQUIRE(err.getEntries() == errs);
+                    ERRLOG_TEST(err.getEntries(), errs);
                     REQUIRE(result == "aaa-first-branch");
                 }
             }
@@ -419,7 +419,7 @@ SCENARIO(
 
                 THEN("The result is else branch of first nested if") {
                     std::vector<Teng::Error_t::Entry_t> errs;
-                    REQUIRE(err.getEntries() == errs);
+                    ERRLOG_TEST(err.getEntries(), errs);
                     REQUIRE(result == "aaa-third-branch");
                 }
             }
@@ -438,7 +438,7 @@ SCENARIO(
 
                 THEN("The result is first branch of second nested if") {
                     std::vector<Teng::Error_t::Entry_t> errs;
-                    REQUIRE(err.getEntries() == errs);
+                    ERRLOG_TEST(err.getEntries(), errs);
                     REQUIRE(result == "bbb-first-branch");
                 }
             }
@@ -451,7 +451,7 @@ SCENARIO(
 
                 THEN("The result is second branch of second nested if") {
                     std::vector<Teng::Error_t::Entry_t> errs;
-                    REQUIRE(err.getEntries() == errs);
+                    ERRLOG_TEST(err.getEntries(), errs);
                     REQUIRE(result == "bbb-second-branch");
                 }
             }
@@ -464,7 +464,7 @@ SCENARIO(
 
                 THEN("The result is first branch of second nested if") {
                     std::vector<Teng::Error_t::Entry_t> errs;
-                    REQUIRE(err.getEntries() == errs);
+                    ERRLOG_TEST(err.getEntries(), errs);
                     REQUIRE(result == "bbb-first-branch");
                 }
             }
@@ -477,7 +477,7 @@ SCENARIO(
 
                 THEN("The result is else branch of second nested if") {
                     std::vector<Teng::Error_t::Entry_t> errs;
-                    REQUIRE(err.getEntries() == errs);
+                    ERRLOG_TEST(err.getEntries(), errs);
                     REQUIRE(result == "bbb-third-branch");
                 }
             }
@@ -496,7 +496,7 @@ SCENARIO(
 
                 THEN("The result is first branch of third nested if") {
                     std::vector<Teng::Error_t::Entry_t> errs;
-                    REQUIRE(err.getEntries() == errs);
+                    ERRLOG_TEST(err.getEntries(), errs);
                     REQUIRE(result == "ccc-first-branch");
                 }
             }
@@ -509,7 +509,7 @@ SCENARIO(
 
                 THEN("The result is second branch of third nested if") {
                     std::vector<Teng::Error_t::Entry_t> errs;
-                    REQUIRE(err.getEntries() == errs);
+                    ERRLOG_TEST(err.getEntries(), errs);
                     REQUIRE(result == "ccc-second-branch");
                 }
             }
@@ -522,7 +522,7 @@ SCENARIO(
 
                 THEN("The result is first branch of third nested if") {
                     std::vector<Teng::Error_t::Entry_t> errs;
-                    REQUIRE(err.getEntries() == errs);
+                    ERRLOG_TEST(err.getEntries(), errs);
                     REQUIRE(result == "ccc-first-branch");
                 }
             }
@@ -535,7 +535,7 @@ SCENARIO(
 
                 THEN("The result is else branch of third nested if") {
                     std::vector<Teng::Error_t::Entry_t> errs;
-                    REQUIRE(err.getEntries() == errs);
+                    ERRLOG_TEST(err.getEntries(), errs);
                     REQUIRE(result == "ccc-third-branch");
                 }
             }
@@ -554,7 +554,7 @@ SCENARIO(
 
                 THEN("The result is first branch of first nested if") {
                     std::vector<Teng::Error_t::Entry_t> errs;
-                    REQUIRE(err.getEntries() == errs);
+                    ERRLOG_TEST(err.getEntries(), errs);
                     REQUIRE(result == "aaa-first-branch");
                 }
             }
@@ -567,7 +567,7 @@ SCENARIO(
 
                 THEN("The result is second branch of first nested if") {
                     std::vector<Teng::Error_t::Entry_t> errs;
-                    REQUIRE(err.getEntries() == errs);
+                    ERRLOG_TEST(err.getEntries(), errs);
                     REQUIRE(result == "aaa-second-branch");
                 }
             }
@@ -580,7 +580,7 @@ SCENARIO(
 
                 THEN("The result is first branch of first nested if") {
                     std::vector<Teng::Error_t::Entry_t> errs;
-                    REQUIRE(err.getEntries() == errs);
+                    ERRLOG_TEST(err.getEntries(), errs);
                     REQUIRE(result == "aaa-first-branch");
                 }
             }
@@ -593,7 +593,7 @@ SCENARIO(
 
                 THEN("The result is else branch of first nested if") {
                     std::vector<Teng::Error_t::Entry_t> errs;
-                    REQUIRE(err.getEntries() == errs);
+                    ERRLOG_TEST(err.getEntries(), errs);
                     REQUIRE(result == "aaa-third-branch");
                 }
             }
@@ -630,7 +630,7 @@ SCENARIO(
                     "Invalid expression, fix it please; replacing whole "
                     "expression with undefined value"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "false-branch");
             }
         }
@@ -655,7 +655,7 @@ SCENARIO(
                     "Invalid expression, fix it please; replacing whole "
                     "expression with undefined value"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "false-branch");
             }
         }
@@ -680,7 +680,7 @@ SCENARIO(
                     {1, 14},
                     "Unexpected token: name=MUL, view=*"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "false-branch");
             }
         }
@@ -709,7 +709,7 @@ SCENARIO(
                     {1, 14},
                     "Unexpected token: name=INV, view=/*1?>"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "false-branch");
             }
         }
@@ -746,7 +746,7 @@ SCENARIO(
                     "Invalid expression, fix it please; replacing whole "
                     "expression with undefined value"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "third-branch");
             }
         }
@@ -771,7 +771,7 @@ SCENARIO(
                     "Invalid expression, fix it please; replacing whole "
                     "expression with undefined value"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "third-branch");
             }
         }
@@ -796,7 +796,7 @@ SCENARIO(
                     {1, 41},
                     "Unexpected token: name=MUL, view=*"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "third-branch");
             }
         }
@@ -825,7 +825,7 @@ SCENARIO(
                     {1, 41},
                     "Unexpected token: name=INV, view=/*1?>"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "third-branch");
             }
         }
@@ -856,7 +856,7 @@ SCENARIO(
                     {1, 24},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -877,7 +877,7 @@ SCENARIO(
                     {1, 24},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -903,7 +903,7 @@ SCENARIO(
                     {1, 49},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -924,7 +924,7 @@ SCENARIO(
                     {1, 49},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -951,7 +951,7 @@ SCENARIO(
                     {1, 50},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -972,7 +972,7 @@ SCENARIO(
                     {1, 50},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -993,7 +993,7 @@ SCENARIO(
                     {1, 50},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -1014,7 +1014,7 @@ SCENARIO(
                     {1, 50},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -1040,7 +1040,7 @@ SCENARIO(
                     {1, 63},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -1061,7 +1061,7 @@ SCENARIO(
                     {1, 63},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -1098,7 +1098,7 @@ SCENARIO(
                     {1, 56},
                     "The <?teng endif?> directive closes unopened if block"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "ab");
             }
         }
@@ -1125,7 +1125,7 @@ SCENARIO(
                     {1, 56},
                     "The <?teng endif?> directive closes unopened if block"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "ab");
             }
         }
@@ -1158,7 +1158,7 @@ SCENARIO(
                     {1, 81},
                     "The <?teng endif?> directive closes unopened if block"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "ab");
             }
         }
@@ -1185,7 +1185,7 @@ SCENARIO(
                     {1, 81},
                     "The <?teng endif?> directive closes unopened if block"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "ab");
             }
         }
@@ -1218,7 +1218,7 @@ SCENARIO(
                     {1, 82},
                     "The <?teng endif?> directive closes unopened if block"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "ab");
             }
         }
@@ -1245,7 +1245,7 @@ SCENARIO(
                     {1, 82},
                     "The <?teng endif?> directive closes unopened if block"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "ab");
             }
         }
@@ -1272,7 +1272,7 @@ SCENARIO(
                     {1, 82},
                     "The <?teng endif?> directive closes unopened if block"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "ab");
             }
         }
@@ -1299,7 +1299,7 @@ SCENARIO(
                     {1, 82},
                     "The <?teng endif?> directive closes unopened if block"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "ab");
             }
         }
@@ -1326,7 +1326,7 @@ SCENARIO(
                     "Disordered elif/else branches in <?teng if?> statement; "
                     "discarding whole if statement"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -1349,7 +1349,7 @@ SCENARIO(
                     "Disordered elif/else branches in <?teng if?> statement; "
                     "discarding whole if statement"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -1384,7 +1384,7 @@ SCENARIO(
                     {1, 13},
                     "Unexpected token: name=BITXOR, view=^"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -1408,7 +1408,7 @@ SCENARIO(
                     {1, 11},
                     "Unexpected token: name=INV, view=/*2?>"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "true-branch");
             }
         }
@@ -1443,7 +1443,7 @@ SCENARIO(
                     {1, 39},
                     "Unexpected token: name=BITXOR, view=^"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -1467,7 +1467,7 @@ SCENARIO(
                     {1, 37},
                     "Unexpected token: name=INV, view=/*2?>"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "elif-branch");
             }
         }
@@ -1498,7 +1498,7 @@ SCENARIO(
                     {1, 36},
                     "Unexpected token: name=DEC_INT, view=1"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "false-branch");
             }
         }
@@ -1523,7 +1523,7 @@ SCENARIO(
                     {1, 37},
                     "Unexpected token: name=DEC_INT, view=1"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "true-branch");
             }
         }

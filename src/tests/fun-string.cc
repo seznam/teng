@@ -56,7 +56,7 @@ SCENARIO(
 
             THEN("The result is 0") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -68,7 +68,7 @@ SCENARIO(
 
             THEN("The result is 0") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "8");
             }
         }
@@ -80,7 +80,7 @@ SCENARIO(
 
             THEN("The result is 0") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -92,7 +92,7 @@ SCENARIO(
 
             THEN("The result is 4") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "4");
             }
         }
@@ -104,7 +104,7 @@ SCENARIO(
 
             THEN("The result is 5") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "5");
             }
         }
@@ -116,7 +116,7 @@ SCENARIO(
 
             THEN("The result is 0") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -128,7 +128,7 @@ SCENARIO(
 
             THEN("The result is 4") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "4");
             }
         }
@@ -140,7 +140,7 @@ SCENARIO(
 
             THEN("The result is 5") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "5");
             }
         }
@@ -161,7 +161,7 @@ SCENARIO(
 
             THEN("The result is same string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "absakfsdjfkjsd");
             }
         }
@@ -173,7 +173,7 @@ SCENARIO(
 
             THEN("The new lines are translated to <br>") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "<br />\nab<br />\nsak<br />\nfsdjd<br />\n");
             }
         }
@@ -194,7 +194,7 @@ SCENARIO(
 
             THEN("The result is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -206,7 +206,7 @@ SCENARIO(
 
             THEN("The result is substr") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "abc");
             }
         }
@@ -218,7 +218,7 @@ SCENARIO(
 
             THEN("The result is substr") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "bc");
             }
         }
@@ -230,7 +230,7 @@ SCENARIO(
 
             THEN("The result is substr") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "žý");
             }
         }
@@ -242,7 +242,7 @@ SCENARIO(
 
             THEN("The result is substr like in python") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "bc");
             }
         }
@@ -264,7 +264,7 @@ SCENARIO(
 
             THEN("The result is hit word") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "more");
             }
         }
@@ -276,7 +276,7 @@ SCENARIO(
 
             THEN("The result is hit word") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "more");
             }
         }
@@ -288,7 +288,7 @@ SCENARIO(
 
             THEN("The result is hit word") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "more");
             }
         }
@@ -300,7 +300,7 @@ SCENARIO(
 
             THEN("The result is two words") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "are more");
             }
         }
@@ -312,7 +312,7 @@ SCENARIO(
 
             THEN("The first word of string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "there");
             }
         }
@@ -324,7 +324,7 @@ SCENARIO(
 
             THEN("The empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -336,7 +336,7 @@ SCENARIO(
 
             THEN("The empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -348,7 +348,7 @@ SCENARIO(
 
             THEN("The first word of string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "there");
             }
         }
@@ -360,7 +360,7 @@ SCENARIO(
 
             THEN("The last word of string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "words");
             }
         }
@@ -372,7 +372,7 @@ SCENARIO(
 
             THEN("The last word of string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "words");
             }
         }
@@ -384,7 +384,7 @@ SCENARIO(
 
             THEN("The last word of string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "words");
             }
         }
@@ -396,7 +396,7 @@ SCENARIO(
 
             THEN("The last word of string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "words");
             }
         }
@@ -408,7 +408,7 @@ SCENARIO(
 
             THEN("The last word of string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "words");
             }
         }
@@ -420,7 +420,7 @@ SCENARIO(
 
             THEN("The last word of string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "words");
             }
         }
@@ -432,7 +432,7 @@ SCENARIO(
 
             THEN("The last word of string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "words");
             }
         }
@@ -453,7 +453,7 @@ SCENARIO(
 
             THEN("The result format string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "longtext");
             }
         }
@@ -465,7 +465,7 @@ SCENARIO(
 
             THEN("The result format string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "longtext");
             }
         }
@@ -481,7 +481,7 @@ SCENARIO(
                     {1, 2},
                     "reorder(): invalid or missing index in format '%{2}'"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "lon1gt%{2}ext");
             }
         }
@@ -493,7 +493,7 @@ SCENARIO(
 
             THEN("The result format string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "some long text!");
             }
         }
@@ -514,7 +514,7 @@ SCENARIO(
 
             THEN("The result origin string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "some text some text");
             }
         }
@@ -526,7 +526,7 @@ SCENARIO(
 
             THEN("The result origin string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "repl text repl text");
             }
         }
@@ -547,7 +547,7 @@ SCENARIO(
 
             THEN("The result is lowerized string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "aa345678fghjkžýáiůřčáéíú");
             }
         }
@@ -568,7 +568,7 @@ SCENARIO(
 
             THEN("The result is upperized string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "AA345678FGHJKŽÝÁIŮŘČÁÉÍÚ");
             }
         }

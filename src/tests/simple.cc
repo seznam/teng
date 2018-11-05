@@ -53,7 +53,7 @@ SCENARIO(
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -67,7 +67,7 @@ SCENARIO(
 
             THEN("It is still empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -88,7 +88,7 @@ SCENARIO(
 
             THEN("It equals to template") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == t);
             }
         }
@@ -102,7 +102,7 @@ SCENARIO(
 
             THEN("It equals to template") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == t);
             }
         }
@@ -133,7 +133,7 @@ SCENARIO(
                     "The closing directive of this <?teng frag?> directive "
                     "is missing"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -162,7 +162,7 @@ SCENARIO(
                     {1, 12},
                     "Unexpected token: name=IDENT, view=sample"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }

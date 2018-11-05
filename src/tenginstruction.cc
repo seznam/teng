@@ -262,6 +262,11 @@ static auto eval(OPCODE opcode, type_t &self, call_t &&call, args_t &&...args) {
             self.template as<OpenFrag_t>(),
             std::forward<args_t>(args)...
         );
+    case OPCODE::OPEN_ERROR_FRAG:
+        return call(
+            self.template as<OpenErrorFrag_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::CLOSE_FRAG:
         return call(
             self.template as<CloseFrag_t>(),
@@ -290,6 +295,31 @@ static auto eval(OPCODE opcode, type_t &self, call_t &&call, args_t &&...args) {
     case OPCODE::PUSH_FRAG_INNER:
         return call(
             self.template as<PushFragInner_t>(),
+            std::forward<args_t>(args)...
+        );
+    case OPCODE::PUSH_VAL_COUNT:
+        return call(
+            self.template as<PushValCount_t>(),
+            std::forward<args_t>(args)...
+        );
+    case OPCODE::PUSH_VAL_INDEX:
+        return call(
+            self.template as<PushValIndex_t>(),
+            std::forward<args_t>(args)...
+        );
+    case OPCODE::PUSH_VAL_FIRST:
+        return call(
+            self.template as<PushValFirst_t>(),
+            std::forward<args_t>(args)...
+        );
+    case OPCODE::PUSH_VAL_LAST:
+        return call(
+            self.template as<PushValLast_t>(),
+            std::forward<args_t>(args)...
+        );
+    case OPCODE::PUSH_VAL_INNER:
+        return call(
+            self.template as<PushValInner_t>(),
             std::forward<args_t>(args)...
         );
     case OPCODE::PUSH_FRAG:
@@ -347,6 +377,11 @@ static auto eval(OPCODE opcode, type_t &self, call_t &&call, args_t &&...args) {
             self.template as<PushThisFrag_t>(),
             std::forward<args_t>(args)...
         );
+    case OPCODE::PUSH_ERROR_FRAG:
+        return call(
+            self.template as<PushErrorFrag_t>(),
+            std::forward<args_t>(args)...
+        );
     case OPCODE::PUSH_ATTR_AT:
         return call(
             self.template as<PushAttrAt_t>(),
@@ -362,34 +397,34 @@ static auto eval(OPCODE opcode, type_t &self, call_t &&call, args_t &&...args) {
             self.template as<Repr_t>(),
             std::forward<args_t>(args)...
         );
-    case OPCODE::REPR_JSONIFY:
+    case OPCODE::QUERY_REPR:
         return call(
-            self.template as<ReprJsonify_t>(),
+            self.template as<QueryRepr_t>(),
             std::forward<args_t>(args)...
         );
-    case OPCODE::REPR_COUNT:
+    case OPCODE::QUERY_COUNT:
         return call(
-            self.template as<ReprCount_t>(),
+            self.template as<QueryCount_t>(),
             std::forward<args_t>(args)...
         );
-    case OPCODE::REPR_TYPE:
+    case OPCODE::QUERY_TYPE:
         return call(
-            self.template as<ReprType_t>(),
+            self.template as<QueryType_t>(),
             std::forward<args_t>(args)...
         );
-    case OPCODE::REPR_DEFINED:
+    case OPCODE::QUERY_DEFINED:
         return call(
-            self.template as<ReprDefined_t>(),
+            self.template as<QueryDefined_t>(),
             std::forward<args_t>(args)...
         );
-    case OPCODE::REPR_EXISTS:
+    case OPCODE::QUERY_EXISTS:
         return call(
-            self.template as<ReprExists_t>(),
+            self.template as<QueryExists_t>(),
             std::forward<args_t>(args)...
         );
-    case OPCODE::REPR_ISEMPTY:
+    case OPCODE::QUERY_ISEMPTY:
         return call(
-            self.template as<ReprIsEmpty_t>(),
+            self.template as<QueryIsEmpty_t>(),
             std::forward<args_t>(args)...
         );
     case OPCODE::OPEN_FRAME:
@@ -452,6 +487,13 @@ const char *opcode_str(OPCODE opcode) {
     case OPCODE::PUSH_FRAG_FIRST: return "PUSH_FRAG_FIRST";
     case OPCODE::PUSH_FRAG_INNER: return "PUSH_FRAG_INNER";
     case OPCODE::PUSH_FRAG_LAST: return "PUSH_FRAG_LAST";
+    case OPCODE::PUSH_FRAG_COUNT: return "PUSH_FRAG_COUNT";
+    case OPCODE::PUSH_FRAG_INDEX: return "PUSH_FRAG_INDEX";
+    case OPCODE::PUSH_VAL_FIRST: return "PUSH_VAL_FIRST";
+    case OPCODE::PUSH_VAL_INNER: return "PUSH_VAL_INNER";
+    case OPCODE::PUSH_VAL_LAST: return "PUSH_VAL_LAST";
+    case OPCODE::PUSH_VAL_COUNT: return "PUSH_VAL_COUNT";
+    case OPCODE::PUSH_VAL_INDEX: return "PUSH_VAL_INDEX";
     case OPCODE::PUSH_FRAG: return "PUSH_FRAG";
     case OPCODE::PRINT: return "PRINT";
     case OPCODE::AND: return "AND";
@@ -462,24 +504,24 @@ const char *opcode_str(OPCODE opcode) {
     case OPCODE::OPEN_FORMAT: return "OPEN_FORMAT";
     case OPCODE::CLOSE_FORMAT: return "CLOSE_FORMAT";
     case OPCODE::OPEN_FRAG: return "OPEN_FRAG";
+    case OPCODE::OPEN_ERROR_FRAG: return "OPEN_ERROR_FRAG";
     case OPCODE::CLOSE_FRAG: return "CLOSE_FRAG";
-    case OPCODE::PUSH_FRAG_COUNT: return "PUSH_FRAG_COUNT";
-    case OPCODE::PUSH_FRAG_INDEX: return "PUSH_FRAG_INDEX";
     case OPCODE::SET: return "SET";
     case OPCODE::OPEN_CTYPE: return "OPEN_CTYPE";
     case OPCODE::CLOSE_CTYPE: return "CLOSE_CTYPE";
     case OPCODE::PUSH_ATTR: return "PUSH_ATTR";
     case OPCODE::PUSH_THIS_FRAG: return "PUSH_THIS_FRAG";
+    case OPCODE::PUSH_ERROR_FRAG: return "PUSH_ERROR_FRAG";
     case OPCODE::PUSH_ROOT_FRAG: return "PUSH_ROOT_FRAG";
     case OPCODE::PUSH_ATTR_AT: return "PUSH_ATTR_AT";
     case OPCODE::POP_ATTR: return "POP_ATTR";
     case OPCODE::REPR: return "REPR";
-    case OPCODE::REPR_JSONIFY: return "REPR_JSONIFY";
-    case OPCODE::REPR_COUNT: return "REPR_COUNT";
-    case OPCODE::REPR_TYPE: return "REPR_TYPE";
-    case OPCODE::REPR_DEFINED: return "REPR_DEFINED";
-    case OPCODE::REPR_EXISTS: return "REPR_EXISTS";
-    case OPCODE::REPR_ISEMPTY: return "REPR_ISEMPTY";
+    case OPCODE::QUERY_REPR: return "QUERY_REPR";
+    case OPCODE::QUERY_COUNT: return "QUERY_COUNT";
+    case OPCODE::QUERY_TYPE: return "QUERY_TYPE";
+    case OPCODE::QUERY_DEFINED: return "QUERY_DEFINED";
+    case OPCODE::QUERY_EXISTS: return "QUERY_EXISTS";
+    case OPCODE::QUERY_ISEMPTY: return "QUERY_ISEMPTY";
     case OPCODE::OPEN_FRAME: return "OPEN_FRAME";
     case OPCODE::CLOSE_FRAME: return "CLOSE_FRAME";
     case OPCODE::REGEX_MATCH: return "REGEX_MATCH";
@@ -566,6 +608,31 @@ void PushFragInner_t::dump_params(std::ostream &os) const {
 void PushFragLast_t::dump_params(std::ostream &os) const {
     os << "<frame-offset=" << frame_offset
        << ",frag-offset=" << frag_offset
+       << '>';
+}
+
+void PushValCount_t::dump_params(std::ostream &os) const {
+    os << "<path=" << path
+       << '>';
+}
+
+void PushValIndex_t::dump_params(std::ostream &os) const {
+    os << "<path=" << path
+       << '>';
+}
+
+void PushValFirst_t::dump_params(std::ostream &os) const {
+    os << "<path=" << path
+       << '>';
+}
+
+void PushValLast_t::dump_params(std::ostream &os) const {
+    os << "<path=" << path
+       << '>';
+}
+
+void PushValInner_t::dump_params(std::ostream &os) const {
+    os << "<path=" << path
        << '>';
 }
 
@@ -677,6 +744,10 @@ bool RegexMatch_t::matches(const string_view_t &view) const {
     auto tmp = compiled_value->regex;
     tmp.search(view.str());
     return tmp.matched();
+}
+
+void PushErrorFrag_t::dump_params(std::ostream &os) const {
+    os << "<discard_stack_value=" << discard_stack_value << '>';
 }
 
 } // namespace Teng

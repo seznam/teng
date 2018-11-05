@@ -60,6 +60,11 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 2},
+                    "The defined() query is deprecated; "
+                    "use isempty() or exists() instead"
+                }, {
                     Teng::Error_t::ERROR,
                     {1, 2},
                     "Invalid variable identifier in defined()"
@@ -68,7 +73,7 @@ SCENARIO(
                     {1, 10},
                     "Unexpected token: name=R_PAREN, view=)"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -82,9 +87,10 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
-                    "Runtime: The defined() operator is deprecated"
+                    "The defined() query is deprecated; "
+                    "use isempty() or exists() instead"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -98,9 +104,10 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
-                    "Runtime: The defined() operator is deprecated"
+                    "The defined() query is deprecated; "
+                    "use isempty() or exists() instead"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -114,9 +121,10 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
-                    "Runtime: The defined() operator is deprecated"
+                    "The defined() query is deprecated; "
+                    "use isempty() or exists() instead"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "(b)");
             }
         }
@@ -130,9 +138,10 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
-                    "Runtime: The defined() operator is deprecated"
+                    "The defined() query is deprecated; "
+                    "use isempty() or exists() instead"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -146,9 +155,10 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
-                    "Runtime: The defined() operator is deprecated"
+                    "The defined() query is deprecated; "
+                    "use isempty() or exists() instead"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -162,9 +172,10 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
-                    "Runtime: The defined() operator is deprecated"
+                    "The defined() query is deprecated; "
+                    "use isempty() or exists() instead"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -178,14 +189,15 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
-                    "Runtime: The defined() operator is deprecated"
+                    "The defined() query is deprecated; "
+                    "use isempty() or exists() instead"
                 }, {
                     Teng::Error_t::WARNING,
                     {1, 11},
-                    "In query expressions the identifier should not be "
+                    "In query expression the identifier shouldn't be "
                     "denoted by $ sign"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -197,6 +209,11 @@ SCENARIO(
 
             THEN("Result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 2},
+                    "The defined() query is deprecated; "
+                    "use isempty() or exists() instead"
+                }, {
                     Teng::Error_t::ERROR,
                     {1, 2},
                     "Invalid variable identifier in defined()"
@@ -205,7 +222,7 @@ SCENARIO(
                     {1, 12},
                     "Unexpected token: name=DEC_INT, view=1"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -219,9 +236,10 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
-                    "Runtime: The defined() operator is deprecated"
+                    "The defined() query is deprecated; "
+                    "use isempty() or exists() instead"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "111");
             }
         }
@@ -235,10 +253,16 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
-                    "Runtime: The defined() operator is deprecated"
+                    "The defined() query is deprecated; "
+                    "use isempty() or exists() instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 10},
+                    "The builtin _parent variable has crossed root "
+                    "boundary; converting it to _this"
                 }};
-                REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "0");
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "1");
             }
         }
     }
@@ -267,9 +291,15 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
-                    "Runtime: The defined() operator is deprecated"
+                    "The defined() query is deprecated; "
+                    "use isempty() or exists() instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -283,9 +313,15 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
-                    "Runtime: The defined() operator is deprecated"
+                    "The defined() query is deprecated; "
+                    "use isempty() or exists() instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -299,9 +335,15 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
-                    "Runtime: The defined() operator is deprecated"
+                    "The defined() query is deprecated; "
+                    "use isempty() or exists() instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "(b)");
             }
         }
@@ -315,9 +357,15 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
-                    "Runtime: The defined() operator is deprecated"
+                    "The defined() query is deprecated; "
+                    "use isempty() or exists() instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -331,9 +379,15 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
-                    "Runtime: The defined() operator is deprecated"
+                    "The defined() query is deprecated; "
+                    "use isempty() or exists() instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -347,9 +401,15 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
-                    "Runtime: The defined() operator is deprecated"
+                    "The defined() query is deprecated; "
+                    "use isempty() or exists() instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -363,10 +423,16 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
-                    "Runtime: The defined() operator is deprecated"
+                    "The defined() query is deprecated; "
+                    "use isempty() or exists() instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
                 }};
-                REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "1");
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "111");
             }
         }
 
@@ -379,9 +445,9 @@ SCENARIO(
         //         std::vector<Teng::Error_t::Entry_t> errs = {{
         //             Teng::Error_t::WARNING,
         //             {1, 2},
-        //             "Runtime: The defined() operator is deprecated"
+        //            "Runtime: The defined() operator is deprecated"
         //         }};
-        //         REQUIRE(err.getEntries() == errs);
+        //         ERRLOG_TEST(err.getEntries(), errs);
         //         REQUIRE(result == "0");
         //     }
         // }
@@ -389,7 +455,7 @@ SCENARIO(
 }
 
 SCENARIO(
-    "The suspicious exists() operator",
+    "The exists() operator",
     "[queries]"
 ) {
     GIVEN("Some variables and fragments") {
@@ -417,7 +483,7 @@ SCENARIO(
                     {1, 9},
                     "Unexpected token: name=R_PAREN, view=)"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -429,7 +495,7 @@ SCENARIO(
 
             THEN("Result is false") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -441,7 +507,7 @@ SCENARIO(
 
             THEN("Result is true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -453,7 +519,7 @@ SCENARIO(
 
             THEN("Result is true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -465,7 +531,7 @@ SCENARIO(
 
             THEN("Result is true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -477,7 +543,7 @@ SCENARIO(
 
             THEN("Result is true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -489,7 +555,7 @@ SCENARIO(
 
             THEN("Result is false") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -503,10 +569,10 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 10},
-                    "In query expressions the identifier should not be "
+                    "In query expression the identifier shouldn't be "
                     "denoted by $ sign"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -526,7 +592,7 @@ SCENARIO(
                     {1, 11},
                     "Unexpected token: name=DEC_INT, view=1"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -538,7 +604,7 @@ SCENARIO(
 
             THEN("Result is true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -549,9 +615,14 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is false") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "0");
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 9},
+                    "The builtin _parent variable has crossed root "
+                    "boundary; converting it to _this"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "1");
             }
         }
 
@@ -562,15 +633,15 @@ SCENARIO(
 
             THEN("Result is false") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "0");
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "1");
             }
         }
     }
 }
 
 SCENARIO(
-    "The suspicious exists() operator - runtime variables",
+    "The exists() operator - runtime variables",
     "[queries]"
 ) {
     GIVEN("Some variables and fragments") {
@@ -589,8 +660,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is false") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 11},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -601,8 +677,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is true") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 11},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -613,8 +694,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is true") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 11},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -625,8 +711,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is true") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 11},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -637,8 +728,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is true") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 11},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -649,8 +745,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is false") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 11},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -661,8 +762,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is true") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 11},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -674,7 +780,7 @@ SCENARIO(
         //
         //     THEN("Result is false") {
         //         std::vector<Teng::Error_t::Entry_t> errs;
-        //         REQUIRE(err.getEntries() == errs);
+        //         ERRLOG_TEST(err.getEntries(), errs);
         //         REQUIRE(result == "0");
         //     }
         // }
@@ -705,7 +811,7 @@ SCENARIO(
 
             THEN("Result is type string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -717,7 +823,7 @@ SCENARIO(
 
             THEN("Result is type string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "integral");
             }
         }
@@ -729,7 +835,7 @@ SCENARIO(
 
             THEN("Result is type string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "real");
             }
         }
@@ -741,7 +847,7 @@ SCENARIO(
 
             THEN("Result is type string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "string_ref");
             }
         }
@@ -753,7 +859,7 @@ SCENARIO(
 
             THEN("Result is type string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "string_ref");
             }
         }
@@ -765,7 +871,7 @@ SCENARIO(
 
             THEN("Result is type string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "list_ref");
             }
         }
@@ -777,7 +883,7 @@ SCENARIO(
 
             THEN("Result is type string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "list_ref");
             }
         }
@@ -789,7 +895,7 @@ SCENARIO(
 
             THEN("Result is type string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "list_ref");
             }
         }
@@ -801,7 +907,7 @@ SCENARIO(
 
             THEN("Result is type string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "list_ref");
             }
         }
@@ -831,8 +937,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is type string") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 9},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -843,8 +954,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is type string") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 9},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "integral");
             }
         }
@@ -855,8 +971,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is type string") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 9},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "real");
             }
         }
@@ -867,8 +988,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is type string") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 9},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "string_ref");
             }
         }
@@ -879,8 +1005,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is type string") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 9},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "string_ref");
             }
         }
@@ -891,8 +1022,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is type string") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 9},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "list_ref");
             }
         }
@@ -903,8 +1039,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is type string") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 9},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "list_ref");
             }
         }
@@ -916,7 +1057,7 @@ SCENARIO(
 
             THEN("Result is type string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "frag_ref");
             }
         }
@@ -928,7 +1069,7 @@ SCENARIO(
 
             THEN("Result is type string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "frag_ref");
             }
         }
@@ -939,8 +1080,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is type string") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 9},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "list_ref");
             }
         }
@@ -951,8 +1097,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is type string") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 9},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "list_ref");
             }
         }
@@ -985,11 +1136,16 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
+                    "The count() query is deprecated; "
+                    "use _count builtin variable instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 2},
                     "Runtime: The path expression references object of "
                     "'undefined' type with value 'undefined' for which "
-                    "count() query is undefined [open_frags=., iteration=0]"
+                    "count() query is undefined [open_frags=., iteration=0/1]"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -1003,11 +1159,16 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
+                    "The count() query is deprecated; "
+                    "use _count builtin variable instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 2},
                     "Runtime: The path expression references object of "
                     "'integral' type with value '3' for which "
-                    "count() query is undefined [open_frags=., iteration=0]"
+                    "count() query is undefined [open_frags=., iteration=0/1]"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -1021,11 +1182,16 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
+                    "The count() query is deprecated; "
+                    "use _count builtin variable instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 2},
                     "Runtime: The path expression references object of "
                     "'real' type with value '3.14' for which "
-                    "count() query is undefined [open_frags=., iteration=0]"
+                    "count() query is undefined [open_frags=., iteration=0/1]"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -1039,11 +1205,16 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
+                    "The count() query is deprecated; "
+                    "use _count builtin variable instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 2},
                     "Runtime: The path expression references object of "
                     "'string_ref' type with value 'three' for which "
-                    "count() query is undefined [open_frags=., iteration=0]"
+                    "count() query is undefined [open_frags=., iteration=0/1]"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -1057,11 +1228,16 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
+                    "The count() query is deprecated; "
+                    "use _count builtin variable instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 2},
                     "Runtime: The path expression references object of "
                     "'string_ref' type with value '' for which "
-                    "count() query is undefined [open_frags=., iteration=0]"
+                    "count() query is undefined [open_frags=., iteration=0/1]"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -1072,8 +1248,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is one") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 2},
+                    "The count() query is deprecated; "
+                    "use _count builtin variable instead"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -1084,8 +1265,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is one") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 2},
+                    "The count() query is deprecated; "
+                    "use _count builtin variable instead"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -1096,8 +1282,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is zero") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 2},
+                    "The count() query is deprecated; "
+                    "use _count builtin variable instead"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -1108,8 +1299,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is two") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 2},
+                    "The count() query is deprecated; "
+                    "use _count builtin variable instead"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "2");
             }
         }
@@ -1142,11 +1338,21 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
+                    "The count() query is deprecated; "
+                    "use _count builtin variable instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 2},
                     "Runtime: The path expression references object of "
                     "'undefined' type with value 'undefined' for which "
-                    "count() query is undefined [open_frags=., iteration=0]"
+                    "count() query is undefined [open_frags=., iteration=0/1]"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 10},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -1160,11 +1366,21 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
+                    "The count() query is deprecated; "
+                    "use _count builtin variable instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 2},
                     "Runtime: The path expression references object of "
                     "'integral' type with value '3' for which "
-                    "count() query is undefined [open_frags=., iteration=0]"
+                    "count() query is undefined [open_frags=., iteration=0/1]"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 10},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -1178,11 +1394,21 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
+                    "The count() query is deprecated; "
+                    "use _count builtin variable instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 2},
                     "Runtime: The path expression references object of "
                     "'real' type with value '3.14' for which "
-                    "count() query is undefined [open_frags=., iteration=0]"
+                    "count() query is undefined [open_frags=., iteration=0/1]"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 10},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -1196,11 +1422,21 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
+                    "The count() query is deprecated; "
+                    "use _count builtin variable instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 2},
                     "Runtime: The path expression references object of "
                     "'string_ref' type with value 'three' for which "
-                    "count() query is undefined [open_frags=., iteration=0]"
+                    "count() query is undefined [open_frags=., iteration=0/1]"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 10},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -1214,11 +1450,21 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
+                    "The count() query is deprecated; "
+                    "use _count builtin variable instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 2},
                     "Runtime: The path expression references object of "
                     "'string_ref' type with value '' for which "
-                    "count() query is undefined [open_frags=., iteration=0]"
+                    "count() query is undefined [open_frags=., iteration=0/1]"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 10},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -1229,8 +1475,18 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is one") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 2},
+                    "The count() query is deprecated; "
+                    "use _count builtin variable instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 10},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -1241,8 +1497,18 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is one") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 2},
+                    "The count() query is deprecated; "
+                    "use _count builtin variable instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 10},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -1256,11 +1522,16 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
+                    "The count() query is deprecated; "
+                    "use _count builtin variable instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 2},
                     "Runtime: The path expression references object of "
                     "'frag_ref' type with value '$frag$' for which "
-                    "count() query is undefined [open_frags=., iteration=0]"
+                    "count() query is undefined [open_frags=., iteration=0/1]"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -1274,11 +1545,16 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 2},
+                    "The count() query is deprecated; "
+                    "use _count builtin variable instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 2},
                     "Runtime: The path expression references object of "
                     "'frag_ref' type with value '$frag$' for which "
-                    "count() query is undefined [open_frags=., iteration=0]"
+                    "count() query is undefined [open_frags=., iteration=0/1]"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -1289,8 +1565,18 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is zero") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 2},
+                    "The count() query is deprecated; "
+                    "use _count builtin variable instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 10},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -1301,8 +1587,18 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is two") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 2},
+                    "The count() query is deprecated; "
+                    "use _count builtin variable instead"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 10},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "2");
             }
         }
@@ -1337,9 +1633,9 @@ SCENARIO(
                     {1, 2},
                     "Runtime: The path expression references object of "
                     "'undefined' type with value 'undefined' for which "
-                    "isempty() query is undefined [open_frags=., iteration=0]"
+                    "isempty() query is undefined [open_frags=., iteration=0/1]"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -1355,9 +1651,9 @@ SCENARIO(
                     {1, 2},
                     "Runtime: The path expression references object of "
                     "'integral' type with value '3' for which "
-                    "isempty() query is undefined [open_frags=., iteration=0]"
+                    "isempty() query is undefined [open_frags=., iteration=0/1]"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -1373,9 +1669,9 @@ SCENARIO(
                     {1, 2},
                     "Runtime: The path expression references object of "
                     "'real' type with value '3.14' for which "
-                    "isempty() query is undefined [open_frags=., iteration=0]"
+                    "isempty() query is undefined [open_frags=., iteration=0/1]"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -1391,9 +1687,9 @@ SCENARIO(
                     {1, 2},
                     "Runtime: The path expression references object of "
                     "'string_ref' type with value 'three' for which "
-                    "isempty() query is undefined [open_frags=., iteration=0]"
+                    "isempty() query is undefined [open_frags=., iteration=0/1]"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -1409,9 +1705,9 @@ SCENARIO(
                     {1, 2},
                     "Runtime: The path expression references object of "
                     "'string_ref' type with value '' for which "
-                    "isempty() query is undefined [open_frags=., iteration=0]"
+                    "isempty() query is undefined [open_frags=., iteration=0/1]"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -1423,7 +1719,7 @@ SCENARIO(
 
             THEN("Result is false") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -1435,7 +1731,7 @@ SCENARIO(
 
             THEN("Result is false") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -1447,7 +1743,7 @@ SCENARIO(
 
             THEN("Result is true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -1459,7 +1755,7 @@ SCENARIO(
 
             THEN("Result is false") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -1494,9 +1790,14 @@ SCENARIO(
                     {1, 2},
                     "Runtime: The path expression references object of "
                     "'undefined' type with value 'undefined' for which "
-                    "isempty() query is undefined [open_frags=., iteration=0]"
+                    "isempty() query is undefined [open_frags=., iteration=0/1]"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -1512,9 +1813,14 @@ SCENARIO(
                     {1, 2},
                     "Runtime: The path expression references object of "
                     "'integral' type with value '3' for which "
-                    "isempty() query is undefined [open_frags=., iteration=0]"
+                    "isempty() query is undefined [open_frags=., iteration=0/1]"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -1530,9 +1836,14 @@ SCENARIO(
                     {1, 2},
                     "Runtime: The path expression references object of "
                     "'real' type with value '3.14' for which "
-                    "isempty() query is undefined [open_frags=., iteration=0]"
+                    "isempty() query is undefined [open_frags=., iteration=0/1]"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -1548,9 +1859,14 @@ SCENARIO(
                     {1, 2},
                     "Runtime: The path expression references object of "
                     "'string_ref' type with value 'three' for which "
-                    "isempty() query is undefined [open_frags=., iteration=0]"
+                    "isempty() query is undefined [open_frags=., iteration=0/1]"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -1566,9 +1882,14 @@ SCENARIO(
                     {1, 2},
                     "Runtime: The path expression references object of "
                     "'string_ref' type with value '' for which "
-                    "isempty() query is undefined [open_frags=., iteration=0]"
+                    "isempty() query is undefined [open_frags=., iteration=0/1]"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "undefined");
             }
         }
@@ -1579,8 +1900,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is false") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -1591,8 +1917,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is false") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -1604,7 +1935,7 @@ SCENARIO(
 
             THEN("Result is true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -1616,7 +1947,7 @@ SCENARIO(
 
             THEN("Result is false") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -1627,8 +1958,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is true") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -1639,8 +1975,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is false") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -1673,10 +2014,10 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 10},
-                    "Runtime: This fragment doesn't contain any value for "
-                    "key 'missing' [open_frags=., iteration=0]"
+                    "Runtime: Variable '.missing' is undefined "
+                    "[open_frags=., iteration=0/1]"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "null");
             }
         }
@@ -1688,7 +2029,7 @@ SCENARIO(
 
             THEN("Result is json value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "3");
             }
         }
@@ -1700,7 +2041,7 @@ SCENARIO(
 
             THEN("Result is json value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "3.14");
             }
         }
@@ -1712,7 +2053,7 @@ SCENARIO(
 
             THEN("Result is json value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "\"three\"");
             }
         }
@@ -1724,7 +2065,7 @@ SCENARIO(
 
             THEN("Result is json value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "\"\"");
             }
         }
@@ -1736,7 +2077,7 @@ SCENARIO(
 
             THEN("Result is json value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "[{}]");
             }
         }
@@ -1748,7 +2089,7 @@ SCENARIO(
 
             THEN("Result is json value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "[{\"var\": \"VAR\"}]");
             }
         }
@@ -1760,7 +2101,7 @@ SCENARIO(
 
             THEN("Result is json value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "[]");
             }
         }
@@ -1772,7 +2113,7 @@ SCENARIO(
 
             THEN("Result is json value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "[{}, {}]");
             }
         }
@@ -1805,10 +2146,15 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 12},
-                    "Runtime: This fragment doesn't contain any value for "
-                    "key 'missing' [open_frags=., iteration=0]"
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "Runtime: Variable '.missing' is undefined "
+                    "[open_frags=., iteration=0/1]"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "null");
             }
         }
@@ -1819,8 +2165,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is json value") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "3");
             }
         }
@@ -1831,8 +2182,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is json value") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "3.14");
             }
         }
@@ -1843,8 +2199,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is json value") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "\"three\"");
             }
         }
@@ -1855,8 +2216,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is json value") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "\"\"");
             }
         }
@@ -1867,8 +2233,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is json value") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "[{}]");
             }
         }
@@ -1879,8 +2250,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is json value") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "[{\"var\": \"VAR\"}]");
             }
         }
@@ -1892,7 +2268,7 @@ SCENARIO(
 
             THEN("Result is json value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{}");
             }
         }
@@ -1904,7 +2280,7 @@ SCENARIO(
 
             THEN("Result is json value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{\"var\": \"VAR\"}");
             }
         }
@@ -1916,8 +2292,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is json value") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "[]");
             }
         }
@@ -1928,8 +2309,13 @@ SCENARIO(
             auto result = g(err, t, root);
 
             THEN("Result is json value") {
-                std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 12},
+                    "The runtime variable is useless; "
+                    "converting it to regular variable"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "[{}, {}]");
             }
         }
@@ -1947,24 +2333,24 @@ SCENARIO(
 
         WHEN("The jsonify operator on string with dangerous ascii characters") {
             Teng::Error_t err;
-            auto t = "%{jsonify($$var)}";
+            auto t = "%{jsonify($var)}";
             auto result = g(err, t, root);
 
             THEN("Result is properly escaped") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "\"čřžý\\\"',[]{}\\n\"");
             }
         }
 
         WHEN("The jsonify operator on string with binary characters") {
             Teng::Error_t err;
-            auto t = "%{jsonify($$bin)}";
+            auto t = "%{jsonify($bin)}";
             auto result = g(err, t, root);
 
             THEN("Result is properly escaped") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "\"\\u0000\\u0001\\u0002\"");
             }
         }

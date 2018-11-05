@@ -55,7 +55,7 @@ SCENARIO(
 
             THEN("Dangerous characters are escaped in html blocks only") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(
                     result == "&amp;&lt;&gt;&quot;&<>\"&amp;&lt;&gt;&quot;"
                 );
@@ -79,7 +79,7 @@ SCENARIO(
                     {1, 9},
                     "Invalid content type 'unknown/unknown'; using top instead"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(
                     result
                     == "&amp;&lt;&gt;&quot;"
@@ -114,7 +114,7 @@ SCENARIO(
                     {1, 45},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "&amp;&");
             }
         }
@@ -142,7 +142,7 @@ SCENARIO(
                     {1, 94},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "&amp;&&amp;");
             }
         }
@@ -169,7 +169,7 @@ SCENARIO(
                     {1, 88},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "&amp;&&amp;&amp;");
             }
         }
@@ -201,7 +201,7 @@ SCENARIO(
                     {1, 77},
                     "Unexpected token: name=<EOF>, view="
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "&amp;&&amp;");
             }
         }
@@ -233,7 +233,7 @@ SCENARIO(
                     {1, 13},
                     "Unexpected token: name=END, view=?>"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "#&amp;#");
             }
         }
@@ -259,7 +259,7 @@ SCENARIO(
                     {1, 14},
                     "Unexpected token: name=DEC_INT, view=1"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "#&amp;#");
             }
         }
@@ -285,7 +285,7 @@ SCENARIO(
                     {1, 32},
                     "Unexpected token: name=DEC_INT, view=1"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "#  &  #");
             }
         }
@@ -316,7 +316,7 @@ SCENARIO(
                     {1, 56},
                     "Unexpected token: name=DEC_INT, view=1"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "#&#");
             }
         }
@@ -339,7 +339,7 @@ SCENARIO(
                     {1, 56},
                     "This directive doesn't accept any options; ignoring them"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "#&#");
             }
         }
@@ -366,7 +366,7 @@ SCENARIO(
                     "The <?teng endctype?> directive closes unopened "
                     "ctype block"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{}");
             }
         }
@@ -393,7 +393,7 @@ SCENARIO(
                     "The <?teng endctype?> directive closes unopened "
                     "ctype block"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{}{}");
             }
         }
@@ -416,7 +416,7 @@ SCENARIO(
                     "The <?teng endctype?> directive closes unopened "
                     "ctype block"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{&amp;}{&}");
             }
         }
@@ -439,7 +439,7 @@ SCENARIO(
                     "The <?teng endctype?> directive closes unopened "
                     "ctype block"
                 }};
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{&}{&amp;}");
             }
         }

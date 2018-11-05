@@ -70,7 +70,7 @@ SCENARIO(
                      "\n"
                      "Configuration:\n"
                      "    debug: enabled\n"
-                     "    errorfragment: disabled\n"
+                     "    errorfragment: enabled\n"
                      "    logtooutput: disabled\n"
                      "    bytecode: enabled\n"
                      "    watchfiles: enabled\n"
@@ -99,7 +99,7 @@ SCENARIO(
 
             THEN("The rendered template contains debug") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == r);
             }
         }
@@ -112,7 +112,7 @@ SCENARIO(
 
             THEN("The rendered template does not contain debug") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
             }
         }
@@ -159,7 +159,7 @@ SCENARIO(
 
             THEN("The rendered template contains bytecode") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == (std::string("a") + r));
             }
         }
@@ -167,16 +167,86 @@ SCENARIO(
         WHEN("Generated with bytecode fragment disabled") {
             Teng::Error_t err;
             std::string d = "teng.conf";
-            std::string t = "<?teng bytecode?>";
             auto result = g(err, t, root);
 
             THEN("The rendered template does not contain bytecode") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
-                REQUIRE(result == "");
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "a");
             }
         }
     }
 }
 
+SCENARIO(
+    "The error fragment",
+    "[debug]"
+) {
+    GIVEN("Template with error fragment") {
+        Teng::Fragment_t root;
+        root.addVariable("var", 1);
+        std::string t = "${missing}<?teng frag _error?>"
+                        "${filename}/${line}/${column}/${level}/${message}"
+                        "<?teng endfrag?>";
+
+        WHEN("Generated with error fragment enabled") {
+            Teng::Error_t err;
+            std::string d = "teng.debug.conf";
+            auto result = g(err, t, root, "cs", "text/html", "utf-8", d);
+            std::string r = "undefined/1/2/1/Runtime: Variable '.missing' "
+                            "is undefined [open_frags=., iteration=0/1]";
+
+            THEN("The rendered template contains error fragment data") {
+                std::vector<Teng::Error_t::Entry_t> errs {{
+                    Teng::Error_t::WARNING,
+                    {1, 2},
+                    "Runtime: Variable '.missing' is undefined "
+                    "[open_frags=., iteration=0/1]"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == r);
+            }
+        }
+
+        WHEN("Generated with error fragment disabled") {
+            Teng::Error_t err;
+            std::string d = "teng.conf";
+            auto result = g(err, t, root);
+
+            THEN("The rendered template does not contain error fragment") {
+                std::vector<Teng::Error_t::Entry_t> errs {{
+                    Teng::Error_t::WARNING,
+                    {1, 2},
+                    "Runtime: Variable '.missing' is undefined "
+                    "[open_frags=., iteration=0/1]"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "undefined");
+            }
+        }
+    }
+
+    GIVEN("Template with error fragment referenced by runtime variables") {
+        Teng::Fragment_t root;
+        root.addVariable("var", 1);
+        std::string t = "${var}/${$$._count}/${no}/${$$_error._count}";
+
+        WHEN("Error fragment is referenced by runtime variables") {
+            Teng::Error_t err;
+            std::string d = "teng.debug.conf";
+            auto result = g(err, t, root, "cs", "text/html", "utf-8", d);
+
+            THEN("The rendered template contains error fragment data") {
+                std::vector<Teng::Error_t::Entry_t> errs {{
+                    Teng::Error_t::WARNING,
+                    {1, 22},
+                    "Runtime: Variable '.no' is undefined "
+                    "[open_frags=., iteration=0/1]"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "1/1/undefined/1");
+            }
+        }
+    }
+}
 

@@ -100,6 +100,28 @@ inline const Fragment_t *get_frag(const Value_t &self) {
     }
 }
 
+/** Resolves the 'value' of value:
+ *
+ * tag::frag_ref - this is returned,
+ * tag::list_ref - value built from i-th list item is returned,
+ * other - nullptr is return.
+ */
+inline Value_t get_value_at(const Value_t &self) {
+    switch (self.type()) {
+    case Value_t::tag::undefined:
+    case Value_t::tag::integral:
+    case Value_t::tag::real:
+    case Value_t::tag::string:
+    case Value_t::tag::string_ref:
+    case Value_t::tag::regex:
+        return Value_t();
+    case Value_t::tag::frag_ref:
+        return self;
+    case Value_t::tag::list_ref:
+        return Value_t(&(*self.as_list_ref().ptr)[self.as_list_ref().i]);
+    }
+}
+
 /** Resolves the 'frag' value:
  *
  * tag::frag_ref - this is returned,
@@ -191,8 +213,8 @@ inline ListPos_t get_list_pos_impl(const Value_t &self) {
  */
 struct FrameRec_t {
     FrameRec_t(const FragmentValue_t *root)
-        : open_frags(1, {Value_t(root), {}, {}})
-    {}
+        : open_frags()
+    {open_frags.emplace_back(root);}
 
     /** Returns true if fragment has been opened.
      */
@@ -201,11 +223,36 @@ struct FrameRec_t {
         switch (new_frag.type()) {
         case Value_t::tag::frag_ref:
         case Value_t::tag::list_ref:
-            open_frags.push_back({std::move(new_frag), Locals_t(), name});
+            open_frags.emplace_back(name, std::move(new_frag));
             return true;
         default:
             return false;
         }
+    }
+
+    /** Returns true if fragment
+     */
+    bool open_error_frag(FragmentList_t &&errors) {
+        open_frags.emplace_back(std::move(errors));
+        return true;
+    }
+
+    /** Stores error fragment in current open fragment. This is a hack that
+     * ensures lifetime of the error frag until the current fragment is
+     * closed.
+     */
+    void store_error_frag(FragmentList_t &&errors) {
+        if (open_frags.back().error_frag)
+            throw std::runtime_error(__PRETTY_FUNCTION__);
+        open_frags.back().error_frag
+            = std::make_unique<FragmentList_t>(std::move(errors));
+    }
+
+    /** Returns value with reference to error fragment stored in current open
+     * fragment.
+     */
+    Value_t current_error_frag() const {
+        return Value_t(open_frags.back().error_frag.get());
     }
 
     /** Returns true if next fragment has been opened.
@@ -309,17 +356,17 @@ struct FrameRec_t {
             throw std::runtime_error(__PRETTY_FUNCTION__);
         auto i = open_frags.size() - var.frag_offset - 1;
         return i == 0
-            ? ListPos_t{0, 1, true} /*root frag*/
+            ? ListPos_t{0, 1, true} /*root frag (backward compatibility)*/
             : get_list_pos_impl(open_frags[i].frag);
     }
 
     /** Returns fragment (or anything else) at given offset.
      */
-    Value_t frag(uint16_t frag_offset) const {
+    Value_t value_at(uint16_t frag_offset) const {
         if (frag_offset >= open_frags.size())
             throw std::runtime_error(__PRETTY_FUNCTION__);
         auto i = open_frags.size() - frag_offset - 1;
-        return Value_t(get_frag(open_frags[i].frag));
+        return Value_t(get_value_at(open_frags[i].frag));
     }
 
     /** Returns open fragments joined by dot.
@@ -337,48 +384,56 @@ struct FrameRec_t {
      */
     std::size_t current_list_i() const {
         return open_frags.size() == 1
-            ? 0
+            ? 0 // root fragment
             : get_list_pos_impl(open_frags.back().frag).i;
     }
 
+    /** Returns size of the current fragmnet list.
+     */
+    std::size_t current_list_size() const {
+        return open_frags.size() == 1
+            ? 1 // root fragment
+            : get_list_pos_impl(open_frags.back().frag).size;
+    }
+
 protected:
+    // storage for local variables
     struct LocalCmp_t: std::less<string_view_t> {struct is_transparent {};};
     using Locals_t = std::map<std::string, Value_t, LocalCmp_t>;
-    struct FragRec_t {Value_t frag; Locals_t locals; string_view_t name;};
+
+    /** Record for open fragment.
+     */
+    struct FragRec_t {
+        /** C'tor: for root frag.
+         */
+        FragRec_t(const FragmentValue_t *root)
+            : frag(root), locals(), name(), error_frag()
+        {}
+
+        /** C'tor: for regular fragments.
+         */
+        FragRec_t(const string_view_t &name, Value_t frag)
+            : frag(std::move(frag)), locals(), name(name), error_frag()
+        {}
+
+        /** C'tor: for error frag.
+         */
+        FragRec_t(FragmentList_t &&errors)
+            : frag(), locals(), name("_error"),
+              error_frag(std::make_unique<FragmentList_t>(std::move(errors)))
+        {frag = Value_t(error_frag.get());}
+
+        // shortucts
+        using FragListPtr_t = std::unique_ptr<FragmentList_t>;
+
+        Value_t frag;             //!< the current open frag
+        Locals_t locals;          //!< local variables of frag
+        string_view_t name;       //!< current frag name
+        FragListPtr_t error_frag; //!< holds frag data from Error_t::getFrags
+    };
+
     std::vector<FragRec_t> open_frags; //!< list of open fragments
 };
-
-// TODO(burlog): 
-// class ErrorFragmentFrame_t : public FragmentFrame_t {
-//     virtual Status_t
-//     findVariable(const std::string &name, Parser::Value_t &var) const {
-//         // try to match variable names
-//         if (name == FILENAME) {
-//             var = *errors[index].pos.filename;;
-//             return S_OK;
-//         } else if (name == LINE) {
-//             var = errors[index].pos.lineno;
-//             return S_OK;
-//         } else if (name == COLUMN) {
-//             var = errors[index].pos.colno;
-//             return S_OK;
-//         } else if (name == LEVEL) {
-//             var = static_cast<int>(errors[index].level);
-//             return S_OK;
-//         } else if (name == MESSAGE) {
-//             var = errors[index].msg;
-//             return S_OK;
-//         }
-//
-//         // nothing matched, return local variable
-//         return findLocalVariable(name, var);
-//     }
-// const std::string ERROR_FRAG_NAME("_error");
-// const std::string FILENAME("filename");
-// const std::string LINE("line");
-// const std::string COLUMN("column");
-// const std::string LEVEL("level");
-// const std::string MESSAGE("message");
 
 /** This class represents runtime stack of open fragments by Teng frag
  * directive runtime. This is 2D structure because you can open root fragment
@@ -414,8 +469,8 @@ public:
     /** C'tor.
      */
     OpenFrames_t(const FragmentValue_t *root)
-        : root(root), frames(1, FrameRec_t(root))
-    {}
+        : root(root), frames()
+    {frames.emplace_back(root);}
 
     /** Returns the root fragment.
      */
@@ -433,6 +488,25 @@ public:
      */
     bool open_frag(const string_view_t &name) {
         return frames.back().open_frag(name);
+    }
+
+    /** Returns true if error fragment has been opened.
+     */
+    bool open_error_frag(FragmentList_t &&errors) {
+        return frames.back().open_error_frag(std::move(errors));
+    }
+
+    /** Stores error fragment in current open fragment.
+     */
+    void store_error_frag(FragmentList_t &&errors) {
+        frames.back().store_error_frag(std::move(errors));
+    }
+
+    /** Returns value with reference to error fragment stored in current open
+     * fragment.
+     */
+    Value_t current_error_frag() const {
+        return frames.back().current_error_frag();
     }
 
     /** Returns true if next fragment has been opened.
@@ -497,11 +571,15 @@ public:
 
     /** Returns frag at given offsets.
      */
-    Value_t frag(uint16_t frame_offset, uint16_t frag_offset) const override {
+    Value_t
+    value_at(
+        uint16_t frame_offset,
+        uint16_t frag_offset
+    ) const override {
         if (frame_offset >= frames.size())
             throw std::runtime_error(__PRETTY_FUNCTION__);
         auto i = frames.size() - frame_offset - 1;
-        return frames[i].frag(frag_offset);
+        return frames[i].value_at(frag_offset);
     }
 
     /** Returns the value for desired name.
@@ -555,10 +633,10 @@ public:
         return frames[0].current_list_i();
     }
 
-    /** Returns 'representation' of the given value.
+    /** Returns size of the current fragmnet list.
      */
-    Value_t repr(const Value_t &arg) const override {
-        return arg;
+    std::size_t current_list_size() const override {
+        return frames[0].current_list_size();
     }
 
     /** Returns true if value exists.

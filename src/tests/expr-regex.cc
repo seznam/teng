@@ -52,7 +52,7 @@ SCENARIO(
 
             THEN("It is not matched as regex") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0.166667");
             }
         }
@@ -72,7 +72,7 @@ SCENARIO(
 
             THEN("It expand to true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "1");
             }
         }
@@ -83,7 +83,7 @@ SCENARIO(
 
             THEN("It expand to true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "0");
             }
         }
@@ -104,7 +104,7 @@ SCENARIO(
 
             THEN("Only the first word is replace") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "(foo) bar");
             }
         }
@@ -116,7 +116,7 @@ SCENARIO(
 
             THEN("All words are replaced") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "(foo) (bar)");
             }
         }
@@ -136,7 +136,7 @@ SCENARIO(
 
             THEN("They are printed in same form as they has been read") {
                 std::vector<Teng::Error_t::Entry_t> errs;
-                REQUIRE(err.getEntries() == errs);
+                ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "/\\w\\n\\t\\s/");
             }
         }

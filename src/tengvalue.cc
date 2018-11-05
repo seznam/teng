@@ -55,6 +55,11 @@ std::ostream &operator<<(std::ostream &os, const Regex_t &regex) {
     if (regex.flags.ignore_case) os << 'i';
     if (regex.flags.global) os << 'g';
     if (regex.flags.multiline) os << 'm';
+    if (regex.flags.anchored) os << 'A';
+    if (regex.flags.dollar_endonly) os << 'D';
+    if (regex.flags.extended) os << 'e';
+    if (regex.flags.extra) os << 'X';
+    if (regex.flags.ungreedy) os << 'U';
     return os;
 }
 
