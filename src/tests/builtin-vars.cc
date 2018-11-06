@@ -3012,8 +3012,7 @@ SCENARIO(
             Teng::Error_t err;
             auto t = "${missing}"
                      "${$$first._error.column}==${$first._error.column}";
-            std::string d = "teng.debug.conf";
-            auto result = g(err, t, root, "cs", "text/html", "utf-8", d);
+            auto result = g(err, t, root, "teng.debug.conf");
 
             THEN("The result is colno of the ${} error") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{

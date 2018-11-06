@@ -50,10 +50,13 @@ inline std::string g(
 ) {
     std::string result;
     Teng::StringWriter_t writer(result);
-
     Teng::Error_t err;
     Teng::Teng_t teng(TEST_ROOT);
-    teng.generatePage(templ, "", "", "", ct, encoding, data, writer, err);
+    Teng::Teng_t::GenPageArgs_t args;
+    args.contentType = ct;
+    args.encoding = encoding;
+    args.templateString = templ;
+    teng.generatePage(args, data, writer, err);
     return result;
 }
 
@@ -61,25 +64,22 @@ inline std::string g(
     Teng::Error_t &err,
     const std::string &templ,
     const Teng::Fragment_t &data = {},
+    const std::string &params = "teng.conf",
     const std::string &lang = "",
     const std::string &ct = "text/html",
-    const std::string &encoding = "utf-8",
-    const std::string &conf_file = "teng.conf"
+    const std::string &encoding = "utf-8"
 ) {
     std::string result;
     Teng::StringWriter_t writer(result);
     Teng::Teng_t teng(TEST_ROOT);
-    teng.generatePage(
-        templ,
-        TEST_ROOT "dict.txt",
-        lang,
-        TEST_ROOT + conf_file,
-        ct,
-        encoding,
-        data,
-        writer,
-        err
-    );
+    Teng::Teng_t::GenPageArgs_t args;
+    args.contentType = ct;
+    args.encoding = encoding;
+    args.templateString = templ;
+    args.paramsFilename = TEST_ROOT + params;
+    args.lang = lang;
+    args.dictFilename = TEST_ROOT "dict.txt";
+    teng.generatePage(args, data, writer, err);
     return result;
 }
 

@@ -57,9 +57,8 @@ SCENARIO(
 
         WHEN("Generated with debug fragment enabled") {
             Teng::Error_t err;
-            std::string d = "teng.debug.conf";
             std::string t = "<?teng debug?>";
-            auto result = g(err, t, root, "cs", "text/html", "utf-8", d);
+            auto result = g(err, t, root, "teng.debug.conf", "cs");
             auto r = "Template sources:\n"
                      "\n"
                      "Language dictionary sources:\n"
@@ -106,9 +105,8 @@ SCENARIO(
 
         WHEN("Generated with debug fragment disabled") {
             Teng::Error_t err;
-            std::string d = "teng.conf";
             std::string t = "<?teng debug?>";
-            auto result = g(err, t, root, "cs", "text/html", "utf-8", d);
+            auto result = g(err, t, root, "teng.conf", "cs");
 
             THEN("The rendered template does not contain debug") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -130,8 +128,7 @@ SCENARIO(
 
         WHEN("Generated with bytecode fragment enabled") {
             Teng::Error_t err;
-            std::string d = "teng.debug.conf";
-            auto result = g(err, t, root, "cs", "text/html", "utf-8", d);
+            auto result = g(err, t, root, "teng.debug.conf", "cs");
             auto r = "000 VAR                 &lt;name=var,escape=1,"
                          "frame-offset=0,frag-offset=0&gt;\n"
                      "001 PRG_STACK_PUSH      \n"
@@ -166,7 +163,6 @@ SCENARIO(
 
         WHEN("Generated with bytecode fragment disabled") {
             Teng::Error_t err;
-            std::string d = "teng.conf";
             auto result = g(err, t, root);
 
             THEN("The rendered template does not contain bytecode") {
@@ -191,8 +187,7 @@ SCENARIO(
 
         WHEN("Generated with error fragment enabled") {
             Teng::Error_t err;
-            std::string d = "teng.debug.conf";
-            auto result = g(err, t, root, "cs", "text/html", "utf-8", d);
+            auto result = g(err, t, root, "teng.debug.conf");
             std::string r = "undefined/1/2/1/Runtime: Variable '.missing' "
                             "is undefined [open_frags=., iteration=0/1]";
 
@@ -210,7 +205,6 @@ SCENARIO(
 
         WHEN("Generated with error fragment disabled") {
             Teng::Error_t err;
-            std::string d = "teng.conf";
             auto result = g(err, t, root);
 
             THEN("The rendered template does not contain error fragment") {
@@ -233,8 +227,7 @@ SCENARIO(
 
         WHEN("Error fragment is referenced by runtime variables") {
             Teng::Error_t err;
-            std::string d = "teng.debug.conf";
-            auto result = g(err, t, root, "cs", "text/html", "utf-8", d);
+            auto result = g(err, t, root, "teng.debug.conf");
 
             THEN("The rendered template contains error fragment data") {
                 std::vector<Teng::Error_t::Entry_t> errs {{

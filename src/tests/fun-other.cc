@@ -107,7 +107,7 @@ SCENARIO(
         WHEN("The dict contains queried key") {
             Teng::Error_t err;
             auto t = "${dictexist('dict_txt')}";
-            auto result = g(err, t, root, "");
+            auto result = g(err, t, root, "teng.conf", "");
 
             THEN("The result is true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -119,7 +119,7 @@ SCENARIO(
         WHEN("The dict does not contain queried key") {
             Teng::Error_t err;
             auto t = "${dictexist('dict_cs_txt')}";
-            auto result = g(err, t, root, "");
+            auto result = g(err, t, root, "teng.conf", "");
 
             THEN("The result is false") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -135,7 +135,7 @@ SCENARIO(
         WHEN("The dict contains queried key") {
             Teng::Error_t err;
             auto t = "${dictexist('dict_cs_txt')}";
-            auto result = g(err, t, root, "cs");
+            auto result = g(err, t, root, "teng.conf", "cs");
 
             THEN("The result is true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -147,7 +147,7 @@ SCENARIO(
         WHEN("The dict does not contain queried key") {
             Teng::Error_t err;
             auto t = "${dictexist('dict_txt')}";
-            auto result = g(err, t, root, "cs");
+            auto result = g(err, t, root, "teng.conf", "cs");
 
             THEN("The result is false") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -163,7 +163,7 @@ SCENARIO(
         WHEN("The dict contains queried key") {
             Teng::Error_t err;
             auto t = "${dictexist('dict_en_txt')}";
-            auto result = g(err, t, root, "en");
+            auto result = g(err, t, root, "teng.conf", "en");
 
             THEN("The result is true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -175,7 +175,7 @@ SCENARIO(
         WHEN("The dict does not contain queried key") {
             Teng::Error_t err;
             auto t = "${dictexist('dict_txt')}";
-            auto result = g(err, t, root, "en");
+            auto result = g(err, t, root, "teng.conf", "en");
 
             THEN("The result is false") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -196,7 +196,7 @@ SCENARIO(
         WHEN("The dict contains queried key") {
             Teng::Error_t err;
             auto t = "${getdict('dict_txt')}";
-            auto result = g(err, t, root, "");
+            auto result = g(err, t, root, "teng.conf", "");
 
             THEN("The result is value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -208,7 +208,7 @@ SCENARIO(
         WHEN("The dict does not contain queried key") {
             Teng::Error_t err;
             auto t = "${getdict('dict_cs_txt')}";
-            auto result = g(err, t, root, "");
+            auto result = g(err, t, root, "teng.conf", "");
 
             THEN("The result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -220,7 +220,7 @@ SCENARIO(
         WHEN("The dict does not contain queried key but default given") {
             Teng::Error_t err;
             auto t = "${getdict('dict_cs_txt', 'default')}";
-            auto result = g(err, t, root, "");
+            auto result = g(err, t, root, "teng.conf", "");
 
             THEN("The result is default") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -236,7 +236,7 @@ SCENARIO(
         WHEN("The dict contains queried key") {
             Teng::Error_t err;
             auto t = "${getdict('dict_cs_txt')}";
-            auto result = g(err, t, root, "cs");
+            auto result = g(err, t, root, "teng.conf", "cs");
 
             THEN("The result is value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -248,7 +248,7 @@ SCENARIO(
         WHEN("The dict does not contain queried key") {
             Teng::Error_t err;
             auto t = "${getdict('dict_txt')}";
-            auto result = g(err, t, root, "cs");
+            auto result = g(err, t, root, "teng.conf", "cs");
 
             THEN("The result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -260,7 +260,7 @@ SCENARIO(
         WHEN("The dict does not contain queried key but default given") {
             Teng::Error_t err;
             auto t = "${getdict('dict_txt', 'default')}";
-            auto result = g(err, t, root, "cs");
+            auto result = g(err, t, root, "teng.conf", "cs");
 
             THEN("The result is default") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -276,7 +276,7 @@ SCENARIO(
         WHEN("The dict contains queried key") {
             Teng::Error_t err;
             auto t = "${getdict('dict_en_txt')}";
-            auto result = g(err, t, root, "en");
+            auto result = g(err, t, root, "teng.conf", "en");
 
             THEN("The result is value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -288,7 +288,7 @@ SCENARIO(
         WHEN("The dict does not contain queried key") {
             Teng::Error_t err;
             auto t = "${getdict('dict_txt')}";
-            auto result = g(err, t, root, "en");
+            auto result = g(err, t, root, "teng.conf", "en");
 
             THEN("The result is undefined") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -300,7 +300,7 @@ SCENARIO(
         WHEN("The dict does not contain queried key but default given") {
             Teng::Error_t err;
             auto t = "${getdict('dict_cs_txt', 'default')}";
-            auto result = g(err, t, root, "en");
+            auto result = g(err, t, root, "teng.conf", "en");
 
             THEN("The result is default") {
                 std::vector<Teng::Error_t::Entry_t> errs;

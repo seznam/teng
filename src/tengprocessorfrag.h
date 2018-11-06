@@ -443,7 +443,6 @@ Result_t push_error_frag(RunCtxPtr_t ctx, GetArg_t get_arg) {
 Result_t push_frag(RunCtxPtr_t ctx) {
     auto &instr = ctx->instr->as<PushFrag_t>();
 
-    // TODO(burlog): it is good idea?
     // we have to lookup variable in current frame and current frag
     Value_t value = ctx->frames.get_var({instr.name});
     if (!value.is_undefined()) {

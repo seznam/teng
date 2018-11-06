@@ -79,36 +79,6 @@ std::string prependBeforeExt(const std::string &str, const std::string &prep) {
     }
 }
 
-int gen_page(
-    Template_t templ,
-    const std::string &contentType,
-    const std::string &encoding,
-    const FragmentValue_t &data,
-    Writer_t &writer,
-    Error_t &err
-) {
-    // propage error log
-    writer.setError(&err);
-
-    // if program is valid (not empty) execute it
-    if (!templ.program->empty()) {
-        Processor_t(
-            err,
-            *templ.program,
-            *templ.dict,
-            *templ.params,
-            encoding,
-            contentType
-        ).run(data, writer);
-    }
-
-    // flush writer to output
-    writer.flush();
-
-    // return error level from error log
-    return err.max_level;
-}
-
 std::string normalize_root(std::string fs_root) {
     // if not absolute path, prepend current working directory
     if (fs_root.empty() || !ISROOT(fs_root)) {
@@ -133,62 +103,51 @@ Teng_t::Teng_t(const std::string &fs_root, const Teng_t::Settings_t &settings)
 Teng_t::~Teng_t() = default;
 
 int Teng_t::generatePage(
-    const std::string &templateFilename,
-    const std::string &skin,
-    const std::string &dict,
-    const std::string &lang,
-    const std::string &param,
-    const std::string &contentType,
-    const std::string &encoding,
+    const GenPageArgs_t &args,
     const Fragment_t &data,
     Writer_t &writer,
     Error_t &err
 ) const {
-    std::string encoding_lowerized = tolower(encoding);
-    return gen_page(
-        templateCache->createTemplate(
-            err,
-            prependBeforeExt(templateFilename, skin),
-            prependBeforeExt(dict, lang),
-            param,
-            encoding_lowerized,
-            contentType,
-            TemplateCache_t::SRC_FILE
-        ), contentType,
-        encoding,
-        FragmentValue_t(&data),
-        writer,
-        err
-    );
-}
+    std::string encoding_lowerized = tolower(args.encoding);
 
-int Teng_t::generatePage(
-    const std::string &templateString,
-    const std::string &dict,
-    const std::string &lang,
-    const std::string &param,
-    const std::string &contentType,
-    const std::string &encoding,
-    const Fragment_t &data,
-    Writer_t &writer,
-    Error_t &err
-) const {
-    std::string encoding_lowerized = tolower(encoding);
-    return gen_page(
-        templateCache->createTemplate(
-            err,
-            templateString,
-            prependBeforeExt(dict, lang),
-            param,
-            encoding_lowerized,
-            contentType,
-            TemplateCache_t::SRC_STRING
-        ), contentType,
-        encoding,
-        FragmentValue_t(&data),
-        writer,
-        err
+    // prepare template
+    std::string template_arg = args.templateFilename.empty()
+        ? args.templateString
+        : prependBeforeExt(args.templateFilename, args.skin);
+
+    // create template
+    auto templ = templateCache->createTemplate(
+        err,
+        template_arg,
+        prependBeforeExt(args.dictFilename, args.lang),
+        args.paramsFilename,
+        encoding_lowerized,
+        args.contentType,
+        args.templateFilename.empty()
+            ? TemplateCache_t::SRC_STRING
+            : TemplateCache_t::SRC_FILE
     );
+
+    // propage error log
+    writer.setError(&err);
+
+    // if program is valid (not empty) execute it
+    if (!templ.program->empty()) {
+        Processor_t(
+            err,
+            *templ.program,
+            *templ.dict,
+            *templ.params,
+            encoding_lowerized,
+            args.contentType
+        ).run(FragmentValue_t(&data), writer);
+    }
+
+    // flush writer to output
+    writer.flush();
+
+    // return error level from error log
+    return err.max_level;
 }
 
 const std::string *Teng_t::dictionaryLookup(

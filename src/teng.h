@@ -43,10 +43,10 @@
 #include <utility>
 #include <memory>
 
-#include <tengnaturaldatastructs.h>
 #include <tengwriter.h>
 #include <tengerror.h>
 #include <tengconfig.h>
+#include <tengfragmentvalue.h>
 
 namespace Teng {
 
@@ -85,14 +85,38 @@ public:
      */
     ~Teng_t();
 
-    // TODO(burlog): neslo by udelat nejake jednodussi genpage
+    /** Arguments of generate page method.
+     */
+    struct GenPageArgs_t {
+        std::string templateFilename;
+        std::string templateString;
+        std::string paramsFilename = "";
+        std::string skin = "";
+        std::string dictFilename = "";
+        std::string lang = "";
+        std::string encoding = "utf-8";
+        std::string contentType = "text/html";
+    };
+
+    /** @short Generate page from file template.
+     * @param args The arguments structure.
+     * @param writer output writer (page destinatin)
+     * @param err error log
+     * @return 0 OK, !0 error
+     */
+    int generatePage(
+        const GenPageArgs_t &args,
+        const Fragment_t &data,
+        Writer_t &writer,
+        Error_t &err
+    ) const;
 
     /** @short Generate page from file template.
      *  @param templateFilename file with main template
      *  @param skin skin of template
      *  @param dict language dictionary
      *  @param lang language
-     *  @param params config (dictionary with non language data)
+     *  @param params params (dictionary with non language data)
      *  @param contentType content type of page
      *  @param encoding encoding of page
      *  @param data data tree
@@ -100,7 +124,7 @@ public:
      *  @param err error log
      *  @return 0 OK, !0 error
      */
-    int generatePage(
+    [[deprecated]] int generatePage(
         const std::string &templateFilename,
         const std::string &skin,
         const std::string &dict,
@@ -111,13 +135,28 @@ public:
         const Fragment_t &data,
         Writer_t &writer,
         Error_t &err
-    ) const;
+    ) const {
+        return generatePage(
+            GenPageArgs_t{
+                templateFilename,
+                "",
+                skin,
+                dict,
+                lang,
+                params,
+                contentType,
+                encoding,
+            }, data,
+            writer,
+            err
+        );
+    }
 
     /** @short Generate page from string template.
      *  @param templateString main template
      *  @param dict language dictionary
      *  @param lang language
-     *  @param params config (dictionary with non language data)
+     *  @param params params (dictionary with non language data)
      *  @param contentType content type of page
      *  @param encoding encoding of page
      *  @param data data tree
@@ -125,7 +164,7 @@ public:
      *  @param err error log
      *  @return 0 OK, !0 error
      */
-    int generatePage(
+    [[deprecated]] int generatePage(
         const std::string &templateString,
         const std::string &dict,
         const std::string &lang,
@@ -135,17 +174,32 @@ public:
         const Fragment_t &data,
         Writer_t &writer,
         Error_t &err
-    ) const;
+    ) const {
+        return generatePage(
+            GenPageArgs_t{
+                "",
+                templateString,
+                "",
+                dict,
+                lang,
+                params,
+                contentType,
+                encoding,
+            }, data,
+            writer,
+            err
+        );
+    }
 
     /** @short Find entry in dictionary.
-     *  @param config config dictionary path
+     *  @param params params dictionary path
      *  @param dict language dictionary path
      *  @param lang language
      *  @param key name of entry
      */
     const std::string *
     dictionaryLookup(
-        const std::string &config,
+        const std::string &params,
         const std::string &dict,
         const std::string &lang,
         const std::string &key
@@ -162,7 +216,7 @@ public:
      */
     [[deprecated]] int
     dictionaryLookup(
-        const std::string &config,
+        const std::string &params,
         const std::string &dict,
         const std::string &lang,
         const std::string &key,

@@ -1,7 +1,6 @@
 #include <teng.h>
+#include <iostream>
 
-#include <stdio.h>
-#include <string>
 
 int main(int argc, char * argv[]) {
     static std::string characters[2] = { "A", "B" };
@@ -26,7 +25,7 @@ int main(int argc, char * argv[]) {
 // </html>\n";
 
     // Create Teng engine
-    Teng::Teng_t teng("");
+    Teng::Teng_t teng;
 
     // Root data fragment
     Teng::Fragment_t root;
@@ -53,18 +52,12 @@ int main(int argc, char * argv[]) {
     // Simple error log
     Teng::Error_t err;
 
+    // make args
+    Teng::Teng_t::GenPageArgs_t args;
+    args.templateString = templ;
+
     // Generate page
-    auto res = teng.generatePage(
-        templ, // Template
-        "", // Dictionary (none)
-        "", // Language (none)
-        "", // Configuration (none)
-        "text/html", // Content type
-        "utf-8", // Encoding
-        root, // Root fragment
-        writer, // Writer
-        err // Error log
-    );
+    auto res = teng.generatePage(args, root, writer, err);
 
     std::cerr << "ERRORS(" << err.getEntries().size() << ")" << std::endl;
     for (auto &line: err.getEntries())

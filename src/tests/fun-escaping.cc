@@ -204,8 +204,8 @@ SCENARIO(
 
         WHEN("The unescape is called") {
             Teng::Error_t err;
-            const char *conf = "teng.no-print-escape.conf";
-            auto result = g(err, t, root, "", "text/html", "utf-8", conf);
+            const char *params = "teng.no-print-escape.conf";
+            auto result = g(err, t, root, params);
 
             THEN("%{} directives are handled as regular text") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -223,8 +223,8 @@ SCENARIO(
 
         WHEN("The unescape is called") {
             Teng::Error_t err;
-            const char *conf = "teng.no-print-escape.conf";
-            auto result = g(err, t, root, "", "text/html", "utf-8", conf);
+            const char *params = "teng.no-print-escape.conf";
+            auto result = g(err, t, root, params);
 
             THEN("%{} directives are handled as regular text") {
                 std::vector<Teng::Error_t::Entry_t> errs;

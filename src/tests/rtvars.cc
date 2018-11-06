@@ -1137,5 +1137,3 @@ SCENARIO(
     }
 }
 
-// TODO(burlog): $$a.b._last.c versus $a.b._last.c
-

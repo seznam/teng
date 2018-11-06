@@ -275,8 +275,8 @@ SCENARIO(
         WHEN("Is escaped") {
             Teng::Error_t err;
             Teng::Fragment_t root;
-            const char * conf = "teng.no-print-escape.conf";
-            auto res = g(err, templ, root, "", "text/html", "utf-8", conf);
+            const char *params = "teng.no-print-escape.conf";
+            auto res = g(err, templ, root, params);
             THEN("Dangerous characters are escaped") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,

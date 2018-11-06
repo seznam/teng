@@ -118,12 +118,12 @@ SCENARIO(
     GIVEN("Dictionary (see dict.txt) and variables with dict keys") {
         Teng::Fragment_t root;
         root.addVariable("a", "html_value");
-        const char * conf = "teng.no-print-escape.conf";
+        const char *params = "teng.no-print-escape.conf";
 
         WHEN("Regular lookup of the existing key") {
             Teng::Error_t err;
             auto t = "#{html_value}";
-            auto result = g(err, t, root, "", "text/html", "utf-8", conf);
+            auto result = g(err, t, root, params);
 
             THEN("Replaced with raw dict entry value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -135,7 +135,7 @@ SCENARIO(
         WHEN("Dict lookup of the existing key - raw print used") {
             Teng::Error_t err;
             auto t = "%{#html_value}";
-            auto result = g(err, t, root, "", "text/html", "utf-8", conf);
+            auto result = g(err, t, root, params);
 
             THEN("Raw print directive is printed as regular text") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -147,7 +147,7 @@ SCENARIO(
         WHEN("Dict lookup of the existing key - escaping print used") {
             Teng::Error_t err;
             auto t = "${#html_value}";
-            auto result = g(err, t, root, "", "text/html", "utf-8", conf);
+            auto result = g(err, t, root, params);
 
             THEN("Replaced with raw dict entry value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -159,7 +159,7 @@ SCENARIO(
         WHEN("Variable lookup of the existing key - raw print used") {
             Teng::Error_t err;
             auto t = "%{@a}";
-            auto result = g(err, t, root, "", "text/html", "utf-8", conf);
+            auto result = g(err, t, root, params);
 
             THEN("Raw print directive is printed as regular text") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -171,7 +171,7 @@ SCENARIO(
         WHEN("Variable lookup of the existing key - escaping print used") {
             Teng::Error_t err;
             auto t = "${@a}";
-            auto result = g(err, t, root, "", "text/html", "utf-8", conf);
+            auto result = g(err, t, root, params);
 
             THEN("Replaced with raw dict entry value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -274,7 +274,7 @@ SCENARIO(
         WHEN("Regular lookup of the existing key") {
             Teng::Error_t err;
             auto t = "#{hello_world}";
-            auto result = g(err, t, root, "en");
+            auto result = g(err, t, root, "teng.conf", "en");
 
             THEN("Replaced with dict entry value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -286,7 +286,7 @@ SCENARIO(
         WHEN("Lookup of the existing key") {
             Teng::Error_t err;
             auto t = "${#hello_world}";
-            auto result = g(err, t, root, "en");
+            auto result = g(err, t, root, "teng.conf", "en");
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -298,7 +298,7 @@ SCENARIO(
         WHEN("Lookup of the missing key") {
             Teng::Error_t err;
             auto t = "${#hello_world_missing}";
-            auto result = g(err, t, root, "en");
+            auto result = g(err, t, root, "teng.conf", "en");
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
@@ -314,7 +314,7 @@ SCENARIO(
         WHEN("Lookup of the existing key") {
             Teng::Error_t err;
             auto t = "${@a}";
-            auto result = g(err, t, root, "en");
+            auto result = g(err, t, root, "teng.conf", "en");
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -326,7 +326,7 @@ SCENARIO(
         WHEN("Lookup of the missing key") {
             Teng::Error_t err;
             auto t = "${@b}";
-            auto result = g(err, t, root, "en");
+            auto result = g(err, t, root, "teng.conf", "en");
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
@@ -349,7 +349,7 @@ SCENARIO(
         WHEN("Regular lookup of the existing key") {
             Teng::Error_t err;
             auto t = "#{hello_world}";
-            auto result = g(err, t, root, "cs");
+            auto result = g(err, t, root, "teng.conf", "cs");
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -361,7 +361,7 @@ SCENARIO(
         WHEN("Lookup of the existing key") {
             Teng::Error_t err;
             auto t = "${#hello_world}";
-            auto result = g(err, t, root, "cs");
+            auto result = g(err, t, root, "teng.conf", "cs");
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -373,7 +373,7 @@ SCENARIO(
         WHEN("Lookup of the missing key") {
             Teng::Error_t err;
             auto t = "${#hello_world_missing}";
-            auto result = g(err, t, root, "cs");
+            auto result = g(err, t, root, "teng.conf", "cs");
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
@@ -389,7 +389,7 @@ SCENARIO(
         WHEN("Lookup of the existing key") {
             Teng::Error_t err;
             auto t = "${@a}";
-            auto result = g(err, t, root, "cs");
+            auto result = g(err, t, root, "teng.conf", "cs");
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs;
@@ -401,7 +401,7 @@ SCENARIO(
         WHEN("Lookup of the missing key") {
             Teng::Error_t err;
             auto t = "${@b}";
-            auto result = g(err, t, root, "cs");
+            auto result = g(err, t, root, "teng.conf", "cs");
 
             THEN("It is empty string") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
