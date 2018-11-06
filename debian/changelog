@@ -1,3 +1,9 @@
+libteng (3.0.0) stable; urgency=low
+
+  * teng3
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Tue, 6 Nov 2018 06:20:44 +0100
+
 libteng (2.3.21) stable; urgency=low
 
   * _tld can be set by env var

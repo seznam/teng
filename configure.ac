@@ -36,7 +36,7 @@
 
 
 # initialize autoconf
-AC_INIT([teng], [2.3.21], [opensource@firma.seznam.cz])
+AC_INIT([teng], [3.0.0], [teng@firma.seznam.cz])
 
 AC_PROG_LIBTOOL
 AC_CONFIG_MACRO_DIRS([m4])
