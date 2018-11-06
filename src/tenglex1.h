@@ -41,6 +41,7 @@
 #define TENGLEX1_H
 
 #include <string>
+#include <stdexcept>
 
 #include "tengposition.h"
 #include "tengflexhelpers.h"
@@ -150,6 +151,7 @@ public:
             case LEX1::ESC_EXPR: case LEX1::RAW_EXPR:
                 return flex_view_value;
             }
+            throw std::runtime_error(__PRETTY_FUNCTION__);
         }
 
         /** Returns value for error, text and end-of-input tokens.

@@ -238,6 +238,7 @@ std::string FragmentValue_t::toString() const {
     case tag::real:
         return stringify(real_value);
     }
+    throw std::runtime_error(__PRETTY_FUNCTION__);
 }
 
 void FragmentValue_t::json(std::ostream &o) const {
@@ -323,21 +324,21 @@ Fragment_t &FragmentValue_t::ensureFragment() {
         throw std::runtime_error(__PRETTY_FUNCTION__);
         break;
     case tag::frags:
-        dispose(&frags_value);
+        dispose(&frag_value);
         new (&frag_value) Fragment_t();
         tag_value = tag::frag;
         break;
     case tag::string:
         dispose(&string_value);
-        new (&frags_value) Fragment_t();
+        new (&frag_value) Fragment_t();
         tag_value = tag::frag;
         break;
     case tag::integral:
-        new (&frags_value) Fragment_t();
+        new (&frag_value) Fragment_t();
         tag_value = tag::frag;
         break;
     case tag::real:
-        new (&frags_value) Fragment_t();
+        new (&frag_value) Fragment_t();
         tag_value = tag::frag;
         break;
     }

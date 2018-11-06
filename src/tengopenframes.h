@@ -61,9 +61,9 @@ struct ListPos_t {
 
 /** Converts negative index (like in python) to standard C array index.
  */
-inline int64_t fix_negative_i(int64_t i, std::size_t max_i) {
+inline uint64_t fix_negative_i(int64_t i, std::size_t max_i) {
     if (i >= 0) return i;
-    if (-i > max_i) return max_i;
+    if (std::size_t(-i) > max_i) return max_i;
     return max_i + i;
 }
 
@@ -98,6 +98,7 @@ inline const Fragment_t *get_frag(const Value_t &self) {
     case Value_t::tag::list_ref:
         return (*self.as_list_ref().ptr)[self.as_list_ref().i].fragment();
     }
+    throw std::runtime_error(__PRETTY_FUNCTION__);
 }
 
 /** Resolves the 'value' of value:
@@ -120,6 +121,7 @@ inline Value_t get_value_at(const Value_t &self) {
     case Value_t::tag::list_ref:
         return Value_t(&(*self.as_list_ref().ptr)[self.as_list_ref().i]);
     }
+    throw std::runtime_error(__PRETTY_FUNCTION__);
 }
 
 /** Resolves the 'frag' value:
@@ -150,6 +152,7 @@ get_lone_frag(const Value_t &self, std::size_t &ambiguous) {
         ambiguous = self.as_list_ref().ptr->size();
         return nullptr;
     }
+    throw std::runtime_error(__PRETTY_FUNCTION__);
 }
 
 /** Returns i-th list item if self value contains list and nullptr otherwise.
@@ -165,11 +168,12 @@ inline Value_t get_value_at(const Value_t &self, int64_t i) {
     case Value_t::tag::frag_ref:
         return Value_t();
     case Value_t::tag::list_ref:
-        i = fix_negative_i(i, self.as_list_ref().ptr->size());
-        if (i < self.as_list_ref().ptr->size())
-            return Value_t(&(*self.as_list_ref().ptr)[i]);
+        std::size_t y = fix_negative_i(i, self.as_list_ref().ptr->size());
+        if (y < self.as_list_ref().ptr->size())
+            return Value_t(&(*self.as_list_ref().ptr)[y]);
         return Value_t();
     }
+    throw std::runtime_error(__PRETTY_FUNCTION__);
 }
 
 /** If the value holds the list then the method increments the list-ref
@@ -189,6 +193,7 @@ inline bool move_to_next_list_item(Value_t &self) {
     case Value_t::tag::list_ref:
         return ++self.as_list_ref().i < self.as_list_ref().ptr->size();
     }
+    throw std::runtime_error(__PRETTY_FUNCTION__);
 }
 
 /** Returns index of frag in its parent list or udenfined if value does not
@@ -207,6 +212,7 @@ inline ListPos_t get_list_pos_impl(const Value_t &self) {
     case Value_t::tag::list_ref:
         return {self.as_list_ref().i, self.as_list_ref().ptr->size(), true};
     }
+    throw std::runtime_error(__PRETTY_FUNCTION__);
 }
 
 /** The frame of open frags.
@@ -619,6 +625,7 @@ public:
         case Value_t::tag::regex:
             return Value_t();
         }
+        throw std::runtime_error(__PRETTY_FUNCTION__);
     }
 
     /** Returns open fragments joined by dot.

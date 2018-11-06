@@ -421,7 +421,7 @@ void generate_auto_rtvar(Context_t *ctx, const Variable_t &var_sym) {
     for (uint16_t i = 0;; ++i) {
         // match common prefix (omit variable name)
         if (i < ctx->open_frames.top().size())
-            if ((i + 1) < var_sym.ident.size())
+            if (std::size_t(i + 1) < var_sym.ident.size())
                 if (ctx->open_frames.top()[i].name() == var_sym.ident[i].view())
                     continue;
         Identifier_t ident;

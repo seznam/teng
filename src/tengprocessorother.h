@@ -63,6 +63,7 @@ Result_t val(EvalCtx_t *ctx) {
             // saves some allocation, instruction lives longer than value
             return Result_t(string_view_t(instr.value.string()));
     }
+    throw std::runtime_error(__PRETTY_FUNCTION__);
 }
 
 /** Implementation of the dictionary lookup function.
@@ -182,6 +183,7 @@ void print(RunCtxPtr_t ctx, GetArg_t get_arg) {
             ctx->output.write(v);
             break;
         }
+        throw std::runtime_error(__PRETTY_FUNCTION__);
     });
 }
 
@@ -243,6 +245,7 @@ Result_t regex_match(EvalCtx_t *ctx, GetArg_t get_arg) {
             );
             return Result_t(0);
         }
+        throw std::runtime_error(__PRETTY_FUNCTION__);
     });
 }
 

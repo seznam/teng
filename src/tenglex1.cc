@@ -213,7 +213,7 @@ unescape(
             case question_backslash_expected_gt:
                 // remove first char from escape sequence
                 ++icur_seq;
-                [[fallthrough]];
+                // fall through
             // \.} -> \}.
             case backslash_expected_rcurly:
                 do_unescape(ipos, "}");

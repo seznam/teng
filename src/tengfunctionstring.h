@@ -255,7 +255,7 @@ Result_t wordsubstr(Ctx_t &ctx, const Args_t &args) {
             while ((--s.end > 0) && isspace(s.text[s.end - 1]));
         } else {
             // we have to go right
-            while ((s.end < s.text.size()) && !isspace(s.text[s.end]))
+            while ((s.end < int(s.text.size())) && !isspace(s.text[s.end]))
                 ++s.end;
         }
 
@@ -264,7 +264,7 @@ Result_t wordsubstr(Ctx_t &ctx, const Args_t &args) {
 
         // strip whitespaces from left of origin string
         int stripped_start = 0;
-        while (stripped_start < s.text.size()) {
+        while (stripped_start < int(s.text.size())) {
             if (!isspace(s.text[stripped_start]))
                 break;
             ++stripped_start;

@@ -253,7 +253,7 @@ void bytecode_frag(RunCtxPtr_t ctx) {
         return;
 
     std::ostringstream out;
-    for (int i = 0; i < ctx->program.size(); ++i)
+    for (std::size_t i = 0; i < ctx->program.size(); ++i)
         out << std::setw(3) << std::setfill('0')
             << std::noshowpos << i << " " << ctx->program[i]
             << std::endl;

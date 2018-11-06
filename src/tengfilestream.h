@@ -64,7 +64,7 @@ protected:
     /** Called when the char sequence should be writen.
      */
     std::streamsize xsputn(const char *s, std::streamsize size) override {
-        auto written = fwrite(s, 1, size, file);
+        std::streamsize written = fwrite(s, 1, size, file);
         return (written != size) && ferror(file)? 0: written;
     }
 

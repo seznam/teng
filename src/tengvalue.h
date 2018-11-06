@@ -493,6 +493,7 @@ public:
         case tag::regex:
             return "regex";
         }
+        throw std::runtime_error(__PRETTY_FUNCTION__);
     }
 
     /** Returns true if value type is undefined.
@@ -648,6 +649,7 @@ public:
         case tag::regex:
             return true;
         }
+        throw std::runtime_error(__PRETTY_FUNCTION__);
     }
 
     /** Converts value to json.

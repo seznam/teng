@@ -272,6 +272,7 @@ public:
         case Value_t::tag::regex:
             throw runtime_ctx_needed_t();
         }
+        throw std::runtime_error(__PRETTY_FUNCTION__);
     }
 
     /** Returns open fragments joined by dot.

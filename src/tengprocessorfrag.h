@@ -637,6 +637,7 @@ Result_t repr(EvalCtx_t *ctx, GetArg_t get_arg) {
     case Value_t::tag::list_ref:
         return arg;
     };
+    throw std::runtime_error(__PRETTY_FUNCTION__);
 }
 
 /** Applies current escaping on the string values and other values left
@@ -673,6 +674,7 @@ Result_t query_count(RunCtxPtr_t ctx, GetArg_t get_arg) {
     case Value_t::tag::list_ref:
         return Result_t(arg.as_list_ref().ptr->size());
     }
+    throw std::runtime_error(__PRETTY_FUNCTION__);
 }
 
 /** Returns the type of desired argument.
@@ -711,6 +713,7 @@ Result_t query_defined(RunCtxPtr_t ctx, GetArg_t get_arg) {
     case Value_t::tag::list_ref:
         return Result_t(!arg.as_list_ref().ptr->empty());
     }
+    throw std::runtime_error(__PRETTY_FUNCTION__);
 }
 
 /** Returns true if object exists.
@@ -745,6 +748,7 @@ Result_t query_isempty(RunCtxPtr_t ctx, GetArg_t get_arg) {
     case Value_t::tag::list_ref:
         return Result_t(arg.as_list_ref().ptr->empty());
     }
+    throw std::runtime_error(__PRETTY_FUNCTION__);
 }
 
 } // namespace exec

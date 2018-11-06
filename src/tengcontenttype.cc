@@ -321,7 +321,7 @@ std::string ContentType_t::unescape(const string_view_t &src) const {
 
 int ContentType_t::nextState(unsigned char c, int state) const {
     // stop when state outside automaton
-    if ((state >= unescaper.size()) || (state < 0))
+    if ((std::size_t(state) >= unescaper.size()) || (state < 0))
         return 0;
 
     // find rule to move to next state

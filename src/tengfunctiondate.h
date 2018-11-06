@@ -276,7 +276,7 @@ template <typename T1, typename... T>
 void formatValue(std::string &out, const char *format, T1 v1, T &&...v) {
     char buf[60];
     auto len = snprintf(buf, sizeof(buf), format, v1, std::forward<T>(v)...);
-    out.append(buf, (len > sizeof(buf)) ? sizeof(buf) : len);
+    out.append(buf, (std::size_t(len) > sizeof(buf))? sizeof(buf): len);
 }
 
 /** Function for formating dates like strftime() from struct tm.
