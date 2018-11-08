@@ -40,8 +40,8 @@
 #include <cstdio>
 #include <string>
 
-#include "tengconfig.h"
-#include "tengstringview.h"
+#include <tengconfig.h>
+#include <tengstringview.h>
 
 namespace Teng {
 
@@ -63,7 +63,7 @@ auto stringify(double value, writer_t &&writer, args_t &&...args) {
     char buffer[64];
     auto len = snprintf(buffer, sizeof(buffer), "%#f", value);
 
-    // remove trialing zeroes
+    // remove trailing zeroes
     for (; len > 2; --len) {
         if (buffer[len - 1] == '0')
             if (buffer[len - 2] != '.')

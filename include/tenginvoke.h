@@ -40,8 +40,7 @@
 #include <vector>
 #include <stdexcept>
 
-#include "tengvalue.h"
-#include "tengcontenttype.h"
+#include <tengvalue.h>
 
 namespace Teng {
 

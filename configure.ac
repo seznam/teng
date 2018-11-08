@@ -148,5 +148,5 @@ AS_IF([test x$check_pthreads == xyes], [
 ], [])
 
 # generate Makefile
-AC_OUTPUT(version Makefile src/Makefile src/tengconfig.h libteng.pc)
-#          doc/Makefile doc/manual/Makefile doc/manual/en/Makefile)
+AC_OUTPUT(version Makefile src/Makefile include/Makefile include/tengconfig.h libteng.pc)
+

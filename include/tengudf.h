@@ -44,9 +44,8 @@
 #include <string>
 #include <functional>
 
-#include "tengconfig.h"
-#include "tenginvoke.h"
-#include "tengvalue.h"
+#include <tengconfig.h>
+#include <tenginvoke.h>
 
 namespace Teng {
 namespace udf {

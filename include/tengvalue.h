@@ -43,9 +43,9 @@
 #include <string>
 #include <stdexcept>
 
-#include "tengconfig.h"
-#include "tengstringify.h"
-#include "tengstringview.h"
+#include <tengconfig.h>
+#include <tengstringify.h>
+#include <tengstringview.h>
 
 namespace Teng {
 
