@@ -35,7 +35,9 @@
 #
 
 # install these headers
-include_HEADERS = teng.h tengstructs.h tengwriter.h tengerror.h tengconfig.h \
-				  tengudf.h tengfragment.h tengfragmentlist.h \
-				  tengfragmentvalue.h
+include_HEADERS = tengerror.h tengfragment.h tengfragmentlist.h \
+				  tengfragmentvalue.h teng.h tenginvoke.h tengstringify.h \
+				  tengstringview.h tengstructs.h tengudf.h tengvalue.h \
+				  tengwriter.h
+
 
