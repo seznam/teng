@@ -1,3 +1,12 @@
+libteng (2.3.25) stable; urgency=low
+
+  * reimplementation of regex support
+  * #! python2.3.12
+  * python (build) depends on libteng-dev (>= 2.3.24)
+  * #! python2.3.11
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Thu, 22 Nov 2018 16:34:23 +0100
+
 libteng (2.3.24) stable; urgency=low
 
   * add autoconf-archive to build-depends
