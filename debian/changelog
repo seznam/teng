@@ -1,3 +1,9 @@
+libteng (2.3.26) stable; urgency=low
+
+  * fix build dependencies
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Thu, 22 Nov 2018 16:38:13 +0100
+
 libteng (2.3.25) stable; urgency=low
 
   * reimplementation of regex support
