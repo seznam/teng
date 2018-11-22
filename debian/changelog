@@ -1,3 +1,9 @@
+libteng (2.3.27) stable; urgency=low
+
+  * another build depends
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Thu, 22 Nov 2018 16:40:48 +0100
+
 libteng (2.3.26) stable; urgency=low
 
   * fix build dependencies
