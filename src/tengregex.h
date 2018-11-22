@@ -465,7 +465,9 @@ protected:
         case PCRE2_NEWLINE_CRLF: return endl::crlf;
         case PCRE2_NEWLINE_ANY: return endl::any;
         case PCRE2_NEWLINE_ANYCRLF: return endl::anycrlf;
+#ifdef PCRE2_NEWLINE_NUL
         case PCRE2_NEWLINE_NUL: return endl::nul;
+#endif
         }
         throw std::runtime_error(__PRETTY_FUNCTION__);
     }
