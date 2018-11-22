@@ -59,7 +59,7 @@ AX_CHECK_COMPILE_FLAG([-std=c++11], [],[AC_MSG_ERROR([Compiler without c++11])])
 # pkg config
 PKG_PROG_PKG_CONFIG([0.25])
 
-DEPENS_NAMES="glib-2.0 libcurl"
+DEPENS_NAMES="glib-2.0 libcurl libpcre2-8"
 PKG_CHECK_MODULES([DEPENS], [${DEPENS_NAMES}])
 
 AC_SUBST(DEPENS_NAMES)
@@ -146,8 +146,6 @@ AC_CHECK_HEADERS(fenv.h)
 # check for functions that may miss on some platforms
 AC_CHECK_LIB(m, floor)
 AC_REPLACE_FUNCS([trunc round])
-
-AC_CHECK_LIB([pcre++], [_init],,AC_MSG_ERROR([pcre++ not installed]))
 
 AX_CHECK_COMPILE_FLAG([-std=c++14], [
     check_cpp14="true"

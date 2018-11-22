@@ -21,7 +21,7 @@
 # http://www.seznam.cz, mailto:teng@firma.seznam.cz
 #
 
-AM_LDFLAGS  = -L@top_srcdir@/src $(BOOST_LDFLAGS)
+AM_LDFLAGS  = -L@top_builddir@/src $(BOOST_LDFLAGS)
 AM_CPPFLAGS = -std=c++14 -I$(top_srcdir)/src $(BOOST_CPPFLAGS) -DBOOST_TEST_DYN_LINK
 LDADD       = -lteng ${BOOST_SYSTEM_LIB} ${BOOST_FILESYSTEM_LIB} ${BOOST_UNIT_TEST_FRAMEWORK_LIB}
 

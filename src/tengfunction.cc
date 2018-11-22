@@ -60,8 +60,7 @@
 #include <glib.h>
 #include <curl/curl.h>
 
-#include <pcre++.h>
-
+#include "tengregex.h"
 #include "tengfunction.h"
 #include "tengplatform.h"
 
@@ -1869,13 +1868,17 @@ static int tengFunctionPregReplace(const std::vector<ParserValue_t> &args,
     } else {
        return -1;
     }
-    pcrepp::Pcre p(sRe, PCRE_GLOBAL|PCRE_UTF8);
-    std::string sResult;
-    sResult = p.replace(s, sTo);
 
-    result.setString(sResult);
+    try {
+        result.setString(Regex_t(sRe).replace(s, sTo));
+    } catch (const std::exception &e) {
+        setting.logger.logError(Error_t::LL_ERROR,
+                                "regex_replace(): " + std::string(e.what()));
+        return -1;
+    }
     return 0;
 }
+
 /** tolower function with utf-8 support
   *   string to convert (args[0])
   * @param args Teng function arguments
