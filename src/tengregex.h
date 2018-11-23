@@ -395,7 +395,7 @@ protected:
     struct ReplaceReferencies_t {
         ReplaceReferencies_t(const RegexCapture_t &capture)
             : offset_value(capture.offset()), size_value(capture.size()),
-              id_value(std::atoi(capture.begin() + 2))
+              id_value(std::atoi(capture.begin() + 1)) // skip $
         {}
 
         // accessors
@@ -413,7 +413,7 @@ protected:
      */
     std::vector<ReplaceReferencies_t>
     make_replace_referencies(const std::string &with) {
-        static const Regex_t refs_re("\\${\\d+}");
+        static const Regex_t refs_re("\\$\\d+");
         std::vector<ReplaceReferencies_t> references;
         if (auto refs_match = refs_re.match(with)) do {
             references.push_back(refs_match[0]);
@@ -439,11 +439,13 @@ protected:
                 result.append(with, with_offset, prefix_size);
 
             // append the reference value
-            auto capture = match_value[ref.id()];
-            result.append(capture.begin(), capture.end());
+            if (ref.id() < match_value.capture_count()) {
+                auto capture = match_value[ref.id()];
+                result.append(capture.begin(), capture.end());
+            }
 
             // move one character past the capture
-            with_offset = capture.offset() + capture.size();
+            with_offset = ref.offset() + ref.size();
         }
 
         // if there is some tail then append it to the result
