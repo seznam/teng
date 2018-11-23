@@ -1,3 +1,9 @@
+libteng (2.3.29) stable; urgency=low
+
+  * fix bad replace references pattern, check capture boundaries
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Fri, 23 Nov 2018 09:51:53 +0100
+
 libteng (2.3.28) stable; urgency=low
 
   * PCRE2_NEWLINE_NUL is missing in older pcre2
