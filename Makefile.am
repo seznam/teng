@@ -34,6 +34,7 @@
 #                   Created.
 #
 
+ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = . src tests
 # directories temporarily out of order: 'doc'
 

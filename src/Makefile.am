@@ -34,6 +34,8 @@
 #             Created.
 #
 
+# enable subdir objects
+AUTOMAKE_OPTIONS = subdir-objects
 
 # warn on all
 AM_CXXFLAGS = -Wall
