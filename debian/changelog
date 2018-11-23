@@ -1,3 +1,12 @@
+libteng (2.3.31) stable; urgency=low
+
+  * remove pcre++ dependencies from -dev
+  * update control (#10)
+  * 
+  * add libpcre2-dev package as a dependency
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Fri, 23 Nov 2018 13:46:26 +0100
+
 libteng (2.3.29) stable; urgency=low
 
   * fix bad replace references pattern, check capture boundaries
