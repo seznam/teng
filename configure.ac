@@ -38,9 +38,13 @@
 # initialize autoconf
 AC_INIT(teng, [2.3.31], opensource@firma.seznam.cz)
 
+AC_CONFIG_SRCDIR([src/teng.cc])
+
+AM_INIT_AUTOMAKE
+
 AC_PROG_LIBTOOL
 
-AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
+AC_CONFIG_MACRO_DIRS([m4])
 
 AC_PREREQ(2.50)
 
@@ -54,7 +58,9 @@ AC_CONFIG_FILES([tests/Makefile])
 # check for C++ compiler
 AC_PROG_CXX
 AC_LANG_CPLUSPLUS
-AX_CHECK_COMPILE_FLAG([-std=c++11], [],[AC_MSG_ERROR([Compiler without c++11])])
+# needs autoconf-archive. Install that if you're getting
+# error: possibly undefined macro: AC_MSG_ERROR
+AX_CHECK_COMPILE_FLAG([-std=c++11], [], [AC_MSG_ERROR([Compiler without c++11])])
 
 # pkg config
 PKG_PROG_PKG_CONFIG([0.25])
