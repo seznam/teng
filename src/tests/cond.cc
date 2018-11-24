@@ -1530,3 +1530,429 @@ SCENARIO(
     }
 }
 
+SCENARIO(
+    "Two consecutive if blocks",
+    "[cond]"
+) {
+    GIVEN("First if block with else and second without") {
+        std::string t = "before"
+                        "<?teng if $f?>"
+                        "    1-true-branch"
+                        "<?teng else?>"
+                        "    1-false-branch"
+                        "<?teng endif?>"
+                        "between"
+                        "<?teng if $s?>"
+                        "    2-true-branch"
+                        "<?teng endif?>"
+                        "after";
+
+        WHEN("The f is false and s false") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("f", 0);
+            root.addVariable("s", 0);
+            auto result = g(err, t, root);
+
+            THEN("result contains content of false brach of first if") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "before"
+                                  "    1-false-branch"
+                                  "between"
+                                  "after");
+            }
+        }
+
+        WHEN("The f is false and s true") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("f", 0);
+            root.addVariable("s", 1);
+            auto result = g(err, t, root);
+
+            THEN("result contains content of false brach of first if") {
+                THEN("and content of true brach of second if") {
+                    std::vector<Teng::Error_t::Entry_t> errs;
+                    ERRLOG_TEST(err.getEntries(), errs);
+                    REQUIRE(result == "before"
+                                      "    1-false-branch"
+                                      "between"
+                                      "    2-true-branch"
+                                      "after");
+                }
+            }
+        }
+
+        WHEN("The f is true and s false") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("f", 1);
+            root.addVariable("s", 0);
+            auto result = g(err, t, root);
+
+            THEN("result contains content of true brach of first if") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "before"
+                                  "    1-true-branch"
+                                  "between"
+                                  "after");
+            }
+        }
+
+        WHEN("The f is true and s true") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("f", 1);
+            root.addVariable("s", 1);
+            auto result = g(err, t, root);
+
+            THEN("result contains content of true brach of first if") {
+                THEN("and content of true brach of second if") {
+                    std::vector<Teng::Error_t::Entry_t> errs;
+                    ERRLOG_TEST(err.getEntries(), errs);
+                    REQUIRE(result == "before"
+                                      "    1-true-branch"
+                                      "between"
+                                      "    2-true-branch"
+                                      "after");
+                }
+            }
+        }
+    }
+
+    GIVEN("First if block with else and second with else too") {
+        std::string t = "before"
+                        "<?teng if $f?>"
+                        "    1-true-branch"
+                        "<?teng else?>"
+                        "    1-false-branch"
+                        "<?teng endif?>"
+                        "between"
+                        "<?teng if $s?>"
+                        "    2-true-branch"
+                        "<?teng else?>"
+                        "    2-false-branch"
+                        "<?teng endif?>"
+                        "after";
+
+        WHEN("The f is false and s false") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("f", 0);
+            root.addVariable("s", 0);
+            auto result = g(err, t, root);
+
+            THEN("result contains content of false brach of first if") {
+                THEN("and content of false brach of second if") {
+                    std::vector<Teng::Error_t::Entry_t> errs;
+                    ERRLOG_TEST(err.getEntries(), errs);
+                    REQUIRE(result == "before"
+                                      "    1-false-branch"
+                                      "between"
+                                      "    2-false-branch"
+                                      "after");
+                }
+            }
+        }
+
+        WHEN("The f is false and s true") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("f", 0);
+            root.addVariable("s", 1);
+            auto result = g(err, t, root);
+
+            THEN("result contains content of false brach of first if") {
+                THEN("and content of true brach of second if") {
+                    std::vector<Teng::Error_t::Entry_t> errs;
+                    ERRLOG_TEST(err.getEntries(), errs);
+                    REQUIRE(result == "before"
+                                      "    1-false-branch"
+                                      "between"
+                                      "    2-true-branch"
+                                      "after");
+                }
+            }
+        }
+
+        WHEN("The f is true and s false") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("f", 1);
+            root.addVariable("s", 0);
+            auto result = g(err, t, root);
+
+            THEN("result contains content of true brach of first if") {
+                THEN("and content of false brach of second if") {
+                    std::vector<Teng::Error_t::Entry_t> errs;
+                    ERRLOG_TEST(err.getEntries(), errs);
+                    REQUIRE(result == "before"
+                                      "    1-true-branch"
+                                      "between"
+                                      "    2-false-branch"
+                                      "after");
+                }
+            }
+        }
+
+        WHEN("The f is true and s true") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("f", 1);
+            root.addVariable("s", 1);
+            auto result = g(err, t, root);
+
+            THEN("result contains content of true brach of first if") {
+                THEN("and content of true brach of second if") {
+                    std::vector<Teng::Error_t::Entry_t> errs;
+                    ERRLOG_TEST(err.getEntries(), errs);
+                    REQUIRE(result == "before"
+                                      "    1-true-branch"
+                                      "between"
+                                      "    2-true-branch"
+                                      "after");
+                }
+            }
+        }
+    }
+
+    GIVEN("First if block without else and second with else") {
+        std::string t = "before"
+                        "<?teng if $f?>"
+                        "    1-true-branch"
+                        "<?teng endif?>"
+                        "between"
+                        "<?teng if $s?>"
+                        "    2-true-branch"
+                        "<?teng else?>"
+                        "    2-false-branch"
+                        "<?teng endif?>"
+                        "after";
+
+        WHEN("The f is false and s false") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("f", 0);
+            root.addVariable("s", 0);
+            auto result = g(err, t, root);
+
+            THEN("result contains content of false brach of second if") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "before"
+                                  "between"
+                                  "    2-false-branch"
+                                  "after");
+            }
+        }
+
+        WHEN("The f is false and s true") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("f", 0);
+            root.addVariable("s", 1);
+            auto result = g(err, t, root);
+
+            THEN("result contains content of false brach of second if") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "before"
+                                  "between"
+                                  "    2-true-branch"
+                                  "after");
+            }
+        }
+
+        WHEN("The f is true and s false") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("f", 1);
+            root.addVariable("s", 0);
+            auto result = g(err, t, root);
+
+            THEN("result contains content of true brach of first if") {
+                THEN("and content of false brach of second if") {
+                    std::vector<Teng::Error_t::Entry_t> errs;
+                    ERRLOG_TEST(err.getEntries(), errs);
+                    REQUIRE(result == "before"
+                                      "    1-true-branch"
+                                      "between"
+                                      "    2-false-branch"
+                                      "after");
+                }
+            }
+        }
+
+        WHEN("The f is true and s true") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("f", 1);
+            root.addVariable("s", 1);
+            auto result = g(err, t, root);
+
+            THEN("result contains content of true brach of first if") {
+                THEN("and content of true brach of second if") {
+                    std::vector<Teng::Error_t::Entry_t> errs;
+                    ERRLOG_TEST(err.getEntries(), errs);
+                    REQUIRE(result == "before"
+                                      "    1-true-branch"
+                                      "between"
+                                      "    2-true-branch"
+                                      "after");
+                }
+            }
+        }
+    }
+
+    GIVEN("Both blocks have else branch") {
+        std::string t = "before"
+                        "<?teng if $f?>"
+                        "    1-true-branch"
+                        "<?teng endif?>"
+                        "between"
+                        "<?teng if $s?>"
+                        "    2-true-branch"
+                        "<?teng endif?>"
+                        "after";
+
+        WHEN("The f is false and s false") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("f", 0);
+            root.addVariable("s", 0);
+            auto result = g(err, t, root);
+
+            THEN("result does not contain any if branches content") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "before"
+                                  "between"
+                                  "after");
+            }
+        }
+
+        WHEN("The f is false and s true") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("f", 0);
+            root.addVariable("s", 1);
+            auto result = g(err, t, root);
+
+            THEN("result contains content of true brach of second if") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "before"
+                                  "between"
+                                  "    2-true-branch"
+                                  "after");
+            }
+        }
+
+        WHEN("The f is true and s false") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("f", 1);
+            root.addVariable("s", 0);
+            auto result = g(err, t, root);
+
+            THEN("result contains content of true brach of first if") {
+                    std::vector<Teng::Error_t::Entry_t> errs;
+                    ERRLOG_TEST(err.getEntries(), errs);
+                    REQUIRE(result == "before"
+                                      "    1-true-branch"
+                                      "between"
+                                      "after");
+            }
+        }
+
+        WHEN("The f is true and s true") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("f", 1);
+            root.addVariable("s", 1);
+            auto result = g(err, t, root);
+
+            THEN("result contains content of true brach of first if") {
+                THEN("and content of true brach of second if") {
+                    std::vector<Teng::Error_t::Entry_t> errs;
+                    ERRLOG_TEST(err.getEntries(), errs);
+                    REQUIRE(result == "before"
+                                      "    1-true-branch"
+                                      "between"
+                                      "    2-true-branch"
+                                      "after");
+                }
+            }
+        }
+    }
+
+    GIVEN("First if block with elif and second without") {
+        std::string t = "before"
+                        "<?teng if $ff?>"
+                        "    1-true-branch"
+                        "<?teng elif fs?>"
+                        "    1-elif-branch"
+                        "<?teng endif?>"
+                        "between"
+                        "<?teng if $s?>"
+                        "    2-true-branch"
+                        "<?teng endif?>"
+                        "after";
+
+        WHEN("The all variables are false") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("ff", 0);
+            root.addVariable("fs", 0);
+            root.addVariable("s", 0);
+            auto result = g(err, t, root);
+
+            THEN("Result does not contain data from if blocks") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "beforebetweenafter");
+            }
+        }
+
+        WHEN("The all variables are true") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("ff", 1);
+            root.addVariable("fs", 1);
+            root.addVariable("s", 1);
+            auto result = g(err, t, root);
+
+            THEN("Result contains data from true branches") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                    REQUIRE(result == "before"
+                                      "    1-true-branch"
+                                      "between"
+                                      "    2-true-branch"
+                                      "after");
+            }
+        }
+
+        WHEN("The second variable of first if block is false") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("ff", 0);
+            root.addVariable("fs", 1);
+            root.addVariable("s", 1);
+            auto result = g(err, t, root);
+
+            THEN("Result contains data from elif and true branches") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                    REQUIRE(result == "before"
+                                      "    1-elif-branch"
+                                      "between"
+                                      "    2-true-branch"
+                                      "after");
+            }
+        }
+    }
+}
+

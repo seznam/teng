@@ -386,3 +386,72 @@ SCENARIO(
     }
 }
 
+SCENARIO(
+    "The two consecutive ternary operators",
+    "[expr][tern]"
+) {
+    GIVEN("Two ternary operators expressions") {
+        std::string t = "before"
+                        "${a? 1: 2}"
+                        "between"
+                        "${b? 3: 4}"
+                        "after";
+
+        WHEN("Variables match 'false' branches") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("a", 0);
+            root.addVariable("b", 0);
+            auto result = g(err, t, root);
+
+            THEN("The result is combination of false branches") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "before2between4after");
+            }
+        }
+
+        WHEN("Variables match 'false'/'true' branches") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("a", 0);
+            root.addVariable("b", 1);
+            auto result = g(err, t, root);
+
+            THEN("The result is combination of false branches") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "before2between3after");
+            }
+        }
+
+        WHEN("Variables match 'true'/'false' branches") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("a", 1);
+            root.addVariable("b", 0);
+            auto result = g(err, t, root);
+
+            THEN("The result is combination of false branches") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "before1between4after");
+            }
+        }
+
+        WHEN("Variables match 'true' branches") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("a", 1);
+            root.addVariable("b", 1);
+            auto result = g(err, t, root);
+
+            THEN("The result is combination of false branches") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "before1between3after");
+            }
+        }
+    }
+}
+

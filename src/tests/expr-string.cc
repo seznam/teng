@@ -759,3 +759,24 @@ SCENARIO(
     }
 }
 
+SCENARIO(
+    "Print optimization of string expressions",
+    "[string][expr]"
+) {
+    GIVEN("One expression and some text after that") {
+        Teng::Fragment_t root;
+        std::string t = "before${!'value'}after";
+
+        WHEN("The template is interpreted") {
+            Teng::Error_t err;
+            auto result = g(err, t, root);
+
+            THEN("The print optimization doesn't swallow string 'after'") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "before0after");
+            }
+        }
+    }
+}
+

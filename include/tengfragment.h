@@ -40,6 +40,7 @@
 #include <map>
 #include <string>
 #include <cstdint>
+#include <type_traits>
 
 #include <tengconfig.h>
 

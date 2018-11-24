@@ -982,3 +982,31 @@ SCENARIO(
     }
 }
 
+SCENARIO(
+    "The two consecutive cases",
+    "[expr][case]"
+) {
+    GIVEN("Nested case expressions") {
+        std::string t = "before"
+                        "${case($a, 'A': 'a', *: 'N1')}"
+                        "between"
+                        "${case($b, 'B': 'b', *: 'N2')}"
+                        "after";
+
+        WHEN("Variables match 'default' branches") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("a", "1");
+            root.addVariable("b", "2");
+            auto result = g(err, t, root);
+
+            THEN("The result is combination of default branches") {
+                INFO("The print optimization is broken by the PRG_STACK_POP");
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "beforeN1betweenN2after");
+            }
+        }
+    }
+}
+

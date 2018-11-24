@@ -159,6 +159,10 @@ public:
      */
     void pop_back() {instrs.pop_back();}
 
+    /** Removes all instruction from given position.
+     */
+    void erase(const_iterator ipos) {instrs.erase(ipos);}
+
 protected:
     SourceList_t sources;           //!< all source files for this program
     Error_t &error;                 //!< error logger

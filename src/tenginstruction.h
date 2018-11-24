@@ -206,7 +206,7 @@ protected:
 };
 
 struct Noop_t: public Instruction_t {
-    Noop_t(const Pos_t &pos)
+    Noop_t(const Pos_t &pos = {})
         : Instruction_t(OPCODE::NOOP, pos)
     {}
 };

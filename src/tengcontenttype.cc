@@ -116,18 +116,19 @@ ContentType_t::Descriptor_t *init_descriptors() {
     using Descriptor_t = ContentType_t::Descriptor_t;
     std::string comment = "Default (text/plain) type.";
     std::unique_ptr<Descriptor_t> descriptor;
+    auto create_default = [] {return std::make_unique<ContentType_t>();};
 
     // create content type descriptor for text/plain
     std::string name = "text/plain";
     unsigned int i = descriptorIndex.size();
-    descriptor.reset(new Descriptor_t{{}, i, name, comment});
+    descriptor.reset(new Descriptor_t{create_default(), i, name, comment});
     descriptorIndex.push_back(descriptor.get());
     descriptors.emplace(name, std::move(descriptor));
 
     // create content type alias descriptor for text/plain
     name = "text";
     i = descriptorIndex.size();
-    descriptor.reset(new Descriptor_t{{}, i, name, comment});
+    descriptor.reset(new Descriptor_t{create_default(), i, name, comment});
     descriptorIndex.push_back(descriptor.get());
     descriptors.emplace(name, std::move(descriptor));
 

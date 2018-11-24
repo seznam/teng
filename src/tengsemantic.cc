@@ -828,6 +828,9 @@ void finalize_tern_op_false_branch(Context_t *ctx) {
     auto &instr = (*ctx->program)[true_branch_jump_addr].as<Jmp_t>();
     instr.addr_offset = tern_op_end_offset;
     ctx->expr_diag.pop();
+
+    // breaks invalid print optimization
+    generate<Noop_t>(ctx);
 }
 
 void generate_query(Context_t *ctx, const Variable_t &var, bool warn) {
@@ -1193,12 +1196,12 @@ void finalize_if_branch(Context_t *ctx, int32_t shift) {
     // calculate real jump address for last elif/else branch
     auto branch_addr = ctx->branch_addrs.top().pop();
     switch ((*ctx->program)[branch_addr].opcode()) {
-    case OPCODE::JMP: {
+    case OPCODE::JMP: {        // else branch
         auto &instr = (*ctx->program)[branch_addr].as<Jmp_t>();
         instr.addr_offset = ctx->program->size() - branch_addr - shift;
         break;
     }
-    case OPCODE::JMP_IF_NOT: {
+    case OPCODE::JMP_IF_NOT: { // elif branch
         auto &instr = (*ctx->program)[branch_addr].as<JmpIfNot_t>();
         instr.addr_offset = ctx->program->size() - branch_addr - shift;
         break;
@@ -1215,6 +1218,9 @@ void finalize_if(Context_t *ctx) {
         auto &instr = (*ctx->program)[branch_addr].as<Jmp_t>();
         instr.addr_offset = ctx->program->size() - branch_addr - 1;
     }
+
+    // breaks invalid print optimization
+    generate<Noop_t>(ctx);
 }
 
 void finalize_inv_if(Context_t *ctx, const Pos_t &pos) {

@@ -507,6 +507,9 @@ void finalize_bin_op(Context_t *ctx) {
     int32_t bin_op_addr = ctx->branch_addrs.top().pop();
     auto addr_offset = ctx->program->size() - bin_op_addr - 1;
     (*ctx->program)[bin_op_addr].as<Instr_t>().addr_offset = addr_offset;
+
+    // breaks invalid print optimization
+    generate<Noop_t>(ctx);
 }
 
 /** Generates instructions implementing runtime variable root.

@@ -183,7 +183,6 @@ void print(RunCtxPtr_t ctx, GetArg_t get_arg) {
             ctx->output.write(v);
             break;
         }
-        throw std::runtime_error(__PRETTY_FUNCTION__);
     });
 }
 

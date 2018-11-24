@@ -88,22 +88,40 @@ CXXFLAGS="-std=c++14"
 CFLAGS=""
 LDFLAGS=""
 
-AC_ARG_ENABLE(optimization,[  --enable-optimization compile optimized without debug logging],[
+AC_ARG_ENABLE(debug,[  --enable-debug compile with debug output],[
     case "${enableval}" in
         no)
-            AC_MSG_NOTICE([disabling optimization.])
-            CPPFLAGS="${CPPFLAGS} -DDEBUG=1 -O0 -g -ggdb"
+            AC_MSG_NOTICE([disabling debug.])
+            CPPFLAGS="${CPPFLAGS} -g -ggdb"
         ;;
         yes)
-            AC_MSG_NOTICE([enabling optimization.])
-            CPPFLAGS="${CPPFLAGS} -O2 -g -ggdb"
+            AC_MSG_NOTICE([enabling debug.])
+            CPPFLAGS="${CPPFLAGS} -DDEBUG=1 -g -ggdb"
         ;;
         *)
             AC_MSG_ERROR([Say yes or no to --enable-optimization.])
         ;;
     esac
 ], [
-   CPPFLAGS="${CPPFLAGS} -O2 -g -ggdb"
+   CPPFLAGS="${CPPFLAGS} -g -ggdb"
+])
+
+AC_ARG_ENABLE(optimization,[  --enable-optimization compile optimized],[
+    case "${enableval}" in
+        no)
+            AC_MSG_NOTICE([disabling optimization.])
+            CPPFLAGS="${CPPFLAGS} -O0"
+        ;;
+        yes)
+            AC_MSG_NOTICE([enabling optimization.])
+            CPPFLAGS="${CPPFLAGS} -O2"
+        ;;
+        *)
+            AC_MSG_ERROR([Say yes or no to --enable-optimization.])
+        ;;
+    esac
+], [
+   CPPFLAGS="${CPPFLAGS} -O2"
 ])
 
 AC_ARG_ENABLE(lock-udf,[ --disable-udf-locks compile without thread safe UDF],[
