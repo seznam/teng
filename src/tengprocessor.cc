@@ -273,7 +273,7 @@ process(Ctx_t *ctx, std::vector<Value_t> &stack, const SubProgram_t &program) {
             push(exec::bit_not(ctx, get_arg));
             break;
 
-        case OPCODE::REGEX_MATCH:
+        case OPCODE::MATCH_REGEX:
             push(exec::regex_match(ctx, get_arg));
             break;
 

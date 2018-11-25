@@ -44,10 +44,6 @@
 #include "tengstringview.h"
 
 namespace Teng {
-
-// forwards
-struct Regex_t;
-
 namespace utf8 {
 
 /** Returns bytes length of the UTF-8 character.

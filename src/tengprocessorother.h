@@ -225,7 +225,7 @@ void pop_escaper(RunCtxPtr_t ctx) {
  */
 Result_t regex_match(EvalCtx_t *ctx, GetArg_t get_arg) {
     auto arg = get_arg();
-    auto &instr = ctx->instr->template as<RegexMatch_t>();
+    auto &instr = ctx->instr->template as<MatchRegex_t>();
     return arg.print([&] (const string_view_t &v, auto &&tag) {
         switch (Value_t::visited_value(tag)) {
         case Value_t::tag::integral:

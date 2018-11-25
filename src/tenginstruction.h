@@ -50,7 +50,7 @@
 namespace Teng {
 
 // forwards
-struct FixedPCRE_t;
+class Regex_t;
 
 /** Allowed operation codes.
  */
@@ -127,7 +127,7 @@ enum class OPCODE {
     QUERY_DEFINED,   //!< Push the value if 'is defined' [OBSOLETE]
     QUERY_EXISTS,    //!< Push the value if it 'exists' on stack
     QUERY_ISEMPTY,   //!< Push true on stack if fragment resp list is empty
-    REGEX_MATCH,     //!< Matching of regular expression
+    MATCH_REGEX,     //!< Matching of regular expression
     LOG_SUPPRESS,    //!< Suppressing error log
 };
 
@@ -765,15 +765,14 @@ struct PushAttrAt_t: public Instruction_t {
     std::string path; //!< path from rtvar start to this attribute
 };
 
-struct RegexMatch_t: public Instruction_t {
-    RegexMatch_t(Regex_t regex, const Pos_t &pos);
-    RegexMatch_t(RegexMatch_t &&) noexcept = default;
-    RegexMatch_t &operator=(RegexMatch_t &&) noexcept = default;
-    ~RegexMatch_t() noexcept;
+struct MatchRegex_t: public Instruction_t {
+    MatchRegex_t(counted_ptr<Regex_t> regex, const Pos_t &pos);
+    MatchRegex_t(MatchRegex_t &&) noexcept = default;
+    MatchRegex_t &operator=(MatchRegex_t &&) noexcept = default;
+    ~MatchRegex_t() noexcept;
     void dump_params(std::ostream &os) const;
     bool matches(const string_view_t &view) const;
-    Regex_t value;                               //!< the regular expression
-    std::unique_ptr<FixedPCRE_t> compiled_value; //!< compiled regex
+    counted_ptr<Regex_t> compiled_value; //!< compiled regex
 };
 
 struct PushErrorFrag_t: public Instruction_t {

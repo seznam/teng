@@ -46,20 +46,21 @@
 #include "tengstructs.h"
 #include "tengplatform.h"
 #include "tengformatter.h"
+#include "tengregex.h"
 #include "tengvalue.h"
 
 namespace Teng {
 
 std::ostream &operator<<(std::ostream &os, const Regex_t &regex) {
-    os << '/' << regex.pattern << '/';
-    if (regex.flags.ignore_case) os << 'i';
-    if (regex.flags.global) os << 'g';
-    if (regex.flags.multiline) os << 'm';
-    if (regex.flags.anchored) os << 'A';
-    if (regex.flags.dollar_endonly) os << 'D';
-    if (regex.flags.extended) os << 'e';
-    if (regex.flags.extra) os << 'X';
-    if (regex.flags.ungreedy) os << 'U';
+    os << '/' << regex.pattern() << '/';
+    if (regex.flags()->ignore_case) os << 'i';
+    if (regex.flags()->global) os << 'g';
+    if (regex.flags()->multiline) os << 'm';
+    if (regex.flags()->anchored) os << 'A';
+    if (regex.flags()->dollar_endonly) os << 'D';
+    if (regex.flags()->extended) os << 'e';
+    if (regex.flags()->extra) os << 'X';
+    if (regex.flags()->ungreedy) os << 'U';
     return os;
 }
 
@@ -142,11 +143,17 @@ std::ostream &operator<<(std::ostream &out, const Value_t &v) {
             << ',' << v.list_ref_value.ptr->size() << ')';
         break;
     case Value_t::tag::regex:
-        out << "regex(" << v.regex_value << ')';
+        out << "regex(" << *v.regex_value << ')';
         break;
     }
     return out;
 }
+
+void Value_t::dispose_regex() {regex_value.~regex_type();}
+
+void Value_t::assign_regex(const regex_type &value) {regex_value = value;}
+
+void Value_t::assign_regex(regex_type &&value) {regex_value = std::move(value);}
 
 } // namespace Teng
 

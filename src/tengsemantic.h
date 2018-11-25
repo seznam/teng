@@ -42,8 +42,10 @@
 #include <string>
 
 #include "tengerror.h"
+#include "tengregex.h"
 #include "tenglogging.h"
 #include "tengprogram.h"
+#include "tengcounted_ptr.h"
 #include "tengparsercontext.h"
 #include "tenginstruction.h"
 
@@ -377,7 +379,7 @@ void generate_rtvar_index(Context_t *ctx, const Token_t &lp, const Token_t &rp);
 
 /** Generates code implementing regex.
  */
-Regex_t generate_regex(Context_t *ctx, const Token_t &regex);
+counted_ptr<Regex_t> generate_regex(Context_t *ctx, const Token_t &regex);
 
 /** Generates code implementing regex matching.
  */
@@ -455,9 +457,11 @@ uint32_t generate_str_expr(Context_t *ctx, const Token_t &token) {
         if (instr.opcode() == OPCODE::VAL) {
             auto &value = instr.as<Val_t>().value;
             if (value.is_regex()) {
-                Regex_t regex = std::move(value.as_regex());
+                if (!value.as_regex().unique())
+                    throw std::runtime_error(__PRETTY_FUNCTION__);
+                auto regex = std::move(value.as_regex());
                 ctx->program->pop_back();
-                generate<RegexMatch_t>(ctx, std::move(regex), token.pos);
+                generate<MatchRegex_t>(ctx, std::move(regex), token.pos);
                 ctx->optimization_points.pop();
                 if (std::is_same<Instr_t, StrNE_t>::value)
                     generate<Not_t>(ctx, token.pos);

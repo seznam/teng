@@ -48,6 +48,7 @@
 #include <string>
 #include <cstdint>
 #include <limits>
+#include <mutex>
 
 #include "tengutf8.h"
 #include "tengregex.h"
@@ -563,17 +564,44 @@ Result_t regex_replace(Ctx_t &ctx, const Args_t &args) {
     string_ptr_t repl(args[0]);
 
     // use middle arguments as regex
-    if (args[1].is_regex()) {
-        const Regex_t &regex_value = args[1].as_regex();
-        auto flags = to_pcre_flags(regex_value.flags);
-        FixedPCRE_t regex(regex_value.pattern, flags);
-        return Result_t(regex->replace(*where, *repl));
-    }
+    if (args[1].is_regex())
+        return Result_t(args[1].as_regex()->replace(*where, *repl));
+
+    // cache of precompiled regexes
+    static std::mutex mutex;
+    static std::unordered_map<std::string, std::shared_ptr<Regex_t>> cache;
 
     // use middle arguments as string
     string_ptr_t pattern(args[1]);
-    pcrepp::Pcre regex(*pattern, PCRE_GLOBAL | PCRE_UTF8);
-    return Result_t(regex.replace(*where, *repl));
+    std::shared_ptr<Regex_t> regex;
+    do {
+        // if cache is too big then flush it
+        std::unique_lock<std::mutex> lock(mutex);
+        if (cache.size() > 10000) {
+            cache.clear(); // (I hope, that it won't happen too often)
+
+        } else {
+            // try hit cache
+            auto iregex = cache.find(*pattern);
+            if (iregex != cache.end()) {
+                regex = iregex->second;
+                break;
+            }
+        }
+
+        // temporary unlock the mutex (compilation can take a long time)
+        lock.unlock();
+        regex_flags_t flags;
+        flags->global = true;
+        regex = std::make_shared<Regex_t>(*pattern, flags);
+
+        // lock again and insert compiled regex
+        lock.lock();
+        cache.emplace(*pattern, regex);
+
+    } while (false);
+    return Result_t(regex->replace(*where, *repl));
+
 }
 
 /** Tolower function with utf-8 support.

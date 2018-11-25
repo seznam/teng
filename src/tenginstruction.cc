@@ -437,9 +437,9 @@ static auto eval(OPCODE opcode, type_t &self, call_t &&call, args_t &&...args) {
             self.template as<CloseFrame_t>(),
             std::forward<args_t>(args)...
         );
-    case OPCODE::REGEX_MATCH:
+    case OPCODE::MATCH_REGEX:
         return call(
-            self.template as<RegexMatch_t>(),
+            self.template as<MatchRegex_t>(),
             std::forward<args_t>(args)...
         );
     case OPCODE::LOG_SUPPRESS:
@@ -524,7 +524,7 @@ const char *opcode_str(OPCODE opcode) {
     case OPCODE::QUERY_ISEMPTY: return "QUERY_ISEMPTY";
     case OPCODE::OPEN_FRAME: return "OPEN_FRAME";
     case OPCODE::CLOSE_FRAME: return "CLOSE_FRAME";
-    case OPCODE::REGEX_MATCH: return "REGEX_MATCH";
+    case OPCODE::MATCH_REGEX: return "MATCH_REGEX";
     case OPCODE::LOG_SUPPRESS: return "LOG_SUPPRESS";
     }
     throw std::runtime_error(__PRETTY_FUNCTION__);
@@ -728,22 +728,19 @@ void PushAttrAt_t::dump_params(std::ostream &os) const {
        << '>';
 }
 
-void RegexMatch_t::dump_params(std::ostream &os) const {
-    os << "<regex=" << value << '>';
+void MatchRegex_t::dump_params(std::ostream &os) const {
+    os << "<regex=" << compiled_value->pattern() << '>';
 }
 
-RegexMatch_t::RegexMatch_t(Regex_t regex, const Pos_t &pos)
-    : Instruction_t(OPCODE::REGEX_MATCH, pos),
-      value(std::move(regex)),
-      compiled_value(new FixedPCRE_t(value.pattern, to_pcre_flags(value.flags)))
+MatchRegex_t::MatchRegex_t(counted_ptr<Regex_t> regex, const Pos_t &pos)
+    : Instruction_t(OPCODE::MATCH_REGEX, pos),
+      compiled_value(std::move(regex))
 {}
 
-RegexMatch_t::~RegexMatch_t() noexcept = default;
+MatchRegex_t::~MatchRegex_t() noexcept = default;
 
-bool RegexMatch_t::matches(const string_view_t &view) const {
-    auto tmp = compiled_value->regex;
-    tmp.search(view.str());
-    return tmp.matched();
+bool MatchRegex_t::matches(const string_view_t &view) const {
+    return !!compiled_value->match(view);
 }
 
 void PushErrorFrag_t::dump_params(std::ostream &os) const {

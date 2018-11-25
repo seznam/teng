@@ -38,6 +38,6 @@
 include_HEADERS = tengerror.h tengfragment.h tengfragmentlist.h \
 				  tengfragmentvalue.h teng.h tenginvoke.h tengstringify.h \
 				  tengstringview.h tengstructs.h tengudf.h tengvalue.h \
-				  tengwriter.h
+				  tengwriter.h tengcounted_ptr.h
 
 

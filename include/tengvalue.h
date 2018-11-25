@@ -46,58 +46,15 @@
 #include <tengconfig.h>
 #include <tengstringify.h>
 #include <tengstringview.h>
+#include <tengcounted_ptr.h>
 
 namespace Teng {
 
 // forwards
+class Regex_t;
 class Fragment_t;
 class FragmentList_t;
 class FragmentValue_t;
-
-/** The possible regex flags.
- */
-struct regex_flags_t {
-    regex_flags_t()
-        : ignore_case(false), global(false), multiline(false), extended(false),
-          extra(false), ungreedy(false), anchored(false), dollar_endonly(false)
-    {}
-    bool ignore_case:1;
-    bool global:1;
-    bool multiline:1;
-    bool extended:1;
-    bool extra:1;
-    bool ungreedy:1;
-    bool anchored:1;
-    bool dollar_endonly:1;
-};
-
-/** The regular expression pattern
- */
-struct Regex_t {std::string pattern; regex_flags_t flags;};
-
-/** Comparison operator.
- */
-inline bool operator==(const Regex_t &lhs, const Regex_t &rhs) {
-    return lhs.pattern == rhs.pattern
-        && lhs.flags.ignore_case == rhs.flags.ignore_case
-        && lhs.flags.global == rhs.flags.global
-        && lhs.flags.multiline == rhs.flags.multiline
-        && lhs.flags.extended == rhs.flags.extended
-        && lhs.flags.extra == rhs.flags.extra
-        && lhs.flags.ungreedy == rhs.flags.ungreedy
-        && lhs.flags.anchored == rhs.flags.anchored
-        && lhs.flags.dollar_endonly == rhs.flags.dollar_endonly;
-}
-
-/** Comparison operator.
- */
-inline bool operator!=(const Regex_t &lhs, const Regex_t &rhs) {
-    return !(lhs == rhs);
-}
-
-/** Writes string representation of regex to stream.
- */
-std::ostream &operator<<(std::ostream &os, const Regex_t &regex);
 
 /** The type of undefined value.
  */
@@ -115,7 +72,7 @@ public:
     using string_ref_type = string_view_t;
     struct frag_ref_type {const Fragment_t *ptr;};
     struct list_ref_type {const FragmentList_t *ptr; std::size_t i;};
-    using regex_type = Regex_t;
+    using regex_type = counted_ptr<Regex_t>;
 
     /** Tags of all possible held value types.
      */
@@ -354,7 +311,7 @@ public:
             string_value = value;
             break;
         case tag::regex:
-            regex_value.~regex_type();
+            dispose_regex();
         default:
             new (&string_value) string_type(value);
             tag_value = tag::string;
@@ -371,7 +328,7 @@ public:
             string_value = value;
             break;
         case tag::regex:
-            regex_value.~regex_type();
+            dispose_regex();
         default:
             new (&string_value) string_type(value);
             tag_value = tag::string;
@@ -388,7 +345,7 @@ public:
             string_value = std::move(value);
             break;
         case tag::regex:
-            regex_value.~regex_type();
+            dispose_regex();
         default:
             new (&string_value) string_type(std::move(value));
             tag_value = tag::string;
@@ -435,7 +392,7 @@ public:
     Value_t &operator=(const regex_type &value) {
         switch (tag_value) {
         case tag::regex:
-            regex_value = value;
+            assign_regex(value);
             break;
         case tag::string:
             string_value.~string_type();
@@ -452,7 +409,7 @@ public:
     Value_t &operator=(regex_type &&value) noexcept {
         switch (tag_value) {
         case tag::regex:
-            regex_value = std::move(value);
+            assign_regex(std::move(value));
             break;
         case tag::string:
             string_value.~string_type();
@@ -704,7 +661,7 @@ public:
                 case tag::string_ref:
                     return string_view_t(string_ref_value);
                 case tag::regex:
-                    regex_value.~regex_type();
+                    dispose_regex();
                     new (&string_value) string_type(v.str());
                     return string_view_t(string_value);
                 default:
@@ -725,7 +682,7 @@ public:
             if (visited_value(visit_tag) == tag::string)
                 return;
             if (visited_value(visit_tag) == tag::regex)
-                regex_value.~regex_type();
+                dispose_regex();
             // here are all possible dynamic resources released
             tag_value = tag::string;
             new (&string_value) string_type(v.str());
@@ -754,13 +711,25 @@ protected:
             string_value.~string_type();
             break;
         case tag::regex:
-            regex_value.~regex_type();
+            dispose_regex();
             break;
         default:
             /* no dynamic resources */
             break;
         }
     }
+
+    /** Calls dtor of forward declared value.
+     */
+    void dispose_regex();
+
+    /** Assigns desired value to regex_value.
+     */
+    void assign_regex(const regex_type &value);
+
+    /** Moves desired value to regex_value.
+     */
+    void assign_regex(regex_type &&value);
 
     /** Calls visitor with printable representation of value.
      */

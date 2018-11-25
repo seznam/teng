@@ -58,7 +58,7 @@ AC_PROG_CXX
 # pkg config
 PKG_PROG_PKG_CONFIG([0.25])
 
-DEPENS_NAMES="glib-2.0"
+DEPENS_NAMES="glib-2.0 libpcre2-8"
 PKG_CHECK_MODULES([DEPENS], [${DEPENS_NAMES}])
 
 AC_SUBST(DEPENS_NAMES)
@@ -156,8 +156,6 @@ AC_CHECK_HEADERS(fenv.h)
 AC_CHECK_LIB(m, floor)
 AC_REPLACE_FUNCS([trunc round])
 
-AC_LANG_CPLUSPLUS
-AC_CHECK_LIB([pcre++], [_init],,AC_MSG_ERROR([pcre++ not installed]))
 
 AS_IF([test x$check_pthreads == xyes], [
     # Check for nonglibc header from serr library. The library is not

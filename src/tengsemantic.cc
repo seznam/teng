@@ -1391,19 +1391,19 @@ generate_rtvar_index(Context_t *ctx, const Token_t &lp, const Token_t &rp) {
     rtvar_string = {ctx->rtvar_strings.back().begin(), rp.view().end()};
 }
 
-Regex_t generate_regex(Context_t *ctx, const Token_t &regex) {
+counted_ptr<Regex_t> generate_regex(Context_t *ctx, const Token_t &regex) {
     regex_flags_t flags;
     auto i = regex.view().size() - 1;
     for (; regex.view()[i] != '/'; --i) {
         switch (regex.view()[i]) {
-        case 'i': flags.ignore_case = true; break;
-        case 'g': flags.global = true; break;
-        case 'm': flags.multiline = true; break;
-        case 'e': flags.extended = true; break;
-        case 'X': flags.extra = true; break;
-        case 'U': flags.ungreedy = true; break;
-        case 'A': flags.anchored = true; break;
-        case 'D': flags.dollar_endonly = true; break;
+        case 'i': flags->ignore_case = true; break;
+        case 'g': flags->global = true; break;
+        case 'm': flags->multiline = true; break;
+        case 'e': flags->extended = true; break;
+        case 'X': flags->extra = true; break;
+        case 'U': flags->ungreedy = true; break;
+        case 'A': flags->anchored = true; break;
+        case 'D': flags->dollar_endonly = true; break;
         default:
             logWarning(
                 ctx,
@@ -1414,16 +1414,17 @@ Regex_t generate_regex(Context_t *ctx, const Token_t &regex) {
             );
         }
     }
-    return {{regex.view().data() + 1, regex.view().data() + i}, flags};
+    string_view_t pattern = {regex.view().data() + 1, regex.view().data() + i};
+    return make_counted<Regex_t>(pattern, flags);
 }
 
 void
 generate_match(Context_t *ctx, const Token_t &token, const Token_t &regex) {
     // parse regex (split pattern and flags)
-    Regex_t regex_value = generate_regex(ctx, regex);
+    auto regex_value = generate_regex(ctx, regex);
 
     // generate instruction for parsed regex
-    generate<RegexMatch_t>(ctx, regex_value, regex.pos);
+    generate<MatchRegex_t>(ctx, std::move(regex_value), regex.pos);
     if (token == LEX2::STR_NE)
         generate<Not_t>(ctx, token.pos);
 }
