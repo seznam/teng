@@ -34,7 +34,7 @@
  *             Coverted to catch2.
  */
 
-#include <teng.h>
+#include <teng/teng.h>
 
 #include "catch.hpp"
 #include "utils.h"

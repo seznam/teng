@@ -36,7 +36,7 @@
 
 
 # initialize autoconf
-AC_INIT([teng], [3.0.0], [teng@firma.seznam.cz])
+AC_INIT([teng], [4.0.0], [teng@firma.seznam.cz])
 
 AC_PROG_LIBTOOL
 AC_CONFIG_MACRO_DIRS([m4])
@@ -164,5 +164,5 @@ AS_IF([test x$check_pthreads == xyes], [
 ], [])
 
 # generate Makefile
-AC_OUTPUT(version Makefile src/Makefile include/Makefile include/tengconfig.h libteng.pc)
+AC_OUTPUT(version Makefile src/Makefile include/teng/Makefile include/teng/config.h libteng.pc)
 

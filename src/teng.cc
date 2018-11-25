@@ -41,13 +41,13 @@
 #include <stdexcept>
 #include <memory>
 
-#include "tengutil.h"
-#include "tengplatform.h"
-#include "tenglogging.h"
-#include "tengstructs.h"
-#include "tengprocessor.h"
-#include "tengtemplate.h"
-#include "teng.h"
+#include "util.h"
+#include "platform.h"
+#include "logging.h"
+#include "processor.h"
+#include "template.h"
+#include "teng/structs.h"
+#include "teng/teng.h"
 
 extern "C" int teng_library_present() {return 0;}
 

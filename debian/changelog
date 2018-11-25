@@ -1,6 +1,6 @@
-libteng (3.0.0) stable; urgency=low
+libteng (4.0.0) stable; urgency=low
 
-  * teng3
+  * teng4
 
  -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Tue, 6 Nov 2018 06:20:44 +0100
 

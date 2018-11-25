@@ -8,4 +8,4 @@ DH_VERBOSE=1
 
 .PHONY: override_dh_strip
 override_dh_strip:
-		dh_strip --dbg-package=libteng3-dbg
+		dh_strip --dbg-package=libteng4-dbg

@@ -36,7 +36,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = src include
+SUBDIRS = src include/teng
 
 # Removed due to this request:
 #
