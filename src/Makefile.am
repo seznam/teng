@@ -34,15 +34,14 @@
 #             Created.
 #
 
-AUTOMAKE_OPTIONS = subdir-objects
-
-# warn on all
-AM_CXXFLAGS = -Wall
-
 # extra compiler options
 AM_CPPFLAGS = -D_ISOC99_SOURCE -fPIC ${DEPENS_CFLAGS}                          \
+              -DGIT_REVISION="\"@GIT_REVISION@\""                              \
 			  -DSRC_DIR="\"$(realpath @abs_top_srcdir@)\""                     \
-			  -I$(top_srcdir)/include -I$(top_builddir)/include
+			  -I$(top_srcdir)/include -I$(top_builddir)/include                \
+			  @TENG_DEPS_CFLAGS@
+
+AUTOMAKE_OPTIONS = subdir-objects
 
 # these are generated and thus ought to be prepared before anything else
 BUILT_SOURCES = lex2impl.cc lex2impl.h syntax.cc syntax.hh
@@ -62,7 +61,7 @@ libteng_la_SOURCES = teng.cc fragment.cc fragmentlist.cc util.cc               \
 
 # with these flags (version info etc.)
 libteng_la_LDFLAGS = @VERSION_INFO@
-libteng_la_LIBADD = $(LTLIBOBJS) ${DEPENS_LIBS}
+libteng_la_LIBADD = $(LTLIBOBJS) @TENG_DEPS_LIBS@
 
 # explicit rules for proper flex & bison sources compilation
 lex2.lo: lex2impl.cc
