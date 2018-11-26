@@ -38,6 +38,6 @@ includedir = @includedir@/teng
 
 include_HEADERS = error.h fragment.h fragmentlist.h fragmentvalue.h teng.h \
 				  invoke.h stringify.h stringview.h structs.h udf.h value.h \
-				  writer.h counted_ptr.h
+				  writer.h counted_ptr.h config.h
 
 
