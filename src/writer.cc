@@ -62,7 +62,7 @@ int StringWriter_t::write(const char *str, std::size_t size) {
     return 0;
 }
 
-int StringWriter_t::write(const std::string &str, StringSpan_t interval) {
+int StringWriter_t::write(const std::string &, StringSpan_t interval) {
     this->str.append(interval.first, interval.second);
     return 0;
 }

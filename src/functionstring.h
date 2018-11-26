@@ -64,8 +64,8 @@ namespace {
  */
 struct SubstrArgs_t {
     std::string text;
-    int start;
-    int end;
+    int64_t start;
+    int64_t end;
     std::string prefix;
     std::string suffix;
 };
@@ -119,7 +119,7 @@ namespace ascii {
 
 /** Adjusts index (even negative) to interval <0, text_size>.
  */
-std::size_t idx2offset(std::size_t text_size, int i) {
+std::size_t idx2offset(std::size_t text_size, int64_t i) {
     if (i >= 0)
         return std::min<std::size_t>(i, text_size);
     i += text_size;
@@ -185,7 +185,7 @@ Result_t nl2br(Ctx_t &ctx, const Args_t &args) {
     return Result_t(args[0].print([&] (const string_view_t &arg) {
         // prepare space for result
         std::string tmp;
-        tmp.reserve(arg.size() * 1.3);
+        tmp.reserve(arg.size() * 2);
 
         // replace
         for (char ch: arg) {
@@ -272,7 +272,7 @@ Result_t wordsubstr(Ctx_t &ctx, const Args_t &args) {
         }
 
         // strip whitespaces from right of origin string
-        int stripped_end = s.text.size();
+        int64_t stripped_end = s.text.size();
         while (stripped_end > 0) {
             if (!isspace(s.text[stripped_end - 1]))
                 break;
@@ -372,7 +372,7 @@ Result_t reorder(Ctx_t &ctx, const Args_t &args) {
 
             case STATUS::DEFAULT:
                 // normal operation => just pass digit
-                text.push_back(c);
+                text.push_back(static_cast<char>(c));
                 break;
 
             case STATUS::NUMBER:
@@ -393,7 +393,7 @@ Result_t reorder(Ctx_t &ctx, const Args_t &args) {
 
             case STATUS::DEFAULT:
                 // OK
-                text.push_back(c);
+                text.push_back(static_cast<char>(c));
                 break;
 
             case STATUS::NUMBER:
@@ -424,7 +424,7 @@ Result_t reorder(Ctx_t &ctx, const Args_t &args) {
 
             case STATUS::DEFAULT:
                 // OK
-                text.push_back(c);
+                text.push_back(static_cast<char>(c));
                 break;
 
             case STATUS::NUMBER:
@@ -461,7 +461,7 @@ Result_t reorder(Ctx_t &ctx, const Args_t &args) {
             case STATUS::FORMAT:
             case STATUS::NUMBER: {
                 // ? after % => error
-                char tc = c;
+                char tc = static_cast<char>(c);
                 logWarning(
                     ctx.err,
                     ctx.pos,
@@ -475,7 +475,7 @@ Result_t reorder(Ctx_t &ctx, const Args_t &args) {
 
             case STATUS::DEFAULT:
                 // OK
-                text.push_back(c);
+                text.push_back(static_cast<char>(c));
                 break;
             }
             break;

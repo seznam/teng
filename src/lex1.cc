@@ -274,8 +274,8 @@ void incr_col_pos_by(const char (&)[n], incr_col_pos_t incr_col_pos) {
 Lex1_t::Token_t Lex1_t::next() {
     // backup start values
     std::size_t start_pos = offset;
-    int32_t start_line = pos.lineno;
-    int32_t start_column = pos.colno;
+    int64_t start_line = pos.lineno;
+    int64_t start_column = pos.colno;
 
     auto incr_pos = [&] {
         if (utf8) {

@@ -125,7 +125,7 @@ void close_frame(RunCtxPtr_t ctx) {
 /** Open new fragment in current frame if there is at least one frag of such
  * name or jump over frag block.
  */
-int32_t open_frag(RunCtxPtr_t ctx) {
+int64_t open_frag(RunCtxPtr_t ctx) {
     auto &instr = ctx->instr->as<OpenFrag_t>();
     return ctx->frames.open_frag(instr.name)
         ? 0
@@ -134,7 +134,7 @@ int32_t open_frag(RunCtxPtr_t ctx) {
 
 /** Open error fragment in current frame.
  */
-int32_t open_error_frag(RunCtxPtr_t ctx) {
+int64_t open_error_frag(RunCtxPtr_t ctx) {
     auto &instr = ctx->instr->as<OpenErrorFrag_t>();
     auto enabled = ctx->params.isErrorFragmentEnabled();
     return enabled && ctx->frames.open_error_frag(ctx->err.getFrags())
@@ -144,7 +144,7 @@ int32_t open_error_frag(RunCtxPtr_t ctx) {
 
 /** Pop frag from top of the stack of open frags.
  */
-int32_t close_frag(RunCtxPtr_t ctx) {
+int64_t close_frag(RunCtxPtr_t ctx) {
     auto &instr = ctx->instr->as<CloseFrag_t>();
     return ctx->frames.next_frag()
         ? instr.open_frag_offset

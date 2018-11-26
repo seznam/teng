@@ -103,7 +103,7 @@ std::tuple<
     Error_t &err,
     const std::string &configFilename,
     const std::string &dictFilename,
-    unsigned long int *serial)
+    unsigned long int *)
 {
     // key for config
     std::vector<std::string> key;

@@ -63,7 +63,7 @@ namespace Teng {
 namespace {
 
 template <typename Ctx_t>
-void dump_program(Ctx_t *ctx, const SubProgram_t &program, std::ostream &out) {
+void dump_program(Ctx_t *, const SubProgram_t &program, std::ostream &out) {
     bool optimization = std::is_same<std::decay_t<Ctx_t>, EvalCtx_t>::value;
 
     // top banner
@@ -72,7 +72,7 @@ void dump_program(Ctx_t *ctx, const SubProgram_t &program, std::ostream &out) {
         << std::endl;
 
     // program
-    for (int i = program.start; i < program.end; ++i)
+    for (auto i = program.start; i < program.end; ++i)
         out << std::setw(3) << std::setfill('0')
             << std::noshowpos << i << " " << program[i]
             << std::endl;
@@ -86,7 +86,7 @@ void dump_program(Ctx_t *ctx, const SubProgram_t &program, std::ostream &out) {
 
 template <typename Ctx_t>
 void dump_instr(
-    Ctx_t *ctx,
+    Ctx_t *,
     const SubProgram_t &program,
     InstructionPointer_t &ip,
     const std::vector<Value_t> &stack,
@@ -509,7 +509,7 @@ Processor_t::Processor_t(
     const string_view_t &contentType
 ): err(err), program(program), dict(dict), params(params),
    encoding(encoding), contentType(contentType)
-{srand(time(0) ^ getpid());}
+{srand(static_cast<uint32_t>(time(0) ^ getpid()));}
 
 void Processor_t::run(const FragmentValue_t &data, Writer_t &writer) {
     // ensure content type
@@ -529,17 +529,17 @@ void Processor_t::run(const FragmentValue_t &data, Writer_t &writer) {
     stack.reserve(128);
     Formatter_t output(writer);
     RunCtx_t ctx{err, program, dict, params, encoding, ct, data, output};
-    process(&ctx, stack, {0, static_cast<int32_t>(program.size()), program});
+    process(&ctx, stack, {0, static_cast<int64_t>(program.size()), program});
 
     // log errors into log, if said
     if (params.isLogToOutputEnabled()) logErrors(ct, writer, err);
 }
 
 Value_t
-Processor_t::eval(const OFFApi_t *frames, int32_t start) {
+Processor_t::eval(const OFFApi_t *frames, int64_t start) {
     // skip evaluation if program is 'empty'
     if (start < 0) return Value_t();
-    int32_t end = program.size();
+    int64_t end = program.size();
 
     // init processor context (no run context - we are in compile time)
     std::vector<Value_t> stack;

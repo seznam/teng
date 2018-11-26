@@ -296,8 +296,8 @@ struct FrameRec_t {
 
         // the open fragments part
         std::string result;
-        uint16_t frag_i = open_frags.size() - var.frag_offset;
-        for (uint16_t i = 1/*skip root frag*/; i < frag_i; ++i) {
+        auto count = open_frags.size() - var.frag_offset;
+        for (uint64_t i = 1/*skip root frag*/; i < count; ++i) {
             auto &frag_name = open_frags[i].name;
             result.push_back('.');
             result.append(frag_name.data(), frag_name.size());
@@ -347,7 +347,7 @@ struct FrameRec_t {
 
     /** Returns local variable of desired name or nullptr.
      */
-    const Value_t *find_local(uint16_t i, const string_view_t &name) const {
+    const Value_t *find_local(uint64_t i, const string_view_t &name) const {
         auto ilocal_var = open_frags[i].locals.find(name);
         if (ilocal_var == open_frags[i].locals.end())
             return nullptr;
@@ -368,7 +368,7 @@ struct FrameRec_t {
 
     /** Returns fragment (or anything else) at given offset.
      */
-    Value_t value_at(uint16_t frag_offset) const {
+    Value_t value_at(uint64_t frag_offset) const {
         if (frag_offset >= open_frags.size())
             throw std::runtime_error(__PRETTY_FUNCTION__);
         auto i = open_frags.size() - frag_offset - 1;
@@ -579,8 +579,8 @@ public:
      */
     Value_t
     value_at(
-        uint16_t frame_offset,
-        uint16_t frag_offset
+        uint64_t frame_offset,
+        uint64_t frag_offset
     ) const override {
         if (frame_offset >= frames.size())
             throw std::runtime_error(__PRETTY_FUNCTION__);
@@ -613,7 +613,7 @@ public:
         case Value_t::tag::integral:
             return get_value_at(arg, idx.as_int());
         case Value_t::tag::real:
-            return get_value_at(arg, idx.as_real());
+            return get_value_at(arg, static_cast<int64_t>(idx.as_real()));
         case Value_t::tag::string:
             return value_at(arg, idx.as_string(), ambiguous);
         case Value_t::tag::string_ref:

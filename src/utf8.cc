@@ -50,7 +50,7 @@ using g_char_ptr_t = std::unique_ptr<gchar, decltype(::free) *>;
 
 } // namespace
 
-std::size_t charlen(char ch) {
+std::size_t charlen(int ch) {
     int bytes = 0;
     for (; ch & 0x80; ch <<= 1) ++bytes;
     return std::max(1, bytes > 4? 1: bytes);
@@ -60,7 +60,7 @@ std::size_t strlen(const string_view_t &str) {
     int chars = 0;
     for (auto istr = str.begin(), estr = str.end(); istr != estr;) {
         int bytes = 0;
-        char tmp = *istr;
+        int tmp = *istr;
 
         while (tmp & 0x80) {
             ++bytes;
@@ -101,9 +101,15 @@ std::size_t strlen(const string_view_t &str) {
 }
 
 std::string
-substr(const string_view_t &str, int s, int e, std::string p1, std::string p2) {
+substr(
+    const string_view_t &str,
+    int64_t s,
+    int64_t e,
+    std::string p1,
+    std::string p2
+) {
     std::string result;
-    int l = strlen(str);
+    int64_t l = strlen(str);
     if (s < 0) s = l + s;
     if (e < 0) e = l + e;
 
@@ -125,7 +131,7 @@ substr(const string_view_t &str, int s, int e, std::string p1, std::string p2) {
 
     for (auto istr = str.begin(), estr = str.end(); istr != estr;) {
         int bytes = 0;
-        char tmp = *istr;
+        int tmp = *istr;
 
         while (tmp & 0x80) {
             ++bytes;
@@ -170,8 +176,8 @@ substr(const string_view_t &str, int s, int e, std::string p1, std::string p2) {
     return p1 + result + p2;
 }
 
-void substr(const string_view_t &str, int &s, int &e) {
-    int l = strlen(str), index, end = str.size(),
+void substr(const string_view_t &str, int64_t &s, int64_t &e) {
+    int64_t l = strlen(str), index, end = str.size(),
         sset = 0, chars = 0;
     if (!l) {
     empty:
@@ -188,7 +194,7 @@ void substr(const string_view_t &str, int &s, int &e) {
     if (!s) sset = 0;
     for (index = 0; index < end; ) {
         int bytes = 0;
-        char tmp = str[index];
+        int tmp = str[index];
         // compute number of bytes in char
         while (tmp & 0x80) {
             ++bytes;
@@ -223,7 +229,7 @@ void substr(const string_view_t &str, int &s, int &e) {
             continue;
         }
         --bytes;
-        int bstr = index + 1;
+        int64_t bstr = index + 1;
         for (; (bstr < end) && bytes; ++bstr, --bytes) {
             if ((str[bstr] & 0xC0) != 0x80) break;
         }

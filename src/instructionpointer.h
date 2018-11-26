@@ -46,9 +46,9 @@ namespace Teng {
 /** Some, even whole, part of program.
  */
 struct SubProgram_t {
-    const Instruction_t &operator[](int32_t i) const {return program[i];}
-    const int32_t start; //!< pointer to the first instruction in program
-    const int32_t end;   //!< pointer to one past last instruction in program
+    const Instruction_t &operator[](int64_t i) const {return program[i];}
+    const int64_t start; //!< pointer to the first instruction in program
+    const int64_t end;   //!< pointer to one past last instruction in program
     const Program_t &program; //!< the whole program
 };
 
@@ -63,49 +63,49 @@ struct InstructionPointer_t {
 
     /** Increments the instruction pointer (it check boundaries).
      */
-    int32_t operator++() {
+    int64_t operator++() {
         *this += 1;
         return value;
     }
 
     /** Increments the instruction pointer (it check boundaries).
      */
-    int32_t operator++(int) {
-        int32_t tmp = value;
+    int64_t operator++(int) {
+        int64_t tmp = value;
         *this += 1;
         return tmp;
     }
 
     /** Decrements the instruction pointer (it check boundaries).
      */
-    int32_t operator--() {
+    int64_t operator--() {
         *this -= 1;
         return value;
     }
 
     /** Decrements the instruction pointer (it check boundaries).
      */
-    int32_t operator--(int) {
-        int32_t tmp = value;
+    int64_t operator--(int) {
+        int64_t tmp = value;
         *this -= 1;
         return tmp;
     }
 
     /** Increments the instruction pointer (it check boundaries).
      */
-    int32_t operator+=(int32_t incr) {
+    int64_t operator+=(int64_t incr) {
         return value = *this + incr;
     }
 
     /** Decrements the instruction pointer (it check boundaries).
      */
-    int32_t operator-=(int32_t incr) {
+    int64_t operator-=(int64_t incr) {
         return value = *this - incr;
     }
 
     /** Increments the instruction pointer (it check boundaries).
      */
-    int32_t operator+(int32_t incr) const {
+    int64_t operator+(int64_t incr) const {
         auto new_value = value + incr;
         if (new_value > program.end)
             throw std::runtime_error("instruction pointer overflow");
@@ -114,7 +114,7 @@ struct InstructionPointer_t {
 
     /** Increments the instruction pointer (it check boundaries).
      */
-    int32_t operator-(int32_t incr) const {
+    int64_t operator-(int64_t incr) const {
         auto new_value = value - incr;
         if (new_value < program.start)
             throw std::runtime_error("instruction pointer underflow");
@@ -123,16 +123,16 @@ struct InstructionPointer_t {
 
     /** Returns true if value of ip is less than given address.
      */
-    int32_t operator<(int32_t addr) const {
+    int64_t operator<(int64_t addr) const {
         return value < addr;
     }
 
     /** Returns numeric value of instruction pointer.
      */
-    int32_t operator*() const {return value;}
+    int64_t operator*() const {return value;}
 
 protected:
-    int32_t value;               //!< never will be changed to unsigned !!
+    int64_t value;               //!< never will be changed to unsigned !!
     const SubProgram_t &program; //!< evaluated program
 };
 

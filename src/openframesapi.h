@@ -61,7 +61,7 @@ struct OFFApi_t {
     /** Returns fragment/value at given open frame/fragments offsets.
      */
     virtual Value_t
-    value_at(uint16_t frame_offset, uint16_t frag_offset) const = 0;
+    value_at(uint64_t frame_offset, uint64_t frag_offset) const = 0;
 
     /** Returns fragment value of desired name.
      */

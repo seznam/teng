@@ -99,11 +99,12 @@ Configuration_t::new_directive(
 
     // lambda that converts directive value to number
     auto to_number = [&] (auto &&result) {
+        using result_t = std::decay_t<decltype(result)>;
         if (!value.empty()) {
             char *end;
-            auto depth = strtoul(value.data(), &end, 10);
+            auto number = strtol(value.data(), &end, 10);
             if (*end == '\0') {
-                result = depth;
+                result = static_cast<result_t>(number);
                 return error_code::none;
             }
         }

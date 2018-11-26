@@ -120,7 +120,7 @@ ContentType_t::Descriptor_t *init_descriptors() {
 
     // create content type descriptor for text/plain
     std::string name = "text/plain";
-    unsigned int i = descriptorIndex.size();
+    std::size_t i = descriptorIndex.size();
     descriptor.reset(new Descriptor_t{create_default(), i, name, comment});
     descriptorIndex.push_back(descriptor.get());
     descriptors.emplace(name, std::move(descriptor));
@@ -165,6 +165,7 @@ struct UnescaperState_t {
      * @short Vector of next states.
      */
     using UnescaperStateVector_t = std::vector<UnescaperState_t>;
+    using Pairs_t = std::vector<std::pair<int64_t, int64_t>>;
 
     /**
      * @short Create new state.
@@ -183,7 +184,7 @@ struct UnescaperState_t {
      * @short Next state of automaton (positive) or replacement
      *        character (negative) or stop state (zero).
      */
-    int nextState;
+    int64_t nextState;
 
     /**
      * @short Next states.
@@ -211,9 +212,9 @@ struct UnescaperState_t {
     /**
      * @short Linearize automaton tree.
      */
-    void linearize(std::vector<std::pair<int, int>> &unescaper) const {
+    void linearize(Pairs_t &unescaper) const {
         // remember link holders
-        std::vector<int> referrers;
+        std::vector<std::size_t> referrers;
 
         // run throgh next states and write rule for each
         for (auto &state: nextStates) {
@@ -231,7 +232,7 @@ struct UnescaperState_t {
         for (auto &state: nextStates) {
             if (!state.nextState) {
                 // remember start of next state
-                int pos = unescaper.size();
+                std::size_t pos = unescaper.size();
                 // linearize this state
                 state.linearize(unescaper);
                 // assign link to sub state
@@ -248,15 +249,15 @@ ContentType_t::ContentType_t()
     : lineComment(), blockComment(), escapes(), unescaper()
 {
     // set escape bitmap to all -1 (character not escaped)
-    int *end = escapeBitmap + 256;
-    int *i = escapeBitmap;
+    auto *end = escapeBitmap + 256;
+    auto *i = escapeBitmap;
     while (i != end) *i++ = -1;
 
     // create empty automaton
     unescaper.emplace_back(0, 0);
 }
 
-int ContentType_t::addEscape(unsigned char c, const std::string &escape) {
+int64_t ContentType_t::addEscape(unsigned char c, const std::string &escape) {
     // if escape already present in bitmap make it error
     if (escapeBitmap[c] != -1) return -1;
 
@@ -275,7 +276,7 @@ std::string ContentType_t::escape(const string_view_t &src) const {
     // run through input string
     for (auto ch: src) {
         // find entry in bitmap
-        int pos = escapeBitmap[static_cast<unsigned char>(ch)];
+        auto pos = escapeBitmap[static_cast<unsigned char>(ch)];
         // if position is negative pass source character to output
         if (pos < 0) dest.push_back(ch);
         // else append escape sequence
@@ -296,7 +297,7 @@ std::string ContentType_t::unescape(const string_view_t &src) const {
         // help iterator
         auto bsrc = isrc;
         // index in automaton
-        int state = 0;
+        int64_t state = 0;
         // run through remaining characters
         for (; bsrc != src.end(); ++bsrc) {
             // move to next state
@@ -308,7 +309,7 @@ std::string ContentType_t::unescape(const string_view_t &src) const {
         // check final state
         if (state < 0) {
             // state is negative => it's negated character!
-            dest.push_back(-state);
+            dest.push_back(static_cast<char>(-state));
             // move after so far eaten escape sequence
             isrc = bsrc + 1;
         } else {
@@ -320,7 +321,7 @@ std::string ContentType_t::unescape(const string_view_t &src) const {
     return dest;
 }
 
-int ContentType_t::nextState(unsigned char c, int state) const {
+int64_t ContentType_t::nextState(unsigned char c, int64_t state) const {
     // stop when state outside automaton
     if ((std::size_t(state) >= unescaper.size()) || (state < 0))
         return 0;
@@ -350,7 +351,7 @@ void ContentType_t::compileUnescaper() {
         const std::string &str = escape.second;
 
         // run through escape sequence
-        for (auto ch: str)
+        for (char ch: str)
             state = &state->add(ch);
 
         // assign unescaped character as final rule
@@ -496,7 +497,7 @@ std::unique_ptr<ContentType_t> jsonCreator() {
     js->addEscape('\t',"\\t");
     js->addEscape('/',"\\/");
 
-    for (int i = 0; i <= 0x1F; ++i) {
+    for (unsigned char i = 0; i <= 0x1F; ++i) {
         std::stringstream ss;
         ss << "\\u" << std::hex << std::uppercase
            <<  std::setfill('0') << std::setw(4) << std::hex << i;

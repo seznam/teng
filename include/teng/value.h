@@ -118,8 +118,8 @@ public:
     /** C'tor.
      */
     explicit Value_t(regex_type value) noexcept
-        : tag_value(tag::regex), regex_value(std::move(value))
-    {}
+        : tag_value(tag::regex), undefined_value()
+    {assign_regex(std::move(value));}
 
     /** C'tor.
      */
@@ -311,7 +311,7 @@ public:
             string_value = value;
             break;
         case tag::regex:
-            dispose_regex();
+            dispose_regex(regex_value);
         default:
             new (&string_value) string_type(value);
             tag_value = tag::string;
@@ -328,7 +328,7 @@ public:
             string_value = value;
             break;
         case tag::regex:
-            dispose_regex();
+            dispose_regex(regex_value);
         default:
             new (&string_value) string_type(value);
             tag_value = tag::string;
@@ -345,7 +345,7 @@ public:
             string_value = std::move(value);
             break;
         case tag::regex:
-            dispose_regex();
+            dispose_regex(regex_value);
         default:
             new (&string_value) string_type(std::move(value));
             tag_value = tag::string;
@@ -552,7 +552,7 @@ public:
         case tag::integral:
             return integral_value;
         case tag::real:
-            return real_value;
+            return static_cast<int_type>(real_value);
         default:
             return 0;
         }
@@ -563,7 +563,7 @@ public:
     real_type real() const {
         switch (tag_value) {
         case tag::integral:
-            return integral_value;
+            return static_cast<real_type>(integral_value);
         case tag::real:
             return real_value;
         default:
@@ -661,7 +661,7 @@ public:
                 case tag::string_ref:
                     return string_view_t(string_ref_value);
                 case tag::regex:
-                    dispose_regex();
+                    dispose_regex(regex_value);
                     new (&string_value) string_type(v.str());
                     return string_view_t(string_value);
                 default:
@@ -682,7 +682,7 @@ public:
             if (visited_value(visit_tag) == tag::string)
                 return;
             if (visited_value(visit_tag) == tag::regex)
-                dispose_regex();
+                dispose_regex(regex_value);
             // here are all possible dynamic resources released
             tag_value = tag::string;
             new (&string_value) string_type(v.str());
@@ -711,7 +711,7 @@ protected:
             string_value.~string_type();
             break;
         case tag::regex:
-            dispose_regex();
+            dispose_regex(regex_value);
             break;
         default:
             /* no dynamic resources */
@@ -721,7 +721,7 @@ protected:
 
     /** Calls dtor of forward declared value.
      */
-    void dispose_regex();
+    static void dispose_regex(regex_type &regex_value);
 
     /** Assigns desired value to regex_value.
      */

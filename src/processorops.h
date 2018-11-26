@@ -68,34 +68,65 @@ std::string to_string(std::greater<>) {return ">";}
 std::string to_string(std::less_equal<>) {return "<=";}
 std::string to_string(std::less<>) {return "<";}
 
+/** Shortcut for enable_if_t.
+ */
+template <typename type_t, template <typename> class pred_t>
+using when = std::enable_if_t<pred_t<type_t>::value, bool>;
+
+/** Shortcut for enable_if_t.
+ */
+template <typename type_t, template <typename> class pred_t>
+using unless = std::enable_if_t<!pred_t<type_t>::value, bool>;
+
+/** The compile time constant that become true if operation is one of bit_or,
+ * bit_and or bit_xor.
+ */
+template <typename operation_t>
+using is_bit_op = std::integral_constant<
+    bool,
+    std::is_same<std::decay_t<operation_t>, bit_or_t>::value
+    || std::is_same<std::decay_t<operation_t>, bit_and_t>::value
+    || std::is_same<std::decay_t<operation_t>, bit_xor_t>::value
+>;
+
+/** The compile time constant that become true if operation is some kind of
+ * division.
+ */
+template <typename operation_t>
+using is_division = std::integral_constant<
+    bool,
+    std::is_same<operation_t, std::divides<>>::value
+    || std::is_same<operation_t, modulus_t>::value
+>;
+
+/** The compile time constant that become true if operation needs integral
+ * argument.
+ */
+template <typename operation_t>
+using is_integral_op = std::integral_constant<
+    bool,
+    is_bit_op<operation_t>::value
+    || std::is_same<operation_t, modulus_t>::value
+>;
+
 /** Almost all operations accept any lhs value.
  */
-template <typename operation_t, typename = void>
+template <typename operation_t, typename = bool>
 struct lhs_checker_t {
     static bool is_valid(EvalCtx_t *, Value_t &) {return true;}
 };
 
 /** Almost all operations accept any rhs value.
  */
-template <typename operation_t, typename = void>
+template <typename operation_t, typename = bool>
 struct rhs_checker_t {
     static bool is_valid(EvalCtx_t *, Value_t &) {return true;}
 };
 
-/** Shortcut that become valid expression if operation_t is one of bit_or,
- * bit_and or bit_xor.
- */
-template <typename operation_t>
-using is_bit_op = typename std::enable_if<
-    std::is_same<operation_t, bit_or_t>::value
-    || std::is_same<operation_t, bit_and_t>::value
-    || std::is_same<operation_t, bit_xor_t>::value
->::type;
-
 /** Bit operations needs integral operands.
  */
 template <typename operation_t>
-struct lhs_checker_t<operation_t, is_bit_op<operation_t>> {
+struct lhs_checker_t<operation_t, when<operation_t, is_bit_op>> {
     static bool is_valid(EvalCtx_t *ctx, Value_t &lhs) {
         if (lhs.is_integral()) return true;
         logWarning(
@@ -111,7 +142,7 @@ struct lhs_checker_t<operation_t, is_bit_op<operation_t>> {
 /** Bit OR needs integral operands.
  */
 template <typename operation_t>
-struct rhs_checker_t<operation_t, is_bit_op<operation_t>> {
+struct rhs_checker_t<operation_t, when<operation_t, is_bit_op>> {
     static bool is_valid(EvalCtx_t *ctx, Value_t &rhs) {
         if (rhs.is_integral()) return true;
         logWarning(
@@ -124,19 +155,10 @@ struct rhs_checker_t<operation_t, is_bit_op<operation_t>> {
     }
 };
 
-/** Shortcut that become valid expression if operation_t is some kind of
- * division.
- */
-template <typename operation_t>
-using needs_rhs_non_zero = typename std::enable_if<
-    std::is_same<operation_t, std::divides<>>::value
-    || std::is_same<operation_t, modulus_t>::value
->::type;
-
 /** Right operand of divison operations must not be zero.
  */
 template <typename operation_t>
-struct rhs_checker_t<operation_t, needs_rhs_non_zero<operation_t>> {
+struct rhs_checker_t<operation_t, when<operation_t, is_division>> {
     static bool is_valid(EvalCtx_t *ctx, Value_t &rhs) {
         bool is_modulus = std::is_same<operation_t, modulus_t>::value;
         static const std::string S = to_string(operation_t());
@@ -151,6 +173,37 @@ struct rhs_checker_t<operation_t, needs_rhs_non_zero<operation_t>> {
 };
 
 } // namespace
+
+/** Evaluates binary numeric operation: implementation for all operation.
+ */
+template <typename operation_t, unless<operation_t, is_integral_op> = false>
+Result_t exec_op(EvalCtx_t *ctx, Value_t &lhs, Value_t &rhs, operation_t op) {
+    // prepare error callback for floating point calculation
+    auto fp_error = [&] {
+        logWarning(*ctx, "Floating point operation failed");
+        return Result_t();
+    };
+
+    // prepare floating point callback
+    auto fp_operation = [&] {
+        return Result_t(op(lhs.real(), rhs.real()));
+    };
+
+    // mod make sense only for integral operands
+    bool is_modulus = std::is_same<operation_t, modulus_t>::value;
+
+    // exec operation
+    return !is_modulus && (lhs.is_real() || rhs.is_real())
+        ? fp_safe(fp_operation, fp_error)
+        : Result_t(op(lhs.integral(), rhs.integral()));
+}
+
+/** Shouldn't be called: implementation for bit operation.
+ */
+template <typename operation_t, when<operation_t, is_integral_op> = true>
+Result_t exec_op(EvalCtx_t *, Value_t &lhs, Value_t &rhs, operation_t op) {
+    return Result_t(op(lhs.integral(), rhs.integral()));
+}
 
 /** Evaluates binary numeric operation.
  */
@@ -180,24 +233,8 @@ Result_t numop(EvalCtx_t *ctx, Value_t &lhs, Value_t &rhs, operation_t op) {
     if (!rhs_checker_t<operation_t>::is_valid(ctx, rhs))
         return Result_t();
 
-    // prepare error callback for floating point calculation
-    auto fp_error = [&] {
-        logWarning(*ctx, "Floating point operation failed");
-        return Result_t();
-    };
-
-    // prepare floating point callback
-    auto fp_operation = [&] {
-        return Result_t(op(lhs.real(), rhs.real()));
-    };
-
-    // mod make sense only for integral operands
-    bool is_modulus = std::is_same<operation_t, modulus_t>::value;
-
-    // exec operation
-    return !is_modulus && (lhs.is_real() || rhs.is_real())
-        ? fp_safe(fp_operation, fp_error)
-        : Result_t(op(lhs.integral(), rhs.integral()));
+    // execute op
+    return exec_op(ctx, lhs, rhs, op);
 }
 
 /** Evaluates binary string operation.
@@ -257,7 +294,7 @@ Result_t strnumop(EvalCtx_t *ctx, GetArg_t get_arg, operation_t op) {
 
 /** Implementation of the logic not operator.
  */
-Result_t logic_not(EvalCtx_t *ctx, GetArg_t get_arg) {
+Result_t logic_not(EvalCtx_t *, GetArg_t get_arg) {
     auto arg = get_arg();
     return arg.is_undefined()? arg: Result_t(!arg);
 }

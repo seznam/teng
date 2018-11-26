@@ -680,7 +680,7 @@ RegexMatch_t::next_after_empty(size_type next_start_i) const {
             if (subject[next_start_i] == '\r')
                 if (subject[next_start_i + 1] == '\n')
                     return RegexMatch_t(re, subject, next_start_i + 1);
-        [[fallthrough]];
+        /*[[fallthrough]]*/
     default:
         // respect utf-8: move to next utf-8 character
         for (; next_start_i < subject.size(); ++next_start_i)

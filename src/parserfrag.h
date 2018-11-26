@@ -60,7 +60,7 @@ namespace Parser {
 struct FragRec_t {
     const string_view_t &name() const {return token.view();}
     Token_t token;      //!< level 2 token
-    int32_t addr;       //!< the address of Frag_t instruction
+    int64_t addr;       //!< the address of Frag_t instruction
     bool auto_close;    //!< if frag was created by <?teng frag ...?>
 };
 
@@ -90,7 +90,7 @@ public:
 
     /** Opens new fragment.
      */
-    void open_frag(const Token_t &token, int32_t addr, bool auto_close) {
+    void open_frag(const Token_t &token, int64_t addr, bool auto_close) {
         if (frags.size() >= std::numeric_limits<uint16_t>::max())
             throw std::length_error("the number of open frags exceeded 65535");
         frags.push_back({token, addr, auto_close});
@@ -209,7 +209,7 @@ public:
     /** Returns frag at given offsets.
      */
     Value_t
-    value_at(uint16_t frame_offset, uint16_t frag_offset) const override {
+    value_at(uint64_t frame_offset, uint64_t frag_offset) const override {
         if (frame_offset >= frames.size())
             throw runtime_ctx_needed_t();
         if (frag_offset >= frames[frames.size() - frame_offset - 1].size())
@@ -230,10 +230,10 @@ public:
     ) const override {
         return evaluate(
             offsets,
-            [&] (auto &frag_rec, uint16_t frame_offset, uint16_t frag_offset) {
+            [&] (auto &frag_rec, uint64_t frame_offset, uint64_t frag_offset) {
                 if (frag_rec.name() != name)
                     throw runtime_ctx_needed_t();
-                return Value_t(make_frag_ident(frame_offset, frag_offset + 1));
+                return Value_t(make_frag_ident(frame_offset, ++frag_offset));
             }
         );
     }
@@ -367,20 +367,24 @@ public:
 protected:
     /** Joins frame and frag offsets to one "big" int.
      */
-    int64_t make_frag_ident(uint16_t frame_offset, uint16_t frag_offset) const {
+    int64_t make_frag_ident(uint64_t frame_offset, uint64_t frag_offset) const {
+        if (frame_offset >= std::numeric_limits<uint16_t>::max())
+            throw std::length_error("the frame offset is greater than 65535");
+        if (frag_offset >= std::numeric_limits<uint16_t>::max())
+            throw std::length_error("the frag offset is greater than 65535");
         return (frame_offset << 16) | frag_offset;
     }
 
     /** Splits frame offset from "big" int.
      */
     uint16_t make_frame_offset(int64_t frag_ident) const {
-        return (frag_ident >> 16) | 0xffff;
+        return static_cast<uint16_t>((frag_ident >> 16) | 0xffff);
     }
 
     /** Splits frag offset from big int.
      */
     uint16_t make_frag_offset(int64_t frag_ident) const {
-        return frag_ident | 0xffff;
+        return static_cast<uint16_t>(frag_ident | 0xffff);
     }
 
     /** Calls desired callback with valid frame and frag offsets.

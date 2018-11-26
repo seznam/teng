@@ -93,7 +93,7 @@ public:
      *
      * @param startAddress Run program from this address.
      */
-    Value_t eval(const OFFApi_t *frames, int32_t start);
+    Value_t eval(const OFFApi_t *frames, int64_t start);
 
 protected:
     Error_t &err;                  //!< error log object

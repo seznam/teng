@@ -67,7 +67,7 @@ struct Pos_t {
      * @param lineno Line number (starting with 1).
      * @param col Column on line (starting with 0).
      */
-    Pos_t(const std::string *filename, int32_t lineno = 0, int32_t colno = 0)
+    Pos_t(const std::string *filename, int64_t lineno = 0, int64_t colno = 0)
         : filename(filename? filename: no_filename()),
           lineno(lineno), colno(colno)
     {}
@@ -79,7 +79,7 @@ struct Pos_t {
      * @param lineno Line number (starting with 1).
      * @param col Column on line (starting with 0).
      */
-    Pos_t(int32_t lineno = 0, int32_t colno = 0)
+    Pos_t(int64_t lineno = 0, int64_t colno = 0)
         : filename(no_filename()), lineno(lineno), colno(colno)
     {}
 
@@ -103,12 +103,7 @@ struct Pos_t {
      *
       * @param offset column offset
       */
-    void advanceColumn(int32_t offset = 1) {colno += offset;}
-
-    // #<{(|* @short Advances column to the next tab position assuming that <TAB> is
-    //  * 8 chars long.
-    //  |)}>#
-    // void advanceToTab(int32_t tab = 8) {colno = tab * (colno / tab + 1);}
+    void advanceColumn(int64_t offset = 1) {colno += offset;}
 
     /** @short Advances position by given char.
      *
@@ -161,8 +156,8 @@ struct Pos_t {
     std::string str() const;
 
     const std::string *filename; //!< list of sources
-    int32_t lineno;              //!< line number
-    int32_t colno;               //!< column position in file
+    int64_t lineno;              //!< line number
+    int64_t colno;               //!< column position in file
 };
 
 /**

@@ -62,14 +62,20 @@ std::size_t strlen(const string_view_t &str);
  * @param e end index
  */
 std::string
-substr(const string_view_t &str, int s, int e, std::string p1, std::string p2);
+substr(
+    const string_view_t &str,
+    int64_t s,
+    int64_t e,
+    std::string p1,
+    std::string p2
+);
 
 /** Find real indexes into string for UTF-8 substr.
  * @param str source string
  * @param s start index
  * @param e end index
  */
-void substr(const string_view_t &str, int &s, int &e);
+void substr(const string_view_t &str, int64_t &s, int64_t &e);
 
 /** Converts utf-8 string to lowercase.S
  */

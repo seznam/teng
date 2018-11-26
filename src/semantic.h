@@ -508,7 +508,7 @@ void generate_bin_op(Context_t *ctx, const Token_t &token) {
  */
 template <typename Instr_t>
 void finalize_bin_op(Context_t *ctx) {
-    int32_t bin_op_addr = ctx->branch_addrs.top().pop();
+    auto bin_op_addr = ctx->branch_addrs.top().pop();
     auto addr_offset = ctx->program->size() - bin_op_addr - 1;
     (*ctx->program)[bin_op_addr].as<Instr_t>().addr_offset = addr_offset;
 
@@ -520,7 +520,7 @@ void finalize_bin_op(Context_t *ctx) {
  */
 template <typename Instr_t>
 void generate_rtvar(Context_t *ctx, const Token_t &token) {
-    uint16_t root_offset = ctx->open_frames.top().size();
+    uint16_t root_offset = static_cast<uint16_t>(ctx->open_frames.top().size());
     generate<Instr_t>(ctx, root_offset, token.pos);
     note_optimization_point(ctx, true);
     if (std::is_same<Instr_t, PushThisFrag_t>::value)

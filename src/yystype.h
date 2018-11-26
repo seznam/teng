@@ -283,11 +283,11 @@ public:
 
     struct Offset_t {
         explicit operator bool() const {
-            return (frame != Variable_t::invalid_offset)
-                && (frag != Variable_t::invalid_offset);
+            return (frame < Variable_t::invalid_offset)
+                && (frag < Variable_t::invalid_offset);
         }
-        uint16_t frame = invalid_offset;  //!< the offset of frame in stack
-        uint16_t frag = invalid_offset;   //!< the offset of frag in frame
+        uint64_t frame = invalid_offset;  //!< the offset of frame in stack
+        uint64_t frag = invalid_offset;   //!< the offset of frag in frame
     } offset;
     Identifier_t ident; //!< the variable identifier
 };

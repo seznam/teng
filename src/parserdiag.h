@@ -64,7 +64,7 @@ enum diag_code {
 // shortcuts
 class Token_t;
 struct Context_t;
-using Addresses_t = std::vector<int32_t>;
+using Addresses_t = std::vector<int64_t>;
 using diag_code_type = diag_code;
 
 /** Diagnostic codes entry that describes what happened.

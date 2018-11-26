@@ -192,8 +192,8 @@ FragmentList_t Error_t::getFrags() const {
 void Error_t::append_impl(
     Level_t level,
     const std::string *filename,
-    int32_t lineno,
-    int32_t colno,
+    int64_t lineno,
+    int64_t colno,
     std::string msg
 ) {
     RecordKey_t key = {translate(filenames, filename), lineno, colno};

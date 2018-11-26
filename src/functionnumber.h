@@ -122,8 +122,9 @@ Result_t random(Ctx_t &ctx, const Args_t &args) {
     ctx.runtime_ctx_needed();
 
     // it is not good to use low bits of rand() see man 3 rand for detail
+    double value = static_cast<double>(args.front().as_int());
     return Result_t(
-        (rand() * (args.front().as_int() + 0.0)) / (RAND_MAX + 1.0)
+        (rand() * (value + 0.0)) / (RAND_MAX + 1.0)
     );
 }
 
@@ -224,7 +225,7 @@ Result_t numformat(Ctx_t &ctx, const Args_t &args) {
         do {
             auto digit = powernum % 10;
             powernum /= 10;
-            str.push_back('0' + digit);
+            str.push_back(static_cast<char>('0' + digit));
         } while (++i < precision);
         std::reverse(str.end() - i, str.end());
     }

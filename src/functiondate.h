@@ -100,9 +100,13 @@ int unixtime(struct tm dateTime, time_t &res) {
 int parseDateTime(Ctx_t &ctx, const string_view_t &str, struct tm &dateTime) {
     char buf4[5];
     char buf2[3];
-    char *end; // is set by strtoul
+    char *end; // is set by strtol
     const char *pos = str.data();
     memset(&dateTime, 0, sizeof(dateTime));
+
+    auto to_int = [] (auto &&...args) {
+        return static_cast<int>(strtol(args...));
+    };
 
     auto warn = [&] (const std::string &msg) {
         logWarning(
@@ -116,7 +120,7 @@ int parseDateTime(Ctx_t &ctx, const string_view_t &str, struct tm &dateTime) {
     buf4[4] = buf2[2] = 0;
 
     strncpy(buf4, pos, 4);
-    dateTime.tm_year = strtoul(buf4, &end, 10)-1900;
+    dateTime.tm_year = to_int(buf4, &end, 10) - 1900;
     if (end != (buf4 + 4)) {
         warn("invalid format of year");
         return -1;
@@ -125,7 +129,7 @@ int parseDateTime(Ctx_t &ctx, const string_view_t &str, struct tm &dateTime) {
     if (*pos == '-') ++pos;
 
     strncpy(buf2, pos, 2);
-    dateTime.tm_mon = strtoul(buf2, &end, 10) - 1;
+    dateTime.tm_mon = to_int(buf2, &end, 10) - 1;
     if (end != (buf2 + 2)) {
         warn("invalid format of month");
         return -1;
@@ -134,7 +138,7 @@ int parseDateTime(Ctx_t &ctx, const string_view_t &str, struct tm &dateTime) {
     if (*pos == '-') ++pos;
 
     strncpy(buf2, pos, 2);
-    dateTime.tm_mday = strtoul(buf2, &end, 10);
+    dateTime.tm_mday = to_int(buf2, &end, 10);
     if (end != (buf2 + 2)) {
         warn("invalid format of day");
         return -1;
@@ -153,7 +157,7 @@ int parseDateTime(Ctx_t &ctx, const string_view_t &str, struct tm &dateTime) {
     }
 
     strncpy(buf2, pos, 2);
-    dateTime.tm_hour = strtoul(buf2, &end, 10);
+    dateTime.tm_hour = to_int(buf2, &end, 10);
     if (end != (buf2 + 2)) {
         warn("invalid format of hour");
         return -1;
@@ -165,7 +169,7 @@ int parseDateTime(Ctx_t &ctx, const string_view_t &str, struct tm &dateTime) {
     }
 
     strncpy(buf2, pos, 2);
-    dateTime.tm_min = strtoul(buf2, &end, 10);
+    dateTime.tm_min = to_int(buf2, &end, 10);
     if (end != (buf2 + 2)) {
         warn("invalid format of minute");
         return -1;
@@ -177,7 +181,7 @@ int parseDateTime(Ctx_t &ctx, const string_view_t &str, struct tm &dateTime) {
     }
 
     strncpy(buf2, pos, 2);
-    dateTime.tm_sec = strtoul(buf2, &end, 10);
+    dateTime.tm_sec = to_int(buf2, &end, 10);
     if (end != (buf2 + 2)) {
         warn("invalid format of second");
         return -1;
@@ -194,7 +198,7 @@ int parseDateTime(Ctx_t &ctx, const string_view_t &str, struct tm &dateTime) {
 
         // hours
         strncpy(buf2, pos, 2);
-        dateTime.tm_gmtoff = strtoul(buf2, &end, 10);
+        dateTime.tm_gmtoff = to_int(buf2, &end, 10);
         if ((end != (buf2 + 2)) || (dateTime.tm_gmtoff < 0)
                                 || (dateTime.tm_gmtoff > 12)) {
             warn("expected ZH");
@@ -207,7 +211,7 @@ int parseDateTime(Ctx_t &ctx, const string_view_t &str, struct tm &dateTime) {
 
         // minutes
         strncpy(buf2, pos, 2);
-        int minutes = strtoul(buf2, &end, 10) * 60 * 60;
+        int minutes = to_int(buf2, &end, 10) * 60 * 60;
         if ((end != (buf2 + 2)) || (minutes < 0) || (minutes > 60)) {
             warn("expected ZM");
             return -1;
@@ -498,11 +502,11 @@ int formatTime_tDate(
 int to_number(const string_view_t &text, time_t &res) {
     // int value
     char *err = nullptr;
-    auto int_value = strtol(text.data(), &err, 10);
+    int int_value = static_cast<int>(strtol(text.data(), &err, 10));
     if (*err == '\0') return res = int_value, 0;
 
     // real value
-    auto real_value = strtod(text.data(), &err);
+    int real_value = static_cast<int>(strtod(text.data(), &err));
     if (*err == '\0') return res = real_value, 0;
 
     // not a number
@@ -528,7 +532,10 @@ Result_t now(Ctx_t &ctx, const Args_t &args) {
     // localtime and maketime work with actual timezone which is now :)
     struct timeval tv;
     gettimeofday(&tv, /*&tz*/nullptr);
-    return Result_t(tv.tv_sec + tv.tv_usec / 1000000.0);
+    return Result_t(
+        static_cast<double>(tv.tv_sec)
+        + static_cast<double>(tv.tv_usec) / 1000000.0
+    );
 }
 
 /** Converts string to timestamp.

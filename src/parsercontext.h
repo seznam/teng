@@ -158,13 +158,13 @@ struct Context_t {
      */
     struct addrs_stack_t {
         struct entry_t {
-            using const_iterator = std::vector<int32_t>::const_iterator;
-            int32_t pop() {auto t = stack.back(); stack.pop_back(); return t;}
-            void push(int32_t v) {stack.push_back(v);}
+            using const_iterator = std::vector<int64_t>::const_iterator;
+            int64_t pop() {auto t = stack.back(); stack.pop_back(); return t;}
+            void push(int64_t v) {stack.push_back(v);}
             bool empty() const {return stack.empty();}
             const_iterator begin() const {return stack.begin();}
             const_iterator end() const {return stack.begin();}
-            std::vector<int32_t> stack;
+            std::vector<int64_t> stack;
         };
 
         void push() {addrs.push({});}
@@ -178,14 +178,14 @@ struct Context_t {
     /** The pair of instruction address and source code position. It's used to
      * remember where expression begins.
      */
-    struct expr_start_t {Pos_t pos; int32_t addr; bool update_allowed;};
+    struct expr_start_t {Pos_t pos; int64_t addr; bool update_allowed;};
 
     /** The pair of instruction address and optimizable flag. It's used to note
      * where begins subprogram representing the expression that should be
      * processed by the optimizer. The optimizable flag is used by optimizer
      * to skip subprograms that is not optimizable.
      */
-    struct optimization_point_t {int32_t addr; bool optimizable;};
+    struct optimization_point_t {int64_t addr; bool optimizable;};
 
     /** Stack of expression begins.
      */

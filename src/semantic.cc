@@ -241,7 +241,7 @@ Identifier_t make_absolute_ident(Context_t *ctx, const Variable_t &var_sym) {
 
 /** Local variable has scalar offsets.
  */
-Variable_t::Offset_t resolve_local_var(Context_t *ctx) {
+Variable_t::Offset_t resolve_local_var(Context_t *) {
     return {0, 0};
 }
 
@@ -412,7 +412,7 @@ void generate_auto_rtvar(Context_t *ctx, const Variable_t &var_sym) {
 
     // absolute variables - no open fragments
     if (ctx->open_frames.top().empty()) {
-        generate<PushRootFrag_t>(ctx, 0, var_sym.pos);
+        generate<PushRootFrag_t>(ctx, uint16_t(0), var_sym.pos);
         auto path_end = var_sym.view().begin();
         return generate_auto_rtvar_path<gen_repr>(ctx, var_sym, path_end);
     }
@@ -490,14 +490,14 @@ void note_expr_start_point(Context_t *ctx, const Pos_t &pos) {
     if (ctx->expr_start_point.update_allowed) {
         ctx->expr_start_point = {
             pos,
-            static_cast<int32_t>(ctx->program->size()),
+            static_cast<int64_t>(ctx->program->size()),
             false
         };
     }
 }
 
 void note_optimization_point(Context_t *ctx, bool optimizable) {
-    auto addr = int32_t(ctx->program->size()) - 1;
+    int64_t addr = ctx->program->size() - 1;
     ctx->optimization_points.push({addr, optimizable});
 }
 
@@ -705,7 +705,7 @@ close_unclosed_frag(Context_t *ctx, const Pos_t &pos, const Token_t &token) {
 void optimize_expr(Context_t *ctx, uint32_t arity, bool lazy_evaluated) {
     // take the address of the first expression argument instruction
     bool optimizable = true;
-    int32_t args_point = ctx->program->size() - 1;
+    auto args_point = ctx->program->size() - 1;
     if (arity) {
         for (; --arity; ctx->optimization_points.pop())
             optimizable &= ctx->optimization_points.top().optimizable;
@@ -807,8 +807,8 @@ void generate_tern_op(Context_t *ctx, const Token_t &token) {
 
 void finalize_tern_op_true_branch(Context_t *ctx, const Token_t &token) {
     // calculate jump from begin of tern op to false branch
-    int32_t cond_addr = ctx->branch_addrs.top().pop();
-    int32_t false_branch_offset = ctx->program->size() - cond_addr;
+    auto cond_addr = ctx->branch_addrs.top().pop();
+    auto false_branch_offset = ctx->program->size() - cond_addr;
 
     // store address of jump from true branch
     ctx->branch_addrs.top().push(ctx->program->size());
@@ -823,7 +823,7 @@ void finalize_tern_op_true_branch(Context_t *ctx, const Token_t &token) {
 }
 
 void finalize_tern_op_false_branch(Context_t *ctx) {
-    int32_t true_branch_jump_addr = ctx->branch_addrs.top().pop();
+    auto true_branch_jump_addr = ctx->branch_addrs.top().pop();
     auto tern_op_end_offset = ctx->program->size() - true_branch_jump_addr - 1;
     auto &instr = (*ctx->program)[true_branch_jump_addr].as<Jmp_t>();
     instr.addr_offset = tern_op_end_offset;
@@ -1157,7 +1157,7 @@ void prepare_if(Context_t *ctx, const Pos_t &pos) {
     ctx->branch_addrs.push();
     ctx->if_stmnt_start_point = {
         pos,
-        static_cast<int32_t>(ctx->program->size()),
+        static_cast<int64_t>(ctx->program->size()),
         true
     };
 }
@@ -1499,7 +1499,7 @@ void new_option(Context_t *ctx, const Token_t &name, Literal_t &&literal) {
     ctx->opts_sym.emplace(name.view(), std::move(literal.value));
 }
 
-void prepare_expr(Context_t *ctx, const Pos_t &pos) {
+void prepare_expr(Context_t *ctx, const Pos_t &) {
     ctx->branch_addrs.push();
 }
 

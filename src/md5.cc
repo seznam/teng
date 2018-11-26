@@ -446,8 +446,8 @@ std::string MD5Hexdigest(const std::string &data) {
     md5_init(&state);
 
     // append data to md5
-    md5_append(&state, reinterpret_cast<const md5_byte_t*>(data.data()),
-               data.length());
+    auto ptr = reinterpret_cast<const md5_byte_t*>(data.data());
+    md5_append(&state, ptr, static_cast<int>(data.size()));
 
     // compute md5 digest
     md5_byte_t digest[16];

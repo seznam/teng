@@ -402,7 +402,7 @@ struct PushThisFrag_t: public Instruction_t {
         : Instruction_t(OPCODE::PUSH_THIS_FRAG, pos)
     {}
     // provide same iface as push root frag has
-    PushThisFrag_t(uint16_t, const Pos_t &pos)
+    PushThisFrag_t(uint64_t, const Pos_t &pos)
         : PushThisFrag_t(pos)
     {}
 };
@@ -471,7 +471,8 @@ struct PushFragIndex_t: public Instruction_t {
     template <typename Variable_t>
     PushFragIndex_t(const Variable_t &var)
         : Instruction_t(OPCODE::PUSH_FRAG_INDEX, var.pos),
-          frame_offset(var.offset.frame), frag_offset(var.offset.frag)
+          frame_offset(static_cast<uint16_t>(var.offset.frame)),
+          frag_offset(static_cast<uint16_t>(var.offset.frag))
     {}
     void dump_params(std::ostream &os) const;
     uint16_t frame_offset; //!< the offset of frame (NOT fragment!)
@@ -482,7 +483,8 @@ struct PushFragCount_t: public Instruction_t {
     template <typename Variable_t>
     PushFragCount_t(const Variable_t &var)
         : Instruction_t(OPCODE::PUSH_FRAG_COUNT, var.pos),
-          frame_offset(var.offset.frame), frag_offset(var.offset.frag)
+          frame_offset(static_cast<uint16_t>(var.offset.frame)),
+          frag_offset(static_cast<uint16_t>(var.offset.frag))
     {}
     void dump_params(std::ostream &os) const;
     uint16_t frame_offset; //!< the offset of frame (NOT fragment!)
@@ -493,7 +495,8 @@ struct PushFragFirst_t: public Instruction_t {
     template <typename Variable_t>
     PushFragFirst_t(const Variable_t &var)
         : Instruction_t(OPCODE::PUSH_FRAG_FIRST, var.pos),
-          frame_offset(var.offset.frame), frag_offset(var.offset.frag)
+          frame_offset(static_cast<uint16_t>(var.offset.frame)),
+          frag_offset(static_cast<uint16_t>(var.offset.frag))
     {}
     void dump_params(std::ostream &os) const;
     uint16_t frame_offset; //!< the offset of frame (NOT fragment!)
@@ -504,7 +507,8 @@ struct PushFragInner_t: public Instruction_t {
     template <typename Variable_t>
     PushFragInner_t(const Variable_t &var)
         : Instruction_t(OPCODE::PUSH_FRAG_INNER, var.pos),
-          frame_offset(var.offset.frame), frag_offset(var.offset.frag)
+          frame_offset(static_cast<uint16_t>(var.offset.frame)),
+          frag_offset(static_cast<uint16_t>(var.offset.frag))
     {}
     void dump_params(std::ostream &os) const;
     uint16_t frame_offset; //!< the offset of frame (NOT fragment!)
@@ -515,7 +519,8 @@ struct PushFragLast_t: public Instruction_t {
     template <typename Variable_t>
     PushFragLast_t(const Variable_t &var)
         : Instruction_t(OPCODE::PUSH_FRAG_LAST, var.pos),
-          frame_offset(var.offset.frame), frag_offset(var.offset.frag)
+          frame_offset(static_cast<uint16_t>(var.offset.frame)),
+          frag_offset(static_cast<uint16_t>(var.offset.frag))
     {}
     void dump_params(std::ostream &os) const;
     uint16_t frame_offset; //!< the offset of frame (NOT fragment!)
@@ -524,10 +529,11 @@ struct PushFragLast_t: public Instruction_t {
 
 struct PushFrag_t: public Instruction_t {
     template <typename Variable_t>
-    PushFrag_t(const Variable_t &var, uint16_t frag_offset)
+    PushFrag_t(const Variable_t &var, uint64_t frag_offset)
         : Instruction_t(OPCODE::PUSH_FRAG, var.pos),
           name(var.ident.name().str()),
-          frame_offset(var.offset.frame), frag_offset(frag_offset)
+          frame_offset(static_cast<uint16_t>(var.offset.frame)),
+          frag_offset(static_cast<uint16_t>(frag_offset))
     {}
     template <typename Variable_t>
     PushFrag_t(const Variable_t &var)
@@ -585,9 +591,9 @@ struct PushValIndex_t: public Instruction_t {
 };
 
 struct PushRootFrag_t: public Instruction_t {
-    PushRootFrag_t(uint16_t root_frag_offset, const Pos_t &pos)
+    PushRootFrag_t(uint64_t root_frag_offset, const Pos_t &pos)
         : Instruction_t(OPCODE::PUSH_ROOT_FRAG, pos),
-          root_frag_offset(root_frag_offset)
+          root_frag_offset(static_cast<uint16_t>(root_frag_offset))
     {}
     void dump_params(std::ostream &os) const;
     uint16_t root_frag_offset;  //!< the offset of root fragment in frame
@@ -611,8 +617,10 @@ struct Var_t: public Instruction_t {
     template <typename Variable_t>
     Var_t(const Variable_t &var, bool escape)
         : Instruction_t(OPCODE::VAR, var.pos),
-          name(var.ident.name().str()), frame_offset(var.offset.frame),
-          frag_offset(var.offset.frag), escape(escape)
+          name(var.ident.name().str()),
+          frame_offset(static_cast<uint16_t>(var.offset.frame)),
+          frag_offset(static_cast<uint16_t>(var.offset.frag)),
+          escape(escape)
     {}
     void dump_params(std::ostream &os) const;
     std::string name;      //!< the variable identifier
@@ -636,7 +644,7 @@ struct And_t: public Instruction_t {
           addr_offset(-1)
     {}
     void dump_params(std::ostream &os) const;
-    int32_t addr_offset; //!< offset where to jump if AND is not satisfied
+    int64_t addr_offset; //!< offset where to jump if AND is not satisfied
 };
 
 struct Or_t: public Instruction_t {
@@ -645,7 +653,7 @@ struct Or_t: public Instruction_t {
           addr_offset(-1)
     {}
     void dump_params(std::ostream &os) const;
-    int32_t addr_offset; //!< offset where to jump if OR is not satisfied
+    int64_t addr_offset; //!< offset where to jump if OR is not satisfied
 };
 
 struct Func_t: public Instruction_t {
@@ -665,7 +673,7 @@ struct JmpIfNot_t: public Instruction_t {
           addr_offset(-1)
     {}
     void dump_params(std::ostream &os) const;
-    int32_t addr_offset; //!< offset where to jump if NOT is satisfied
+    int64_t addr_offset; //!< offset where to jump if NOT is satisfied
 };
 
 struct Jmp_t: public Instruction_t {
@@ -674,7 +682,7 @@ struct Jmp_t: public Instruction_t {
           addr_offset(-1)
     {}
     void dump_params(std::ostream &os) const;
-    int32_t addr_offset; //!< offset where to jump
+    int64_t addr_offset; //!< offset where to jump
 };
 
 struct OpenFormat_t: public Instruction_t {
@@ -697,7 +705,7 @@ struct OpenFrag_t: public Instruction_t {
     {}
     void dump_params(std::ostream &os) const;
     std::string name;          //!< the fragment name
-    int32_t close_frag_offset; //!< offset where to jump if frament is missing
+    int64_t close_frag_offset; //!< offset where to jump if frament is missing
 };
 
 struct OpenErrorFrag_t: public OpenFrag_t {
@@ -712,7 +720,7 @@ struct CloseFrag_t: public Instruction_t {
           open_frag_offset(-1)
     {}
     void dump_params(std::ostream &os) const;
-    int32_t open_frag_offset; //!< offset where to jump to repeat fragment
+    int64_t open_frag_offset; //!< offset where to jump to repeat fragment
 };
 
 struct Print_t: public Instruction_t {
@@ -728,8 +736,9 @@ struct Set_t: public Instruction_t {
     template <typename Variable_t>
     Set_t(const Variable_t &var)
         : Instruction_t(OPCODE::SET, var.pos),
-          name(var.ident.name().str()), frame_offset(var.offset.frame),
-          frag_offset(var.offset.frag)
+          name(var.ident.name().str()),
+          frame_offset(static_cast<uint16_t>(var.offset.frame)),
+          frag_offset(static_cast<uint16_t>(var.offset.frag))
     {}
     void dump_params(std::ostream &os) const;
     std::string name;      //!< the variable identifier

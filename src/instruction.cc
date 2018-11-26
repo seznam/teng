@@ -56,7 +56,7 @@ namespace {
  */
 std::string escapenl(const std::string &str) {
     std::string result;
-    result.reserve(str.size() * 1.3);
+    result.reserve(str.size() * 2);
     for (auto ch: str)
         if (ch == '\n') result.append("\\n");
         else result.push_back(ch);

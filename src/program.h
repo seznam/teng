@@ -123,7 +123,7 @@ public:
 
     /** Removes specified instruction from program.
      */
-    iterator erase_from(int32_t pos) {
+    iterator erase_from(int64_t pos) {
         return instrs.erase(instrs.begin() + pos, instrs.end());
     }
 

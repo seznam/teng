@@ -77,15 +77,15 @@ public:
      * we want to provide safe API, we translate pos structure to ErrorPos_t.
      */
     struct ErrorPos_t {
-        ErrorPos_t(std::string filename, int32_t lineno, int32_t colno)
+        ErrorPos_t(std::string filename, int64_t lineno, int64_t colno)
             : filename(filename), lineno(lineno), colno(colno)
         {}
-        ErrorPos_t(int32_t lineno, int32_t colno)
+        ErrorPos_t(int64_t lineno, int64_t colno)
             : lineno(lineno), colno(colno)
         {}
         std::string filename; //!< file path
-        int32_t lineno;       //!< the line number (starting with 1)
-        int32_t colno;        //!< the column number (starting with 0)
+        int64_t lineno;       //!< the line number (starting with 1)
+        int64_t colno;        //!< the column number (starting with 0)
     };
 
     /** Entry in error log.
@@ -137,8 +137,8 @@ public:
     void append(
         Level_t level,
         const std::string *filename,
-        int32_t lineno,
-        int32_t colno,
+        int64_t lineno,
+        int64_t colno,
         std::string msg
     ) {
         // increase level if lower than that of err
@@ -177,8 +177,8 @@ private:
 
         }
         const char *filename; //!< file path
-        int32_t lineno;       //!< the line number (starting with 1)
-        int32_t colno;        //!< the column number (starting with 0)
+        int64_t lineno;       //!< the line number (starting with 1)
+        int64_t colno;        //!< the column number (starting with 0)
     };
 
     /** Error record value.
@@ -207,8 +207,8 @@ private:
     void append_impl(
         Level_t level,
         const std::string *filename,
-        int32_t lineno,
-        int32_t colno,
+        int64_t lineno,
+        int64_t colno,
         std::string msg
     );
 

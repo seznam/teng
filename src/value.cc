@@ -149,7 +149,9 @@ std::ostream &operator<<(std::ostream &out, const Value_t &v) {
     return out;
 }
 
-void Value_t::dispose_regex() {regex_value.~regex_type();}
+void Value_t::dispose_regex(regex_type &regex_value) {
+    regex_value.~regex_type();
+}
 
 void Value_t::assign_regex(const regex_type &value) {regex_value = value;}
 

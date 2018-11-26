@@ -68,7 +68,7 @@ public:
      * @return position in escape list or -1 when escape for given
      *         character already present
      */
-    int addEscape(unsigned char c, const std::string &escape);
+    int64_t addEscape(unsigned char c, const std::string &escape);
 
     /** @short Compile unescaping automaton from escaping list.
      */
@@ -91,7 +91,7 @@ public:
     struct Descriptor_t {
         using ptr_t = std::unique_ptr<ContentType_t>;
         ptr_t contentType;       //!< the content type escaper
-        unsigned int index;      //!< index in list of content types
+        std::size_t index;       //!< index in list of content types
         std::string name;        //!< the content type name
         std::string description; //!< the description text
     };
@@ -132,12 +132,12 @@ private:
     /**
      * @short Map of indices to escape list (-1 -> no escape).
      */
-    int escapeBitmap[256];
+    int64_t escapeBitmap[256];
 
     /**
      * @short Unescaping automaton.
      */
-    std::vector<std::pair<int, int>> unescaper;
+    std::vector<std::pair<int64_t, int64_t>> unescaper;
 
     /**
      * @short Moves to next state of automaton.
@@ -145,7 +145,7 @@ private:
      * @param state current state
      * @return new +state or -character or 0 (on no match)
      */
-    int nextState(unsigned char c, int state) const;
+    int64_t nextState(unsigned char c, int64_t state) const;
 };
 
 class Escaper_t {
