@@ -1,3 +1,9 @@
+libteng (2.3.32) stable; urgency=low
+
+  * Cleanup of autotools warnings. Helpful comment about autotools-archive (#11)
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Mon, 26 Nov 2018 12:59:21 +0100
+
 libteng (2.3.31) stable; urgency=low
 
   * remove pcre++ dependencies from -dev
