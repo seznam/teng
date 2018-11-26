@@ -34,7 +34,7 @@
  *             Coverted to catch2.
  */
 
-#include <teng.h>
+#include <teng/teng.h>
 
 #ifndef SRC_DIR
 #define SRC_DIR "."
@@ -84,7 +84,7 @@ inline std::string g(
 }
 
 #define ERRLOG_TEST(LHS, RHS)                                                  \
-    for (int i = 0; i < std::min(LHS.size(), RHS.size()); ++i) {               \
+    for (uint64_t i = 0; i < std::min(LHS.size(), RHS.size()); ++i) {          \
         INFO("i=" + std::to_string(i));                                        \
         REQUIRE(LHS[i] == RHS[i]);                                             \
     }                                                                          \
