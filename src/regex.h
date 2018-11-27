@@ -216,8 +216,10 @@ inline uint32_t to_pcre_options(regex_flags_t flags) {
         result |= PCRE2_MULTILINE;
     if (flags->extended)
         result |= PCRE2_EXTENDED;
+#ifdef PCRE2_EXTRA_BAD_ESCAPE_IS_LITERAL
     if (flags->extra)
         result |= PCRE2_EXTRA_BAD_ESCAPE_IS_LITERAL;
+#endif /*PCRE2_EXTRA_BAD_ESCAPE_IS_LITERAL*/
     if (flags->ungreedy)
         result |= PCRE2_UNGREEDY;
     if (flags->anchored)
