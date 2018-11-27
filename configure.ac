@@ -58,7 +58,7 @@ AC_CONFIG_SRCDIR([src/teng.cc])
 AC_PREREQ(2.50)
 
 # replace autotools original defaults
-: ${CXXFLAGS="-W -Wall -Wextra -Wconversion -Wno-sign-conversion -fPIC -fno-omit-frame-pointer -g -ggdb -std=c++14 -Werror"}
+: ${CXXFLAGS="-W -Wall -Wextra -Wconversion -Wno-sign-conversion -fPIC -fno-omit-frame-pointer -g -ggdb -std=c++14"}
 : ${LDFLAGS="-pthread -rdynamic"}
 
 # --enable-package-version switch
