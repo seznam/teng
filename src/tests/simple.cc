@@ -169,3 +169,22 @@ SCENARIO(
     }
 }
 
+SCENARIO(
+    "Numeric config values",
+    "[basic]"
+) {
+    GIVEN("Teng conf with maxdebugvallength") {
+        WHEN("Generated with none data") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            auto result = g(err, "", root);
+
+            THEN("no warning with bad numeric value") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "");
+            }
+        }
+    }
+}
+

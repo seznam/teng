@@ -103,7 +103,7 @@ Configuration_t::new_directive(
         if (!value.empty()) {
             char *end;
             auto number = strtol(value.data(), &end, 10);
-            if (*end == '\0') {
+            if (end == value.end()) {
                 result = static_cast<result_t>(number);
                 return error_code::none;
             }
