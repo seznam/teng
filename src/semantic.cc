@@ -89,14 +89,18 @@ void set_var_impl(Context_t *ctx, const Variable_t &var) {
 
     case LEX2::VAR:   // $ident
     case LEX2::IDENT: // ident
-        if (var.ident.name().view().front() == '_') {
-            logWarning(
-                ctx,
-                var.pos,
-                "The variable names starting with an underscore are reserved, "
-                "and might cause undefined behaviour in future: var="
-                + var.symbol_view
-            );
+        if (var.ident.name().view()[0] == '_') {
+            if (var.ident.name().view().size() > 1) {
+                if (var.ident.name().view()[1] != '_') {
+                    logWarning(
+                        ctx,
+                        var.pos,
+                        "The variable names starting with an underscore are "
+                        "reserved, and might cause undefined behaviour in "
+                        "future: var=" + var.symbol_view
+                    );
+                }
+            }
         }
         // pass through
     case LEX2::LT_DIGRAPH:
@@ -171,14 +175,18 @@ void generate_var_impl(Context_t *ctx, const Variable_t &var) {
 
     case LEX2::VAR:   // $ident
     case LEX2::IDENT: // ident
-        if (var.ident.name().view().front() == '_') {
-            logWarning(
-                ctx,
-                var.pos,
-                "The variable names starting with an underscore are reserved, "
-                "and might cause undefined behaviour in future: var="
-                + var.symbol_view
-            );
+        if (var.ident.name().view()[0] == '_') {
+            if (var.ident.name().view().size() > 1) {
+                if (var.ident.name().view()[1] != '_') {
+                    logWarning(
+                        ctx,
+                        var.pos,
+                        "The variable names starting with an underscore are "
+                        "reserved, and might cause undefined behaviour in "
+                        "future: var=" + var.symbol_view
+                    );
+                }
+            }
         }
         // pass through
 
