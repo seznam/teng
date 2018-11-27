@@ -135,6 +135,10 @@ Result_t func(Ctx_t *ctx, GetArg_t get_arg) {
             return function(ctx, fun_ctx, args);
 
     } else {
+        // we don't know what udf function does so it can't be optimized out
+        if (!std::is_same<std::decay_t<Ctx_t>, RunCtx_t>::value)
+            throw runtime_ctx_needed_t();
+
         // user defined functions
         if (auto function = udf::findFunction(instr.name))
             return function(ctx, fun_ctx, args);

@@ -95,7 +95,7 @@ public:
     const Configuration_t &params; //!< current configuration
     const Dictionary_t &dict;      //!< current dictionary
 
-//protected:
+protected:
     const Escaper_t *escaper_ptr;  //!< string escaping machine
 };
 

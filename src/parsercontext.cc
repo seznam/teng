@@ -260,7 +260,7 @@ Token_t Context_t::next_token() {
     return {LEX2_EOF, last_valid_pos, {}}; // EOF
 }
 
-void Parser_t::error(const std::string &s) {
+void Parser_t::error(__attribute__((unused)) const std::string &s) {
     DBG(std::cerr << "!!!! Syntax error occurred: " << s << std::endl);
 }
 

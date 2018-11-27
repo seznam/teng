@@ -728,7 +728,7 @@ void optimize_expr(Context_t *ctx, uint32_t arity, bool lazy_evaluated) {
 
         } else optimizable = false;
         DBG(if (!optimizable) std::cerr << "$$$$ can't optimize" << std::endl);
-    } else DBG(std::cerr << "$$$$ unoptimizable" << std::endl);
+    } else {DBG(std::cerr << "$$$$ unoptimizable" << std::endl);}
 
     // each expression has a value that plays its role in further optimization
     // if optimization fails then it is ok to replace it with one imaginary
