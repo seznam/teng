@@ -99,7 +99,7 @@ Fragment_t::addFragmentList(const std::string &name) {
     if (iitem != items.end())
         return iitem->second.ensureFragmentList();
     auto create_list = TypeTag_t<FragmentList_t>();
-    return items.emplace_hint(iitem, name, create_list)->second.frags_value;
+    return items.emplace_hint(iitem, name, create_list)->second.list_value;
 }
 
 void Fragment_t::addValue(const std::string &name, Fragment_t &&value) {

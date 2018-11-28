@@ -61,10 +61,10 @@ FragmentValue_t::FragmentValue_t(FragmentValue_t &&other) noexcept
         new (&frag_value) Fragment_t(std::move(other.frag_value));
         break;
     case tag::frag_ptr:
-        ptr_value = other.ptr_value;
+        frag_ptr_value = other.frag_ptr_value;
         break;
-    case tag::frags:
-        new (&frags_value) FragmentList_t(std::move(other.frags_value));
+    case tag::list:
+        new (&list_value) FragmentList_t(std::move(other.list_value));
         break;
     case tag::string:
         new (&string_value) std::string(std::move(other.string_value));
@@ -86,10 +86,10 @@ FragmentValue_t &FragmentValue_t::operator=(FragmentValue_t &&other) noexcept {
                 frag_value = std::move(other.frag_value);
                 break;
             case tag::frag_ptr:
-                ptr_value = other.ptr_value;
+                frag_ptr_value = other.frag_ptr_value;
                 break;
-            case tag::frags:
-                frags_value = std::move(other.frags_value);
+            case tag::list:
+                list_value = std::move(other.list_value);
                 break;
             case tag::string:
                 string_value = std::move(other.string_value);
@@ -117,8 +117,8 @@ FragmentValue_t::~FragmentValue_t() noexcept {
         break;
     case tag::frag_ptr:
         break;
-    case tag::frags:
-        dispose(&frags_value);
+    case tag::list:
+        dispose(&list_value);
         break;
     case tag::string:
         dispose(&string_value);
@@ -140,8 +140,8 @@ void FragmentValue_t::setValue(const std::string &new_value) {
     case tag::frag_ptr:
         throw std::runtime_error(__PRETTY_FUNCTION__);
         break;
-    case tag::frags:
-        dispose(&frags_value);
+    case tag::list:
+        dispose(&list_value);
         new (&string_value) std::string(new_value);
         tag_value = tag::string;
         break;
@@ -169,8 +169,8 @@ void FragmentValue_t::setInt(const IntType_t new_value) {
     case tag::frag_ptr:
         throw std::runtime_error(__PRETTY_FUNCTION__);
         break;
-    case tag::frags:
-        dispose(&frags_value);
+    case tag::list:
+        dispose(&list_value);
         integral_value = new_value;
         tag_value = tag::integral;
         break;
@@ -199,8 +199,8 @@ void FragmentValue_t::setDouble(double new_value) {
     case tag::frag_ptr:
         throw std::runtime_error(__PRETTY_FUNCTION__);
         break;
-    case tag::frags:
-        dispose(&frags_value);
+    case tag::list:
+        dispose(&list_value);
         real_value = new_value;
         tag_value = tag::real;
         break;
@@ -229,7 +229,7 @@ std::string FragmentValue_t::toString() const {
         return "";
     case tag::frag_ptr:
         return "";
-    case tag::frags:
+    case tag::list:
         return "";
     case tag::string:
         return string_value;
@@ -247,10 +247,10 @@ void FragmentValue_t::json(std::ostream &o) const {
         frag_value.json(o);
         break;
     case tag::frag_ptr:
-        ptr_value->json(o);
+        frag_ptr_value->json(o);
         break;
-    case tag::frags:
-        frags_value.json(o);
+    case tag::list:
+        list_value.json(o);
         break;
     case tag::string:
         json::quote_string(o, string_value);
@@ -270,10 +270,10 @@ void FragmentValue_t::dump(std::ostream &o) const {
         frag_value.json(o);
         break;
     case tag::frag_ptr:
-        ptr_value->json(o);
+        frag_ptr_value->json(o);
         break;
-    case tag::frags:
-        frags_value.json(o);
+    case tag::list:
+        list_value.json(o);
         break;
     case tag::string:
         o << '\'' << string_value << '\'';
@@ -291,29 +291,29 @@ FragmentList_t &FragmentValue_t::ensureFragmentList() {
     switch (tag_value) {
     case tag::frag:
         dispose(&frag_value);
-        new (&frags_value) FragmentList_t();
-        tag_value = tag::frags;
+        new (&list_value) FragmentList_t();
+        tag_value = tag::list;
         break;
     case tag::frag_ptr:
         throw std::runtime_error(__PRETTY_FUNCTION__);
         break;
-    case tag::frags:
+    case tag::list:
         break;
     case tag::string:
         dispose(&string_value);
-        new (&frags_value) FragmentList_t();
-        tag_value = tag::frags;
+        new (&list_value) FragmentList_t();
+        tag_value = tag::list;
         break;
     case tag::integral:
-        new (&frags_value) FragmentList_t();
-        tag_value = tag::frags;
+        new (&list_value) FragmentList_t();
+        tag_value = tag::list;
         break;
     case tag::real:
-        new (&frags_value) FragmentList_t();
-        tag_value = tag::frags;
+        new (&list_value) FragmentList_t();
+        tag_value = tag::list;
         break;
     }
-    return frags_value;
+    return list_value;
 }
 
 Fragment_t &FragmentValue_t::ensureFragment() {
@@ -323,7 +323,7 @@ Fragment_t &FragmentValue_t::ensureFragment() {
     case tag::frag_ptr:
         throw std::runtime_error(__PRETTY_FUNCTION__);
         break;
-    case tag::frags:
+    case tag::list:
         dispose(&frag_value);
         new (&frag_value) Fragment_t();
         tag_value = tag::frag;

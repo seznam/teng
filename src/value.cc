@@ -66,11 +66,11 @@ std::ostream &operator<<(std::ostream &os, const Regex_t &regex) {
 
 Value_t::Value_t(const FragmentValue_t *value) noexcept {
     switch (value->type()) {
-    case FragmentValue_t::tag::frags:
-        new (this) Value_t(&value->frags_value);
+    case FragmentValue_t::tag::list:
+        new (this) Value_t(&value->list_value);
         break;
     case FragmentValue_t::tag::frag_ptr:
-        new (this) Value_t(value->ptr_value);
+        new (this) Value_t(value->frag_ptr_value);
         break;
     case FragmentValue_t::tag::frag:
         new (this) Value_t(&value->frag_value);

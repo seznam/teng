@@ -594,7 +594,7 @@ public:
         case tag::integral:
             return integral_value;
         case tag::real:
-            return real_value;
+            return real_value != 0;
         case tag::string:
             return !string_value.empty();
         case tag::string_ref:

@@ -67,7 +67,7 @@ public:
     FragmentValue_t &operator=(const FragmentValue_t &) = delete;
 
     // types
-    enum class tag {frag, frag_ptr, frags, integral, real, string};
+    enum class tag {frag, frag_ptr, list, integral, real, string};
 
     /**
      * @short C'tor: move.
@@ -113,7 +113,7 @@ public:
      * @short Create empty fragment list value.
      */
     explicit FragmentValue_t(FragmentList_t &&value) noexcept
-        : tag_value(tag::frags), frags_value(std::move(value))
+        : tag_value(tag::list), list_value(std::move(value))
     {}
 
     /** C'tor.
@@ -126,7 +126,7 @@ public:
      * @short Create empty fragment list value.
      */
     explicit FragmentValue_t(TypeTag_t<FragmentList_t>) noexcept
-        : tag_value(tag::frags), frags_value()
+        : tag_value(tag::list), list_value()
     {}
 
     /**
@@ -199,7 +199,7 @@ public:
         switch (tag_value) {
         case tag::frag: return false;
         case tag::frag_ptr: return false;
-        case tag::frags: return false;
+        case tag::list: return false;
         case tag::integral: return true;
         case tag::real: return true;
         case tag::string: return true;
@@ -243,7 +243,7 @@ public:
      * @short Returns pointer to list of values or nullptr.
      */
     const FragmentList_t *list() const {
-        return tag_value == tag::frags? &frags_value: nullptr;
+        return tag_value == tag::list? &list_value: nullptr;
     }
 
     /**
@@ -252,7 +252,7 @@ public:
     const Fragment_t *fragment() const {
         switch (tag_value) {
         case tag::frag: return &frag_value;
-        case tag::frag_ptr: return ptr_value;
+        case tag::frag_ptr: return frag_ptr_value;
         default: return nullptr;
         }
     }
@@ -269,8 +269,8 @@ protected:
      * @short Create new scalar value with given value.
      * @param value value of variable
      */
-    explicit FragmentValue_t(const Fragment_t *ptr_value) noexcept
-        : tag_value(tag::frag_ptr), ptr_value(ptr_value)
+    explicit FragmentValue_t(const Fragment_t *frag_ptr_value) noexcept
+        : tag_value(tag::frag_ptr), frag_ptr_value(frag_ptr_value)
     {}
 
     /**
@@ -292,9 +292,9 @@ protected:
         std::string string_value;    //!< string (scalar) value
         IntType_t integral_value;    //!< integral number (scalar) value
         double real_value;           //!< real number (scalar) value
-        FragmentList_t frags_value;  //!< list of nested fragment values
+        FragmentList_t list_value;   //!< list of nested fragment values
         Fragment_t frag_value;       //!< data fragment
-        const Fragment_t *ptr_value; //!< for data root
+        const Fragment_t *frag_ptr_value; //!< for data root
     };
 };
 

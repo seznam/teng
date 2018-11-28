@@ -65,7 +65,7 @@ bool has_vars_and_frags(const Fragment_t &frag) {
     for (auto &var: frag) {
         switch (var.second.type()) {
         case FragmentValue_t::tag::frag:
-        case FragmentValue_t::tag::frags:
+        case FragmentValue_t::tag::list:
         case FragmentValue_t::tag::frag_ptr:
             if (vars) return true;
             frags = true;
@@ -96,7 +96,7 @@ void write_vars(RunCtx_t *ctx, const Fragment_t &frag, std::string indent) {
     for (auto &var: frag) {
         switch (var.second.type()) {
         case FragmentValue_t::tag::frag:
-        case FragmentValue_t::tag::frags:
+        case FragmentValue_t::tag::list:
         case FragmentValue_t::tag::frag_ptr:
             // skip frags, they will be written after variables
             break;
@@ -136,7 +136,7 @@ void write_frags(RunCtx_t *ctx, const Fragment_t &frag, std::string indent) {
     // write frags
     for (auto &var: frag) {
         switch (var.second.type()) {
-        case FragmentValue_t::tag::frags:
+        case FragmentValue_t::tag::list:
             for (auto i = 0u; i < var.second.list()->size(); ++i) {
                 write_escaped(indent);
                 write_escaped(var.first);
@@ -180,7 +180,7 @@ write_frag_val(RunCtx_t *ctx, const FragmentValue_t &val, std::string indent) {
 
     // write fragment value
     switch (val.type()) {
-    case FragmentValue_t::tag::frags:
+    case FragmentValue_t::tag::list:
         for (auto i = 0u; i < val.list()->size(); ++i) {
             write_escaped(indent);
             write_escaped("[" + std::to_string(i) + "]:\n");
