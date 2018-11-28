@@ -178,6 +178,22 @@ SCENARIO(
     "The error fragment",
     "[debug]"
 ) {
+    GIVEN("Template with error fragment with no errors") {
+        Teng::Fragment_t root;
+        std::string t = "<?teng frag _error?>${filename}<?teng endfrag?>";
+
+        WHEN("Template is rendered") {
+            Teng::Error_t err;
+            auto result = g(err, t, root, "teng.debug.conf");
+
+            THEN("Nothing returned") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "");
+            }
+        }
+    }
+
     GIVEN("Template with error fragment") {
         Teng::Fragment_t root;
         root.addVariable("var", 1);

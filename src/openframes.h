@@ -239,6 +239,8 @@ struct FrameRec_t {
     /** Returns true if fragment
      */
     bool open_error_frag(FragmentList_t &&errors) {
+        if (errors.empty())
+            return false;
         open_frags.emplace_back(std::move(errors));
         return true;
     }
