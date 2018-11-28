@@ -61,6 +61,7 @@ inline void quote_string(std::ostream &o, const string_view_t &value) {
         case '\t': o << "\\t"; break;
         case '\\': o << "\\\\"; break;
         case '"': o << "\\\""; break;
+        case '/': o << "\\/"; break;
         default: o << ch; break;
         }
     }

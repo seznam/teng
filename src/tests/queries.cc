@@ -1998,6 +1998,7 @@ SCENARIO(
         root.addVariable("var_s", "three");
         root.addVariable("var_empty_s", "");
         root.addVariable("var_r", 3.14);
+        root.addVariable("script", "</script>");
         root.addFragment("empty_frag");
         root.addFragment("frag").addVariable("var", "VAR");
         root.addFragmentList("empty_frag_list");
@@ -2034,7 +2035,7 @@ SCENARIO(
             }
         }
 
-        WHEN("The exists operator is applied on real variable") {
+        WHEN("The jsonify operator is applied on real variable") {
             Teng::Error_t err;
             auto t = "%{jsonify(var_r)}";
             auto result = g(err, t, root);
@@ -2046,7 +2047,7 @@ SCENARIO(
             }
         }
 
-        WHEN("The exists operator is applied on string variable") {
+        WHEN("The jsonify operator is applied on string variable") {
             Teng::Error_t err;
             auto t = "%{jsonify(var_s)}";
             auto result = g(err, t, root);
@@ -2058,7 +2059,7 @@ SCENARIO(
             }
         }
 
-        WHEN("The exists operator is applied on empty string variable") {
+        WHEN("The jsonify operator is applied on empty string variable") {
             Teng::Error_t err;
             auto t = "%{jsonify(var_empty_s)}";
             auto result = g(err, t, root);
@@ -2070,7 +2071,7 @@ SCENARIO(
             }
         }
 
-        WHEN("The exists operator is applied on empty frag") {
+        WHEN("The jsonify operator is applied on empty frag") {
             Teng::Error_t err;
             auto t = "%{jsonify(empty_frag)}";
             auto result = g(err, t, root);
@@ -2082,7 +2083,7 @@ SCENARIO(
             }
         }
 
-        WHEN("The exists operator is applied on frag") {
+        WHEN("The jsonify operator is applied on frag") {
             Teng::Error_t err;
             auto t = "%{jsonify(frag)}";
             auto result = g(err, t, root);
@@ -2094,7 +2095,7 @@ SCENARIO(
             }
         }
 
-        WHEN("The exists operator is applied on empty frag list") {
+        WHEN("The jsonify operator is applied on empty frag list") {
             Teng::Error_t err;
             auto t = "%{jsonify(empty_frag_list)}";
             auto result = g(err, t, root);
@@ -2106,7 +2107,19 @@ SCENARIO(
             }
         }
 
-        WHEN("The exists operator is applied on frag list") {
+        WHEN("The jsonify operator is applied on string with tag") {
+            Teng::Error_t err;
+            auto t = "%{jsonify(script)}";
+            auto result = g(err, t, root);
+
+            THEN("The slash is escaped") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "\"<\\/script>\"");
+            }
+        }
+
+        WHEN("The jsonify operator is applied on frag list") {
             Teng::Error_t err;
             auto t = "%{jsonify(frag_list)}";
             auto result = g(err, t, root);
@@ -2176,7 +2189,7 @@ SCENARIO(
             }
         }
 
-        WHEN("The exists operator is applied on real variable") {
+        WHEN("The jsonify operator is applied on real variable") {
             Teng::Error_t err;
             auto t = "%{jsonify($$var_r)}";
             auto result = g(err, t, root);
@@ -2193,7 +2206,7 @@ SCENARIO(
             }
         }
 
-        WHEN("The exists operator is applied on string variable") {
+        WHEN("The jsonify operator is applied on string variable") {
             Teng::Error_t err;
             auto t = "%{jsonify($$var_s)}";
             auto result = g(err, t, root);
@@ -2210,7 +2223,7 @@ SCENARIO(
             }
         }
 
-        WHEN("The exists operator is applied on empty string variable") {
+        WHEN("The jsonify operator is applied on empty string variable") {
             Teng::Error_t err;
             auto t = "%{jsonify($$var_empty_s)}";
             auto result = g(err, t, root);
@@ -2227,7 +2240,7 @@ SCENARIO(
             }
         }
 
-        WHEN("The exists operator is applied on empty frag") {
+        WHEN("The jsonify operator is applied on empty frag") {
             Teng::Error_t err;
             auto t = "%{jsonify($$empty_frag)}";
             auto result = g(err, t, root);
@@ -2244,7 +2257,7 @@ SCENARIO(
             }
         }
 
-        WHEN("The exists operator is applied on frag") {
+        WHEN("The jsonify operator is applied on frag") {
             Teng::Error_t err;
             auto t = "%{jsonify($$frag)}";
             auto result = g(err, t, root);
@@ -2261,7 +2274,7 @@ SCENARIO(
             }
         }
 
-        WHEN("The exists operator is applied on empty frag - indexed") {
+        WHEN("The jsonify operator is applied on empty frag - indexed") {
             Teng::Error_t err;
             auto t = "%{jsonify($$empty_frag[0])}";
             auto result = g(err, t, root);
@@ -2273,7 +2286,7 @@ SCENARIO(
             }
         }
 
-        WHEN("The exists operator is applied on frag - indexed") {
+        WHEN("The jsonify operator is applied on frag - indexed") {
             Teng::Error_t err;
             auto t = "%{jsonify($$frag[0])}";
             auto result = g(err, t, root);
@@ -2286,7 +2299,7 @@ SCENARIO(
         }
 
 
-        WHEN("The exists operator is applied on empty frag list") {
+        WHEN("The jsonify operator is applied on empty frag list") {
             Teng::Error_t err;
             auto t = "%{jsonify($$empty_frag_list)}";
             auto result = g(err, t, root);
@@ -2303,7 +2316,7 @@ SCENARIO(
             }
         }
 
-        WHEN("The exists operator is applied on frag list") {
+        WHEN("The jsonify operator is applied on frag list") {
             Teng::Error_t err;
             auto t = "%{jsonify($$frag_list)}";
             auto result = g(err, t, root);
