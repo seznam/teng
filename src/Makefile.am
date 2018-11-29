@@ -66,6 +66,8 @@ libteng_la_LIBADD = $(LTLIBOBJS) @TENG_DEPS_LIBS@
 # explicit rules for proper flex & bison sources compilation
 lex2.lo: lex2impl.cc
 parsercontext.lo: syntax.cc
+lex2impl.h: lex2impl.cc
+syntax.hh: syntax.cc
 
 # test program
 EXTRA_PROGRAMS = teng-example teng-cache test-teng
