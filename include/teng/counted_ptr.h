@@ -47,6 +47,12 @@ namespace Teng {
 template <typename type_t>
 class counted_ptr {
 public:
+    /** C'tor: default.
+     */
+    counted_ptr() noexcept
+        : ptr(nullptr), refs(nullptr)
+    {}
+
     /** C'tor: copy.
      */
     counted_ptr(const counted_ptr &other) noexcept

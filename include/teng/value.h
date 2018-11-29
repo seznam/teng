@@ -118,7 +118,7 @@ public:
     /** C'tor.
      */
     explicit Value_t(regex_type value) noexcept
-        : tag_value(tag::regex), undefined_value()
+        : tag_value(tag::regex), regex_value()
     {assign_regex(std::move(value));}
 
     /** C'tor.
