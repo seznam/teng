@@ -163,7 +163,7 @@ struct rhs_checker_t<operation_t, when<operation_t, is_division>> {
         bool is_modulus = std::is_same<operation_t, modulus_t>::value;
         static const std::string S = to_string(operation_t());
         if (is_modulus && rhs.integral()) return true;
-        else if (!is_modulus && rhs.real()) return true;
+        else if (!is_modulus && (rhs.real() != 0)) return true;
         logWarning(
             *ctx,
             "Right operand of " + S + " division operator is zero"
