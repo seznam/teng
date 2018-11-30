@@ -69,6 +69,13 @@ parsercontext.lo: syntax.cc
 lex2impl.h: lex2impl.cc
 syntax.hh: syntax.cc
 
+# fuzzer program
+if FUZZER
+bin_PROGRAMS = teng-fuzzer
+teng_fuzzer_SOURCES = tests/fuzz.cc
+teng_fuzzer_LDADD = libteng.la
+endif
+
 # test program
 EXTRA_PROGRAMS = teng-example teng-cache test-teng
 teng_example_SOURCES = example/example.cc

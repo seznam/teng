@@ -61,6 +61,10 @@ AC_PREREQ(2.50)
 : ${CXXFLAGS="-W -Wall -Wextra -Wconversion -Wno-sign-conversion -fPIC -fno-omit-frame-pointer -g -ggdb -std=c++14"}
 : ${LDFLAGS="-pthread -rdynamic"}
 
+# cxx flags for libfuzzer
+SANITIZE_CXXFLAGS="-fsanitize=undefined -fsanitize=address"
+FUZZER_CXXFLAGS="${SANITIZE_CXXFLAGS} -fsanitize=fuzzer"
+
 # --enable-package-version switch
 AC_ARG_ENABLE(
     [package-version],
@@ -87,7 +91,7 @@ AC_ARG_ENABLE(
 AC_ARG_ENABLE(
     [debug],
     [AS_HELP_STRING([--enable-debug], [enable the debug build])],
-    [AS_IF([test x${enableval} = xyes], [AC_DEFINE([DEBUG], 1, [allow debug build])])]
+    [AS_IF([test x${enableval} = xyes], [CXXFLAGS="${CXXFLAGS} ${SANITIZE_CXXFLAGS}"; AC_DEFINE([DEBUG], 1, [allow debug build])])]
 )
 
 # --disable-udf-lock switch
@@ -97,9 +101,23 @@ AC_ARG_ENABLE(
     [AS_IF([test x${enableval} = xno], [AC_DEFINE([NO_UDF_LOCKS], 1, [disable locking of udf registry])])]
 )
 
+# --enable-fuzzer switch
+AC_ARG_ENABLE(
+   [fuzzer],
+   [AS_HELP_STRING([--enable-fuzzer], [compile with llvm libfuzzer])],
+   [FUZZER=${enableval}; AS_IF([test x${enableval} = xyes], [CXXFLAGS="${CXXFLAGS} ${FUZZER_CXXFLAGS}"; AC_DEFINE([FUZZER])])],
+   [FUZZER=no]
+)
+AM_CONDITIONAL([FUZZER], [test x${FUZZER} = xyes])
+
+# the AC_PROG_CC can't be in conditionals, so we are forced to replace default compiler list
+# see https://bug-autoconf.gnu.narkive.com/bTkajPb5/ac-prog-cc-does-not-work-correctly-inside-conditionals-autoconf-2-61
+AS_IF([test x${FUZZER} = xyes], [CC_LIST="clang"], [CC_LIST="gcc clang c1 cc"])
+AS_IF([test x${FUZZER} = xyes], [CXX_LIST="clang++"], [CXX_LIST="g++ clang++ cxx cc++ c++ g++"])
+
 # check for C++ compiler
-AC_PROG_CC
-AC_PROG_CXX
+AC_PROG_CC([$CC_LIST])
+AC_PROG_CXX([$CXX_LIST])
 AC_HEADER_STDC
 AC_PROG_RANLIB
 AC_PROG_LIBTOOL
