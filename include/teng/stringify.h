@@ -39,6 +39,7 @@
 
 #include <cstdio>
 #include <string>
+#include <cfloat>
 
 #include <teng/config.h>
 #include <teng/stringview.h>
@@ -50,7 +51,7 @@ namespace Teng {
 template <typename writer_t, typename... args_t>
 auto stringify(IntType_t value, writer_t &&writer, args_t &&...args) {
     // produce at least d
-    char buffer[64];
+    char buffer[24];
     auto len = snprintf(buffer, sizeof(buffer), "%jd", value);
     return writer(string_view_t(buffer, len), std::forward<args_t>(args)...);
 }
@@ -60,7 +61,7 @@ auto stringify(IntType_t value, writer_t &&writer, args_t &&...args) {
 template <typename writer_t, typename... args_t>
 auto stringify(double value, writer_t &&writer, args_t &&...args) {
     // produce at least d.d
-    char buffer[64];
+    char buffer[3 + DBL_MANT_DIG - DBL_MIN_EXP];
     auto len = snprintf(buffer, sizeof(buffer), "%#f", value);
 
     // remove trailing zeroes

@@ -487,17 +487,22 @@ Lex1_t::Token_t Lex1_t::next() {
             switch (source_code[offset]) {
             case '>':
                 incr_col_pos(1);
-                if (source_code[offset - 2] == '-')
-                    if (source_code[offset - 3] == '-')
-                        if (source_code[offset - 4] == '-')
-                            if ((offset - start_pos) > strlen("<!----->"))
-                                return;
-                break;
+                if (source_code[offset - 2] != '-')
+                    continue;
+                if (source_code[offset - 3] != '-')
+                    continue;
+                if (source_code[offset - 4] != '-')
+                    continue;
+                if ((offset - start_pos) <= strlen("<!----->"))
+                    continue;
+                start_pos = offset;
+                return;
             default:
                 incr_pos();
-                break;
+                continue;
             }
         }
+        start_pos = offset;
     };
 
     // parse and return deferred tokens
@@ -546,7 +551,7 @@ Lex1_t::Token_t Lex1_t::next() {
                     continue;
                 case '!':
                     if (!match_str("---", +2)) continue;
-                    if (offset == start_pos)
+                    if (offset != start_pos)
                         return accept_text_and_defer(state::comment_directive);
                     accept_comment_directive();
                     continue;

@@ -48,6 +48,18 @@ SCENARIO(
         root.addVariable("two", 2);
         root.addVariable("three", 3);
         root.addVariable("tri", 3);
+        root.addVariable("max_int", std::numeric_limits<int64_t>::max());
+
+        WHEN("MAX_INT was printed") {
+            Teng::Error_t err;
+            auto result = g(err, "${max_int}", root);
+
+            THEN("Library don't crash") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "9223372036854775807");
+            }
+        }
 
         WHEN("Variables with same value are compared") {
             Teng::Error_t err;

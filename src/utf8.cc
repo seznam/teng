@@ -60,7 +60,7 @@ std::size_t strlen(const string_view_t &str) {
     int chars = 0;
     for (auto istr = str.begin(), estr = str.end(); istr != estr;) {
         int bytes = 0;
-        int tmp = *istr;
+        uint32_t tmp = *istr;
 
         while (tmp & 0x80) {
             ++bytes;
@@ -131,7 +131,7 @@ substr(
 
     for (auto istr = str.begin(), estr = str.end(); istr != estr;) {
         int bytes = 0;
-        int tmp = *istr;
+        uint32_t tmp = *istr;
 
         while (tmp & 0x80) {
             ++bytes;

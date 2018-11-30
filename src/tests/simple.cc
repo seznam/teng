@@ -188,3 +188,45 @@ SCENARIO(
     }
 }
 
+SCENARIO(
+    "Teng lexer level 1 comments",
+    "[basic]"
+) {
+    GIVEN("None data") {
+        Teng::Fragment_t root;
+
+        WHEN("Template with one comment") {
+            Teng::Error_t err;
+            auto result = g(err, "<!--- aaa --->", root);
+
+            THEN("Comment is swallowed") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "");
+            }
+        }
+
+        WHEN("Template with unclosed comment") {
+            Teng::Error_t err;
+            auto result = g(err, "<!--- aaa -->", root);
+
+            THEN("Comment is swallowed") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "");
+            }
+        }
+
+        WHEN("Incomplete utf-8 char in comment") {
+            Teng::Error_t err;
+            auto result = g(err, "<!---ùö", root);
+
+            THEN("Comment is swallowed") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "");
+            }
+        }
+    }
+}
+

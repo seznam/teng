@@ -48,6 +48,56 @@ SCENARIO(
         root.addVariable("two", 2.1);
         root.addVariable("three", 3.1);
         root.addVariable("tri", 3.1);
+        root.addVariable("max_real", std::numeric_limits<double>::max());
+        root.addVariable("min_real", std::numeric_limits<double>::min());
+        root.addVariable("lowest", std::numeric_limits<double>::lowest());
+
+        WHEN("MAX_REAL was printed") {
+            Teng::Error_t err;
+            auto result = g(err, "${max_real}", root);
+
+            THEN("Library don't crash") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "179769313486231570814527423731704356798070"
+                                  "5675258449965989174768031572607800285387605"
+                                  "8955863276687817154045895351438246423432132"
+                                  "6889464182768467546703537516986049910576551"
+                                  "2820762454900903893289440758685084551339423"
+                                  "0458323690322294816580855933212334827479782"
+                                  "6204144723168738177180919299881250404026184"
+                                  "124858368.0");
+            }
+        }
+
+        WHEN("MIN_REAL was printed") {
+            Teng::Error_t err;
+            auto result = g(err, "${min_real}", root);
+
+            THEN("Library don't crash") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "0.0");
+            }
+        }
+
+        WHEN("LOWEST was printed") {
+            Teng::Error_t err;
+            auto result = g(err, "${lowest}", root);
+
+            THEN("Library don't crash") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "-179769313486231570814527423731704356798070"
+                                  "5675258449965989174768031572607800285387605"
+                                  "8955863276687817154045895351438246423432132"
+                                  "6889464182768467546703537516986049910576551"
+                                  "2820762454900903893289440758685084551339423"
+                                  "0458323690322294816580855933212334827479782"
+                                  "6204144723168738177180919299881250404026184"
+                                  "124858368.0");
+            }
+        }
 
         WHEN("Variables with same value are compared") {
             Teng::Error_t err;
