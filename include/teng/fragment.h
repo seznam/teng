@@ -139,6 +139,15 @@ public:
     void addRealVariable(const std::string &name, double value);
 
     /**
+     * @short Add variable to fragment.
+     * @param name variable name
+     * @param value variable value
+     */
+    void addStringVariable(const std::string &name, const std::string &value) {
+        addVariable(name, value);
+    }
+
+    /**
      * @short Add nested fragment.
      * @param name fragment name
      * @return created fragment
