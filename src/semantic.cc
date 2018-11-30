@@ -773,7 +773,7 @@ void discard_expr(Context_t *ctx) {
     // (the unexpected_token is always the first of an invalid token sequence)
     if (ctx->expr_start_point.update_allowed)
         note_expr_start_point(ctx, ctx->unexpected_token.pos);
-    else ctx->expr_start_point.update_allowed = true;
+    ctx->expr_start_point.update_allowed = true;
 
     // discard whole expression code and replace it with undefined
     ctx->program->erase_from(ctx->expr_start_point.addr);

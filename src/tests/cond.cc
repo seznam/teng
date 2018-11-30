@@ -1956,3 +1956,51 @@ SCENARIO(
     }
 }
 
+SCENARIO(
+    "Fuzzer problems in conditional",
+    "[condx]"
+) {
+    GIVEN("Two consecutive invalid empty expressions in if's") {
+        std::string t = "<?teng if ?>s<?teng elseif ?>g${abc}<?teng endif?>";
+
+        WHEN("The second one is discarded") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addVariable("abc", 0);
+            auto result = g(err, t, root);
+
+            THEN("The ctx->expr_start_point.update_allowed is set to true") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::DIAG,
+                    {1, 0},
+                    "You forgot write condition of the if statement"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 10},
+                    "Unexpected token: name=END, view=?>"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 10},
+                    "Invalid expression, fix it please; "
+                    "replacing whole expression with undefined value"
+                }, {
+                    Teng::Error_t::DIAG,
+                    {1, 13},
+                    "You forgot write condition of the elif statement"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 27},
+                    "Unexpected token: name=END, view=?>"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 27},
+                    "Invalid expression, fix it please; "
+                    "replacing whole expression with undefined value"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "");
+            }
+        }
+    }
+}
+
