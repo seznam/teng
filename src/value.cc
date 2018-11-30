@@ -51,6 +51,10 @@
 
 namespace Teng {
 
+Value_t::Value_t(regex_type value) noexcept
+    : tag_value(tag::regex), regex_value(std::move(value))
+{}
+
 std::ostream &operator<<(std::ostream &os, const Regex_t &regex) {
     os << '/' << regex.pattern() << '/';
     if (regex.flags()->ignore_case) os << 'i';
