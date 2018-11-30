@@ -219,7 +219,7 @@ SCENARIO(
 
         WHEN("Incomplete utf-8 char in comment") {
             Teng::Error_t err;
-            auto result = g(err, "<!---ùö", root);
+            auto result = g(err, "<!---\x0c\xfa\x0c", root);
 
             THEN("Comment is swallowed") {
                 std::vector<Teng::Error_t::Entry_t> errs;

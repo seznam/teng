@@ -496,13 +496,14 @@ Lex1_t::Token_t Lex1_t::next() {
                 if ((offset - start_pos) <= strlen("<!----->"))
                     continue;
                 start_pos = offset;
-                return;
+                return true;
             default:
                 incr_pos();
                 continue;
             }
         }
         start_pos = offset;
+        return false;
     };
 
     // parse and return deferred tokens
@@ -553,7 +554,8 @@ Lex1_t::Token_t Lex1_t::next() {
                     if (!match_str("---", +2)) continue;
                     if (offset != start_pos)
                         return accept_text_and_defer(state::comment_directive);
-                    accept_comment_directive();
+                    if (!accept_comment_directive())
+                        return make_end_of_input_token();
                     continue;
                 default:
                     continue;
