@@ -84,7 +84,7 @@ unescape(
     } state = initial;
 
     char *istr = str.data() + start;
-    char *estr = str.data() + end;
+    char *estr = str.data() + std::min(end, str.size());
     const char *ires = istr;
     char *eres = estr;
     const char *elast_seq = istr;
@@ -294,7 +294,7 @@ Lex1_t::Token_t Lex1_t::next() {
                 offset += 3;
                 break;
             case 0b1111:            // 11110xxx, 111110xx, 1111110x
-                switch (byte & 0b00001100) {
+                switch ((byte & 0b00001100) >> 2) {
                 case 0b00: pos.advanceColumn(1); offset += 4; break;
                 case 0b01: pos.advanceColumn(1); offset += 4; break;
                 case 0b10: pos.advanceColumn(1); offset += 5; break;
