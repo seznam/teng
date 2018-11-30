@@ -805,6 +805,7 @@ struct InstrType_t {};
 class InstrBox_t: public Instruction_t {
 public:
     // don't copy
+    InstrBox_t(InstrBox_t &) = delete;
     InstrBox_t(const InstrBox_t &) = delete;
     InstrBox_t &operator=(const InstrBox_t &) = delete;
 
