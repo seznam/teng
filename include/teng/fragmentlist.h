@@ -84,10 +84,16 @@ public:
     ~FragmentList_t() noexcept = default;
 
     /**
-     * @short Add given or empty fragment to fragment list.
+     * @short Add empty fragment to fragment list.
      * @return created fragment
      */
     Fragment_t &addFragment();
+
+    /**
+     * @short Add fragment list to fragment list.
+     * @return created fragment
+     */
+    FragmentList_t &addFragmentList();
 
     /**
      * @short Add value to list..

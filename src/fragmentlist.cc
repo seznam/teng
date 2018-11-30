@@ -49,6 +49,11 @@ Fragment_t &FragmentList_t::addFragment() {
     return items.back().frag_value;
 }
 
+FragmentList_t &FragmentList_t::addFragmentList() {
+    items.emplace_back(TypeTag_t<FragmentList_t>());
+    return items.back().list_value;
+}
+
 void FragmentList_t::addValue(const std::string &value) {
     items.emplace_back(value);
 }
