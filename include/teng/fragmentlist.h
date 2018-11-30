@@ -130,6 +130,30 @@ public:
     void addRealValue(double value);
 
     /**
+     * @short Add value to list..
+     * @param value variable value
+     */
+    void addStringValue(const std::string &value) {
+        addValue(value);
+    }
+
+    /**
+     * @short Add value to list..
+     * @param value variable value
+     */
+    void addFragmentValue(Fragment_t &&value) {
+        addValue(std::move(value));
+    }
+
+    /**
+     * @short Add value to list..
+     * @param value variable value
+     */
+    void addFragmentListValue(FragmentList_t &&value) {
+        addValue(std::move(value));
+    }
+
+    /**
      * @short Add some frag value to fragment.
      * @param value variable value
      */
