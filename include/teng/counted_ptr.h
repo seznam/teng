@@ -92,7 +92,12 @@ public:
 
     /** Dispose the pointer.
      */
-    void reset() noexcept {if (refs && (--*refs == 0)) delete ptr;}
+    void reset() noexcept {
+        if (refs && (--*refs == 0)) {
+            ptr->~type_t(); // this turn off asan warn
+            delete [] reinterpret_cast<char *>(ptr);
+        }
+    }
 
     /** Returns pointer to held object.
      */
@@ -136,8 +141,11 @@ protected:
 template <typename type_t, typename... args_t>
 counted_ptr<type_t> make_counted(args_t &&...args) {
     struct memory_t {type_t value; std::size_t refs;};
-    auto *memory = new memory_t{{std::forward<args_t>(args)...}, 1};
-    return counted_ptr<type_t>(&memory->value, &memory->refs);
+    auto *bytes = new char[sizeof(memory_t)];
+    try {
+        auto *memory = new (bytes) memory_t{{std::forward<args_t>(args)...}, 1};
+        return counted_ptr<type_t>(&memory->value, &memory->refs);
+    } catch (...) {delete[] bytes; throw;}
 }
 
 /** Returns true if both pointers points to same object.
