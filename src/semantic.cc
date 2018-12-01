@@ -479,6 +479,39 @@ void open_frag(Context_t *ctx, const Token_t &token, const Pos_t &pos) {
         : generate<OpenFrag_t>(ctx, token.view().str(), pos);
 }
 
+/** Returns true if instructions from given address (inclusive) are protected.
+ */
+bool are_instrs_protected(Context_t *ctx, int64_t from_addr) {
+    // addresses of JMP instructions
+    if (!ctx->branch_addrs.empty())
+        if (!ctx->branch_addrs.top().empty())
+            if (ctx->branch_addrs.top().top() >= from_addr)
+                return true;
+
+    // addresses of JPM instructions of case expression
+    if (!ctx->case_option_addrs.empty())
+        if (!ctx->case_option_addrs.top().empty())
+            if (ctx->case_option_addrs.top().top() >= from_addr)
+                return true;
+
+    // start address of if statement
+    if (!ctx->if_stmnt_start_points.empty())
+        if (ctx->if_stmnt_start_points.top().addr >= from_addr)
+            return true;
+
+    // optimizations points - they are used only inside expressions
+    // if (!ctx->optimization_points.empty())
+    //     if (ctx->optimization_points.top().addr >= from_addr)
+    //         return true;
+
+    // start address of expression statement
+    if (ctx->expr_start_point.addr >= from_addr)
+        return true;
+
+    // instructions are not referenced by addresses so can be optimized out
+    return false;
+}
+
 } // namespace
 
 Token_t note_error(Context_t *ctx, const Token_t &token) {
@@ -535,10 +568,14 @@ void prepare_parent_variable(Context_t *ctx, const Token_t &token) {
 
 void generate_print(Context_t *ctx, bool print_escape) {
     // get current program size
-    auto prgsize = ctx->program->size();
+    int64_t prgsize = ctx->program->size();
 
     // underflow protect -> no optimalization can be peformed for now
     if (prgsize < 3)
+        return generate<Print_t>(ctx, print_escape, ctx->pos());
+
+    // check whether there is no references to vanishing code
+    if (are_instrs_protected(ctx, prgsize - 3))
         return generate<Print_t>(ctx, print_escape, ctx->pos());
 
     // attempt to optimize consecutive print instrs to one merged
@@ -579,7 +616,7 @@ void generate_print(Context_t *ctx, bool print_escape) {
             break;
         }
 
-    // or if it is disabled we can directly join values
+    // or if it is disabled then we can directly join values
     } else first_val.append_str(second_val);
 
     // delete last VAL instruction (optimized out)
@@ -736,6 +773,7 @@ void optimize_expr(Context_t *ctx, uint32_t arity, bool lazy_evaluated) {
 
         } else optimizable = false;
         DBG(if (!optimizable) std::cerr << "$$$$ can't optimize" << std::endl);
+
     } else {DBG(std::cerr << "$$$$ unoptimizable" << std::endl);}
 
     // each expression has a value that plays its role in further optimization
@@ -1163,11 +1201,11 @@ close_unclosed_ctype(Context_t *ctx, const Pos_t &pos, const Token_t &token) {
 
 void prepare_if(Context_t *ctx, const Pos_t &pos) {
     ctx->branch_addrs.push();
-    ctx->if_stmnt_start_point = {
+    ctx->if_stmnt_start_points.push({
         pos,
         static_cast<int64_t>(ctx->program->size()),
         true
-    };
+    });
 }
 
 void generate_if(Context_t *ctx, const Token_t &token, bool valid_expr) {
@@ -1268,7 +1306,7 @@ void finalize_if_stmnt(Context_t *ctx) {
 }
 
 void finalize_inv_if_stmnt(Context_t *ctx, const Token_t &token) {
-    auto &pos = ctx->if_stmnt_start_point.pos;
+    auto &pos = ctx->if_stmnt_start_points.top().pos;
     switch (token) {
     case LEX2_EOF:
         logError(
@@ -1312,7 +1350,8 @@ void finalize_inv_if_stmnt(Context_t *ctx, const Token_t &token) {
         break;
     }
     ctx->branch_addrs.pop();
-    ctx->program->erase_from(ctx->if_stmnt_start_point.addr);
+    ctx->program->erase_from(ctx->if_stmnt_start_points.top().addr);
+    ctx->if_stmnt_start_points.pop();
     note_error(ctx, token);
     reset_error(ctx);
 }
@@ -1320,11 +1359,12 @@ void finalize_inv_if_stmnt(Context_t *ctx, const Token_t &token) {
 void discard_if(Context_t *ctx) {
     logError(
         ctx,
-        ctx->if_stmnt_start_point.pos,
+        ctx->if_stmnt_start_points.top().pos,
         "Disordered elif/else branches in <?teng if?> statement; "
         "discarding whole if statement"
     );
-    ctx->program->erase_from(ctx->if_stmnt_start_point.addr);
+    ctx->program->erase_from(ctx->if_stmnt_start_points.top().addr);
+    ctx->if_stmnt_start_points.pop();
 }
 
 void set_var(Context_t *ctx, Variable_t var) {

@@ -159,6 +159,7 @@ struct Context_t {
     struct addrs_stack_t {
         struct entry_t {
             using const_iterator = std::vector<int64_t>::const_iterator;
+            int64_t top() {return stack.back();}
             int64_t pop() {auto t = stack.back(); stack.pop_back(); return t;}
             void push(int64_t v) {stack.push_back(v);}
             bool empty() const {return stack.empty();}
@@ -169,6 +170,7 @@ struct Context_t {
 
         void push() {addrs.push({});}
         void pop() {addrs.pop();}
+        bool empty() {return addrs.empty();}
         entry_t &top() {return addrs.top();}
         const entry_t &top() const {return addrs.top();}
 
@@ -179,6 +181,7 @@ struct Context_t {
      * remember where expression begins.
      */
     struct expr_start_t {Pos_t pos; int64_t addr; bool update_allowed;};
+    using expr_starts_t = std::stack<expr_start_t>;
 
     /** The pair of instruction address and optimizable flag. It's used to note
      * where begins subprogram representing the expression that should be
@@ -224,7 +227,7 @@ struct Context_t {
     bool error_occurred;                //!< used to turn off consequent errors
     Token_t unexpected_token;           //!< the last unexpected token
     expr_start_t expr_start_point;      //!< address and pos where exprs starts
-    expr_start_t if_stmnt_start_point;  //!< address where if stmnt starts
+    expr_starts_t if_stmnt_start_points;//!< addresses where if stmnts start
     rtvar_strings_t rtvar_strings;      //!< positions where rtvar starts
     addrs_stack_t branch_addrs;         //!< addresses of unfinished jumps
     addrs_stack_t case_option_addrs;    //!< the list of addrs of case options
