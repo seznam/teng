@@ -522,6 +522,8 @@ expr_up_to_end
  // before END token.
 expr_up_to_end_impl
     : expression_impl {finish_expr(ctx); $$ = true;}
+    | expression_impl ASSIGN {discard_expr(ctx); $$ = true;}
+    | expression_impl ASSIGN error_up_to_end {discard_expr(ctx); $$ = true;}
     | error_up_to_end {discard_expr(ctx); $$ = false;}
     ;
 
