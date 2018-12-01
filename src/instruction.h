@@ -135,6 +135,18 @@ enum class OPCODE {
  */
 const char *opcode_str(OPCODE opcode);
 
+/** Thrown in debug mode if instruction is casted to invalid type.
+ */
+struct bad_instr_cast_t: public std::runtime_error {
+    bad_instr_cast_t(OPCODE instr_opcode, OPCODE dest_opcode)
+        : std::runtime_error(
+            std::string("attempt to cast instruction to invalid type")
+            + ": instr-type=" + opcode_str(instr_opcode)
+            + ", casting-to=" + opcode_str(dest_opcode)
+        )
+    {}
+};
+
 /** Instruction for "teng computer".
   * Syntax & semanthics analyzer creates program (sequence of instructions).
   */
@@ -167,13 +179,25 @@ public:
      * shoot your foot.
      */
     template <typename Impl_t>
-    const Impl_t &as() const & {return static_cast<const Impl_t &>(*this);}
+    const Impl_t &as() const & {
+#ifdef DEBUG
+        if (opcode() != Impl_t::instr_opcode)
+            throw bad_instr_cast_t(opcode(), Impl_t::instr_opcode);
+#endif /* DEBUG */
+        return static_cast<const Impl_t &>(*this);
+    }
 
     /** Casts this instruction to its real type. Does not any checks, so don't
      * shoot your foot.
      */
     template <typename Impl_t>
-    Impl_t &as() & {return static_cast<Impl_t &>(*this);}
+    Impl_t &as() & {
+#ifdef DEBUG
+        if (opcode() != Impl_t::instr_opcode)
+            throw bad_instr_cast_t(opcode(), Impl_t::instr_opcode);
+#endif /* DEBUG */
+        return static_cast<Impl_t &>(*this);
+    }
 
 protected:
     // don't copy
@@ -206,200 +230,233 @@ protected:
 };
 
 struct Noop_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::NOOP;
     Noop_t(const Pos_t &pos = {})
-        : Instruction_t(OPCODE::NOOP, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct Dict_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::DICT;
     Dict_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::DICT, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct PrgStackPush_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::PRG_STACK_PUSH;
     PrgStackPush_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::PRG_STACK_PUSH, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct PrgStackPop_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::PRG_STACK_POP;
     PrgStackPop_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::PRG_STACK_POP, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct UnaryPlus_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::UNARY_PLUS;
     UnaryPlus_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::UNARY_PLUS, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct UnaryMinus_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::UNARY_MINUS;
     UnaryMinus_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::UNARY_MINUS, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct Plus_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::PLUS;
     Plus_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::PLUS, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct Minus_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::MINUS;
     Minus_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::MINUS, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct Mul_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::MUL;
     Mul_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::MUL, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct Div_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::DIV;
     Div_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::DIV, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct Mod_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::MOD;
     Mod_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::MOD, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct Concat_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::CONCAT;
     Concat_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::CONCAT, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct Repeat_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::REPEAT;
     Repeat_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::REPEAT, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct BitAnd_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::BIT_AND;
     BitAnd_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::BIT_AND, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct BitXor_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::BIT_XOR;
     BitXor_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::BIT_XOR, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct BitOr_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::BIT_OR;
     BitOr_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::BIT_OR, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct BitNot_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::BIT_NOT;
     BitNot_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::BIT_NOT, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct Not_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::NOT;
     Not_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::NOT, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct EQ_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::EQ;
     EQ_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::EQ, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct NE_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::NE;
     NE_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::NE, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct GE_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::GE;
     GE_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::GE, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct GT_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::GT;
     GT_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::GT, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct LE_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::LE;
     LE_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::LE, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct LT_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::LT;
     LT_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::LT, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct StrEQ_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::STR_EQ;
     StrEQ_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::STR_EQ, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct StrNE_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::STR_NE;
     StrNE_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::STR_NE, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct Halt_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::HALT;
     Halt_t(const Pos_t &pos = {})
-        : Instruction_t(OPCODE::HALT, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct DebugFrag_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::DEBUG_FRAG;
     DebugFrag_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::DEBUG_FRAG, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct BytecodeFrag_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::BYTECODE_FRAG;
     BytecodeFrag_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::BYTECODE_FRAG, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct CloseFormat_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::CLOSE_FORMAT;
     CloseFormat_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::CLOSE_FORMAT, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct CloseCType_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::CLOSE_CTYPE;
     CloseCType_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::CLOSE_CTYPE, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct PopAttr_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::POP_ATTR;
     PopAttr_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::POP_ATTR, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct PushThisFrag_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::PUSH_THIS_FRAG;
     PushThisFrag_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::PUSH_THIS_FRAG, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
     // provide same iface as push root frag has
     PushThisFrag_t(uint64_t, const Pos_t &pos)
@@ -408,69 +465,80 @@ struct PushThisFrag_t: public Instruction_t {
 };
 
 struct OpenFrame_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::OPEN_FRAME;
     OpenFrame_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::OPEN_FRAME, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct CloseFrame_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::CLOSE_FRAME;
     CloseFrame_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::CLOSE_FRAME, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct Repr_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::REPR;
     Repr_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::REPR, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct QueryRepr_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::QUERY_REPR;
     QueryRepr_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::QUERY_REPR, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct QueryCount_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::QUERY_COUNT;
     QueryCount_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::QUERY_COUNT, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct QueryType_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::QUERY_TYPE;
     QueryType_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::QUERY_TYPE, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct QueryDefined_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::QUERY_DEFINED;
     QueryDefined_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::QUERY_DEFINED, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct QueryExists_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::QUERY_EXISTS;
     QueryExists_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::QUERY_EXISTS, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct QueryIsEmpty_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::QUERY_ISEMPTY;
     QueryIsEmpty_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::QUERY_ISEMPTY, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct LogSuppress_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::LOG_SUPPRESS;
     LogSuppress_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::LOG_SUPPRESS, pos)
+        : Instruction_t(instr_opcode, pos)
     {}
 };
 
 struct PushFragIndex_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::PUSH_FRAG_INDEX;
     template <typename Variable_t>
     PushFragIndex_t(const Variable_t &var)
-        : Instruction_t(OPCODE::PUSH_FRAG_INDEX, var.pos),
+        : Instruction_t(instr_opcode, var.pos),
           frame_offset(static_cast<uint16_t>(var.offset.frame)),
           frag_offset(static_cast<uint16_t>(var.offset.frag))
     {}
@@ -480,9 +548,10 @@ struct PushFragIndex_t: public Instruction_t {
 };
 
 struct PushFragCount_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::PUSH_FRAG_COUNT;
     template <typename Variable_t>
     PushFragCount_t(const Variable_t &var)
-        : Instruction_t(OPCODE::PUSH_FRAG_COUNT, var.pos),
+        : Instruction_t(instr_opcode, var.pos),
           frame_offset(static_cast<uint16_t>(var.offset.frame)),
           frag_offset(static_cast<uint16_t>(var.offset.frag))
     {}
@@ -492,9 +561,10 @@ struct PushFragCount_t: public Instruction_t {
 };
 
 struct PushFragFirst_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::PUSH_FRAG_FIRST;
     template <typename Variable_t>
     PushFragFirst_t(const Variable_t &var)
-        : Instruction_t(OPCODE::PUSH_FRAG_FIRST, var.pos),
+        : Instruction_t(instr_opcode, var.pos),
           frame_offset(static_cast<uint16_t>(var.offset.frame)),
           frag_offset(static_cast<uint16_t>(var.offset.frag))
     {}
@@ -504,9 +574,10 @@ struct PushFragFirst_t: public Instruction_t {
 };
 
 struct PushFragInner_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::PUSH_FRAG_INNER;
     template <typename Variable_t>
     PushFragInner_t(const Variable_t &var)
-        : Instruction_t(OPCODE::PUSH_FRAG_INNER, var.pos),
+        : Instruction_t(instr_opcode, var.pos),
           frame_offset(static_cast<uint16_t>(var.offset.frame)),
           frag_offset(static_cast<uint16_t>(var.offset.frag))
     {}
@@ -516,9 +587,10 @@ struct PushFragInner_t: public Instruction_t {
 };
 
 struct PushFragLast_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::PUSH_FRAG_LAST;
     template <typename Variable_t>
     PushFragLast_t(const Variable_t &var)
-        : Instruction_t(OPCODE::PUSH_FRAG_LAST, var.pos),
+        : Instruction_t(instr_opcode, var.pos),
           frame_offset(static_cast<uint16_t>(var.offset.frame)),
           frag_offset(static_cast<uint16_t>(var.offset.frag))
     {}
@@ -528,9 +600,10 @@ struct PushFragLast_t: public Instruction_t {
 };
 
 struct PushFrag_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::PUSH_FRAG;
     template <typename Variable_t>
     PushFrag_t(const Variable_t &var, uint64_t frag_offset)
-        : Instruction_t(OPCODE::PUSH_FRAG, var.pos),
+        : Instruction_t(instr_opcode, var.pos),
           name(var.ident.name().str()),
           frame_offset(static_cast<uint16_t>(var.offset.frame)),
           frag_offset(static_cast<uint16_t>(frag_offset))
@@ -546,8 +619,9 @@ struct PushFrag_t: public Instruction_t {
 };
 
 struct PushValCount_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::PUSH_VAL_COUNT;
     PushValCount_t(std::string path, const Pos_t &pos)
-        : Instruction_t(OPCODE::PUSH_VAL_COUNT, pos),
+        : Instruction_t(instr_opcode, pos),
           path(std::move(path))
     {}
     void dump_params(std::ostream &os) const;
@@ -555,8 +629,9 @@ struct PushValCount_t: public Instruction_t {
 };
 
 struct PushValFirst_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::PUSH_VAL_FIRST;
     PushValFirst_t(std::string path, const Pos_t &pos)
-        : Instruction_t(OPCODE::PUSH_VAL_FIRST, pos),
+        : Instruction_t(instr_opcode, pos),
           path(std::move(path))
     {}
     void dump_params(std::ostream &os) const;
@@ -564,8 +639,9 @@ struct PushValFirst_t: public Instruction_t {
 };
 
 struct PushValLast_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::PUSH_VAL_LAST;
     PushValLast_t(std::string path, const Pos_t &pos)
-        : Instruction_t(OPCODE::PUSH_VAL_LAST, pos),
+        : Instruction_t(instr_opcode, pos),
           path(std::move(path))
     {}
     void dump_params(std::ostream &os) const;
@@ -573,8 +649,9 @@ struct PushValLast_t: public Instruction_t {
 };
 
 struct PushValInner_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::PUSH_VAL_INNER;
     PushValInner_t(std::string path, const Pos_t &pos)
-        : Instruction_t(OPCODE::PUSH_VAL_INNER, pos),
+        : Instruction_t(instr_opcode, pos),
           path(std::move(path))
     {}
     void dump_params(std::ostream &os) const;
@@ -582,8 +659,9 @@ struct PushValInner_t: public Instruction_t {
 };
 
 struct PushValIndex_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::PUSH_VAL_INDEX;
     PushValIndex_t(std::string path, const Pos_t &pos)
-        : Instruction_t(OPCODE::PUSH_VAL_INDEX, pos),
+        : Instruction_t(instr_opcode, pos),
           path(std::move(path))
     {}
     void dump_params(std::ostream &os) const;
@@ -591,8 +669,9 @@ struct PushValIndex_t: public Instruction_t {
 };
 
 struct PushRootFrag_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::PUSH_ROOT_FRAG;
     PushRootFrag_t(uint64_t root_frag_offset, const Pos_t &pos)
-        : Instruction_t(OPCODE::PUSH_ROOT_FRAG, pos),
+        : Instruction_t(instr_opcode, pos),
           root_frag_offset(static_cast<uint16_t>(root_frag_offset))
     {}
     void dump_params(std::ostream &os) const;
@@ -600,13 +679,14 @@ struct PushRootFrag_t: public Instruction_t {
 };
 
 struct Val_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::VAL;
     Val_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::VAL, pos),
+        : Instruction_t(instr_opcode, pos),
           value()
     {}
     template <typename type_t>
     Val_t(type_t &&value, const Pos_t &pos)
-        : Instruction_t(OPCODE::VAL, pos),
+        : Instruction_t(instr_opcode, pos),
           value(std::forward<type_t>(value))
     {}
     void dump_params(std::ostream &os) const;
@@ -614,9 +694,10 @@ struct Val_t: public Instruction_t {
 };
 
 struct Var_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::VAR;
     template <typename Variable_t>
     Var_t(const Variable_t &var, bool escape)
-        : Instruction_t(OPCODE::VAR, var.pos),
+        : Instruction_t(instr_opcode, var.pos),
           name(var.ident.name().str()),
           frame_offset(static_cast<uint16_t>(var.offset.frame)),
           frag_offset(static_cast<uint16_t>(var.offset.frag)),
@@ -630,8 +711,9 @@ struct Var_t: public Instruction_t {
 };
 
 struct PrgStackAt_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::PRG_STACK_AT;
     PrgStackAt_t(std::size_t index, const Pos_t &pos)
-        : Instruction_t(OPCODE::PRG_STACK_AT, pos),
+        : Instruction_t(instr_opcode, pos),
           index(index)
     {}
     void dump_params(std::ostream &os) const;
@@ -639,8 +721,9 @@ struct PrgStackAt_t: public Instruction_t {
 };
 
 struct And_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::AND;
     And_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::AND, pos),
+        : Instruction_t(instr_opcode, pos),
           addr_offset(-1)
     {}
     void dump_params(std::ostream &os) const;
@@ -648,8 +731,9 @@ struct And_t: public Instruction_t {
 };
 
 struct Or_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::OR;
     Or_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::OR, pos),
+        : Instruction_t(instr_opcode, pos),
           addr_offset(-1)
     {}
     void dump_params(std::ostream &os) const;
@@ -657,8 +741,9 @@ struct Or_t: public Instruction_t {
 };
 
 struct Func_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::FUNC;
     Func_t(std::string name, uint32_t nargs, const Pos_t &pos, bool is_udf)
-        : Instruction_t(OPCODE::FUNC, pos),
+        : Instruction_t(instr_opcode, pos),
           name(std::move(name)), nargs(nargs), is_udf(is_udf)
     {}
     void dump_params(std::ostream &os) const;
@@ -668,8 +753,9 @@ struct Func_t: public Instruction_t {
 };
 
 struct JmpIfNot_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::JMP_IF_NOT;
     JmpIfNot_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::JMP_IF_NOT, pos),
+        : Instruction_t(instr_opcode, pos),
           addr_offset(-1)
     {}
     void dump_params(std::ostream &os) const;
@@ -677,8 +763,9 @@ struct JmpIfNot_t: public Instruction_t {
 };
 
 struct Jmp_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::JMP;
     Jmp_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::JMP, pos),
+        : Instruction_t(instr_opcode, pos),
           addr_offset(-1)
     {}
     void dump_params(std::ostream &os) const;
@@ -686,8 +773,9 @@ struct Jmp_t: public Instruction_t {
 };
 
 struct OpenFormat_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::OPEN_FORMAT;
     OpenFormat_t(int64_t mode, const Pos_t &pos)
-        : Instruction_t(OPCODE::OPEN_FORMAT, pos),
+        : Instruction_t(instr_opcode, pos),
           mode(mode)
     {}
     void dump_params(std::ostream &os) const;
@@ -695,8 +783,9 @@ struct OpenFormat_t: public Instruction_t {
 };
 
 struct OpenFrag_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::OPEN_FRAG;
     OpenFrag_t(std::string name, const Pos_t &pos)
-        : Instruction_t(OPCODE::OPEN_FRAG, pos),
+        : Instruction_t(instr_opcode, pos),
           name(std::move(name)), close_frag_offset(-1)
     {}
     OpenFrag_t(OPCODE opcode, std::string name, const Pos_t &pos)
@@ -715,8 +804,9 @@ struct OpenErrorFrag_t: public OpenFrag_t {
 };
 
 struct CloseFrag_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::CLOSE_FRAG;
     CloseFrag_t(const Pos_t &pos)
-        : Instruction_t(OPCODE::CLOSE_FRAG, pos),
+        : Instruction_t(instr_opcode, pos),
           open_frag_offset(-1)
     {}
     void dump_params(std::ostream &os) const;
@@ -724,8 +814,9 @@ struct CloseFrag_t: public Instruction_t {
 };
 
 struct Print_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::PRINT;
     Print_t(bool print_escape, const Pos_t &pos)
-        : Instruction_t(OPCODE::PRINT, pos),
+        : Instruction_t(instr_opcode, pos),
           print_escape(print_escape)
     {}
     void dump_params(std::ostream &os) const;
@@ -733,9 +824,10 @@ struct Print_t: public Instruction_t {
 };
 
 struct Set_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::SET;
     template <typename Variable_t>
     Set_t(const Variable_t &var)
-        : Instruction_t(OPCODE::SET, var.pos),
+        : Instruction_t(instr_opcode, var.pos),
           name(var.ident.name().str()),
           frame_offset(static_cast<uint16_t>(var.offset.frame)),
           frag_offset(static_cast<uint16_t>(var.offset.frag))
@@ -747,8 +839,9 @@ struct Set_t: public Instruction_t {
 };
 
 struct OpenCType_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::OPEN_CTYPE;
     OpenCType_t(const ContentType_t::Descriptor_t *ctype, const Pos_t &pos)
-        : Instruction_t(OPCODE::OPEN_CTYPE, pos),
+        : Instruction_t(instr_opcode, pos),
           ctype(ctype)
     {}
     void dump_params(std::ostream &os) const;
@@ -756,8 +849,9 @@ struct OpenCType_t: public Instruction_t {
 };
 
 struct PushAttr_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::PUSH_ATTR;
     PushAttr_t(std::string name, std::string path, const Pos_t &pos)
-        : Instruction_t(OPCODE::PUSH_ATTR, pos),
+        : Instruction_t(instr_opcode, pos),
           name(std::move(name)), path(std::move(path))
     {}
     void dump_params(std::ostream &os) const;
@@ -766,8 +860,9 @@ struct PushAttr_t: public Instruction_t {
 };
 
 struct PushAttrAt_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::PUSH_ATTR_AT;
     PushAttrAt_t(std::string path, const Pos_t &pos)
-        : Instruction_t(OPCODE::PUSH_ATTR_AT, pos),
+        : Instruction_t(instr_opcode, pos),
           path(std::move(path))
     {}
     void dump_params(std::ostream &os) const;
@@ -775,6 +870,7 @@ struct PushAttrAt_t: public Instruction_t {
 };
 
 struct MatchRegex_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::MATCH_REGEX;
     MatchRegex_t(counted_ptr<Regex_t> regex, const Pos_t &pos);
     MatchRegex_t(MatchRegex_t &&) noexcept = default;
     MatchRegex_t &operator=(MatchRegex_t &&) noexcept = default;
@@ -785,8 +881,9 @@ struct MatchRegex_t: public Instruction_t {
 };
 
 struct PushErrorFrag_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::PUSH_ERROR_FRAG;
     PushErrorFrag_t(bool discard_stack_value, const Pos_t &pos)
-        : Instruction_t(OPCODE::PUSH_ERROR_FRAG, pos),
+        : Instruction_t(instr_opcode, pos),
           discard_stack_value(discard_stack_value)
     {}
     void dump_params(std::ostream &os) const;

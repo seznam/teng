@@ -733,7 +733,7 @@ void MatchRegex_t::dump_params(std::ostream &os) const {
 }
 
 MatchRegex_t::MatchRegex_t(counted_ptr<Regex_t> regex, const Pos_t &pos)
-    : Instruction_t(OPCODE::MATCH_REGEX, pos),
+    : Instruction_t(instr_opcode, pos),
       compiled_value(std::move(regex))
 {}
 
