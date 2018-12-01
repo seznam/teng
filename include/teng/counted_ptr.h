@@ -145,7 +145,7 @@ counted_ptr<type_t> make_counted(args_t &&...args) {
     try {
         auto *memory = new (bytes) memory_t{{std::forward<args_t>(args)...}, 1};
         return counted_ptr<type_t>(&memory->value, &memory->refs);
-    } catch (...) {delete[] bytes; throw;}
+    } catch (...) {delete [] bytes; throw;}
 }
 
 /** Returns true if both pointers points to same object.
