@@ -365,7 +365,7 @@ Result_t is_inner_frag(RunCtxPtr_t ctx) {
 /** Returns true if the current fragment is not the first neither the last.
  */
 Result_t is_inner_frag(RunCtxPtr_t ctx, GetArg_t get_arg) {
-    auto &instr = ctx->instr->as<PushValLast_t>();
+    auto &instr = ctx->instr->as<PushValInner_t>();
     auto arg = get_arg();
     switch (arg.type()) {
     case Value_t::tag::undefined:

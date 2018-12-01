@@ -798,8 +798,9 @@ struct OpenFrag_t: public Instruction_t {
 };
 
 struct OpenErrorFrag_t: public OpenFrag_t {
+    static constexpr auto instr_opcode = OPCODE::OPEN_ERROR_FRAG;
     OpenErrorFrag_t(const Pos_t &pos)
-        : OpenFrag_t(OPCODE::OPEN_ERROR_FRAG, "_error", pos)
+        : OpenFrag_t(instr_opcode, "_error", pos)
     {}
 };
 

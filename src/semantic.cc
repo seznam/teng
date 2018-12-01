@@ -512,6 +512,19 @@ bool are_instrs_protected(Context_t *ctx, int64_t from_addr) {
     return false;
 }
 
+/** Casts given instruction to OPEN_FRAG instruction.
+ */
+OpenFrag_t &open_frag_cast(Instruction_t &instr) {
+    switch (instr.opcode()) {
+    case OPCODE::OPEN_ERROR_FRAG:
+        return instr.as<OpenErrorFrag_t>();
+    case OPCODE::OPEN_FRAG:
+        return instr.as<OpenFrag_t>();
+    default:
+        throw bad_instr_cast_t(instr.opcode(), OPCODE::OPEN_FRAG);
+    }
+}
+
 } // namespace
 
 Token_t note_error(Context_t *ctx, const Token_t &token) {
@@ -699,7 +712,7 @@ void close_frag(Context_t *ctx, const Pos_t &pos, bool invalid) {
         auto frag_routine_length = ctx->program->size() - frag.addr - 1;
 
         // take references to instructions after push_back that invalidates them
-        auto &open_frag_instr = (*ctx->program)[frag.addr].as<OpenFrag_t>();
+        auto &open_frag_instr = open_frag_cast((*ctx->program)[frag.addr]);
         auto &close_frag_instr = ctx->program->back().as<CloseFrag_t>();
 
         // open frag instr contains offset of close frag instr and vice versa
