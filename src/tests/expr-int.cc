@@ -41,7 +41,7 @@
 
 SCENARIO(
     "Integral numeric == operator",
-    "[numeric][expr][integral]"
+    "[numeric][expr][integral][fuzzer]"
 ) {
     GIVEN("Some variables in root frag set to integral numbers") {
         Teng::Fragment_t root;

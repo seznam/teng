@@ -1958,7 +1958,7 @@ SCENARIO(
 
 SCENARIO(
     "Fuzzer problems in conditional expressions",
-    "[condx]"
+    "[cond][fuzzer]"
 ) {
     GIVEN("Two consecutive invalid empty expressions in if's") {
         std::string t = "<?teng if ?>s<?teng elseif ?>g${abc}<?teng endif?>";
@@ -2053,7 +2053,8 @@ SCENARIO(
                 }, {
                     Teng::Error_t::ERROR,
                     {1, 26},
-                    "Error in <?teng if?> statement true branch; "
+                    "Missing <?teng endif?> closing directive "
+                    "of <?teng if?> statement; "
                     "discarding whole if statement"
                 }, {
                     Teng::Error_t::ERROR,
@@ -2072,13 +2073,148 @@ SCENARIO(
                     Teng::Error_t::ERROR,
                     {1, 36},
                     "Unexpected token: name=END, view=?>"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "\tt");
+            }
+        }
+    }
+
+    GIVEN("Assign after expr") {
+       std::string t = "<?teng if e = ?>";
+
+       WHEN("The template is rendered") {
+           Teng::Error_t err;
+           Teng::Fragment_t root;
+           auto result = g(err, t, root);
+
+           THEN("The parser accepts it") {
+               std::vector<Teng::Error_t::Entry_t> errs = {{
+                   Teng::Error_t::ERROR,
+                   {1, 0},
+                   "Missing <?teng endif?> closing directive "
+                   "of <?teng if?> statement; "
+                   "discarding whole if statement"
+               }, {
+                   Teng::Error_t::ERROR,
+                   {1, 10},
+                   "Invalid expression, fix it please; "
+                   "replacing whole expression with undefined value"
+               }, {
+                   Teng::Error_t::ERROR,
+                   {1, 16},
+                   "Unexpected token: name=<EOF>, view="
+               }};
+               ERRLOG_TEST(err.getEntries(), errs);
+               REQUIRE(result == "");
+           }
+       }
+    }
+
+    GIVEN("Assign after expr + additional tokens") {
+       std::string t = "<?teng if e = / / / ?>";
+
+       WHEN("The template is rendered") {
+           Teng::Error_t err;
+           Teng::Fragment_t root;
+           auto result = g(err, t, root);
+
+           THEN("The parser accepts it") {
+               std::vector<Teng::Error_t::Entry_t> errs = {{
+                   Teng::Error_t::ERROR,
+                   {1, 0},
+                   "Missing <?teng endif?> closing directive "
+                   "of <?teng if?> statement; "
+                   "discarding whole if statement"
+               }, {
+                   Teng::Error_t::ERROR,
+                   {1, 10},
+                   "Invalid expression, fix it please; "
+                   "replacing whole expression with undefined value"
+               }, {
+                   Teng::Error_t::ERROR,
+                   {1, 14},
+                   "Unexpected token: name=REGEX, view=/ /"
+               }, {
+                   Teng::Error_t::ERROR,
+                   {1, 22},
+                   "Unexpected token: name=<EOF>, view="
+               }};
+               ERRLOG_TEST(err.getEntries(), errs);
+               REQUIRE(result == "");
+           }
+       }
+    }
+
+    GIVEN("???") {
+        std::string t(
+            "\"p<?teng if $\x05\x00\x00<?teng frag ?><?teng if\x00\x00"
+            "e = ?>",
+            47
+        );
+
+        WHEN("The template is rendered") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            auto result = g(err, t, root);
+
+            THEN("Both if statements are discarded") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::DIAG,
+                    {1, 2},
+                    "Invalid expression in the if statement condition"
                 }, {
                     Teng::Error_t::ERROR,
-                    {1, 39},
+                    {1, 2},
+                    "Missing <?teng endif?> closing directive "
+                    "of <?teng if?> statement; "
+                    "discarding whole if statement"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 12},
+                    "Invalid expression, fix it please; "
+                    "replacing whole expression with undefined value"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 13},
+                    "Unexpected character '\x05'"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 13},
+                    "Unexpected token: name=INV, view=\x05"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 16},
+                    "The closing directive of this <?teng frag?> directive "
+                    "is missing"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 16},
+                    "The <?teng frag?> directive must contain the frag name "
+                    "(e.g. <?teng frag example?>; "
+                    "discarding fragment block content"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 28},
+                    "Unexpected token: name=END, view=?>"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 30},
+                    "Missing <?teng endif?> closing directive "
+                    "of <?teng if?> statement; "
+                    "discarding whole if statement"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 41},
+                    "Invalid expression, fix it please; "
+                    "replacing whole expression with undefined value"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 47},
                     "Unexpected token: name=<EOF>, view="
                 }};
                 ERRLOG_TEST(err.getEntries(), errs);
-                REQUIRE(result == "\t");
+                REQUIRE(result == "\"p");
             }
         }
     }

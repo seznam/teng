@@ -41,7 +41,7 @@
 
 SCENARIO(
     "Real numeric == operator",
-    "[numeric][expr][real]"
+    "[numeric][expr][real][fuzzer]"
 ) {
     GIVEN("Some variables in root frag set to real numbers") {
         Teng::Fragment_t root;

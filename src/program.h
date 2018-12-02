@@ -124,6 +124,15 @@ public:
     /** Removes specified instruction from program.
      */
     iterator erase_from(int64_t pos) {
+#ifdef DEBUG
+        if (uint64_t(pos) > instrs.size()) {
+            throw std::out_of_range(
+                std::string("attempt to erase instrs behind the program end")
+                + ": program-size=" + std::to_string(instrs.size())
+                + ", pos=" + std::to_string(pos)
+            );
+        }
+#endif /* DEBUG */
         return instrs.erase(instrs.begin() + pos, instrs.end());
     }
 

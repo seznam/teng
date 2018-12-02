@@ -56,6 +56,7 @@
 
 // enable debugging
 %define parse.trace true
+%define parse.error verbose
 
 // add forward declarations to the begin of tengsyntax.hh
 %code requires {
@@ -432,12 +433,12 @@ teng_if_stmnt_valid
 
 
 teng_if_stmnt_invalid
-    : teng_if
-      error {finalize_inv_if_stmnt(ctx, *YYLA);}
+    : teng_if block_content
+      error {finalize_inv_if_stmnt(ctx, *YYLA); yyerrok;}
     | teng_if block_content teng_else
-      error {finalize_inv_if_stmnt(ctx, *YYLA);}
+      error {finalize_inv_if_stmnt(ctx, *YYLA); yyerrok;}
     | teng_if block_content teng_elif_stmnt teng_else
-      error {finalize_inv_if_stmnt(ctx, *YYLA);}
+      error {finalize_inv_if_stmnt(ctx, *YYLA); yyerrok;}
     ;
 
 

@@ -190,7 +190,7 @@ SCENARIO(
 
 SCENARIO(
     "Teng lexer level 1 comments",
-    "[basic]"
+    "[basic][fuzzer]"
 ) {
     GIVEN("None data") {
         Teng::Fragment_t root;

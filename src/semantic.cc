@@ -1321,6 +1321,7 @@ void finalize_if_stmnt(Context_t *ctx) {
 void finalize_inv_if_stmnt(Context_t *ctx, const Token_t &token) {
     auto &pos = ctx->if_stmnt_start_points.top().pos;
     switch (token) {
+    case LEX2::END:
     case LEX2_EOF:
         logError(
             ctx,
