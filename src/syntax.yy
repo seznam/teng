@@ -98,7 +98,7 @@
 }
 
 // use C++ parser (is always pure parser)
-%skeleton "lalr1.cc"
+%skeleton "./lalr1.cc"
 
 // all callbacks takes context
 %param {Teng::Parser::Context_t *ctx}
@@ -419,8 +419,8 @@ set_variable
 
 teng_if_stmnt
     : teng_if_stmnt_valid {finalize_if_stmnt(ctx);}
-    | teng_if_stmnt_invalid {}
-    | teng_if_stmnt_disordered {}
+    | teng_if_stmnt_invalid {finalize_inv_if_stmnt(ctx, *YYLA); yyerrok;;}
+    | teng_if_stmnt_disordered {discard_if_stmnt(ctx);}
     ;
 
 
@@ -433,20 +433,15 @@ teng_if_stmnt_valid
 
 
 teng_if_stmnt_invalid
-    : teng_if block_content
-      error {finalize_inv_if_stmnt(ctx, *YYLA); yyerrok;}
-    | teng_if block_content teng_else
-      error {finalize_inv_if_stmnt(ctx, *YYLA); yyerrok;}
-    | teng_if block_content teng_elif_stmnt teng_else
-      error {finalize_inv_if_stmnt(ctx, *YYLA); yyerrok;}
+    : teng_if block_content error
+    | teng_if block_content teng_else error
+    | teng_if block_content teng_elif_stmnt teng_else error
     ;
 
 
 teng_if_stmnt_disordered
-    : teng_if block_content teng_else block_content teng_elif
-      error_up_to_end_if teng_endif {discard_if(ctx);}
-    | teng_if block_content teng_elif_stmnt teng_else block_content teng_elif
-      error_up_to_end_if teng_endif {discard_if(ctx);}
+    : teng_if block_content teng_else block_content teng_elif error_up_to_end_if teng_endif
+    | teng_if block_content teng_elif_stmnt teng_else block_content teng_elif error_up_to_end_if teng_endif
     ;
 
 
@@ -457,7 +452,7 @@ teng_elif_stmnt
 
 
 teng_if_prepare
-    : IF {prepare_if(ctx, $1->pos); $$ = std::move($1);}
+    : IF {prepare_if_stmnt(ctx, $1->pos); $$ = std::move($1);}
     ;
 
 
@@ -469,23 +464,23 @@ teng_if
 
 teng_else
     : ELSE ignored_options END {generate_else(ctx, *$1);}
-    | ELSE error_up_to_end END {generate_inv_else(ctx, *$1);}
+    | ELSE error_up_to_end END {generate_else(ctx, *$1, true);}
     ;
 
 
 teng_elif_prepare
-    : ELSEIF {generate_elif(ctx, *$1); $$ = std::move($1);}
+    : ELSEIF {prepare_elif(ctx, *$1); $$ = std::move($1);}
 
 
 teng_elif
-    : teng_elif_prepare expr_up_to_end END {generate_if(ctx, *$1, $2);}
-    | teng_elif_prepare expr_up_to_end INV {generate_if(ctx, *$1, *$3);}
+    : teng_elif_prepare expr_up_to_end END {generate_elif(ctx, *$1, $2);}
+    | teng_elif_prepare expr_up_to_end INV {generate_elif(ctx, *$1, *$3);}
     ;
 
 
 teng_endif
-    : ENDIF ignored_options END {finalize_if(ctx);}
-    | ENDIF error_up_to_end END {finalize_inv_if(ctx, $1->pos);}
+    : ENDIF ignored_options END {generate_endif(ctx);}
+    | ENDIF error_up_to_end END {generate_endif(ctx, &$1->pos);}
     ;
 
 
@@ -523,8 +518,7 @@ expr_up_to_end
  // before END token.
 expr_up_to_end_impl
     : expression_impl {finish_expr(ctx); $$ = true;}
-    | expression_impl ASSIGN {discard_expr(ctx); $$ = true;}
-    | expression_impl ASSIGN error_up_to_end {discard_expr(ctx); $$ = true;}
+    | expression_impl error_up_to_end {discard_expr(ctx); $$ = true;}
     | error_up_to_end {discard_expr(ctx); $$ = false;}
     ;
 
@@ -541,6 +535,7 @@ expr_up_to_short_end
  // before SHORT_END token.
 expr_up_to_short_end_impl
     : expression_impl {finish_expr(ctx);}
+    | expression_impl error_up_to_short_end {discard_expr(ctx);}
     | error_up_to_short_end {discard_expr(ctx);}
     ;
 

@@ -525,6 +525,30 @@ OpenFrag_t &open_frag_cast(Instruction_t &instr) {
     }
 }
 
+/** Calculates if expression jump and updates appropriate instructions in
+ * program.
+ */
+void finalize_if_branch(Context_t *ctx, int32_t shift) {
+    // TODO(burlog): optimalize if
+
+    // calculate real jump address for last elif/else branch
+    auto branch_addr = ctx->branch_addrs.top().pop();
+    switch ((*ctx->program)[branch_addr].opcode()) {
+    case OPCODE::JMP: {        // else branch
+        auto &instr = (*ctx->program)[branch_addr].as<Jmp_t>();
+        instr.addr_offset = ctx->program->size() - branch_addr - shift;
+        break;
+    }
+    case OPCODE::JMP_IF_NOT: { // elif branch
+        auto &instr = (*ctx->program)[branch_addr].as<JmpIfNot_t>();
+        instr.addr_offset = ctx->program->size() - branch_addr - shift;
+        break;
+    }
+    default:
+        throw std::runtime_error(__PRETTY_FUNCTION__);
+    }
+}
+
 } // namespace
 
 Token_t note_error(Context_t *ctx, const Token_t &token) {
@@ -1212,13 +1236,18 @@ close_unclosed_ctype(Context_t *ctx, const Pos_t &pos, const Token_t &token) {
     reset_error(ctx);
 }
 
-void prepare_if(Context_t *ctx, const Pos_t &pos) {
+void prepare_if_stmnt(Context_t *ctx, const Pos_t &pos) {
     ctx->branch_addrs.push();
     ctx->if_stmnt_start_points.push({
         pos,
         static_cast<int64_t>(ctx->program->size()),
         true
     });
+}
+
+void finalize_if_stmnt(Context_t *ctx) {
+    ctx->branch_addrs.pop();
+    ctx->if_stmnt_start_points.pop();
 }
 
 void generate_if(Context_t *ctx, const Token_t &token, bool valid_expr) {
@@ -1249,28 +1278,7 @@ void generate_if(Context_t *ctx, const Token_t &token, const Token_t &inv) {
     generate_if(ctx, token, false);
 }
 
-void finalize_if_branch(Context_t *ctx, int32_t shift) {
-    // TODO(burlog): optimalize if
-
-    // calculate real jump address for last elif/else branch
-    auto branch_addr = ctx->branch_addrs.top().pop();
-    switch ((*ctx->program)[branch_addr].opcode()) {
-    case OPCODE::JMP: {        // else branch
-        auto &instr = (*ctx->program)[branch_addr].as<Jmp_t>();
-        instr.addr_offset = ctx->program->size() - branch_addr - shift;
-        break;
-    }
-    case OPCODE::JMP_IF_NOT: { // elif branch
-        auto &instr = (*ctx->program)[branch_addr].as<JmpIfNot_t>();
-        instr.addr_offset = ctx->program->size() - branch_addr - shift;
-        break;
-    }
-    default:
-        throw std::runtime_error(__PRETTY_FUNCTION__);
-    }
-}
-
-void finalize_if(Context_t *ctx) {
+void generate_endif(Context_t *ctx, const Pos_t *inv_pos) {
     finalize_if_branch(ctx, 1);
     while (!ctx->branch_addrs.top().empty()) {
         auto branch_addr = ctx->branch_addrs.top().pop();
@@ -1280,42 +1288,38 @@ void finalize_if(Context_t *ctx) {
 
     // breaks invalid print optimization
     generate<Noop_t>(ctx);
+
+    // warn if there is invalid tokens
+    if (inv_pos) {
+        logWarning(
+            ctx,
+            *inv_pos,
+            "Ignoring invalid excessive tokens in <?teng endif?> directive"
+        );
+        reset_error(ctx);
+    }
 }
 
-void finalize_inv_if(Context_t *ctx, const Pos_t &pos) {
-    finalize_if(ctx);
-    logWarning(
-        ctx,
-        pos,
-        "Ignoring invalid excessive tokens in <?teng endif?> directive"
-    );
-    reset_error(ctx);
-}
-
-void generate_else(Context_t *ctx, const Token_t &token) {
+void generate_else(Context_t *ctx, const Token_t &token, bool invalid) {
     finalize_if_branch(ctx, 0);
     ctx->branch_addrs.top().push(ctx->program->size());
     generate<Jmp_t>(ctx, token.pos);
+
+    // warn if there is invalid tokens
+    if (invalid) {
+        logWarning(
+            ctx,
+            token.pos,
+            "Ignoring invalid excessive tokens in <?teng else?> directive"
+        );
+        reset_error(ctx);
+    }
 }
 
-void generate_inv_else(Context_t *ctx, const Token_t &token) {
-    generate_else(ctx, token);
-    logWarning(
-        ctx,
-        token.pos,
-        "Ignoring invalid excessive tokens in <?teng else?> directive"
-    );
-    reset_error(ctx);
-}
-
-void generate_elif(Context_t *ctx, const Token_t &token) {
+void prepare_elif(Context_t *ctx, const Token_t &token) {
     finalize_if_branch(ctx, 0);
     ctx->branch_addrs.top().push(ctx->program->size());
     generate<Jmp_t>(ctx, token.pos);
-}
-
-void finalize_if_stmnt(Context_t *ctx) {
-    ctx->branch_addrs.pop();
 }
 
 void finalize_inv_if_stmnt(Context_t *ctx, const Token_t &token) {
@@ -1363,14 +1367,13 @@ void finalize_inv_if_stmnt(Context_t *ctx, const Token_t &token) {
         );
         break;
     }
-    ctx->branch_addrs.pop();
     ctx->program->erase_from(ctx->if_stmnt_start_points.top().addr);
-    ctx->if_stmnt_start_points.pop();
+    finalize_if_stmnt(ctx);
     note_error(ctx, token);
     reset_error(ctx);
 }
 
-void discard_if(Context_t *ctx) {
+void discard_if_stmnt(Context_t *ctx) {
     logError(
         ctx,
         ctx->if_stmnt_start_points.top().pos,
@@ -1378,7 +1381,7 @@ void discard_if(Context_t *ctx) {
         "discarding whole if statement"
     );
     ctx->program->erase_from(ctx->if_stmnt_start_points.top().addr);
-    ctx->if_stmnt_start_points.pop();
+    finalize_if_stmnt(ctx);
 }
 
 void set_var(Context_t *ctx, Variable_t var) {
