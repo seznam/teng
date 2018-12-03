@@ -1307,8 +1307,20 @@ counted_ptr<Regex_t> generate_regex(Context_t *ctx, const Token_t &regex) {
             );
         }
     }
-    string_view_t pattern = {regex.view().data() + 1, regex.view().data() + i};
-    return make_counted<Regex_t>(pattern, flags);
+
+    try {
+        auto *data = regex.view().data();
+        string_view_t pattern = {data + 1, data + i};
+        return make_counted<Regex_t>(pattern, flags);
+
+    } catch (const std::exception &e) {
+        logWarning(
+            ctx,
+            regex.pos,
+            std::string("Invalid regular expression: ") + e.what()
+        );
+    }
+    return make_counted<Regex_t>(".^", flags);
 }
 
 void

@@ -44,13 +44,13 @@
 namespace Teng {
 
 // forwards
-class Pos_t;
+struct Pos_t;
 
 namespace Parser {
 
 // forwards
 class Token_t;
-class Context_t;
+struct Context_t;
 
 /** Prepares new if statement.
  */
