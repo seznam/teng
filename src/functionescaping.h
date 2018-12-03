@@ -107,8 +107,8 @@ Result_t urlescape(Ctx_t &ctx, const Args_t &args) {
                 break;
             default:
                 escaped.push_back('%');
-                escaped.push_back(hex[ch >> 4]);
-                escaped.push_back(hex[ch & 0x0f]);
+                escaped.push_back(hex[uint8_t(ch) >> 4]);
+                escaped.push_back(hex[uint8_t(ch) & 0x0f]);
                 break;
             }
         }

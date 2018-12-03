@@ -47,7 +47,7 @@ namespace Teng {
 struct Pos_t;
 class Regex_t;
 class Value_t;
-class Identifier_t;
+struct Identifier_t;
 
 namespace Parser {
 

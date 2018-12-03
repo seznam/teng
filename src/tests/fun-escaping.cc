@@ -56,6 +56,13 @@ SCENARIO(
             REQUIRE(g(t) == "'asdf!@%23$%^&amp;*(%22");
         }
     }
+
+    WHEN("String with utf-8 char - escaping print used") {
+        THEN("Is escaped") {
+            auto t = "<?teng expr urlescape('¢')?>";
+            REQUIRE(g(t) == "%C2%A2");
+        }
+    }
 }
 
 SCENARIO(
