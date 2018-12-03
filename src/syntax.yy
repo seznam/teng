@@ -62,6 +62,7 @@
 %code requires {
     #include "yystype.h"
     #include "semantic.h"
+    #include "semanticif.h"
     namespace Teng {
     namespace Parser {
     struct Context_t;

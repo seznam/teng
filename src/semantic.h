@@ -315,57 +315,6 @@ void close_inv_ctype(Context_t *ctx, const Pos_t &pos);
 void
 close_unclosed_ctype(Context_t *ctx, const Pos_t &pos, const Token_t &token);
 
-/** Prepares new if statement.
- */
-void prepare_if_stmnt(Context_t *ctx, const Pos_t &pos);
-
-/** Cleans after if statement building.
- */
-void finalize_if_stmnt(Context_t *ctx);
-
-/** Generates instructions implementing the if expression.
- */
-void generate_if(Context_t *ctx, const Token_t &token, bool valid_expr);
-
-/** Generates instructions implementing the if expression.
- */
-void generate_if(Context_t *ctx, const Token_t &token, const Token_t &inv);
-
-/** Generates instructions implementing the if expression.
- */
-inline void
-generate_elif(Context_t *ctx, const Token_t &token, bool valid_expr) {
-    generate_if(ctx, token, valid_expr);
-}
-
-/** Generates instructions implementing the if expression.
- */
-inline void
-generate_elif(Context_t *ctx, const Token_t &token, const Token_t &inv) {
-    generate_if(ctx, token, inv);
-}
-
-/** Updates branch terminating jumps.
- */
-void generate_endif(Context_t *ctx, const Pos_t *inv_pos = nullptr);
-
-/** Cleans after invalid if statement building.
- */
-void finalize_inv_if_stmnt(Context_t *ctx, const Token_t &token);
-
-/** Generates instructions implementing the else expression.
- */
-void generate_else(Context_t *ctx, const Token_t &token, bool invalid = false);
-
-/** Calculates if expression's jump and updates appropriate instructions in
- * program.
- */
-void prepare_elif(Context_t *ctx, const Token_t &token);
-
-/** Discards while if statement because of invalid order of else/elif branches.
- */
-void discard_if_stmnt(Context_t *ctx);
-
 /** Generates code implementing the setting variable.
  */
 void set_var(Context_t *ctx, Variable_t var_name);

@@ -211,6 +211,14 @@ struct Context_t {
      */
     void load_source(const std::string &source);
 
+    /** Returns current address of the unfinished JMP instruction.
+     */
+    addrs_stack_t::entry_t &curr_branch_addrs() {return branch_addrs.top();}
+
+    /** Returns current address of the unfinished JMP instruction.
+     */
+    auto &curr_if_start_point() {return if_start_points.top();}
+
     bool utf8;                          //!< true if templates are in utf-8
     std::unique_ptr<Program_t> program; //!< program created by parser
     const Dictionary_t *dict;           //!< language dictionary
@@ -227,7 +235,7 @@ struct Context_t {
     bool error_occurred;                //!< used to turn off consequent errors
     Token_t unexpected_token;           //!< the last unexpected token
     expr_start_t expr_start_point;      //!< address and pos where exprs starts
-    expr_starts_t if_stmnt_start_points;//!< addresses where if stmnts start
+    expr_starts_t if_start_points;      //!< addresses where if stmnts start
     rtvar_strings_t rtvar_strings;      //!< positions where rtvar starts
     addrs_stack_t branch_addrs;         //!< addresses of unfinished jumps
     addrs_stack_t case_option_addrs;    //!< the list of addrs of case options
