@@ -1122,3 +1122,24 @@ SCENARIO(
     }
 }
 
+SCENARIO(
+    "Fuzzer problems in expression with real numbers",
+    "[real][fuzzer]"
+) {
+    GIVEN("Comparison of real number with string") {
+        Teng::Fragment_t root;
+        std::string t = "${1.1e20 =~ 1.1}";
+
+        WHEN("The expression is evaluated") {
+            Teng::Error_t err;
+            auto result = g(err, t, root);
+
+            THEN("Memory leak is fixed") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "0");
+            }
+        }
+    }
+}
+

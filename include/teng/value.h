@@ -665,6 +665,7 @@ public:
                 default:
                     // calling the dispose() is not needed because only string
                     // and regex owns dynamic resources
+                    tag_value = tag::string;
                     new (&string_value) string_type(v.str());
                     return string_view_t(string_value);
             }
