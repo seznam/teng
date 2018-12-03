@@ -36,14 +36,11 @@
  *             Moved from syntax.yy.
  */
 
-#include <cstdio>
-#include <string>
-
-#include "lex2.h"
 #include "program.h"
+#include "parserdiag.h"
 #include "instruction.h"
 #include "parsercontext.h"
-#include "semantic.h"
+#include "semantictern.h"
 
 #ifdef DEBUG
 #include <iostream>
@@ -54,35 +51,39 @@
 
 namespace Teng {
 namespace Parser {
-namespace {
 
-} // namespace
-
-Token_t note_error(Context_t *ctx, const Token_t &token) {
-    if (!ctx->error_occurred) {
-        ctx->error_occurred = true;
-        ctx->unexpected_token = token;
-        ExprDiag_t::log_unexpected_token(ctx);
-    }
-    return token;
+void generate_tern_op(Context_t *ctx, const Token_t &token) {
+    ctx->curr_branch_addrs().push(ctx->program->size());
+    generate<JmpIfNot_t>(ctx, token.pos);
+    expr_diag(ctx, diag_code::tern_true_branch, false);
 }
 
-void reset_error(Context_t *ctx) {
-    ctx->error_occurred = false;
+void finalize_tern_op_true_branch(Context_t *ctx, const Token_t &token) {
+    // calculate jump from begin of tern op to false branch
+    auto cond_addr = ctx->curr_branch_addrs().pop();
+    auto false_branch_offset = ctx->program->size() - cond_addr;
+
+    // store address of jump from true branch
+    ctx->curr_branch_addrs().push(ctx->program->size());
+    generate<Jmp_t>(ctx, token.pos);
+
+    // fix conditional jump offset (relative addr)
+    auto &instr = (*ctx->program)[cond_addr].as<JmpIfNot_t>();
+    instr.addr_offset = false_branch_offset;
+
+    // diagnostic code
+    expr_diag(ctx, diag_code::tern_false_branch);
 }
 
-void expr_diag(Context_t *ctx, diag_code_type new_diag_code, bool pop) {
-    if (pop) ctx->expr_diag.pop();
-    ctx->expr_diag.push({new_diag_code, ctx->pos()});
-}
+void finalize_tern_op_false_branch(Context_t *ctx) {
+    auto true_branch_jump_addr = ctx->curr_branch_addrs().pop();
+    auto tern_op_end_offset = ctx->program->size() - true_branch_jump_addr - 1;
+    auto &instr = (*ctx->program)[true_branch_jump_addr].as<Jmp_t>();
+    instr.addr_offset = tern_op_end_offset;
+    ctx->expr_diag.pop();
 
-void expr_diag_sentinel(Context_t *ctx, diag_code new_diag_code) {
-    ctx->expr_diag.push_sentinel();
-    expr_diag(ctx, new_diag_code, false);
-}
-
-void generate_val(Context_t *ctx, const Pos_t &pos, Value_t value) {
-    generate<Val_t>(ctx, std::move(value), pos);
+    // breaks invalid print optimization
+    generate<Noop_t>(ctx);
 }
 
 } // namespace Parser

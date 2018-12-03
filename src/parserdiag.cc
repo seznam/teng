@@ -36,6 +36,8 @@
 
 #include "lex2.h"
 #include "syntax.hh"
+#include "logging.h"
+#include "parsercontext.h"
 #include "parserdiag.h"
 
 namespace Teng {

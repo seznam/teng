@@ -235,6 +235,15 @@ public:
     Value_t value; //!< the literal value
 };
 
+struct VarOffset_t {
+    explicit operator bool() const {
+        return (frame < invalid_offset) && (frag < invalid_offset);
+    }
+    static constexpr auto invalid_offset = std::numeric_limits<uint16_t>::max();
+    uint64_t frame = invalid_offset;  //!< the offset of frame in stack
+    uint64_t frag = invalid_offset;   //!< the offset of frag in frame
+};
+
 /** The symbol representing the variables in various contexts.
  */
 class Variable_t: public Symbol_t {
@@ -277,18 +286,7 @@ public:
      */
     Variable_t &pop_back(Context_t *ctx, const Pos_t &pos);
 
-    /** Unresolved offset.
-     */
-    static constexpr auto invalid_offset = std::numeric_limits<uint16_t>::max();
-
-    struct Offset_t {
-        explicit operator bool() const {
-            return (frame < Variable_t::invalid_offset)
-                && (frag < Variable_t::invalid_offset);
-        }
-        uint64_t frame = invalid_offset;  //!< the offset of frame in stack
-        uint64_t frag = invalid_offset;   //!< the offset of frag in frame
-    } offset;
+    VarOffset_t offset; //!< the offset of variable in stack of open frags
     Identifier_t ident; //!< the variable identifier
 };
 

@@ -36,55 +36,47 @@
  *             Moved from syntax.yy.
  */
 
-#include <cstdio>
+#ifndef TENGSEMANTICFRAG_H
+#define TENGSEMANTICFRAG_H
+
 #include <string>
 
-#include "lex2.h"
-#include "program.h"
-#include "instruction.h"
-#include "parsercontext.h"
 #include "semantic.h"
-
-#ifdef DEBUG
-#include <iostream>
-#define DBG(...) __VA_ARGS__
-#else /* DEBUG */
-#define DBG(...)
-#endif /* DEBUG */
 
 namespace Teng {
 namespace Parser {
-namespace {
 
-} // namespace
+/** Generates as many as needed open frag instructions.
+ */
+void open_frag(Context_t *ctx, const Pos_t &pos, Variable_t &frag);
 
-Token_t note_error(Context_t *ctx, const Token_t &token) {
-    if (!ctx->error_occurred) {
-        ctx->error_occurred = true;
-        ctx->unexpected_token = token;
-        ExprDiag_t::log_unexpected_token(ctx);
-    }
-    return token;
-}
+/** Warns about invalid fragment name.
+ */
+void open_inv_frag(Context_t *ctx, const Pos_t &pos);
 
-void reset_error(Context_t *ctx) {
-    ctx->error_occurred = false;
-}
+/** Generates as many as needed close frag instructions.
+ */
+void close_frag(Context_t *ctx, const Pos_t &pos, bool invalid = false);
 
-void expr_diag(Context_t *ctx, diag_code_type new_diag_code, bool pop) {
-    if (pop) ctx->expr_diag.pop();
-    ctx->expr_diag.push({new_diag_code, ctx->pos()});
-}
+/** Closes invalid fragment.
+ */
+void close_inv_frag(Context_t *ctx, const Pos_t &pos);
 
-void expr_diag_sentinel(Context_t *ctx, diag_code new_diag_code) {
-    ctx->expr_diag.push_sentinel();
-    expr_diag(ctx, new_diag_code, false);
-}
+/** Generates as many as needed close frag instructions.
+ */
+void
+close_unclosed_frag(Context_t *ctx, const Pos_t &pos, const Token_t &token);
 
-void generate_val(Context_t *ctx, const Pos_t &pos, Value_t value) {
-    generate<Val_t>(ctx, std::move(value), pos);
-}
+/** Generates code implementing debug fragment.
+ */
+void debug_frag(Context_t *ctx, const Pos_t &pos, bool warn = false);
+
+/** Generates code implementing bytecode fragment.
+ */
+void bytecode_frag(Context_t *ctx, const Pos_t &pos, bool warn = false);
 
 } // namespace Parser
 } // namespace Teng
+
+#endif /* TENGSEMANTICFRAG_H */
 

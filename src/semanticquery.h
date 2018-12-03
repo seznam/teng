@@ -36,55 +36,30 @@
  *             Moved from syntax.yy.
  */
 
-#include <cstdio>
+#ifndef TENGSEMANTICQUERY_H
+#define TENGSEMANTICQUERY_H
+
 #include <string>
 
-#include "lex2.h"
-#include "program.h"
-#include "instruction.h"
-#include "parsercontext.h"
 #include "semantic.h"
-
-#ifdef DEBUG
-#include <iostream>
-#define DBG(...) __VA_ARGS__
-#else /* DEBUG */
-#define DBG(...)
-#endif /* DEBUG */
 
 namespace Teng {
 namespace Parser {
-namespace {
 
-} // namespace
+/** Generates runtime variable instruction from variable identifier for query
+ * call.
+ */
+void generate_query(Context_t *ctx, const Variable_t &var, bool warn);
 
-Token_t note_error(Context_t *ctx, const Token_t &token) {
-    if (!ctx->error_occurred) {
-        ctx->error_occurred = true;
-        ctx->unexpected_token = token;
-        ExprDiag_t::log_unexpected_token(ctx);
-    }
-    return token;
-}
-
-void reset_error(Context_t *ctx) {
-    ctx->error_occurred = false;
-}
-
-void expr_diag(Context_t *ctx, diag_code_type new_diag_code, bool pop) {
-    if (pop) ctx->expr_diag.pop();
-    ctx->expr_diag.push({new_diag_code, ctx->pos()});
-}
-
-void expr_diag_sentinel(Context_t *ctx, diag_code new_diag_code) {
-    ctx->expr_diag.push_sentinel();
-    expr_diag(ctx, new_diag_code, false);
-}
-
-void generate_val(Context_t *ctx, const Pos_t &pos, Value_t value) {
-    generate<Val_t>(ctx, std::move(value), pos);
-}
+/** Generates instructions implementing query expression.
+ * If arity is not 1 then query is badly formated and instruction is not
+ * generated.
+ */
+template <typename Instr_t>
+NAryExpr_t query_expr(Context_t *ctx, const Token_t &token, uint32_t arity);
 
 } // namespace Parser
 } // namespace Teng
+
+#endif /* TENGSEMANTICQUERY_H */
 

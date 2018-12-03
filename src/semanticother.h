@@ -36,55 +36,44 @@
  *             Moved from syntax.yy.
  */
 
-#include <cstdio>
+#ifndef TENGSEMANTICOTHER_H
+#define TENGSEMANTICOTHER_H
+
 #include <string>
 
-#include "lex2.h"
-#include "program.h"
-#include "instruction.h"
-#include "parsercontext.h"
 #include "semantic.h"
-
-#ifdef DEBUG
-#include <iostream>
-#define DBG(...) __VA_ARGS__
-#else /* DEBUG */
-#define DBG(...)
-#endif /* DEBUG */
 
 namespace Teng {
 namespace Parser {
-namespace {
 
-} // namespace
+/** Opens given file and replace include directive with content of the file.
+ */
+void include_file(Context_t *ctx, const Pos_t &pos, const Options_t &opts);
 
-Token_t note_error(Context_t *ctx, const Token_t &token) {
-    if (!ctx->error_occurred) {
-        ctx->error_occurred = true;
-        ctx->unexpected_token = token;
-        ExprDiag_t::log_unexpected_token(ctx);
-    }
-    return token;
-}
+/** Writes warning into log error about ignored include.
+ */
+void ignore_include(Context_t *ctx, const Token_t &token, bool empty = false);
 
-void reset_error(Context_t *ctx) {
-    ctx->error_occurred = false;
-}
+/** Generates warning with unknown Teng directive message.
+ */
+void ignore_unknown_directive(Context_t *ctx, const Token_t &token);
 
-void expr_diag(Context_t *ctx, diag_code_type new_diag_code, bool pop) {
-    if (pop) ctx->expr_diag.pop();
-    ctx->expr_diag.push({new_diag_code, ctx->pos()});
-}
+/** Generates warning about excessive options in directive that does not accept
+ * any.
+ */
+void ignore_excessive_options(Context_t *ctx, const Pos_t &pos);
 
-void expr_diag_sentinel(Context_t *ctx, diag_code new_diag_code) {
-    ctx->expr_diag.push_sentinel();
-    expr_diag(ctx, new_diag_code, false);
-}
+/** Inserts new option to options list. It expects that ctx->opts_sym is valid
+ * symbol (not moved out).
+ */
+void new_option(Context_t *ctx, const Token_t &name, Literal_t &&literal);
 
-void generate_val(Context_t *ctx, const Pos_t &pos, Value_t value) {
-    generate<Val_t>(ctx, std::move(value), pos);
-}
+/** Generates instructions implementing the function call.
+ */
+uint32_t generate_func(Context_t *ctx, const Token_t &name, uint32_t nargs);
 
 } // namespace Parser
 } // namespace Teng
+
+#endif /* TENGSEMANTICOTHER_H */
 

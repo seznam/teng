@@ -36,55 +36,47 @@
  *             Moved from syntax.yy.
  */
 
-#include <cstdio>
+#ifndef TENGSEMANTICPRINT_H
+#define TENGSEMANTICPRINT_H
+
 #include <string>
 
-#include "lex2.h"
-#include "program.h"
-#include "instruction.h"
-#include "parsercontext.h"
 #include "semantic.h"
-
-#ifdef DEBUG
-#include <iostream>
-#define DBG(...) __VA_ARGS__
-#else /* DEBUG */
-#define DBG(...)
-#endif /* DEBUG */
 
 namespace Teng {
 namespace Parser {
-namespace {
 
-} // namespace
+/** Generates print instruction.
+ */
+void generate_print(Context_t *ctx, bool print_escape = true);
 
-Token_t note_error(Context_t *ctx, const Token_t &token) {
-    if (!ctx->error_occurred) {
-        ctx->error_occurred = true;
-        ctx->unexpected_token = token;
-        ExprDiag_t::log_unexpected_token(ctx);
-    }
-    return token;
-}
+/** Generates lookup to dictionary instruction.
+ */
+void generate_dict_lookup(Context_t *ctx, const Token_t &token);
 
-void reset_error(Context_t *ctx) {
-    ctx->error_occurred = false;
-}
+/** Generates raw print instruction.
+ */
+void generate_raw_print(Context_t *ctx);
 
-void expr_diag(Context_t *ctx, diag_code_type new_diag_code, bool pop) {
-    if (pop) ctx->expr_diag.pop();
-    ctx->expr_diag.push({new_diag_code, ctx->pos()});
-}
+/** Generates print instruction of given token value.
+ */
+void generate_raw_print(Context_t *ctx, const Token_t &token);
 
-void expr_diag_sentinel(Context_t *ctx, diag_code new_diag_code) {
-    ctx->expr_diag.push_sentinel();
-    expr_diag(ctx, new_diag_code, false);
-}
+/** Generates print instruction of given token value. It expects that value is
+ * "undefined" which does not need escaping.
+ */
+void generate_inv_print(Context_t *ctx, const Token_t &inv);
 
-void generate_val(Context_t *ctx, const Pos_t &pos, Value_t value) {
-    generate<Val_t>(ctx, std::move(value), pos);
-}
+/** Generates lookup to dictionary instruction.
+ */
+void print_dict_lookup(Context_t *ctx, const Token_t &token);
+
+/** Generates undefined value due to invalid dict identifier.
+ */
+void print_dict_undef(Context_t *ctx, const Token_t &token);
 
 } // namespace Parser
 } // namespace Teng
+
+#endif /* TENGSEMANTICPRINT_H */
 

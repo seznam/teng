@@ -58,7 +58,10 @@ libteng_la_SOURCES = teng.cc fragment.cc fragmentlist.cc util.cc               \
 					 position.cc lex2impl.ll udf.cc yystype.cc md5.cc          \
 					 configuration.cc aux.cc logging.cc semantic.cc hex.cc     \
 					 utf8.cc stringview.cc lex2.cc parserfrag.cc parserdiag.cc \
-					 semanticif.cc
+					 semanticblock.cc semanticcase.cc semanticexpr.cc          \
+					 semanticfrag.cc semanticif.cc semanticother.cc            \
+					 semanticprint.cc semanticquery.cc semanticregex.cc        \
+					 semantictern.cc semanticvar.cc
 
 # with these flags (version info etc.)
 libteng_la_LDFLAGS = @VERSION_INFO@

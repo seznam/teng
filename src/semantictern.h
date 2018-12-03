@@ -36,55 +36,30 @@
  *             Moved from syntax.yy.
  */
 
-#include <cstdio>
+#ifndef TENGSEMANTICTERN_H
+#define TENGSEMANTICTERN_H
+
 #include <string>
 
-#include "lex2.h"
-#include "program.h"
-#include "instruction.h"
-#include "parsercontext.h"
 #include "semantic.h"
-
-#ifdef DEBUG
-#include <iostream>
-#define DBG(...) __VA_ARGS__
-#else /* DEBUG */
-#define DBG(...)
-#endif /* DEBUG */
 
 namespace Teng {
 namespace Parser {
-namespace {
 
-} // namespace
+/** Generates first conditional instruction for ternary operator.
+ */
+void generate_tern_op(Context_t *ctx, const Token_t &token);
 
-Token_t note_error(Context_t *ctx, const Token_t &token) {
-    if (!ctx->error_occurred) {
-        ctx->error_occurred = true;
-        ctx->unexpected_token = token;
-        ExprDiag_t::log_unexpected_token(ctx);
-    }
-    return token;
-}
+/** Finalizes jumps for true branch of ternary operator.
+ */
+void finalize_tern_op_true_branch(Context_t *ctx, const Token_t &token);
 
-void reset_error(Context_t *ctx) {
-    ctx->error_occurred = false;
-}
-
-void expr_diag(Context_t *ctx, diag_code_type new_diag_code, bool pop) {
-    if (pop) ctx->expr_diag.pop();
-    ctx->expr_diag.push({new_diag_code, ctx->pos()});
-}
-
-void expr_diag_sentinel(Context_t *ctx, diag_code new_diag_code) {
-    ctx->expr_diag.push_sentinel();
-    expr_diag(ctx, new_diag_code, false);
-}
-
-void generate_val(Context_t *ctx, const Pos_t &pos, Value_t value) {
-    generate<Val_t>(ctx, std::move(value), pos);
-}
+/** Finalizes jumps for false branch of ternary operator.
+ */
+void finalize_tern_op_false_branch(Context_t *ctx);
 
 } // namespace Parser
 } // namespace Teng
+
+#endif /* TENGSEMANTICTERN_H */
 

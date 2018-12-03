@@ -36,55 +36,27 @@
  *             Moved from syntax.yy.
  */
 
-#include <cstdio>
+#ifndef TENGSEMANTICREGEX_H
+#define TENGSEMANTICREGEX_H
+
 #include <string>
 
-#include "lex2.h"
-#include "program.h"
-#include "instruction.h"
-#include "parsercontext.h"
 #include "semantic.h"
-
-#ifdef DEBUG
-#include <iostream>
-#define DBG(...) __VA_ARGS__
-#else /* DEBUG */
-#define DBG(...)
-#endif /* DEBUG */
+#include "teng/counted_ptr.h"
 
 namespace Teng {
 namespace Parser {
-namespace {
 
-} // namespace
+/** Generates code implementing regex.
+ */
+counted_ptr<Regex_t> generate_regex(Context_t *ctx, const Token_t &regex);
 
-Token_t note_error(Context_t *ctx, const Token_t &token) {
-    if (!ctx->error_occurred) {
-        ctx->error_occurred = true;
-        ctx->unexpected_token = token;
-        ExprDiag_t::log_unexpected_token(ctx);
-    }
-    return token;
-}
-
-void reset_error(Context_t *ctx) {
-    ctx->error_occurred = false;
-}
-
-void expr_diag(Context_t *ctx, diag_code_type new_diag_code, bool pop) {
-    if (pop) ctx->expr_diag.pop();
-    ctx->expr_diag.push({new_diag_code, ctx->pos()});
-}
-
-void expr_diag_sentinel(Context_t *ctx, diag_code new_diag_code) {
-    ctx->expr_diag.push_sentinel();
-    expr_diag(ctx, new_diag_code, false);
-}
-
-void generate_val(Context_t *ctx, const Pos_t &pos, Value_t value) {
-    generate<Val_t>(ctx, std::move(value), pos);
-}
+/** Generates code implementing regex matching.
+ */
+void generate_match(Context_t *ctx, const Token_t &token, const Token_t &regex);
 
 } // namespace Parser
 } // namespace Teng
+
+#endif /* TENGSEMANTICREGEX_H */
 

@@ -60,9 +60,22 @@
 
 // add forward declarations to the begin of tengsyntax.hh
 %code requires {
+    #include "regex.h"
+    #include "program.h"
     #include "yystype.h"
-    #include "semantic.h"
+    #include "instruction.h"
+    #include "parsercontext.h"
+    #include "semanticblock.h"
+    #include "semanticcase.h"
+    #include "semanticexpr.h"
+    #include "semanticfrag.h"
     #include "semanticif.h"
+    #include "semanticother.h"
+    #include "semanticprint.h"
+    #include "semanticquery.h"
+    #include "semanticregex.h"
+    #include "semantictern.h"
+    #include "semanticvar.h"
     namespace Teng {
     namespace Parser {
     struct Context_t;
@@ -98,8 +111,11 @@
     } // namespace Teng
 }
 
+// include token names in implementation file
+%token-table
+
 // use C++ parser (is always pure parser)
-%skeleton "./lalr1.cc"
+%skeleton "lalr1.cc"
 
 // all callbacks takes context
 %param {Teng::Parser::Context_t *ctx}
@@ -609,21 +625,21 @@ binary_expression
 
 
 lazy_binary_expression
-    : expression OR {generate_bin_op<Or_t>(ctx, *$2);}
-      expression {finalize_bin_op<Or_t>(ctx);}
-    | expression OR_DIGRAPH {generate_bin_op<Or_t>(ctx, *$2);}
-      expression {finalize_bin_op<Or_t>(ctx);}
-    | expression AND {generate_bin_op<And_t>(ctx, *$2);}
-      expression {finalize_bin_op<And_t>(ctx);}
-    | expression AND_TRIGRAPH {generate_bin_op<And_t>(ctx, *$2);}
-      expression {finalize_bin_op<And_t>(ctx);}
+    : expression OR {generate_bin_or(ctx, *$2);}
+      expression {finalize_bin_or(ctx);}
+    | expression OR_DIGRAPH {generate_bin_or(ctx, *$2);}
+      expression {finalize_bin_or(ctx);}
+    | expression AND {generate_bin_and(ctx, *$2);}
+      expression {finalize_bin_and(ctx);}
+    | expression AND_TRIGRAPH {generate_bin_and(ctx, *$2);}
+      expression {finalize_bin_and(ctx);}
     ;
 
 
  // TODO(burlog): uncommnet 'expression STR_EQ REGEX' rule, after removed
 deprecated_binary_expression
-    : expression STR_EQ expression {$$ = generate_str_expr<StrEQ_t>(ctx, *$2);}
-    | expression STR_NE expression {$$ = generate_str_expr<StrNE_t>(ctx, *$2);}
+    : expression STR_EQ expression {$$ = generate_str_expr(ctx, *$2);}
+    | expression STR_NE expression {$$ = generate_str_expr(ctx, *$2, true);}
     | expression CONCAT expression {generate_expr<Concat_t>(ctx, *$2); $$ = 2;}
     ;
 
@@ -802,7 +818,7 @@ local_rtvar
 
 
 absolute_rtvar_prefix
-    : SELECTOR {generate_rtvar<PushRootFrag_t>(ctx, *$1);}
+    : SELECTOR {generate_rtvar_root(ctx, *$1);}
     ;
 
 

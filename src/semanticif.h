@@ -41,16 +41,10 @@
 
 #include <string>
 
+#include "semantic.h"
+
 namespace Teng {
-
-// forwards
-struct Pos_t;
-
 namespace Parser {
-
-// forwards
-class Token_t;
-struct Context_t;
 
 /** Prepares new if statement.
  */

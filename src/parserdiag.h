@@ -49,7 +49,7 @@ namespace Parser {
 
 /** Possible diagnostic codes.
  */
-enum diag_code {
+enum class diag_code {
     sentinel,
     case_cond,
     case_option,
