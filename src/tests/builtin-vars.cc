@@ -787,8 +787,9 @@ SCENARIO(
                 }, {
                     Teng::Error_t::WARNING,
                     {1, 21},
-                    "Runtime: This fragment doesn't contain any value for "
-                    "key 'missing' [open_frags=., iteration=0/1]"
+                    "Runtime: The path expression '.' references fragment "
+                    "that doesn't contain any value for key 'missing' "
+                    "[open_frags=., iteration=0/1]"
                 }, {
                     Teng::Error_t::WARNING,
                     {1, 43},
@@ -1370,8 +1371,9 @@ SCENARIO(
                 }, {
                     Teng::Error_t::WARNING,
                     {1, 21},
-                    "Runtime: This fragment doesn't contain any value for "
-                    "key 'missing' [open_frags=., iteration=0/1]"
+                    "Runtime: The path expression '.' references fragment "
+                    "that doesn't contain any value for key 'missing' "
+                    "[open_frags=., iteration=0/1]"
                 }, {
                     Teng::Error_t::WARNING,
                     {1, 43},
@@ -1792,8 +1794,9 @@ SCENARIO(
                 }, {
                     Teng::Error_t::WARNING,
                     {1, 20},
-                    "Runtime: This fragment doesn't contain any value for "
-                    "key 'missing' [open_frags=., iteration=0/1]"
+                    "Runtime: The path expression '.' references fragment "
+                    "that doesn't contain any value for key 'missing' "
+                    "[open_frags=., iteration=0/1]"
                 }, {
                     Teng::Error_t::WARNING,
                     {1, 41},
@@ -2154,8 +2157,9 @@ SCENARIO(
                 }, {
                     Teng::Error_t::WARNING,
                     {1, 21},
-                    "Runtime: This fragment doesn't contain any value for "
-                    "key 'missing' [open_frags=., iteration=0/1]"
+                    "Runtime: The path expression '.' references fragment "
+                    "that doesn't contain any value for key 'missing' "
+                    "[open_frags=., iteration=0/1]"
                 }, {
                     Teng::Error_t::WARNING,
                     {1, 43},
@@ -2576,8 +2580,9 @@ SCENARIO(
                 }, {
                     Teng::Error_t::WARNING,
                     {1, 21},
-                    "Runtime: This fragment doesn't contain any value for "
-                    "key 'missing' [open_frags=., iteration=0/1]"
+                    "Runtime: The path expression '.' references fragment "
+                    "that doesn't contain any value for key 'missing' "
+                    "[open_frags=., iteration=0/1]"
                 }, {
                     Teng::Error_t::WARNING,
                     {1, 43},

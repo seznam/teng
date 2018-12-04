@@ -838,7 +838,7 @@ SCENARIO(
                 }, {
                     Teng::Error_t::WARNING,
                     {1, 389},
-                    "Runtime: The path expression '.nested_1.nested_2' "
+                    "Runtime: The path expression 'nested_2' "
                     "references fragment that doesn't contain any value for "
                     "key 'var_set' [open_frags=.nested_1, iteration=0/1]"
                 }};

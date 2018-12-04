@@ -674,6 +674,10 @@ struct PushRootFrag_t: public Instruction_t {
         : Instruction_t(instr_opcode, pos),
           root_frag_offset(static_cast<uint16_t>(root_frag_offset))
     {}
+    PushRootFrag_t(const Pos_t &pos)
+        : Instruction_t(instr_opcode, pos),
+          root_frag_offset()
+    {}
     void dump_params(std::ostream &os) const;
     uint16_t root_frag_offset;  //!< the offset of root fragment in frame
 };

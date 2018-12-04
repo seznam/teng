@@ -669,3 +669,34 @@ SCENARIO(
     }
 }
 
+SCENARIO(
+    "Fuzzer problems in fragments",
+    "[frags][fuzzer]"
+) {
+    GIVEN("The variable which ident consists from frag and var ident") {
+        auto t = "<?frag a.r?><?if _parent.er.r?><?endif?><?endfrag?>";
+
+        WHEN("The data corresponding to open frags") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            auto &a = root.addFragment("a");
+            auto &r = a.addFragment("r");
+            auto &er = a.addFragment("er");
+            auto result = g(err, t, root);
+
+            THEN("The path of undefined variable is valid") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 17},
+                    "Runtime: The path expression '.a.er' references "
+                    "fragment that doesn't contain any value for key 'r' "
+                    "[open_frags=.a.r, iteration=0/1]"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "");
+            }
+        }
+    }
+}
+
+

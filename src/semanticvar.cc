@@ -229,31 +229,30 @@ void
 generate_auto_rtvar_path(
     Context_t *ctx,
     const Variable_t &var_sym,
-    const char *path_end,
     bool gen_repr
 ) {
     // it is used to generate instruction for one identifier segment
-    auto path_start = var_sym.view().begin();
+    std::string path;
+    if (var_sym.ident.is_absolute()) path.push_back('.');
 
     // generate runtime variable from regular variable
     for (std::size_t i = 0; i < var_sym.ident.size(); ++i) {
         auto &segment = var_sym.ident[i];
-        string_view_t path = {path_start, path_end};
         switch (segment.token_id) {
         case LEX2::BUILTIN_FIRST:
-            generate<PushValFirst_t>(ctx, path.str(), var_sym.pos);
+            generate<PushValFirst_t>(ctx, path, var_sym.pos);
             break;
         case LEX2::BUILTIN_INNER:
-            generate<PushValInner_t>(ctx, path.str(), var_sym.pos);
+            generate<PushValInner_t>(ctx, path, var_sym.pos);
             break;
         case LEX2::BUILTIN_LAST:
-            generate<PushValLast_t>(ctx, path.str(), var_sym.pos);
+            generate<PushValLast_t>(ctx, path, var_sym.pos);
             break;
         case LEX2::BUILTIN_INDEX:
-            generate<PushValIndex_t>(ctx, path.str(), var_sym.pos);
+            generate<PushValIndex_t>(ctx, path, var_sym.pos);
             break;
         case LEX2::BUILTIN_COUNT:
-            generate<PushValCount_t>(ctx, path.str(), var_sym.pos);
+            generate<PushValCount_t>(ctx, path, var_sym.pos);
             break;
 
         case LEX2::BUILTIN_PARENT:
@@ -278,12 +277,13 @@ generate_auto_rtvar_path(
             // pass through
 
         default:
-            generate<PushAttr_t>(ctx, segment.str(), path.str(), var_sym.pos);
+            generate<PushAttr_t>(ctx, segment.str(), path, var_sym.pos);
             if (gen_repr && (i == (var_sym.ident.size() - 1)))
                 generate<Repr_t>(ctx, var_sym.pos);
             break;
         }
-        path_end = segment.view().end();
+        if (!path.empty() && (path.back() != '.')) path.push_back('.');
+        path.append(segment.view().data(), segment.view().size());
     }
 }
 
@@ -296,33 +296,40 @@ generate_auto_rtvar(Context_t *ctx, const Variable_t &var_sym, bool gen_repr) {
     // relative variables
     if (var_sym.ident.is_relative()) {
         generate<PushThisFrag_t>(ctx, var_sym.pos);
-        auto path_end = var_sym.view().begin();
-        return generate_auto_rtvar_path(ctx, var_sym, path_end, gen_repr);
+        return generate_auto_rtvar_path(ctx, var_sym, gen_repr);
     }
 
     // absolute variables - no open fragments
     if (ctx->open_frames.top().empty()) {
-        generate<PushRootFrag_t>(ctx, uint16_t(0), var_sym.pos);
-        auto path_end = var_sym.view().begin();
-        return generate_auto_rtvar_path(ctx, var_sym, path_end, gen_repr);
+        generate<PushRootFrag_t>(ctx, var_sym.pos);
+        return generate_auto_rtvar_path(ctx, var_sym, gen_repr);
     }
 
     // absolute variables - there is at least one open fragment
     for (uint16_t i = 0;; ++i) {
-        // match common prefix (omit variable name)
-        if (i < ctx->open_frames.top().size())
+        // if open fragments match the prefix of absolute path we can make the
+        // variable relative to current opened fragment (_this) and otherwise
+        // the variable has to stay absolute
+        if (i < ctx->open_frames.top().size()) {
             if (std::size_t(i + 1) < var_sym.ident.size())
                 if (ctx->open_frames.top()[i].name() == var_sym.ident[i].view())
                     continue;
+
+            // variable can't be relative, the prefix does not match or is short
+            auto root_offset = ctx->open_frames.top().size();
+            generate<PushRootFrag_t>(ctx, uint16_t(root_offset), var_sym.pos);
+            return generate_auto_rtvar_path(ctx, var_sym, gen_repr);
+        }
+
+        // copy the tail where var_sym and open_frags path differs
         Identifier_t ident;
         for (auto j = i; j < var_sym.ident.size(); ++j)
             ident.push_back(var_sym.ident[j]);
+
+        // make variable relative to current open fragments
         Variable_t rel_var(var_sym, std::move(ident));
         generate<PushThisFrag_t>(ctx, var_sym.pos);
-        auto path_end = i
-            ? var_sym.ident[i - 1].view().end()
-            : var_sym.ident[i].view().begin();
-        return generate_auto_rtvar_path(ctx, rel_var, path_end, gen_repr);
+        return generate_auto_rtvar_path(ctx, rel_var, gen_repr);
     }
 }
 
