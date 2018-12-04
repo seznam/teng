@@ -816,16 +816,6 @@ SCENARIO(
             THEN("Variable is defined in outer frame") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
-                    {1, 106},
-                    "Runtime: Variable '.nested_1.var_set' is undefined "
-                    "[open_frags=.nested_1.nested_2, iteration=0/1]"
-                }, {
-                    Teng::Error_t::WARNING,
-                    {1, 204},
-                    "Runtime: Variable '.nested_1.var_set' is undefined "
-                    "[open_frags=.nested_1.nested_2, iteration=0/1]"
-                }, {
-                    Teng::Error_t::WARNING,
                     {1, 358},
                     "Runtime: Variable '.nested_1.var_set' is undefined "
                     "[open_frags=.nested_1, iteration=0/1]"
@@ -843,7 +833,7 @@ SCENARIO(
                     "key 'var_set' [open_frags=.nested_1, iteration=0/1]"
                 }};
                 ERRLOG_TEST(err.getEntries(), errs);
-                REQUIRE(result == "undefined,xxx,xxx,undefined,yyy,yyy"
+                REQUIRE(result == "xxx,xxx,xxx,yyy,yyy,yyy"
                         "|yyy,yyy,yyy,undefined,undefined,undefined");
             }
         }
@@ -867,6 +857,23 @@ SCENARIO(
                 }};
                 ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "nested_1_var_setundefined");
+            }
+        }
+
+        WHEN("Setting root variable in prevoius frame") {
+            Teng::Error_t err;
+            auto t = "<?frag nested_1?>"
+                     "<?teng set .var_set = 'root_var_set'?>"
+                     "<?frag .nested_1?>"
+                     "${.var_set}"
+                     "<?endfrag?>"
+                     "<?endfrag?>";
+            auto result = g(err, t, root);
+
+            THEN("The set variable should be visible in next frame") {
+                std::vector<Teng::Error_t::Entry_t> errs = {};
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "root_var_set");
             }
         }
     }

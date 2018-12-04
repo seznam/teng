@@ -543,8 +543,11 @@ public:
     Value_t get_var(const VarDesc_t &var) const {
         if (var.frame_offset >= frames.size())
             throw std::runtime_error(__PRETTY_FUNCTION__);
-        auto i = frames.size() - var.frame_offset - 1;
-        return frames[i].get_var(var);
+        for (auto i = frames.size() - var.frame_offset; i > 0; --i) {
+            auto result = frames[i - 1].get_var(var);
+            if (!result.is_undefined()) return result;
+        }
+        return Value_t();
     }
 
     /** Returns the value of the desired variable or an undefined value.
