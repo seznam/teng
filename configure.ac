@@ -35,8 +35,9 @@
 #
 
 # initialize autoconf
-AC_INIT([teng], [4.0.0], [teng@firma.seznam.cz])
-VERSION_INFO="-version-info 4:0:0"
+AC_INIT([teng], [4.0.1], [teng@firma.seznam.cz])
+# https://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
+VERSION_INFO="-version-info 4:1:0"
 
 # enable silent builds (disable with --disable-silent-rules)
 # or simply do "make V=1"
