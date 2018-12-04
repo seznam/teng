@@ -228,7 +228,11 @@ struct FrameRec_t {
         Value_t new_frag = get_attr(get_frag(open_frags.back().frag), name);
         switch (new_frag.type()) {
         case Value_t::tag::frag_ref:
+            open_frags.emplace_back(name, std::move(new_frag));
+            return true;
         case Value_t::tag::list_ref:
+            if (new_frag.as_list_ref().ptr->empty())
+                return false;
             open_frags.emplace_back(name, std::move(new_frag));
             return true;
         default:

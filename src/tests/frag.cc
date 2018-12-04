@@ -40,6 +40,28 @@
 #include "utils.h"
 
 SCENARIO(
+    "Zero Teng fragments",
+    "[frags]"
+) {
+    GIVEN("Template with one Teng fragment") {
+        auto t = "<?teng frag sample?>content<?teng endfrag?>";
+
+        WHEN("Generated with empty fragmentlist") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            root.addFragmentList("sample");
+            auto result = g(err, t, root);
+
+            THEN("It is empty string") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "");
+            }
+        }
+    }
+}
+
+SCENARIO(
     "One Teng fragment",
     "[frags]"
 ) {
