@@ -71,11 +71,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     args.encoding = "utf-8";
     args.templateString = std::move(string);
 
-    try {
-        teng.generatePage(args, root, writer, err);
-    } catch (const std::exception &e) {
-        std::cerr << "error: " << e.what() << std::endl;
-    }
+    teng.generatePage(args, root, writer, err);
     return 0;
 }
 
