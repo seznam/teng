@@ -365,6 +365,7 @@ SCENARIO(
     GIVEN("Some data with nested fragments and with variables") {
         Teng::Fragment_t root;
         root.addVariable("var", "root_var");
+        root.addVariable("rav", "root_rav");
         auto &nested_1 = root.addFragment("nested_1");
         nested_1.addVariable("var", "nested_1_var");
         auto &nested_2 = nested_1.addFragment("nested_2");
@@ -816,6 +817,16 @@ SCENARIO(
             THEN("Variable is defined in outer frame") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
+                    {1, 106},
+                    "Runtime: Variable '.nested_1.var_set' is undefined "
+                    "[open_frags=.nested_1, iteration=0/1]"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 204},
+                    "Runtime: Variable '.nested_1.var_set' is undefined "
+                    "[open_frags=.nested_1, iteration=0/1]"
+                }, {
+                    Teng::Error_t::WARNING,
                     {1, 358},
                     "Runtime: Variable '.nested_1.var_set' is undefined "
                     "[open_frags=.nested_1, iteration=0/1]"
@@ -833,7 +844,7 @@ SCENARIO(
                     "key 'var_set' [open_frags=.nested_1, iteration=0/1]"
                 }};
                 ERRLOG_TEST(err.getEntries(), errs);
-                REQUIRE(result == "xxx,xxx,xxx,yyy,yyy,yyy"
+                REQUIRE(result == "undefined,xxx,xxx,undefined,yyy,yyy"
                         "|yyy,yyy,yyy,undefined,undefined,undefined");
             }
         }
@@ -1165,6 +1176,140 @@ SCENARIO(
                 }};
                 ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(res == "6");
+            }
+        }
+    }
+}
+
+SCENARIO(
+    "Accessing variable across frames",
+    "[vars]"
+) {
+    GIVEN("Some data with nested fragments and with variables") {
+        Teng::Fragment_t root;
+        root.addVariable("var", "root_var");
+        root.addVariable("rav", "root_rav");
+        auto &nested_1 = root.addFragment("nested_1");
+        nested_1.addVariable("var", "nested_1_var");
+        auto &nested_2 = nested_1.addFragment("nested_2");
+        nested_2.addVariable("var", "nested_2_var");
+        auto &other = root.addFragment("other");
+        other.addVariable("var", "other_var");
+        nested_1.addFragment("a").addFragment("b").addFragment("c");
+
+        WHEN("Absolute variable from previous frame on different offset") {
+            Teng::Error_t err;
+            auto templ = "<?teng frag nested_1?>"
+                         "<?teng frag nested_2?>"
+                         "${.rav}"
+                         "<?teng frag .other?>"
+                         "${.rav}"
+                         "<?teng endfrag?>"
+                         "<?teng endfrag?>"
+                         "<?teng endfrag?>";
+            auto result = g(err, templ, root);
+
+            THEN("Result is value of root var") {
+                std::vector<Teng::Error_t::Entry_t> errs = {};
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "root_ravroot_rav");
+            }
+        }
+
+        WHEN("Set root variable in previous frame") {
+            Teng::Error_t err;
+            auto templ = "<?teng frag nested_1?>"
+                         "<?teng frag nested_2?>"
+                         "<?teng set .__some_var = 131?>"
+                         "${.__some_var}"
+                         "<?teng frag .other?>"
+                         "${.__some_var}"
+                         "<?teng endfrag?>"
+                         "<?teng endfrag?>"
+                         "<?teng endfrag?>";
+            auto result = g(err, templ, root);
+
+            THEN("Result is value of root var") {
+                std::vector<Teng::Error_t::Entry_t> errs = {};
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "131131");
+            }
+        }
+
+        WHEN("Previous frame does not match current path") {
+            Teng::Error_t err;
+            auto templ = "<?teng frag nested_1?>"
+                         "<?teng frag nested_2?>"
+                         "<?teng frag .other?>"
+                         "${rav}"
+                         "<?teng endfrag?>"
+                         "<?teng endfrag?>"
+                         "<?teng endfrag?>";
+            auto result = g(err, templ, root);
+
+            THEN("Result is undefined") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 66},
+                    "Runtime: Variable '.other.rav' is undefined "
+                    "[open_frags=.other, iteration=0/1]"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "undefined");
+            }
+        }
+
+        WHEN("The path of inner variable is longer than outer") {
+            Teng::Error_t err;
+            auto templ = "<?teng frag nested_1?>"
+                         "<?teng frag nested_2?>"
+                         "<?teng frag .nested_1?>"
+                         "<?teng frag a?>"
+                         "<?teng frag b?>"
+                         "<?teng frag c?>"
+                         "${xxx}"
+                         "<?teng endfrag?>"
+                         "<?teng endfrag?>"
+                         "<?teng endfrag?>"
+                         "<?teng endfrag?>"
+                         "<?teng endfrag?>"
+                         "<?teng endfrag?>";
+            auto result = g(err, templ, root);
+
+            THEN("Result is undefined") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 114},
+                    "Runtime: Variable '.nested_1.a.b.c.xxx' is undefined "
+                    "[open_frags=.nested_1.a.b.c, iteration=0/1]"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "undefined");
+            }
+        }
+
+        WHEN("The path len of inner variable equals to outer") {
+            Teng::Error_t err;
+            auto templ = "<?teng frag nested_1?>"
+                         "<?teng frag nested_2?>"
+                         "<?teng frag .nested_1?>"
+                         "<?teng frag a?>"
+                         "${var}"
+                         "<?teng endfrag?>"
+                         "<?teng endfrag?>"
+                         "<?teng endfrag?>"
+                         "<?teng endfrag?>";
+            auto result = g(err, templ, root);
+
+            THEN("Result is undefined") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 84},
+                    "Runtime: Variable '.nested_1.a.var' is undefined "
+                    "[open_frags=.nested_1.a, iteration=0/1]"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "undefined");
             }
         }
     }

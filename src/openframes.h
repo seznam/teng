@@ -41,6 +41,7 @@
 #define TENGOPENFRAMES_H
 
 #include <string>
+#include <limits>
 
 #include "teng/error.h"
 #include "teng/value.h"
@@ -330,6 +331,45 @@ struct FrameRec_t {
         return get_attr(get_frag(open_frags[i].frag), var.name);
     }
 
+    /** Returns the value of the desired variable or an undefined value. The
+     * value is identified by path of open fragments in origin frame.
+     *
+     * This method is intended to recursive variable lookup if variable is not
+     * found in its own frame.
+     */
+    template <typename VarDesc_t>
+    Value_t get_var(const VarDesc_t &var, const FrameRec_t &orig) const {
+        auto var_frag_offset = get_offset(var, orig);
+        if (var_frag_offset >= open_frags.size())
+            return Value_t();
+
+        // local variables overrides
+        auto i = open_frags.size() - var_frag_offset - 1;
+        if (auto *local_var = find_local(i, var.name))
+            return *local_var;
+
+        // regular variables
+        return get_attr(get_frag(open_frags[i].frag), var.name);
+    }
+
+    /** Get offset of variable identified by path in given list of open frames
+     * in this frame.
+     */
+    template <typename VarDesc_t>
+    std::size_t get_offset(const VarDesc_t &var, const FrameRec_t &orig) const {
+        auto path_len = orig.open_frags.size() - var.frag_offset;
+        if (path_len >= open_frags.size())
+            return std::numeric_limits<std::size_t>::max();
+
+        // match origin path with current open fragments
+        for (std::size_t i = 0; i < path_len; ++i)
+            if (orig.open_frags[i].name != open_frags[i].name)
+                return std::numeric_limits<std::size_t>::max();
+
+        // the path length determines offset in current open fragments
+        return open_frags.size() - path_len;
+    }
+
     /** Sets the value of the desired variable.
      */
     template <typename VarDesc_t>
@@ -543,8 +583,15 @@ public:
     Value_t get_var(const VarDesc_t &var) const {
         if (var.frame_offset >= frames.size())
             throw std::runtime_error(__PRETTY_FUNCTION__);
-        for (auto i = frames.size() - var.frame_offset; i > 0; --i) {
-            auto result = frames[i - 1].get_var(var);
+
+        // return value from desired frame if it exists
+        auto i = frames.size() - var.frame_offset - 1;
+        auto result = frames[i].get_var(var);
+        if (!result.is_undefined()) return result;
+
+        // if value does not exist then try another frame but use path matching
+        for (int64_t j = i; j >= 0; --j) {
+            result = frames[j].get_var(var, frames[i]);
             if (!result.is_undefined()) return result;
         }
         return Value_t();
@@ -640,19 +687,19 @@ public:
     /** Returns open fragments joined by dot.
      */
     std::string current_path() const override {
-        return frames[0].current_path();
+        return frames.back().current_path();
     }
 
     /** Returns current fragment index in parent list.
      */
     std::size_t current_list_i() const override {
-        return frames[0].current_list_i();
+        return frames.back().current_list_i();
     }
 
     /** Returns size of the current fragmnet list.
      */
     std::size_t current_list_size() const override {
-        return frames[0].current_list_size();
+        return frames.back().current_list_size();
     }
 
     /** Returns true if value exists.
