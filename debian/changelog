@@ -1,3 +1,9 @@
+libteng (4.0.3) stable; urgency=low
+
+  * fixed another tone of bugs
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Wed, 5 Dec 2018 6:42:44 +0100
+
 libteng (4.0.2) stable; urgency=low
 
   * fixed another tone of bugs
