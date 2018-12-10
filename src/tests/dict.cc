@@ -57,7 +57,7 @@ SCENARIO(
             THEN("Replaced with raw dict entry value") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 ERRLOG_TEST(err.getEntries(), errs);
-                REQUIRE(result == "&<b>some <i>HTML</i> text</b>&");
+                REQUIRE(result == r);
             }
         }
 
@@ -417,4 +417,24 @@ SCENARIO(
     }
 }
 
+SCENARIO(
+    "Expanding of dictionary items",
+    "[dict][expr]"
+) {
+    GIVEN("The empty data") {
+        Teng::Fragment_t root;
+
+        WHEN("Template with dictionary item including variable is rendered") {
+            Teng::Error_t err;
+            auto t = "#{text_version}";
+            auto result = g(err, t, root);
+
+            THEN("Variable is expanded") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "version is 1.1.1!");
+            }
+        }
+    }
+}
 

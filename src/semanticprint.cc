@@ -182,7 +182,7 @@ void generate_inv_print(Context_t *ctx, const Token_t &inv) {
 
 void print_dict_lookup(Context_t *ctx, const Token_t &token) {
     generate_dict_lookup(ctx, token);
-    generate_raw_print(ctx);
+    generate_print(ctx);
 }
 
 void print_dict_undef(Context_t *ctx, const Token_t &token) {

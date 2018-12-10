@@ -466,7 +466,7 @@ std::string DictParser_t::expand_value(string_view_t value, Pos_t value_pos) {
         }
 
         // compose dict value key
-        string_view_t key = {iopen + 2, iclose - 1};
+        string_view_t key = {iopen + 2, iclose};
         ivalue = iclose + 1;
 
         // try to find key in so far parsed entries
