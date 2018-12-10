@@ -71,7 +71,7 @@ FileWriter_t::FileWriter_t(const std::string &filename)
     : Writer_t(), file(0), borrowed(false)
 {
     file = fopen(filename.c_str(), "w");
-    if (!file) {
+    if (!file && err) {
         logFatal(
             *err,
             "Cannot open file '" + filename + "' (" + strerr(errno) + ")"
@@ -82,7 +82,7 @@ FileWriter_t::FileWriter_t(const std::string &filename)
 FileWriter_t::FileWriter_t(FILE *file)
     : Writer_t(), file(file), borrowed(true)
 {
-    if (!file)
+    if (!file && err)
         logFatal(*err, "Got invalid file handle (nullptr)");
 }
 
