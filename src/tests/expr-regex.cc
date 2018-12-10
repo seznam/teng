@@ -102,7 +102,7 @@ SCENARIO(
             std::string t = "${regex_replace('foo bar', /\\w+/, '($0)')}";
             auto result = g(err, t);
 
-            THEN("Only the first word is replace") {
+            THEN("Only the first word is replaced") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "(foo) bar");

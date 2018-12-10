@@ -53,6 +53,12 @@
 #include "configuration.h"
 #include "parsercontext.h"
 
+#ifdef DEBUG
+#define DBG(...) __VA_ARGS__
+#else /* DEBUG */
+#define DBG(...)
+#endif /* DEBUG */
+
 namespace Teng {
 namespace {
 
@@ -107,6 +113,15 @@ void compile(Parser::Context_t *ctx) {
             "Unrecoverable syntax error; discarding whole program"
         );
     }
+}
+
+/** If the last instruction of program is a PRINT then it is marked as
+ * unoptimizable.
+ */
+void make_last_print_unoptimalizable(Parser::Context_t *ctx) {
+    if (ctx->program->empty()) return;
+    if (ctx->program->back().opcode() != OPCODE::PRINT) return;
+    ctx->program->back().as<Print_t>().unoptimizable = true;
 }
 
 } // namespace
@@ -166,17 +181,16 @@ Context_t::Context_t(
 
 Context_t::~Context_t() = default;
 
-void
-Context_t::load_file(const string_view_t &filename, const Pos_t &incl_pos) {
+void Context_t::load_file(const string_view_t &path, const Pos_t &incl_pos) {
     // register source into program sources list
     // the registration routine returns program lifetime durable pointer to
     // filename that can be used as pointer to filename in Pos_t instancies
-    std::string path = absfile(fs_root, filename);
+    std::string abs_path = absfile(fs_root, path);
     try {
-        auto *source_path = program->addSource(path).first;
+        auto *source_path = program->addSource(abs_path).first;
 
         // load source code from file
-        source_codes.push_back(read_file(this, incl_pos, path));
+        source_codes.push_back(read_file(this, incl_pos, abs_path));
         auto &source_code = source_codes.back();
 
         // create the level 1 lexer for given source code
@@ -186,26 +200,22 @@ Context_t::load_file(const string_view_t &filename, const Pos_t &incl_pos) {
         logError(
             this,
             incl_pos,
-            "Error reading file '" + path + "' " + "(" + e.what() + ")"
+            "Error reading file '" + abs_path + "' " + "(" + e.what() + ")"
         );
     }
 }
 
-void Context_t::load_source(const std::string &source) {
+void Context_t::load_source(const std::string &source, const Pos_t *pos) {
     // copy source code to flex parsable string
     flex_string_value_t source_code(source.size());
     std::copy(source.begin(), source.end(), source_code.data());
     source_codes.push_back(std::move(source_code));
 
     // create the level 1 lexer for given source code
-    lex1_stack.emplace(source_codes.back(), utf8, params);
+    pos != nullptr
+        ? lex1_stack.emplace(source_codes.back(), utf8, params, *pos)
+        : lex1_stack.emplace(source_codes.back(), utf8, params);
 }
-
-#ifdef DEBUG
-#define DBG(...) __VA_ARGS__
-#else /* DEBUG */
-#define DBG(...)
-#endif /* DEBUG */
 
 Token_t Context_t::next_token() {
     Pos_t last_valid_pos;
@@ -252,6 +262,7 @@ Token_t Context_t::next_token() {
             // EOF from current level 1 lexer so pop it and try next
             last_valid_pos = lex1().position();
             lex1_stack.pop();
+            make_last_print_unoptimalizable(this);
             break;
         }
     }
@@ -263,8 +274,6 @@ Token_t Context_t::next_token() {
 void Parser_t::error(__attribute__((unused)) const std::string &s) {
     DBG(std::cerr << "!!!! Syntax error occurred: " << s << std::endl);
 }
-
-#undef DBG
 
 } // namespace Parser
 } // namespace Teng

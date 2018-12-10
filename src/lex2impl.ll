@@ -59,6 +59,7 @@
 %x oneline_comment
 %x xml_tag
 %x regex
+%x block_override
 
 %{
 
@@ -98,6 +99,7 @@ UTF_4_CHAR  {UTF_4}{UTF_CONT}{UTF_CONT}{UTF_CONT}
 UTF_5_CHAR  {UTF_5}{UTF_CONT}{UTF_CONT}{UTF_CONT}{UTF_CONT}
 UTF_6_CHAR  {UTF_6}{UTF_CONT}{UTF_CONT}{UTF_CONT}{UTF_CONT}{UTF_CONT}
 UTF_CHAR    {UTF_2_CHAR}|{UTF_3_CHAR}|{UTF_4_CHAR}|{UTF_5_CHAR}|{UTF_6_CHAR}
+TENG        "<?"("teng"[[:space:]\0])?[[:space:]\0]*
 
 %%
 
@@ -151,169 +153,155 @@ UTF_CHAR    {UTF_2_CHAR}|{UTF_3_CHAR}|{UTF_4_CHAR}|{UTF_5_CHAR}|{UTF_6_CHAR}
     }
 }
 
-"<?teng"[[:space:]\0]+"debug" {
+<block_override>{
+    {TENG}"endoverride"([[:space:]\0]+"block")? {
+        // match '<?teng endoverride block'
+        BEGIN(INITIAL);
+        make_token_start(yytext +  yyleng);
+        return make_token(LEX2::ENDBLOCK_OVERRIDE, yytext, yytext + yyleng);
+    }
+    "?>" {
+        // match '?>'
+        make_token_start(yytext +  yyleng);
+        return make_nonewline_token(LEX2::END, yytext, yytext + yyleng);
+    }
+    {IDENT} {
+        // match identifier
+        make_token_start(yytext +  yyleng);
+        return make_nonewline_token(LEX2::IDENT, yytext, yytext + yyleng);
+    }
+    <<EOF>> {
+        // leave this context
+        BEGIN(INITIAL);
+        auto token_epos = (yytext +  yyleng - 1);
+        if (token_ipos == token_epos)
+            return Token_t{LEX2_EOF, token_pos, {}};
+        return make_token(LEX2::TEXT, token_epos);
+    }
+    .|\n {
+        // do nothing
+    }
+}
+
+{TENG}"debug" {
     // match '<?teng debug'
     return make_token(LEX2::DEBUG_FRAG, yytext, yytext + yyleng);
 }
 
-"<?teng"[[:space:]\0]+"bytecode" {
+{TENG}"bytecode" {
     // match '<?teng bytecode'
     return make_token(LEX2::BYTECODE_FRAG, yytext, yytext + yyleng);
 }
 
-"<?teng"[[:space:]\0]+"include" {
+{TENG}"include" {
     // match '<?teng include'
     return make_token(LEX2::INCLUDE, yytext, yytext + yyleng);
 }
 
-"<?teng"[[:space:]\0]+"format" {
+{TENG}"format" {
     // match '<?teng format'
     return make_token(LEX2::FORMAT, yytext, yytext + yyleng);
 }
 
-"<?teng"[[:space:]\0]+"endformat" {
+{TENG}"endformat" {
     // match '<?teng endformat'
     return make_token(LEX2::ENDFORMAT, yytext, yytext + yyleng);
 }
 
-"<?teng"[[:space:]\0]+"frag" {
+{TENG}"frag" {
     // match '<?teng frag'
     return make_token(LEX2::FRAGMENT, yytext, yytext + yyleng);
 }
 
-"<?teng"[[:space:]\0]+"endfrag" {
+{TENG}"endfrag" {
     // match '<?teng endfrag'
     return make_token(LEX2::ENDFRAGMENT, yytext, yytext + yyleng);
 }
 
-"<?teng"[[:space:]\0]+"if" {
+{TENG}"if" {
     // match '<?teng if'
     return make_token(LEX2::IF, yytext, yytext + yyleng);
 }
 
-"<?teng"[[:space:]\0]+"endif" {
+{TENG}"endif" {
     // match '<?teng endif'
     return make_token(LEX2::ENDIF, yytext, yytext + yyleng);
 }
 
-"<?teng"[[:space:]\0]+"elseif" {
+{TENG}"elseif" {
     // match '<?teng elseif'
     return make_token(LEX2::ELSEIF, yytext, yytext + yyleng);
 }
 
-"<?teng"[[:space:]\0]+"elif" {
+{TENG}"elif" {
     // match '<?teng elif'
     return make_token(LEX2::ELSEIF, yytext, yytext + yyleng);
 }
 
-"<?teng"[[:space:]\0]+"else" {
+{TENG}"else" {
     // match '<?teng else'
     return make_token(LEX2::ELSE, yytext, yytext + yyleng);
 }
 
-"<?teng"[[:space:]\0]+"set" {
+{TENG}"set" {
     // match '<?teng set'
     return make_token(LEX2::SET, yytext, yytext + yyleng);
 }
 
-"<?teng"[[:space:]\0]+"expr" {
+{TENG}"expr" {
     // match '<?teng expr'
     return make_token(LEX2::ESC_EXPR, yytext, yytext + yyleng);
 }
 
-"<?teng"[[:space:]\0]+"ctype" {
+{TENG}"ctype" {
     // match '<?teng ctype'
     return make_token(LEX2::CTYPE, yytext, yytext + yyleng);
 }
 
-"<?teng"[[:space:]\0]+"endctype" {
+{TENG}"endctype" {
     // match '<?teng endctype'
     return make_token(LEX2::ENDCTYPE, yytext, yytext + yyleng);
 }
 
-"<?teng"[[:space:]\0]*[[:alnum:]]* {
+{TENG}"extends" {
+    // match '<?teng extends'
+    return make_token(LEX2::EXTENDS, yytext, yytext + yyleng);
+}
+
+{TENG}"endextends" {
+    // match '<?teng endextends'
+    return make_token(LEX2::ENDEXTENDS, yytext, yytext + yyleng);
+}
+
+{TENG}"define"([[:space:]\0]+"block")? {
+    // match '<?teng define block'
+    return make_token(LEX2::DEFINE_BLOCK, yytext, yytext + yyleng);
+}
+
+<INITIAL,block_override>
+{TENG}"override"([[:space:]\0]+"block")? {
+    // match '<?teng override block'
+    return make_token(LEX2::OVERRIDE_BLOCK, yytext, yytext + yyleng);
+}
+
+{TENG}"enddefine"([[:space:]\0]+"block")? {
+    // match '<?teng enddefine block'
+    return make_token(LEX2::ENDBLOCK_DEFINE, yytext, yytext + yyleng);
+}
+
+{TENG}"endoverride"([[:space:]\0]+"block")? {
+    // match '<?teng endoverride block'
+    return make_token(LEX2::ENDBLOCK_OVERRIDE, yytext, yytext + yyleng);
+}
+
+{TENG}"super"([[:space:]\0]+"block")? {
+    // match '<?teng super block'
+    return make_token(LEX2::SUPER_BLOCK, yytext, yytext + yyleng);
+}
+
+"<?teng"[[:space:]\0]+[[:alnum:]]* {
     // match '<?teng???'
     return make_token(LEX2::TENG, yytext, yytext + yyleng);
-}
-
-"<?"[[:space:]\0]*"debug" {
-    // match '<?debug'
-    return make_token(LEX2::DEBUG_FRAG, yytext, yytext + yyleng);
-}
-
-"<?"[[:space:]\0]*"bytecode" {
-    // match '<?bytecode'
-    return make_token(LEX2::BYTECODE_FRAG, yytext, yytext + yyleng);
-}
-
-"<?"[[:space:]\0]*"include" {
-    // match '<?include'
-    return make_token(LEX2::INCLUDE, yytext, yytext + yyleng);
-}
-
-"<?"[[:space:]\0]*"format" {
-    // match '<?format'
-    return make_token(LEX2::FORMAT, yytext, yytext + yyleng);
-}
-
-"<?"[[:space:]\0]*"endformat" {
-    // match '<?endformat'
-    return make_token(LEX2::ENDFORMAT, yytext, yytext + yyleng);
-}
-
-"<?"[[:space:]\0]*"frag" {
-    // match '<?frag'
-    return make_token(LEX2::FRAGMENT, yytext, yytext + yyleng);
-}
-
-"<?"[[:space:]\0]*"endfrag" {
-    // match '<?endfrag'
-    return make_token(LEX2::ENDFRAGMENT, yytext, yytext + yyleng);
-}
-
-"<?"[[:space:]\0]*"if" {
-    // match '<?if'
-    return make_token(LEX2::IF, yytext, yytext + yyleng);
-}
-
-"<?"[[:space:]\0]*"endif" {
-    // match '<?endif'
-    return make_token(LEX2::ENDIF, yytext, yytext + yyleng);
-}
-
-"<?"[[:space:]\0]*"elseif" {
-    // match '<?elseif'
-    return make_token(LEX2::ELSEIF, yytext, yytext + yyleng);
-}
-
-"<?"[[:space:]\0]*"elif" {
-    // match '<?elif'
-    return make_token(LEX2::ELSEIF, yytext, yytext + yyleng);
-}
-
-"<?"[[:space:]\0]*"else" {
-    // match '<?else'
-    return make_token(LEX2::ELSE, yytext, yytext + yyleng);
-}
-
-"<?"[[:space:]\0]*"set" {
-    // match '<?set'
-    return make_token(LEX2::SET, yytext, yytext + yyleng);
-}
-
-"<?"[[:space:]\0]*"expr" {
-    // match '<?expr'
-    return make_token(LEX2::ESC_EXPR, yytext, yytext + yyleng);
-}
-
-"<?"[[:space:]\0]*"ctype" {
-    // match '<?ctype'
-    return make_token(LEX2::CTYPE, yytext, yytext + yyleng);
-}
-
-"<?"[[:space:]\0]*"endctype" {
-    // match '<?endctype'
-    return make_token(LEX2::ENDCTYPE, yytext, yytext + yyleng);
 }
 
 "<?" {
@@ -336,7 +324,7 @@ UTF_CHAR    {UTF_2_CHAR}|{UTF_3_CHAR}|{UTF_4_CHAR}|{UTF_5_CHAR}|{UTF_6_CHAR}
         logError(err, pos, "Unterminated xml tag");
         // leave this context
         BEGIN(INITIAL);
-        return make_token(LEX2::INV, yytext + yyleng);
+        return make_token(LEX2::INV, yytext + yyleng - 1);
     }
     .|"\n" {
         // do nothing
@@ -446,13 +434,11 @@ UTF_CHAR    {UTF_2_CHAR}|{UTF_3_CHAR}|{UTF_4_CHAR}|{UTF_5_CHAR}|{UTF_6_CHAR}
 
 "==" {
     // match equal operator
-    BEGIN(regex);
     return make_nonewline_token(LEX2::EQ, yytext, yytext + yyleng);
 }
 
 "!=" {
     // match not equal operator
-    BEGIN(regex);
     return make_nonewline_token(LEX2::NE, yytext, yytext + yyleng);
 }
 
@@ -478,13 +464,11 @@ UTF_CHAR    {UTF_2_CHAR}|{UTF_3_CHAR}|{UTF_4_CHAR}|{UTF_5_CHAR}|{UTF_6_CHAR}
 
 "eq" {
     // match equal operator
-    BEGIN(regex);
     return make_nonewline_token(LEX2::EQ_DIGRAPH, yytext, yytext + yyleng);
 }
 
 "ne" {
     // match not equal operator
-    BEGIN(regex);
     return make_nonewline_token(LEX2::NE_DIGRAPH, yytext, yytext + yyleng);
 }
 
@@ -776,7 +760,7 @@ UTF_CHAR    {UTF_2_CHAR}|{UTF_3_CHAR}|{UTF_4_CHAR}|{UTF_5_CHAR}|{UTF_6_CHAR}
     // utf-8 character rule
     std::string tmp(yytext, yyleng);
     if (utf8) logError(err, pos, "Unexpected utf-8 encoded character '" + tmp + "'");
-    else  logError(err, pos, "Unexpected binary character '" + tmp + "'");
+    else logError(err, pos, "Unexpected binary character '" + tmp + "'");
     return make_token(LEX2::INV, yytext, yytext + yyleng);
 }
 
@@ -788,4 +772,11 @@ UTF_CHAR    {UTF_2_CHAR}|{UTF_3_CHAR}|{UTF_4_CHAR}|{UTF_5_CHAR}|{UTF_6_CHAR}
 }
 
 %%
+
+void Teng::Parser::Lex2_t::set_start_condition(int start_condition) {
+    auto *yyg = static_cast<yyguts_t *>(yyscanner);
+    BEGIN(start_condition);
+    if (start_condition == block_override)
+        make_token_start(yytext);
+}
 

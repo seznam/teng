@@ -129,7 +129,7 @@ SCENARIO(
         WHEN("Generated with bytecode fragment enabled") {
             Teng::Error_t err;
             auto result = g(err, t, root, "teng.debug.conf", "cs");
-            auto r = "000 VAR                 &lt;name=var,escape=1,"
+            auto r = "000 VAR                 &lt;name=var,escape=true,"
                          "frame-offset=0,frag-offset=0&gt;\n"
                      "001 PRG_STACK_PUSH      \n"
                      "002 PRG_STACK_AT        &lt;index=0&gt;\n"
@@ -150,7 +150,7 @@ SCENARIO(
                      "017 JMP                 &lt;jump=+1&gt;\n"
                      "018 VAL                 &lt;value=c,type=string&gt;\n"
                      "019 PRG_STACK_POP       \n"
-                     "020 PRINT               &lt;print_escape=1&gt;\n"
+                     "020 PRINT               &lt;print_escape=true,unoptimizable=false&gt;\n"
                      "021 BYTECODE_FRAG       \n"
                      "022 HALT                \n";
 

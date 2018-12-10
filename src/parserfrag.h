@@ -44,6 +44,9 @@
 #include <vector>
 #include <algorithm>
 
+// TODO(burlog): remove
+#include <iostream>
+
 #include "position.h"
 #include "identifier.h"
 #include "openframesapi.h"
@@ -127,6 +130,9 @@ public:
         if (ident.size() <= 1)
             return frags.end();
 
+        std::cerr << "?_____________________________" << std::endl;
+        std::cerr << frags.size() << " " << (ident.size() - 1) << std::endl;
+
         // if ident path is longer than opened fragments (omit var name)
         if (frags.size() < (ident.size() - 1))
             return frags.end();
@@ -141,7 +147,7 @@ public:
         // and return
         return irfrag == frags.rend()
             ? frags.end()
-            : irfrag.base() - ident.size() + 1;
+            : irfrag.base() - (ident.size() - 1);
     }
 
     /** Returns open fragment at desired index.

@@ -40,6 +40,7 @@
  */
 
 #include <iostream>
+#include <algorithm>
 
 #include "position.h"
 
@@ -62,6 +63,11 @@ std::ostream &operator<<(std::ostream &o, const Pos_t &pos) {
     if ((pos.lineno > 0) && (pos.colno >= 0))
         o << ":" << pos.lineno << ":" << pos.colno;
     return o;
+}
+
+std::string Pos_t::basename() const {
+    auto islash = std::find(filename->rbegin(), filename->rend(), '/');
+    return {islash.base(), filename->end()};
 }
 
 } // namespace Teng

@@ -36,8 +36,11 @@
 
 #include "util.h"
 #include "syntax.hh"
-#include "lex2impl.h"
 #include "lex2.h"
+
+#define YY_HEADER_EXPORT_START_CONDITIONS
+#include "lex2impl.h"
+#undef YY_HEADER_EXPORT_START_CONDITIONS
 
 namespace Teng {
 namespace Parser {
@@ -134,6 +137,13 @@ string_view_t l2_token_name(int token_id) {
     case LEX2::BUILTIN_ERROR: return "BUILTIN_ERROR";
     case LEX2::BUILTIN_THIS: return "BUILTIN_THIS";
     case LEX2::BUILTIN_PARENT: return "BUILTIN_PARENT";
+    case LEX2::EXTENDS: return "EXTENDS";
+    case LEX2::ENDEXTENDS: return "ENDEXTENDS";
+    case LEX2::OVERRIDE_BLOCK: return "OVERRIDE_BLOCK";
+    case LEX2::DEFINE_BLOCK: return "DEFINE_BLOCK";
+    case LEX2::ENDBLOCK_OVERRIDE: return "ENDBLOCK_OVERRIDE";
+    case LEX2::ENDBLOCK_DEFINE: return "ENDBLOCK_DEFINE";
+    case LEX2::SUPER_BLOCK: return "SUPER_BLOCK";
     }
     return token_id == LEX2_EOF? "<EOF>": "<UNEXPECTED>";
 }
@@ -159,7 +169,8 @@ auto scan(flex_string_view_t &d, void *yyscanner) {
 
 Lex2_t::Lex2_t(const Configuration_t *params, bool utf8, Error_t &err)
   : yyscanner(nullptr), buffer(nullptr), err(err), params(params), utf8(utf8),
-    pos(), token_pos(), token_ipos(nullptr), directive(empty_directive)
+    pos(), token_pos(), token_ipos(nullptr), directive(empty_directive),
+    current_start_condition(INITIAL)
 {
     if (teng_lex_init(&yyscanner))
         throw std::runtime_error("can't initalize lex2: " + strerr(errno));
@@ -168,6 +179,14 @@ Lex2_t::Lex2_t(const Configuration_t *params, bool utf8, Error_t &err)
 Lex2_t::~Lex2_t() {
     if (buffer) finish_scanning();
     teng_lex_destroy((yyscan_t)yyscanner);
+}
+
+void Lex2_t::switch_to_override_block() {
+    current_start_condition = block_override;
+}
+
+void Lex2_t::switch_to_initial() {
+    current_start_condition = INITIAL;
 }
 
 void
@@ -181,6 +200,7 @@ Lex2_t::start_scanning(
     directive = std::move(new_directive);
     if (!(buffer = scan(directive, yyscanner)))
         throw std::runtime_error("can't allocate flex buffer in lex2");
+    set_start_condition(current_start_condition);
 }
 
 void Lex2_t::finish_scanning() {

@@ -57,17 +57,8 @@ namespace {
  *     ?\> -> ?>
  *     \}  -> {
  *     <\? -> <?
- *
- * It never allocates any memory because it writes unescaped string into given
- * interval.
  */
-string_view_t
-unescape(
-    const Configuration_t *params,
-    flex_string_view_t &str,
-    std::size_t start,
-    std::size_t end
-) {
+std::string unescape(const Configuration_t *params, const string_view_t &str) {
     enum {
         initial,
         dollar_expected_backslash_lcurly,
@@ -83,19 +74,26 @@ unescape(
         question_backslash_expected_gt,
     } state = initial;
 
-    char *istr = str.data() + start;
-    char *estr = str.data() + std::min(end, str.size());
-    const char *ires = istr;
-    char *eres = estr;
-    const char *elast_seq = istr;
-    const char *icur_seq = istr;
+    // the result (it can't be longer than source string)
+    std::string res;
+    res.resize(str.size());
+    auto eres = res.begin();
+
+    // boundaries of source string
+    const char *istr = str.begin();
+    const char *estr = str.end();
+
+    // postion of last escape sequence in source string
+    const char *eseq = istr;
+    const char *iseq = istr;
 
     auto do_unescape = [&] (const char *ipos, string_view_t seq) {
-        eres = eres == estr
-            ? istr + std::distance(elast_seq, icur_seq)
-            : std::copy(elast_seq, icur_seq, eres);
+        // copy all data from last escape sequence to recent one
+        eres = std::copy(eseq, iseq, eres);
+        // copy the unescaped data to result
         eres = std::copy(seq.begin(), seq.end(), eres);
-        elast_seq = ++ipos;
+        // and mark where the last escape sequence ends (for next unescaping)
+        eseq = ++ipos;
     };
 
     for (auto ipos = istr; ipos != estr; ++ipos) {
@@ -103,25 +101,25 @@ unescape(
         case '$':
             //!< .$\{ -> $.\{
             state = dollar_expected_backslash_lcurly;
-            icur_seq = ipos;
+            iseq = ipos;
             break;
 
         case '#':
             //!< .#\{ -> #.\{
             state = hash_expected_backslash_lcurly;
-            icur_seq = ipos;
+            iseq = ipos;
             break;
 
         case '%':
             //!< .%\{ -> #.\{
             state = percent_expected_backslash_lcurly;
-            icur_seq = ipos;
+            iseq = ipos;
             break;
 
         case '<':
             //!< .<\? -> <.\?
             state = lt_expected_backslash_question;
-            icur_seq = ipos;
+            iseq = ipos;
             break;
 
         case '\\':
@@ -149,7 +147,7 @@ unescape(
             // .\{ -> \.{
             default:
                 state = backslash_expected_rcurly;
-                icur_seq = ipos;
+                iseq = ipos;
                 break;
             }
             break;
@@ -164,7 +162,7 @@ unescape(
             // .?\> -> ?.\>
             default:
                 state = question_expected_backslash_gt;
-                icur_seq = ipos;
+                iseq = ipos;
                 break;
             }
             break;
@@ -212,7 +210,7 @@ unescape(
             case hash_backslash_expected_lcurly:
             case question_backslash_expected_gt:
                 // remove first char from escape sequence
-                ++icur_seq;
+                ++iseq;
                 // fall through
             // \.} -> \}.
             case backslash_expected_rcurly:
@@ -229,9 +227,11 @@ unescape(
             break;
         };
     }
-    if (eres != estr)
-        eres = std::copy<const char *>(elast_seq, estr, eres);
-    return {ires, eres};
+    // copy all data from last unescaped escape sequence to end of string
+    eres = std::copy(eseq, estr, eres);
+    // and resize the result to real size
+    res.resize(std::distance(res.begin(), eres));
+    return res;
 }
 
 /** Reads input until end of quoted string is reached.
@@ -270,6 +270,10 @@ void incr_col_pos_by(const char (&)[n], incr_col_pos_t incr_col_pos) {
 };
 
 } // namespace
+
+std::string Lex1_t::unescape(const string_view_t &str) const {
+    return Parser::unescape(params, str);
+}
 
 Lex1_t::Token_t Lex1_t::next() {
     // backup start values
@@ -370,7 +374,7 @@ Lex1_t::Token_t Lex1_t::next() {
         return {
             LEX1::TEXT,
             {pos.filename, start_line, start_column},
-            unescape(params, source_code, start_pos, offset)
+            string_view_t{source_code.begin() + start_pos, offset - start_pos}
         };
     };
 
@@ -486,16 +490,11 @@ Lex1_t::Token_t Lex1_t::next() {
         while (offset < source_code.size()) {
             switch (source_code[offset]) {
             case '>':
-                incr_col_pos(1);
-                if (source_code[offset - 2] != '-')
-                    continue;
-                if (source_code[offset - 3] != '-')
-                    continue;
-                if (source_code[offset - 4] != '-')
-                    continue;
-                if ((offset - start_pos) <= strlen("<!----->"))
-                    continue;
-                start_pos = offset;
+                if (source_code[offset - 1] != '-') {incr_col_pos(1); continue;}
+                if (source_code[offset - 2] != '-') {incr_col_pos(1); continue;}
+                if (source_code[offset - 3] != '-') {incr_col_pos(1); continue;}
+                if ((offset - start_pos) <= 8) {incr_col_pos(1); continue;}
+                start_pos = offset + 1;
                 return true;
             default:
                 incr_pos();
@@ -617,6 +616,7 @@ std::ostream &operator<<(std::ostream &os, const Lex1_t::Token_t &token) {
        << ", id=" << static_cast<int>(token.token_id)
        << ", name=" << token.name()
        << ", view='" << token.view() << "'"
+       << ", size=" << token.view().size()
        << ", at=" << token.pos << "')";
     return os;
 }

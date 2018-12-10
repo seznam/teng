@@ -447,6 +447,16 @@ static auto eval(OPCODE opcode, type_t &self, call_t &&call, args_t &&...args) {
             self.template as<LogSuppress_t>(),
             std::forward<args_t>(args)...
         );
+    case OPCODE::RETURN:
+        return call(
+            self.template as<Return_t>(),
+            std::forward<args_t>(args)...
+        );
+    case OPCODE::CALL:
+        return call(
+            self.template as<Call_t>(),
+            std::forward<args_t>(args)...
+        );
     }
 }
 
@@ -526,6 +536,8 @@ const char *opcode_str(OPCODE opcode) {
     case OPCODE::CLOSE_FRAME: return "CLOSE_FRAME";
     case OPCODE::MATCH_REGEX: return "MATCH_REGEX";
     case OPCODE::LOG_SUPPRESS: return "LOG_SUPPRESS";
+    case OPCODE::RETURN: return "RETURN";
+    case OPCODE::CALL: return "CALL";
     }
     throw std::runtime_error(__PRETTY_FUNCTION__);
 }
@@ -656,7 +668,7 @@ void Val_t::dump_params(std::ostream &os) const {
 
 void Var_t::dump_params(std::ostream &os) const {
     os << "<name=" << name
-       << ",escape=" << escape
+       << ",escape=" << std::boolalpha << escape << std::noboolalpha
        << ",frame-offset=" << frame_offset
        << ",frag-offset=" << frag_offset
        << '>';
@@ -702,7 +714,8 @@ void CloseFrag_t::dump_params(std::ostream &os) const {
 }
 
 void Print_t::dump_params(std::ostream &os) const {
-    os << "<print_escape=" << print_escape
+    os << "<print_escape=" << std::boolalpha << print_escape
+       << ",unoptimizable=" << unoptimizable << std::noboolalpha
        << '>';
 }
 
@@ -744,7 +757,15 @@ bool MatchRegex_t::matches(const string_view_t &view) const {
 }
 
 void PushErrorFrag_t::dump_params(std::ostream &os) const {
-    os << "<discard_stack_value=" << discard_stack_value << '>';
+    os << "<discard_stack_value="
+       << std::boolalpha << discard_stack_value << std::noboolalpha
+       << '>';
+}
+
+void Call_t::dump_params(std::ostream &os) const {
+    os << "<addr=" << addr
+       << ",name=" << name
+       << '>';
 }
 
 } // namespace Teng

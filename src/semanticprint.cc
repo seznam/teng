@@ -109,6 +109,12 @@ void generate_print(Context_t *ctx, bool print_escape) {
     if ((*ctx->program)[prgsize - 3].opcode() != OPCODE::VAL)
         return generate<Print_t>(ctx, print_escape, ctx->pos());
 
+    // TODO(burlog): can this replace are_instrs_protected and NOOP insertions?
+
+    // check if print can be optimized out
+    if ((*ctx->program)[prgsize - 2].as<Print_t>().unoptimizable)
+        return generate<Print_t>(ctx, print_escape, ctx->pos());
+
     DBG(std::cerr << "$$$$ print optimization" << std::endl);
 
     // optimalize sequence of VAL, PRINT, VAL, PRINT to single VAL, PRINT pair
@@ -169,7 +175,7 @@ void generate_raw_print(Context_t *ctx) {
 }
 
 void generate_raw_print(Context_t *ctx, const Token_t &token) {
-    generate_val(ctx, token.pos, Value_t(token.str()));
+    generate_val(ctx, token.pos, Value_t(ctx->lex1().unescape(token.view())));
     generate_raw_print(ctx);
 }
 

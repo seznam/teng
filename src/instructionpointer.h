@@ -61,6 +61,17 @@ struct InstructionPointer_t {
         : value(program.start), program(program)
     {}
 
+    /** Moves instruction pointer to given address.
+     */
+    InstructionPointer_t &operator=(int64_t new_value) {
+        if (new_value >= program.end)
+            throw std::runtime_error("instruction pointer overflow");
+        if (new_value < program.start)
+            throw std::runtime_error("instruction pointer underflow");
+        value = new_value;
+        return *this;
+    }
+
     /** Increments the instruction pointer (it check boundaries).
      */
     int64_t operator++() {
@@ -94,12 +105,16 @@ struct InstructionPointer_t {
     /** Increments the instruction pointer (it check boundaries).
      */
     int64_t operator+=(int64_t incr) {
+        if (incr == -1)
+            throw std::runtime_error("never ending loop detected");
         return value = *this + incr;
     }
 
     /** Decrements the instruction pointer (it check boundaries).
      */
     int64_t operator-=(int64_t incr) {
+        if (incr == 1)
+            throw std::runtime_error("never ending loop detected");
         return value = *this - incr;
     }
 

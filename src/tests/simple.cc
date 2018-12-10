@@ -206,6 +206,17 @@ SCENARIO(
             }
         }
 
+        WHEN("Template with one comment and some text") {
+            Teng::Error_t err;
+            auto result = g(err, "a<!--- aaa --->b", root);
+
+            THEN("Comment is swallowed") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "ab");
+            }
+        }
+
         WHEN("Template with unclosed comment") {
             Teng::Error_t err;
             auto result = g(err, "<!--- aaa -->", root);

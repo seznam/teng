@@ -42,6 +42,8 @@
 
 #include <string>
 #include <stdexcept>
+#include <functional>
+#include <stack>
 
 #include "position.h"
 #include "flexhelpers.h"
@@ -178,13 +180,8 @@ public:
 
     /** Initialize lexical analyzer from string.
      *
-     * The second argument is pointer to filename that must live as long as
+     * The last argument is pointer to filename that must live as long as
      * Lex1_t object.
-     *
-     * The level 1 lexer will change the source code buffer.
-     *
-     * @param source_code Input string.
-     * @param filename Pointer to filename.
      */
     Lex1_t(
         flex_string_value_t &source_code,
@@ -192,6 +189,19 @@ public:
         const Configuration_t *params,
         const std::string *filename = {}
     ): source_code(source_code), offset(0), pos(filename, 1, 0), utf8(utf8),
+       params(params)
+    {}
+
+    /** Initialize lexical analyzer from string.
+     *
+     * The file position will be intialized to desired one.
+     */
+    Lex1_t(
+        flex_string_value_t &source_code,
+        bool utf8,
+        const Configuration_t *params,
+        const Pos_t &pos
+    ): source_code(source_code), offset(0), pos(pos), utf8(utf8),
        params(params)
     {}
 
@@ -210,6 +220,14 @@ public:
     /** Get position within the input string.
      */
     const Pos_t &position() const {return pos;}
+
+    /** Returns current pointer to source code.
+     */
+    const char *current() const {return source_code.data() + offset;}
+
+    /** Returns unescaped string.
+     */
+    std::string unescape(const string_view_t &str) const;
 
 private:
     // don't copy
@@ -234,6 +252,58 @@ private:
     Pos_t pos;                      //!< position within the "page"
     bool utf8;                      //!< if pos should be in utf8 chars
     const Configuration_t *params;  //!< teng configuration
+};
+
+/** List of level 1 lexers.
+ */
+struct Lex1Stack_t {
+    // types
+    using Action_t = std::function<void ()>;
+
+    /** The level 1 lexers stack entry.
+     */
+    struct Entry_t {
+        /** C'tor.
+         */
+        template <typename... Args_t>
+        Entry_t(Args_t &&...args)
+            : lexer(std::forward<Args_t>(args)...), action()
+        {}
+
+        Lex1_t lexer;    //!< list of level 1 lexer
+        Action_t action; //!< action bounded to popping this entry
+    };
+
+    /** Returns true if stack is empty.
+     */
+    bool empty() const {return lexers.empty();}
+
+    /** Returns the number of elements in stack.
+     */
+    std::size_t size() const {return lexers.size();}
+
+    /** Return reference to the last inserted entry.
+     */
+    Entry_t &top() {return lexers.top();}
+
+    /** Removes the last inserted entry from stack.
+     * It also run action bounded to pop.
+     */
+    void pop() {
+        auto action = std::move(lexers.top().action);
+        lexers.pop();
+        if (action) action();
+    }
+
+    /** Emplaces new entry to the stack.
+     */
+    template <typename... Args_t>
+    void emplace(Args_t &&...args) {
+        lexers.emplace(std::forward<Args_t>(args)...);
+    }
+
+protected:
+    std::stack<Entry_t> lexers; //!< the lexers stack
 };
 
 /** Writes token description to the stream.

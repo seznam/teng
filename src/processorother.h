@@ -252,6 +252,32 @@ Result_t regex_match(EvalCtx_t *ctx, GetArg_t get_arg) {
     });
 }
 
+/** Pops return address from prg_stack and jump there.
+ */
+int64_t return_impl(std::vector<Value_t> &prg_stack) {
+    if (prg_stack.empty())
+        throw std::runtime_error("program stack underflow");
+
+    // pick the return address
+    auto &addr = prg_stack.back();
+    prg_stack.pop_back();
+
+    // the value must be an int
+    if (!addr.is_integral())
+        throw std::runtime_error("the subroutine return address is not an int");
+
+    // and jump there
+    return addr.as_int();
+}
+
+/** Pushes return address to prg_stack and jumps to subroutine
+ */
+int64_t call_impl(EvalCtx_t *ctx, std::vector<Value_t> &prg_stack, int64_t ip) {
+    auto &instr = ctx->instr->template as<Call_t>();
+    prg_stack.push_back(Value_t(ip));
+    return instr.addr;
+}
+
 } // namespace exec
 } // namespace Teng
 

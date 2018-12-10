@@ -129,6 +129,8 @@ enum class OPCODE {
     QUERY_ISEMPTY,   //!< Push true on stack if fragment resp list is empty
     MATCH_REGEX,     //!< Matching of regular expression
     LOG_SUPPRESS,    //!< Suppressing error log
+    RETURN,          //!< Implements return from subroutine
+    CALL,            //!< Pushes return address and jumps to subroutine
 };
 
 /** Converts opcode to its string representation.
@@ -772,6 +774,10 @@ struct Jmp_t: public Instruction_t {
         : Instruction_t(instr_opcode, pos),
           addr_offset(-1)
     {}
+    Jmp_t(int64_t addr_offset, const Pos_t &pos)
+        : Instruction_t(instr_opcode, pos),
+          addr_offset(addr_offset)
+    {}
     void dump_params(std::ostream &os) const;
     int64_t addr_offset; //!< offset where to jump
 };
@@ -822,10 +828,11 @@ struct Print_t: public Instruction_t {
     static constexpr auto instr_opcode = OPCODE::PRINT;
     Print_t(bool print_escape, const Pos_t &pos)
         : Instruction_t(instr_opcode, pos),
-          print_escape(print_escape)
+          print_escape(print_escape), unoptimizable(false)
     {}
     void dump_params(std::ostream &os) const;
-    bool print_escape; //!< do escaping if print escaping is enabled
+    bool print_escape;  //!< do escaping if print escaping is enabled
+    bool unoptimizable; //!< can't be optimized out
 };
 
 struct Set_t: public Instruction_t {
@@ -893,6 +900,24 @@ struct PushErrorFrag_t: public Instruction_t {
     {}
     void dump_params(std::ostream &os) const;
     bool discard_stack_value; //!< if true value on the stack top is discarded
+};
+
+struct Return_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::RETURN;
+    Return_t(const Pos_t &pos)
+        : Instruction_t(instr_opcode, pos)
+    {}
+};
+
+struct Call_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::CALL;
+    Call_t(std::string name, int64_t addr, const Pos_t &pos)
+        : Instruction_t(instr_opcode, pos),
+          name(std::move(name)), addr(addr)
+    {}
+    void dump_params(std::ostream &os) const;
+    std::string name; //!< just debug info
+    int64_t addr;     //!< where the subroutine starts
 };
 
 /** The reason of this struct is lack of explicit template parameters of c'tors

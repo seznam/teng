@@ -61,7 +61,7 @@ libteng_la_SOURCES = teng.cc fragment.cc fragmentlist.cc util.cc               \
 					 semanticblock.cc semanticcase.cc semanticexpr.cc          \
 					 semanticfrag.cc semanticif.cc semanticother.cc            \
 					 semanticprint.cc semanticquery.cc semanticregex.cc        \
-					 semantictern.cc semanticvar.cc
+					 semantictern.cc semanticvar.cc semanticinheritance.cc
 
 # with these flags (version info etc.)
 libteng_la_LDFLAGS = @VERSION_INFO@
@@ -104,7 +104,7 @@ test_teng_SOURCES = tests/main.cc tests/old.cc tests/fun-escaping.cc           \
 					tests/expr-tern.cc tests/expr-case.cc tests/fun-date.cc    \
 					tests/fun-number.cc tests/fun-string.cc tests/fun-other.cc \
 					tests/queries.cc tests/debug.cc tests/rtvars.cc            \
-					tests/builtin-vars.cc
+					tests/builtin-vars.cc tests/inheritance.cc
 
 AM_COLOR_TESTS = always
 TESTS = test-teng

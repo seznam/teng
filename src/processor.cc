@@ -439,6 +439,14 @@ process(Ctx_t *ctx, std::vector<Value_t> &stack, const SubProgram_t &program) {
             ++ctx->log_suppressed;
             break;
 
+        case OPCODE::RETURN:
+            ip = exec::return_impl(prg_stack);
+            break;
+
+        case OPCODE::CALL:
+            ip = exec::call_impl(ctx, prg_stack, *ip);
+            break;
+
         case OPCODE::HALT:
             break;
         }

@@ -155,6 +155,10 @@ struct Pos_t {
      */
     std::string str() const;
 
+    /** Returns the path basename or empty string if path is empty.
+     */
+    std::string basename() const;
+
     const std::string *filename; //!< list of sources
     int64_t lineno;              //!< line number
     int64_t colno;               //!< column position in file

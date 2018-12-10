@@ -64,7 +64,7 @@ void include_file(Context_t *ctx, const Pos_t &pos, const Options_t &opts) {
     }
 
     // ensure that we not go beyond include limit
-    if (ctx->lex1_stack.size() >= ctx->params->getMaxIncludeDepth()) {
+    if (ctx->include_level() >= ctx->params->getMaxIncludeDepth()) {
         logError(ctx, pos, "Can't include file; include level is too deep");
         return;
     }

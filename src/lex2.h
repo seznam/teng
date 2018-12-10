@@ -97,7 +97,18 @@ public:
     /** Create new lexer buffer for given string.
      */
     void
-    start_scanning(flex_string_view_t &&new_directive, const Pos_t &init_pos);
+    start_scanning(
+        flex_string_view_t &&new_directive,
+        const Pos_t &init_pos
+    );
+
+    /** Switches the scanner to block_override start condition.
+     */
+    void switch_to_override_block();
+
+    /** Switches the scanner to initial start condition.
+     */
+    void switch_to_initial();
 
     /** Entry point of lexer that do all the work.
      *
@@ -152,6 +163,10 @@ protected:
     Lex2_t(const Lex2_t &) = delete;
     Lex2_t &operator=(const Lex2_t &) = delete;
 
+    /** Sets start condition after scanner initialization.
+     */
+    void set_start_condition(int start_condition);
+
     void *yyscanner;               //!< reentrant flex lexer instance
     void *buffer;                  //!< buffer for flex lexer
     Error_t &err;                  //!< error log
@@ -161,6 +176,7 @@ protected:
     Pos_t token_pos;               //!< start pos of not yet fully parsed token
     const char *token_ipos;        //!< ptr to first char of not yet fully ...
     flex_string_view_t directive;  //!< the teng directive source code
+    int current_start_condition;   //!< what start condition is in use
 };
 
 } // namespace Parser

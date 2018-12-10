@@ -76,6 +76,7 @@
     #include "semanticregex.h"
     #include "semantictern.h"
     #include "semanticvar.h"
+    #include "semanticinheritance.h"
     namespace Teng {
     namespace Parser {
     struct Context_t;
@@ -139,7 +140,9 @@
 %token <TokenSymbol_t> TENG FRAGMENT ENDFRAGMENT DEBUG_FRAG BYTECODE_FRAG
 %token <TokenSymbol_t> INCLUDE IF ELSEIF ELSE ENDIF SET ESC_EXPR RAW_EXPR
 %token <TokenSymbol_t> END SHORT_ESC_EXPR SHORT_RAW_EXPR SHORT_DICT SHORT_END
-%token <TokenSymbol_t> FORMAT ENDFORMAT CTYPE ENDCTYPE
+%token <TokenSymbol_t> FORMAT ENDFORMAT CTYPE ENDCTYPE EXTENDS ENDEXTENDS
+%token <TokenSymbol_t> OVERRIDE_BLOCK DEFINE_BLOCK ENDBLOCK_OVERRIDE
+%token <TokenSymbol_t> ENDBLOCK_DEFINE SUPER_BLOCK
 
 // assignment operator
 %token <TokenSymbol_t> ASSIGN
@@ -264,6 +267,10 @@ teng_directive
     | teng_dict
     | teng_ctype
     | teng_set
+    | teng_define_block
+    | teng_extends_block
+    | teng_super_block
+    | teng_free_override_block
     ;
 
  /************************************************************* RULES: errors */
@@ -353,6 +360,18 @@ teng_include
     ;
 
 
+teng_super_block
+    : SUPER_BLOCK ignored_options END {call_super_block(ctx, *$1);}
+    | SUPER_BLOCK error_up_to_end END {}
+    ;
+
+
+teng_free_override_block
+    : OVERRIDE_BLOCK error END {ignore_free_override(ctx, *$1);}
+    | ENDBLOCK_OVERRIDE error END {ignore_free_override(ctx, *$1);}
+    ;
+
+
  /************************************************** RULES: format directives */
 
 
@@ -413,6 +432,113 @@ teng_ctype_open
 teng_ctype_close
     : ENDCTYPE ignored_options END {close_ctype(ctx, $1->pos);}
     | ENDCTYPE error_up_to_end END {close_inv_ctype(ctx, $1->pos);}
+    ;
+
+
+ /******************************************* RULES: extends block directives */
+
+
+teng_extends_block
+    : teng_extends_open teng_override_block_list teng_extends_close {}
+    | teng_extends_open error {ignore_unclosed_extends(ctx, *YYLA); yyerrok;}
+    ;
+
+
+teng_extends_open
+    : EXTENDS options END {extends_file(ctx, $1->pos, *$2);}
+    | EXTENDS END {ignore_extends(ctx, *$1, true);}
+    | EXTENDS error_up_to_end END {ignore_extends(ctx, *$1, false);}
+    ;
+
+
+teng_extends_close
+    : ENDEXTENDS ignored_options END {close_extends(ctx);}
+    | ENDEXTENDS error_up_to_end END {close_extends(ctx, &$1->pos);}
+    ;
+
+
+ /****************************************** RULES: override block directives */
+
+
+teng_override_block_list
+    : teng_override_block_list teng_override_block
+    | teng_override_block_list TEXT
+    | teng_override_block_list teng_extends_block
+    | %empty
+    ;
+
+
+teng_override_block
+    : teng_override_block_open
+      teng_override_block_content
+      teng_override_block_close {}
+    | teng_override_block_open
+      error {ignore_unclosed_extends(ctx, *YYLA); yyerrok;}
+    ;
+
+
+teng_override_block_open
+    : OVERRIDE_BLOCK identifier_relative END {note_override_block(ctx, *$2);}
+    | OVERRIDE_BLOCK error_up_to_end END {note_inv_override_block(ctx, *$1);}
+    ;
+
+
+teng_override_block_close
+    : ENDBLOCK_OVERRIDE ignored_options END {reg_override_block(ctx, *$1);}
+    | ENDBLOCK_OVERRIDE error_up_to_end END {reg_override_block(ctx, *$1);}
+    ;
+
+
+ /********************************************* RULES: override block content */
+
+
+teng_override_block_content
+    : teng_override_block_content teng_override_block_in_override
+    | teng_override_block_content TEXT
+    | teng_override_block_content IDENT
+    | teng_override_block_content END
+    | %empty
+    ;
+
+
+teng_override_block_in_override
+    : teng_override_block_open_in_override
+      teng_override_block_content
+      teng_override_block_close_in_override {}
+    | teng_override_block_open_in_override error {yyerrok;}
+    ;
+
+
+teng_override_block_open_in_override
+    : OVERRIDE_BLOCK identifier_relative END
+    | OVERRIDE_BLOCK error_up_to_end END
+    ;
+
+
+teng_override_block_close_in_override
+    : ENDBLOCK_OVERRIDE ignored_options END
+    | ENDBLOCK_OVERRIDE error_up_to_end END
+    ;
+
+
+ /******************************************** RULES: define block directives */
+
+
+teng_define_block
+    : teng_define_block_open block_content teng_define_block_close
+    | teng_define_block_open error {unclosed_define_block(ctx, *YYLA); yyerrok;}
+    ;
+
+
+teng_define_block_open
+    : DEFINE_BLOCK identifier_relative END {note_define_block(ctx, *$2);}
+    | DEFINE_BLOCK error_up_to_end END {note_inv_define_block(ctx, *$1);}
+    ;
+
+
+teng_define_block_close
+    : ENDBLOCK_DEFINE ignored_options END {reg_define_block(ctx, *$1);}
+    | ENDBLOCK_DEFINE error_up_to_end END {reg_define_block(ctx, *$1);}
     ;
 
 

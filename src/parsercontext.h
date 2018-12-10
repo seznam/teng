@@ -51,6 +51,7 @@
 #include "parserfrag.h"
 #include "parserdiag.h"
 #include "contenttype.h"
+#include "overriddenblocks.h"
 #include "teng/error.h"
 
 namespace Teng {
@@ -120,7 +121,8 @@ struct Context_t {
      * Source code parsing algorithm has three layers:
      * - level 1 lexer: tenglex1.h/cc,
      * - level 2 lexer: tenglex2(impl).h/ll,
-     * - syntactic parser: tengsyntax.yy.
+     * - syntactic parser: tengsyntax.yy,
+     * - semanthic actions: semanthic*.h/cc.
      *
      * This method returns directly some level 1 tokens that can be passed to
      * syntactic parser or it uses level 2 lexer to parse complex level 1
@@ -130,11 +132,15 @@ struct Context_t {
 
     /** Returns level 1 lexer that is on the top of level 1 lexers stack.
      */
-    Lex1_t &lex1() {return lex1_stack.top();}
+    Lex1_t &lex1() {return lex1_stack.top().lexer;}
 
     /** Returns level 2 lexer.
      */
     Lex2_t &lex2() {return lex2_value;}
+
+    /** Return the number of current includes.
+     */
+    std::size_t include_level() const {return lex1_stack.size();}
 
     /** Returns current position in source.
      */
@@ -199,17 +205,18 @@ struct Context_t {
     /** Load source code from file.
      *
      * @param ctx Parser context.
-     * @param filename Template filename (absolute path).
+     * @param path Template filename (absolute path).
      * @param incl_pos The include directive position.
      */
-    void load_file(const string_view_t &filename, const Pos_t &incl_pos);
+    void load_file(const string_view_t &path, const Pos_t &incl_pos);
 
     /** Load source code from string.
      *
      * @param ctx Parser context.
      * @param source Template source code in string.
+     * @param incl_pos The include directive position.
      */
-    void load_source(const std::string &source);
+    void load_source(const std::string &source, const Pos_t *inc_pos = nullptr);
 
     /** Returns current address of the unfinished JMP instruction.
      */
@@ -225,7 +232,7 @@ struct Context_t {
     const Configuration_t *params;      //!< config dictionary (param.conf)
     const std::string fs_root;          //!< application root path
     SourceCodes_t source_codes;         //!< parsed/compiled source codes
-    std::stack<Lex1_t> lex1_stack;      //!< lexical analyzer (level 1)
+    Lex1Stack_t lex1_stack;             //!< lexical analyzer (level 1)
     Lex2_t lex2_value;                  //!< lexical analyzer (level 2)
     Error_t coproc_err;                 //!< error log for optimalizer
     Processor_t coproc;                 //!< coprocessor for expr optimizer
@@ -242,6 +249,8 @@ struct Context_t {
     optim_points_t optimization_points; //!< adresses of "value generators"
     ExprDiag_t expr_diag;               //!< list of expression diagnostic codes
     Escaper_t escaper;                  //!< open content types / escaper
+    ExtendsBlock_t extends_block;       //!< stack of open 'extends' block
+    OverriddenBlocks_t overridden_blocks;//!< used to impl. template inheritance
 };
 
 } // namespace Parser
