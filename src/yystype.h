@@ -123,8 +123,10 @@ public:
      */
     template <typename... Args_t>
     OptionalSymbol_t &emplace(Args_t &&...args) {
+#ifndef __clang_analyzer__
         // the emplace() is expected to be used only for uninitialized symbols
         if (initialized) throw std::runtime_error(__PRETTY_FUNCTION__);
+#endif /* __clang_analyzer__ */
         new (&value) ValueType_t(std::forward<Args_t>(args)...);
         initialized = true;
         return *this;
