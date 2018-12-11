@@ -81,6 +81,17 @@ SCENARIO(
             Teng::Error_t err;
             auto result = g(err, "${'ahoj' !~ /.*/}");
 
+            THEN("It expand to false") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "0");
+            }
+        }
+
+        WHEN("The regex is used digraph") {
+            Teng::Error_t err;
+            auto result = g(err, "${\"str18\"!~/./}");
+
             THEN("It expand to true") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 ERRLOG_TEST(err.getEntries(), errs);
