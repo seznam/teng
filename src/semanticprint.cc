@@ -130,15 +130,17 @@ void generate_print(Context_t *ctx, bool print_escape) {
             first_val.append_str(second_val);
             break;
         case -1: // (false - true)
-            second_val.print([&] (const string_view_t &v) {
-                first_val.append_str(esc(v));
+            second_val.print([&] (const string_view_t &v2) {
+                first_val.print([&] (const string_view_t &v1) {
+                    first_val = esc(v1) + v2;
+                });
             });
             print_instr.print_escape = false;
             break;
         case 1:  // (true - false)
             second_val.print([&] (const string_view_t &v2) {
                 first_val.print([&] (const string_view_t &v1) {
-                    first_val = esc(v1) + v2;
+                    first_val = v1 + esc(v2);
                 });
             });
             print_instr.print_escape = false;
