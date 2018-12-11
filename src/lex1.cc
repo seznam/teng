@@ -281,6 +281,10 @@ Lex1_t::Token_t Lex1_t::next() {
     int64_t start_line = pos.lineno;
     int64_t start_column = pos.colno;
 
+    auto offset_incr = [&] (int n) {
+        offset = std::min(source_code.size(), offset + n);
+    };
+
     auto incr_pos = [&] {
         if (utf8) {
             auto byte = static_cast<uint8_t>(source_code[offset]);
@@ -291,18 +295,18 @@ Lex1_t::Token_t Lex1_t::next() {
                 break;
             case 0b1100 ... 0b1101: // 110xxxxx
                 pos.advanceColumn(1);
-                offset += 2;
+                offset_incr(2);
                 break;
             case 0b1110:            // 1110xxxx
                 pos.advanceColumn(1);
-                offset += 3;
+                offset_incr(3);
                 break;
             case 0b1111:            // 11110xxx, 111110xx, 1111110x
                 switch ((byte & 0b00001100) >> 2) {
-                case 0b00: pos.advanceColumn(1); offset += 4; break;
-                case 0b01: pos.advanceColumn(1); offset += 4; break;
-                case 0b10: pos.advanceColumn(1); offset += 5; break;
-                case 0b11: pos.advanceColumn(1); offset += 6; break;
+                case 0b00: pos.advanceColumn(1); offset_incr(4); break;
+                case 0b01: pos.advanceColumn(1); offset_incr(4); break;
+                case 0b10: pos.advanceColumn(1); offset_incr(5); break;
+                case 0b11: pos.advanceColumn(1); offset_incr(6); break;
                 }
                 break;
             }
