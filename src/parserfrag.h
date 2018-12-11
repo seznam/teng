@@ -44,9 +44,6 @@
 #include <vector>
 #include <algorithm>
 
-// TODO(burlog): remove
-#include <iostream>
-
 #include "position.h"
 #include "identifier.h"
 #include "openframesapi.h"
@@ -129,9 +126,6 @@ public:
         // empty ident path is automatically matched (omit var name)
         if (ident.size() <= 1)
             return frags.end();
-
-        std::cerr << "?_____________________________" << std::endl;
-        std::cerr << frags.size() << " " << (ident.size() - 1) << std::endl;
 
         // if ident path is longer than opened fragments (omit var name)
         if (frags.size() < (ident.size() - 1))
