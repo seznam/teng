@@ -90,11 +90,14 @@ libteng_la_LIBADD = $(LTLIBOBJS) @TENG_DEPS_LIBS@
 
 # test program
 EXTRA_PROGRAMS = teng-example teng-cache test-teng
+teng_example_LDFLAGS = -static
 teng_example_SOURCES = example/example.cc
 teng_example_LDADD = libteng.la
+teng_cache_LDFLAGS = -static
 teng_cache_SOURCES = example/cache.cc
 teng_cache_LDADD = libteng.la
 
+test_teng_LDFLAGS = -static
 test_teng_LDADD = libteng.la
 test_teng_SOURCES = tests/main.cc tests/old.cc tests/fun-escaping.cc           \
 					tests/frag.cc tests/vars.cc tests/simple.cc tests/incl.cc  \

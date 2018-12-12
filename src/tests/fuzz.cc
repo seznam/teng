@@ -52,13 +52,22 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     Teng::Fragment_t root;
     auto &data_frag = root.addFragment("data");
     data_frag.addFragment("current_section");
-    for (int i = 0; i < 10; ++i) {
+    data_frag.addVariable("a", "123");
+    data_frag.addVariable("b", -1);
+    data_frag.addVariable("c", 0);
+    for (int i = 0; i < 3; ++i) {
         auto &sub_frag = data_frag.addFragment("subsections");
         sub_frag.addVariable("thread_count", i);
         sub_frag.addVariable("icon_url", "http:://icon.url");
+        sub_frag.addVariable("a", "123");
+        sub_frag.addVariable("b", -1);
+        sub_frag.addVariable("c", 0);
         for (int j = 0; j < 3; ++j) {
             auto &n_frag = sub_frag.addFragment("topNThreads");
             n_frag.addVariable("answer_count", 10);
+            n_frag.addVariable("a", "123");
+            n_frag.addVariable("b", -1);
+            n_frag.addVariable("c", 0);
             if (j > 1) {
                 auto &profile_frag = n_frag.addFragment("profile");
                 profile_frag.addVariable("image", "aaa");
