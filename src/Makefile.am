@@ -46,26 +46,17 @@ AUTOMAKE_OPTIONS = subdir-objects
 # these are generated and thus ought to be prepared before anything else
 BUILT_SOURCES = lex2impl.cc lex2impl.h syntax.cc syntax.hh
 
-# compile this library
-lib_LTLIBRARIES = libteng.la
-
 # from the these sources
-libteng_la_SOURCES = teng.cc fragment.cc fragmentlist.cc util.cc               \
-					 fragmentvalue.cc cache.cc sourcelist.cc dictionary.cc     \
-					 instruction.cc value.cc parsercontext.cc program.cc       \
-					 function.cc processor.cc writer.cc formatter.cc           \
-					 contenttype.cc error.cc template.cc lex1.cc syntax.yy     \
-					 position.cc lex2impl.ll udf.cc yystype.cc md5.cc          \
-					 configuration.cc aux.cc logging.cc semantic.cc hex.cc     \
-					 utf8.cc stringview.cc lex2.cc parserfrag.cc parserdiag.cc \
-					 semanticblock.cc semanticcase.cc semanticexpr.cc          \
-					 semanticfrag.cc semanticif.cc semanticother.cc            \
-					 semanticprint.cc semanticquery.cc semanticregex.cc        \
-					 semantictern.cc semanticvar.cc semanticinheritance.cc
-
-# with these flags (version info etc.)
-libteng_la_LDFLAGS = @VERSION_INFO@
-libteng_la_LIBADD = $(LTLIBOBJS) @TENG_DEPS_LIBS@
+SOURCES = teng.cc fragment.cc fragmentlist.cc util.cc fragmentvalue.cc         \
+		  sourcelist.cc dictionary.cc instruction.cc value.cc parsercontext.cc \
+		  program.cc function.cc processor.cc writer.cc formatter.cc cache.cc  \
+		  contenttype.cc error.cc template.cc lex1.cc syntax.yy position.cc    \
+		  lex2impl.ll udf.cc yystype.cc md5.cc configuration.cc aux.cc         \
+		  logging.cc semantic.cc hex.cc utf8.cc stringview.cc lex2.cc          \
+		  parserfrag.cc parserdiag.cc semanticblock.cc semanticcase.cc         \
+		  semanticexpr.cc semanticfrag.cc semanticif.cc semanticother.cc       \
+		  semanticprint.cc semanticquery.cc semanticregex.cc semantictern.cc   \
+		  semanticvar.cc semanticinheritance.cc
 
 # explicit rules for proper flex & bison sources compilation
 lex2.lo: lex2impl.cc
@@ -73,12 +64,29 @@ parsercontext.lo: syntax.cc
 lex2impl.h: lex2impl.cc
 syntax.hh: syntax.cc
 
-# fuzzer program
+CLEANFILES = @top_builddir@/src/syntax.hh                                      \
+			 @top_builddir@/src/syntax.cc                                      \
+			 @top_builddir@/src/lex2impl.cc                                    \
+			 @top_builddir@/src/lex2impl.h
+
+# compile library or fuzzer
 if FUZZER
+
+# fuzzer
 bin_PROGRAMS = teng-fuzzer
-teng_fuzzer_SOURCES = tests/fuzz.cc
-teng_fuzzer_LDADD = libteng.la
-endif
+teng_fuzzer_SOURCES = tests/fuzz.cc ${SOURCES}
+teng_fuzzer_CXXFLAGS = $(AM_CXXFLAGS)
+teng_fuzzer_LDADD = @TENG_DEPS_LIBS@
+
+else # FUZZER
+
+# library
+lib_LTLIBRARIES = libteng.la
+libteng_la_SOURCES = ${SOURCES}
+
+# with these flags (version info etc.)
+libteng_la_LDFLAGS = @VERSION_INFO@
+libteng_la_LIBADD = $(LTLIBOBJS) @TENG_DEPS_LIBS@
 
 # test program
 EXTRA_PROGRAMS = teng-example teng-cache test-teng
@@ -86,14 +94,6 @@ teng_example_SOURCES = example/example.cc
 teng_example_LDADD = libteng.la
 teng_cache_SOURCES = example/cache.cc
 teng_cache_LDADD = libteng.la
-
-CLEANFILES = @top_builddir@/src/syntax.hh                                      \
-			 @top_builddir@/src/syntax.cc                                      \
-			 @top_builddir@/src/lex2impl.cc                                    \
-			 @top_builddir@/src/lex2impl.h
-
-doc:
-	doxygen
 
 test_teng_LDADD = libteng.la
 test_teng_SOURCES = tests/main.cc tests/old.cc tests/fun-escaping.cc           \
@@ -108,4 +108,9 @@ test_teng_SOURCES = tests/main.cc tests/old.cc tests/fun-escaping.cc           \
 
 AM_COLOR_TESTS = always
 TESTS = test-teng
+
+endif # FUZZER
+
+doc:
+	doxygen
 

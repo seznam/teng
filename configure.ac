@@ -64,6 +64,7 @@ AC_PREREQ(2.50)
 
 # cxx flags for libfuzzer
 SANITIZE_CXXFLAGS="-fsanitize=undefined -fsanitize=address"
+CODE_COVERAGE_CXXFLAGS="-fprofile-instr-generate -fcoverage-mapping"
 FUZZER_CXXFLAGS="${SANITIZE_CXXFLAGS} -fsanitize=fuzzer"
 
 # --enable-package-version switch
@@ -92,7 +93,21 @@ AC_ARG_ENABLE(
 AC_ARG_ENABLE(
     [debug],
     [AS_HELP_STRING([--enable-debug], [enable the debug build])],
-    [AS_IF([test x${enableval} = xyes], [CXXFLAGS="${CXXFLAGS} ${SANITIZE_CXXFLAGS}"; AC_DEFINE([DEBUG], 1, [allow debug build])])]
+    [AS_IF([test x${enableval} = xyes], [AC_DEFINE([DEBUG], 1, [allow debug build])])]
+)
+
+# --enable-sanitize switch
+AC_ARG_ENABLE(
+    [sanitize],
+    [AS_HELP_STRING([--enable-sanitize], [enable the sanitizer cxx flags])],
+    [AS_IF([test x${enableval} = xyes], [CXXFLAGS="${CXXFLAGS} ${SANITIZE_CXXFLAGS}"])]
+)
+
+# --enable-code-coverage switch
+AC_ARG_ENABLE(
+    [code-coverage],
+    [AS_HELP_STRING([--enable-code-coverage], [enable the code coverage cxx flags])],
+    [AS_IF([test x${enableval} = xyes], [CXXFLAGS="${CXXFLAGS} ${CODE_COVERAGE_CXXFLAGS}"])]
 )
 
 # --disable-udf-lock switch
