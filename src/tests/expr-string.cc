@@ -780,3 +780,57 @@ SCENARIO(
     }
 }
 
+SCENARIO(
+    "Print optimization of string escaped and not escapend values",
+    "[string][expr]"
+) {
+    GIVEN("Template with sequence of not escaped and escaped values") {
+        Teng::Fragment_t root;
+        std::string t = "<b>#{html_small}";
+
+        WHEN("Prints are optimalized") {
+            Teng::Error_t err;
+            auto result = g(err, t, root);
+
+            THEN("The value before dict stayed unescaped") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "<b>&amp;&lt;b&gt;");
+            }
+        }
+    }
+
+    GIVEN("Template with sequence of escaped and not escaped values") {
+        Teng::Fragment_t root;
+        std::string t = "#{html_small}<b>";
+
+        WHEN("Prints are optimalized") {
+            Teng::Error_t err;
+            auto result = g(err, t, root);
+
+            THEN("The value after dict stayed unescaped") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "&amp;&lt;b&gt;<b>");
+            }
+        }
+    }
+
+    GIVEN("Template with sequence of different print escaping") {
+        Teng::Fragment_t root;
+        std::string t = "<b>#{html_small}</b>";
+
+        WHEN("Prints are optimalized") {
+            Teng::Error_t err;
+            auto result = g(err, t, root);
+
+            THEN("The value around dict stayed unescaped") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "<b>&amp;&lt;b&gt;</b>");
+            }
+        }
+    }
+}
+
+
