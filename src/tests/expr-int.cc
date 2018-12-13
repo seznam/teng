@@ -1142,7 +1142,29 @@ SCENARIO(
     }
 }
 
+SCENARIO(
+    "The list of integers accesed by _this",
+    "[numeric][expr][integral]"
+) {
+    GIVEN("List of integeres") {
+        Teng::Fragment_t root;
+        Teng::FragmentList_t list;
+        list.addValue(1);
+        list.addValue(2);
+        list.addValue(3);
+        root.addValue("a", std::move(list));
 
+        WHEN("The integeres are accessed by _this") {
+            Teng::Error_t err;
+            std::string t = "<?teng frag a?>${_this},<?teng endfrag?>";
+            auto result = g(err, t, root);
 
-
+            THEN("Result is list of ints") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "1,2,3,");
+            }
+        }
+    }
+}
 

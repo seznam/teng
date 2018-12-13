@@ -109,7 +109,7 @@ public:
         typename type_t,
         std::enable_if_t<std::is_integral<type_t>::value, bool> = true
     > void addValue(type_t value) {
-        addIntVariable(value);
+        addIntValue(value);
     }
 
     /**
@@ -120,7 +120,7 @@ public:
         typename type_t,
         std::enable_if_t<std::is_floating_point<type_t>::value, bool> = true
     > void addValue(type_t value) {
-        addRealVariable(value);
+        addRealValue(value);
     }
 
     /**
