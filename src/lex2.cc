@@ -109,6 +109,13 @@ string_view_t l2_token_name(int token_id) {
     case LEX2::DEFINED: return "DEFINED";
     case LEX2::REPR: return "REPR";
     case LEX2::ISEMPTY: return "ISEMPTY";
+    case LEX2::ISUNDEFINED: return "ISUNDEFINED";
+    case LEX2::ISINTEGRAL: return "ISINTEGRAL";
+    case LEX2::ISREAL: return "ISREAL";
+    case LEX2::ISSTRING: return "ISSTRING";
+    case LEX2::ISFRAG: return "ISFRAG";
+    case LEX2::ISFRAGLIST: return "ISFRAGLIST";
+    case LEX2::ISREGEX: return "ISREGEX";
     case LEX2::EXISTS: return "EXISTS";
     case LEX2::TYPE: return "TYPE";
     case LEX2::COUNT: return "COUNT";

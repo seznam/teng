@@ -110,6 +110,13 @@ void set_var_impl(Context_t *ctx, const Variable_t &var) {
     case LEX2::DEFINED:
     case LEX2::REPR:
     case LEX2::ISEMPTY:
+    case LEX2::ISUNDEFINED:
+    case LEX2::ISINTEGRAL:
+    case LEX2::ISREAL:
+    case LEX2::ISSTRING:
+    case LEX2::ISFRAG:
+    case LEX2::ISFRAGLIST:
+    case LEX2::ISREGEX:
     case LEX2::EXISTS:
     case LEX2::TYPE:
     case LEX2::COUNT:
@@ -197,6 +204,13 @@ void generate_var_impl(Context_t *ctx, const Variable_t &var) {
     case LEX2::DEFINED:
     case LEX2::REPR:
     case LEX2::ISEMPTY:
+    case LEX2::ISUNDEFINED:
+    case LEX2::ISINTEGRAL:
+    case LEX2::ISREAL:
+    case LEX2::ISSTRING:
+    case LEX2::ISFRAG:
+    case LEX2::ISFRAGLIST:
+    case LEX2::ISREGEX:
     case LEX2::EXISTS:
     case LEX2::TYPE:
     case LEX2::COUNT:

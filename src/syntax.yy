@@ -185,7 +185,8 @@
 // identifiers and literals
 %token <TokenSymbol_t> BUILTIN_FIRST BUILTIN_INNER BUILTIN_LAST BUILTIN_INDEX
 %token <TokenSymbol_t> BUILTIN_COUNT BUILTIN_THIS BUILTIN_PARENT BUILTIN_ERROR
-%token <TokenSymbol_t> REPR DEFINED ISEMPTY EXISTS TYPE COUNT
+%token <TokenSymbol_t> REPR DEFINED ISEMPTY EXISTS TYPE COUNT ISREAL ISFRAG
+%token <TokenSymbol_t> ISUNDEFINED ISINTEGRAL ISSTRING ISFRAGLIST ISREGEX
 %token <TokenSymbol_t> IDENT UDF_IDENT STRING REGEX DEC_INT HEX_INT BIN_INT REAL
 
 // invalid lexical token
@@ -840,9 +841,19 @@ identifier_relative
     | BUILTIN_INDEX {$$ = std::move($1);}
     | BUILTIN_COUNT {$$ = std::move($1);}
     | BUILTIN_ERROR {$$ = std::move($1);}
+    | REPR {$$ = std::move($1);}
     | TYPE {$$ = std::move($1);}
     | COUNT {$$ = std::move($1);}
     | EXISTS {$$ = std::move($1);}
+    | DEFINED {$$ = std::move($1);}
+    | ISEMPTY {$$ = std::move($1);}
+    | ISUNDEFINED {$$ = std::move($1);}
+    | ISINTEGRAL {$$ = std::move($1);}
+    | ISREAL {$$ = std::move($1);}
+    | ISSTRING {$$ = std::move($1);}
+    | ISFRAG {$$ = std::move($1);}
+    | ISFRAGLIST {$$ = std::move($1);}
+    | ISREGEX {$$ = std::move($1);}
     | LT_DIGRAPH {$$ = std::move($1);}
     | LE_DIGRAPH {$$ = std::move($1);}
     | GT_DIGRAPH {$$ = std::move($1);}
@@ -1087,9 +1098,16 @@ query_expression
     : REPR query_arg {$$.emplace(query_expr<QueryRepr_t>(ctx, *$1, $2));}
     | DEFINED query_arg {$$.emplace(query_expr<QueryDefined_t>(ctx, *$1, $2));}
     | EXISTS query_arg {$$.emplace(query_expr<QueryExists_t>(ctx, *$1, $2));}
-    | ISEMPTY query_arg {$$.emplace(query_expr<QueryIsEmpty_t>(ctx, *$1, $2));}
     | TYPE query_arg {$$.emplace(query_expr<QueryType_t>(ctx, *$1, $2));}
     | COUNT query_arg {$$.emplace(query_expr<QueryCount_t>(ctx, *$1, $2));}
+    | ISEMPTY query_arg {$$.emplace(query_expr<IsEmpty_t>(ctx, *$1, $2));}
+    | ISUNDEFINED query_arg {$$.emplace(query_expr<IsUndefined_t>(ctx, *$1, $2));}
+    | ISINTEGRAL query_arg {$$.emplace(query_expr<IsIntegral_t>(ctx, *$1, $2));}
+    | ISREAL query_arg {$$.emplace(query_expr<IsReal_t>(ctx, *$1, $2));}
+    | ISSTRING query_arg {$$.emplace(query_expr<IsString_t>(ctx, *$1, $2));}
+    | ISFRAG query_arg {$$.emplace(query_expr<IsFrag_t>(ctx, *$1, $2));}
+    | ISFRAGLIST query_arg {$$.emplace(query_expr<IsFragList_t>(ctx, *$1, $2));}
+    | ISREGEX query_arg {$$.emplace(query_expr<IsRegex_t>(ctx, *$1, $2));}
     ;
 
 

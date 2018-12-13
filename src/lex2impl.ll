@@ -609,6 +609,41 @@ TENG        "<?"("teng"[[:space:]\0])?[[:space:]\0]*
     return make_nonewline_token(LEX2::COUNT, yytext, yytext + yyleng);
 }
 
+"isundefined" {
+    // match count query
+    return make_nonewline_token(LEX2::ISUNDEFINED, yytext, yytext + yyleng);
+}
+
+"isintegral" {
+    // match count query
+    return make_nonewline_token(LEX2::ISINTEGRAL, yytext, yytext + yyleng);
+}
+
+"isreal" {
+    // match count query
+    return make_nonewline_token(LEX2::ISREAL, yytext, yytext + yyleng);
+}
+
+"isstring" {
+    // match count query
+    return make_nonewline_token(LEX2::ISSTRING, yytext, yytext + yyleng);
+}
+
+"isfrag" {
+    // match count query
+    return make_nonewline_token(LEX2::ISFRAG, yytext, yytext + yyleng);
+}
+
+"isfraglist" {
+    // match count query
+    return make_nonewline_token(LEX2::ISFRAGLIST, yytext, yytext + yyleng);
+}
+
+"isregex" {
+    // match count query
+    return make_nonewline_token(LEX2::ISREGEX, yytext, yytext + yyleng);
+}
+
 "_first" {
     // match builtin variable name
     return make_nonewline_token(LEX2::BUILTIN_FIRST, yytext, yytext + yyleng);

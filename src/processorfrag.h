@@ -751,6 +751,62 @@ Result_t query_isempty(RunCtxPtr_t ctx, GetArg_t get_arg) {
     throw std::runtime_error(__PRETTY_FUNCTION__);
 }
 
+/** Returns true if arg is undefined.
+ */
+Result_t query_isundefined(RunCtxPtr_t ctx, GetArg_t get_arg) {
+    --ctx->log_suppressed;
+    auto arg = get_arg();
+    return Result_t(arg.is_undefined());
+}
+
+/** Returns true if arg is integral.
+ */
+Result_t query_isintegral(RunCtxPtr_t ctx, GetArg_t get_arg) {
+    --ctx->log_suppressed;
+    auto arg = get_arg();
+    return Result_t(arg.is_integral());
+}
+
+/** Returns true if arg is real.
+ */
+Result_t query_isreal(RunCtxPtr_t ctx, GetArg_t get_arg) {
+    --ctx->log_suppressed;
+    auto arg = get_arg();
+    return Result_t(arg.is_real());
+}
+
+/** Returns true if arg is string.
+ */
+Result_t query_isstring(RunCtxPtr_t ctx, GetArg_t get_arg) {
+    --ctx->log_suppressed;
+    auto arg = get_arg();
+    return Result_t(arg.is_string());
+}
+
+/** Returns true if arg is fragment.
+ */
+Result_t query_isfrag(RunCtxPtr_t ctx, GetArg_t get_arg) {
+    --ctx->log_suppressed;
+    auto arg = get_arg();
+    return Result_t(arg.is_frag_ref());
+}
+
+/** Returns true if arg is list.
+ */
+Result_t query_isfraglist(RunCtxPtr_t ctx, GetArg_t get_arg) {
+    --ctx->log_suppressed;
+    auto arg = get_arg();
+    return Result_t(arg.is_list_ref());
+}
+
+/** Returns true if arg is regular expression.
+ */
+Result_t query_isregex(RunCtxPtr_t ctx, GetArg_t get_arg) {
+    --ctx->log_suppressed;
+    auto arg = get_arg();
+    return Result_t(arg.is_regex());
+}
+
 } // namespace exec
 } // namespace Teng
 

@@ -110,11 +110,26 @@ NAryExpr_t query_expr<QueryDefined_t>(Context_t *, const Token_t &, uint32_t);
 template
 NAryExpr_t query_expr<QueryExists_t>(Context_t *, const Token_t &, uint32_t);
 template
-NAryExpr_t query_expr<QueryIsEmpty_t>(Context_t *, const Token_t &, uint32_t);
-template
 NAryExpr_t query_expr<QueryType_t>(Context_t *, const Token_t &, uint32_t);
 template
 NAryExpr_t query_expr<QueryCount_t>(Context_t *, const Token_t &, uint32_t);
+
+template
+NAryExpr_t query_expr<IsEmpty_t>(Context_t *, const Token_t &, uint32_t);
+template
+NAryExpr_t query_expr<IsUndefined_t>(Context_t *, const Token_t &, uint32_t);
+template
+NAryExpr_t query_expr<IsIntegral_t>(Context_t *, const Token_t &, uint32_t);
+template
+NAryExpr_t query_expr<IsReal_t>(Context_t *, const Token_t &, uint32_t);
+template
+NAryExpr_t query_expr<IsString_t>(Context_t *, const Token_t &, uint32_t);
+template
+NAryExpr_t query_expr<IsFrag_t>(Context_t *, const Token_t &, uint32_t);
+template
+NAryExpr_t query_expr<IsFragList_t>(Context_t *, const Token_t &, uint32_t);
+template
+NAryExpr_t query_expr<IsRegex_t>(Context_t *, const Token_t &, uint32_t);
 
 } // namespace Parser
 } // namespace Teng

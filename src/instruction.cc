@@ -422,9 +422,44 @@ static auto eval(OPCODE opcode, type_t &self, call_t &&call, args_t &&...args) {
             self.template as<QueryExists_t>(),
             std::forward<args_t>(args)...
         );
-    case OPCODE::QUERY_ISEMPTY:
+    case OPCODE::ISEMPTY:
         return call(
-            self.template as<QueryIsEmpty_t>(),
+            self.template as<IsEmpty_t>(),
+            std::forward<args_t>(args)...
+        );
+    case OPCODE::ISUNDEFINED:
+        return call(
+            self.template as<IsUndefined_t>(),
+            std::forward<args_t>(args)...
+        );
+    case OPCODE::ISINTEGRAL:
+        return call(
+            self.template as<IsIntegral_t>(),
+            std::forward<args_t>(args)...
+        );
+    case OPCODE::ISREAL:
+        return call(
+            self.template as<IsReal_t>(),
+            std::forward<args_t>(args)...
+        );
+    case OPCODE::ISSTRING:
+        return call(
+            self.template as<IsString_t>(),
+            std::forward<args_t>(args)...
+        );
+    case OPCODE::ISFRAG:
+        return call(
+            self.template as<IsFrag_t>(),
+            std::forward<args_t>(args)...
+        );
+    case OPCODE::ISFRAGLIST:
+        return call(
+            self.template as<IsFragList_t>(),
+            std::forward<args_t>(args)...
+        );
+    case OPCODE::ISREGEX:
+        return call(
+            self.template as<IsRegex_t>(),
             std::forward<args_t>(args)...
         );
     case OPCODE::OPEN_FRAME:
@@ -531,7 +566,14 @@ const char *opcode_str(OPCODE opcode) {
     case OPCODE::QUERY_TYPE: return "QUERY_TYPE";
     case OPCODE::QUERY_DEFINED: return "QUERY_DEFINED";
     case OPCODE::QUERY_EXISTS: return "QUERY_EXISTS";
-    case OPCODE::QUERY_ISEMPTY: return "QUERY_ISEMPTY";
+    case OPCODE::ISEMPTY: return "ISEMPTY";
+    case OPCODE::ISUNDEFINED: return "ISUNDEFINED";
+    case OPCODE::ISINTEGRAL: return "ISINTEGRAL";
+    case OPCODE::ISREAL: return "ISREAL";
+    case OPCODE::ISSTRING: return "ISSTRING";
+    case OPCODE::ISFRAG: return "ISFRAG";
+    case OPCODE::ISFRAGLIST: return "ISFRAGLIST";
+    case OPCODE::ISREGEX: return "ISREGEX";
     case OPCODE::OPEN_FRAME: return "OPEN_FRAME";
     case OPCODE::CLOSE_FRAME: return "CLOSE_FRAME";
     case OPCODE::MATCH_REGEX: return "MATCH_REGEX";

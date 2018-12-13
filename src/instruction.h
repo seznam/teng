@@ -126,7 +126,14 @@ enum class OPCODE {
     QUERY_TYPE,      //!< Push type of the value on top of stack on stak
     QUERY_DEFINED,   //!< Push the value if 'is defined' [OBSOLETE]
     QUERY_EXISTS,    //!< Push the value if it 'exists' on stack
-    QUERY_ISEMPTY,   //!< Push true on stack if fragment resp list is empty
+    ISEMPTY,         //!< Push true on stack if fragment resp list is empty
+    ISUNDEFINED,     //!< Push true on stack if arg is undefined
+    ISINTEGRAL,      //!< Push true on stack if arg is integral number
+    ISREAL,          //!< Push true on stack if arg is real number
+    ISSTRING,        //!< Push true on stack if arg is string
+    ISFRAG,          //!< Push true on stack if arg is fragment
+    ISFRAGLIST,      //!< Push true on stack if arg is list
+    ISREGEX,         //!< Push true on stack if arg is regular expression
     MATCH_REGEX,     //!< Matching of regular expression
     LOG_SUPPRESS,    //!< Suppressing error log
     RETURN,          //!< Implements return from subroutine
@@ -522,9 +529,58 @@ struct QueryExists_t: public Instruction_t {
     {}
 };
 
-struct QueryIsEmpty_t: public Instruction_t {
-    static constexpr auto instr_opcode = OPCODE::QUERY_ISEMPTY;
-    QueryIsEmpty_t(const Pos_t &pos)
+struct IsEmpty_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::ISEMPTY;
+    IsEmpty_t(const Pos_t &pos)
+        : Instruction_t(instr_opcode, pos)
+    {}
+};
+
+struct IsUndefined_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::ISUNDEFINED;
+    IsUndefined_t(const Pos_t &pos)
+        : Instruction_t(instr_opcode, pos)
+    {}
+};
+
+struct IsIntegral_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::ISINTEGRAL;
+    IsIntegral_t(const Pos_t &pos)
+        : Instruction_t(instr_opcode, pos)
+    {}
+};
+
+struct IsReal_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::ISREAL;
+    IsReal_t(const Pos_t &pos)
+        : Instruction_t(instr_opcode, pos)
+    {}
+};
+
+struct IsString_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::ISSTRING;
+    IsString_t(const Pos_t &pos)
+        : Instruction_t(instr_opcode, pos)
+    {}
+};
+
+struct IsFrag_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::ISFRAG;
+    IsFrag_t(const Pos_t &pos)
+        : Instruction_t(instr_opcode, pos)
+    {}
+};
+
+struct IsFragList_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::ISFRAGLIST;
+    IsFragList_t(const Pos_t &pos)
+        : Instruction_t(instr_opcode, pos)
+    {}
+};
+
+struct IsRegex_t: public Instruction_t {
+    static constexpr auto instr_opcode = OPCODE::ISREGEX;
+    IsRegex_t(const Pos_t &pos)
         : Instruction_t(instr_opcode, pos)
     {}
 };

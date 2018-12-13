@@ -431,8 +431,36 @@ process(Ctx_t *ctx, std::vector<Value_t> &stack, const SubProgram_t &program) {
             push(exec::query_exists(ctx, get_arg));
             break;
 
-        case OPCODE::QUERY_ISEMPTY:
+        case OPCODE::ISEMPTY:
             push(exec::query_isempty(ctx, get_arg));
+            break;
+
+        case OPCODE::ISUNDEFINED:
+            push(exec::query_isundefined(ctx, get_arg));
+            break;
+
+        case OPCODE::ISINTEGRAL:
+            push(exec::query_isintegral(ctx, get_arg));
+            break;
+
+        case OPCODE::ISREAL:
+            push(exec::query_isreal(ctx, get_arg));
+            break;
+
+        case OPCODE::ISSTRING:
+            push(exec::query_isstring(ctx, get_arg));
+            break;
+
+        case OPCODE::ISFRAG:
+            push(exec::query_isfrag(ctx, get_arg));
+            break;
+
+        case OPCODE::ISFRAGLIST:
+            push(exec::query_isfraglist(ctx, get_arg));
+            break;
+
+        case OPCODE::ISREGEX:
+            push(exec::query_isregex(ctx, get_arg));
             break;
 
         case OPCODE::LOG_SUPPRESS:
