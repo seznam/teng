@@ -107,6 +107,7 @@ struct ExtendsBlock_t {
      */
     OverriddenBlock_t close_override(const char *raw_data_end) {
         auto &top = override_blocks.back();
+        raw_data_end = raw_data_end? raw_data_end: top.raw_data_begin;
         std::string range = {top.raw_data_begin, raw_data_end};
         OverriddenBlock_t block = {top.pos, top.addr, std::move(range)};
         override_blocks.pop_back();

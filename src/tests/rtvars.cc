@@ -1139,7 +1139,7 @@ SCENARIO(
 
 SCENARIO(
     "The builtin variable _parent optimalization",
-    "[vars][rtvarsx]"
+    "[vars][rtvars]"
 ) {
     GIVEN("Three nested fragments") {
         Teng::Fragment_t root;

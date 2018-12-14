@@ -1199,3 +1199,29 @@ SCENARIO(
     }
 }
 
+SCENARIO(
+    "Fuzzer problems in inheritance",
+    "[inheritance][fuzzerx]"
+) {
+    GIVEN("Empty teng root") {
+        Teng::Fragment_t root;
+
+        WHEN("The define directive is at the end of input") {
+            Teng::Error_t err;
+            std::string t = "<?define d?>";
+            auto result = g(err, t, root);
+
+            THEN("The defined block is deduced correctly") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 12},
+                    "The <?teng define block?> is not closed"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "");
+            }
+        }
+    }
+}
+
+
