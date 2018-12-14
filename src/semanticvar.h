@@ -135,6 +135,14 @@ VarOffset_t resolve_abs_var(Context_t *ctx, const Variable_t &var_sym);
  */
 Identifier_t make_absolute_ident(Context_t *ctx, const Variable_t &var_sym);
 
+/** Inserts address of expression in brackets to stack of index start points.
+ */
+void note_rtvar_index_start_point(Context_t *ctx);
+
+/** Cleans after generating runtime variable.
+ */
+void rtvar_clean(Context_t *ctx);
+
 } // namespace Parser
 } // namespace Teng
 

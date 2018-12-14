@@ -932,8 +932,8 @@ variable_identifier
 
 
 runtime_variable
-    : absolute_rtvar {ctx->rtvar_strings.pop_back();}
-    | relative_rtvar {ctx->rtvar_strings.pop_back();}
+    : absolute_rtvar {rtvar_clean(ctx);}
+    | relative_rtvar {rtvar_clean(ctx);}
     | local_rtvar {}
     ;
 
@@ -1007,7 +1007,8 @@ rtvar_index
 
 
 rtvar_index_expr
-    : L_BRACKET expression R_BRACKET {generate_rtvar_index(ctx, *$1, *$3);}
+    : L_BRACKET {note_rtvar_index_start_point(ctx);} expression R_BRACKET
+      {generate_rtvar_index(ctx, *$1, *$4);}
     ;
 
 

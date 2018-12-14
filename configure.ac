@@ -103,6 +103,13 @@ AC_ARG_ENABLE(
     [AS_IF([test x${enableval} = xyes], [CXXFLAGS="${CXXFLAGS} ${SANITIZE_CXXFLAGS}"])]
 )
 
+# --enable-stl-debug switch
+AC_ARG_ENABLE(
+    [stl-debug],
+    [AS_HELP_STRING([--enable-stl-debug], [enable the STL debug version])],
+    [AS_IF([test x${enableval} = xyes], [CXXFLAGS="${CXXFLAGS} -D_GLIBCXX_DEBUG"])]
+)
+
 # --enable-code-coverage switch
 AC_ARG_ENABLE(
     [code-coverage],

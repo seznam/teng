@@ -659,6 +659,11 @@ struct PushFragLast_t: public Instruction_t {
 
 struct PushFrag_t: public Instruction_t {
     static constexpr auto instr_opcode = OPCODE::PUSH_FRAG;
+    PushFrag_t(uint64_t frame_offset, uint64_t frag_offset, const Pos_t &pos)
+        : Instruction_t(instr_opcode, pos),
+          frame_offset(static_cast<uint16_t>(frame_offset)),
+          frag_offset(static_cast<uint16_t>(frag_offset))
+    {}
     template <typename Variable_t>
     PushFrag_t(const Variable_t &var, uint64_t frag_offset)
         : Instruction_t(instr_opcode, var.pos),

@@ -151,12 +151,12 @@ public:
     /** Returns open fragments joined by dot.
      */
     std::string current_path() const {
-        std::string result = ".";
-        for (auto i = 1u; i < frags.size(); ++i) {
-            if (i > 1) result.push_back('.');
+        std::string result;
+        for (auto i = 0u; i < frags.size(); ++i) {
+            result.push_back('.');
             result.append(frags[i].name().data(), frags[i].name().size());
         }
-        return result;
+        return result.empty()? ".": result;
     }
 
 protected:
@@ -278,7 +278,7 @@ public:
     /** Returns open fragments joined by dot.
      */
     std::string current_path() const override {
-        return frames[0].current_path();
+        return frames.back().current_path();
     }
 
     /** Returns current fragment index in parent list.

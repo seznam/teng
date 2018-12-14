@@ -354,6 +354,7 @@ void generate_rtvar_this_impl(Context_t *ctx, const Token_t &token) {
     generate<PushThisFrag_t>(ctx, root_offset, token.pos);
     note_optimization_point(ctx, true);
     ctx->rtvar_strings.emplace_back(token.view().begin(), 0);
+    ctx->rtvar_idx_start_point.push();
 }
 
 } // namespace
@@ -543,21 +544,58 @@ generate_rtvar_parent(Context_t *ctx, const Token_t &token, bool is_first) {
     // for first path segments
     if (is_first) {
         generate_rtvar_this_impl(ctx, token);
-        if (ctx->open_frames.top().empty()) {
-            logWarning(
-                ctx,
-                token.pos,
-                "The builtin _parent variable has crossed root boundary; "
-                "converting it to _this"
-            );
-        }
         note_optimization_point(ctx, false);
     }
 
+    // shortcut
+    auto warn_root_boundary_crossed = [&] {
+        logWarning(
+            ctx,
+            token.pos,
+            "The builtin _parent variable has crossed root boundary; "
+            "converting it to _this"
+        );
+    };
+
     // top level rtvar path string
     auto &rtvar_string = ctx->rtvar_strings.back();
-    // remove "last" path segment
-    generate<PopAttr_t>(ctx, token.pos);
+
+    // optimalize/implement access of parent frags
+    switch (ctx->program->back().opcode()) {
+    case OPCODE::PUSH_ROOT_FRAG: {
+        warn_root_boundary_crossed();
+        break;
+    }
+    case OPCODE::PUSH_THIS_FRAG: {
+        // replace this_frag with its parent
+        if (!ctx->open_frames.top().empty())
+            ctx->program->back() = PushFrag_t(0, 1, token.pos);
+        else warn_root_boundary_crossed();
+        break;
+    }
+    case OPCODE::PUSH_FRAG: {
+        auto &push_frag = ctx->program->back().as<PushFrag_t>();
+        // replace push_frag with its parent
+        if (push_frag.frag_offset < ctx->open_frames.top().size())
+            push_frag.frag_offset += 1;
+        else warn_root_boundary_crossed();
+        break;
+    }
+    case OPCODE::PUSH_ATTR: {
+        // the pop anihilates the push instruction
+        ctx->program->pop_back();
+        break;
+    }
+    case OPCODE::PUSH_ATTR_AT: {
+        // remove PUSH_ATTR_AT instr including index expression
+        auto addr = ctx->rtvar_idx_start_point.top().pop();
+        ctx->program->erase_from(addr);
+        break;
+    }
+    default:
+        throw std::runtime_error(__PRETTY_FUNCTION__);
+    }
+
     // this code remains valid until the runtime variables
     // will not be broken to more strings
     rtvar_string = {rtvar_string.begin(), token.view().end()};
@@ -578,6 +616,7 @@ void generate_rtvar_root(Context_t *ctx, const Token_t &token) {
     generate<PushRootFrag_t>(ctx, root_offset, token.pos);
     note_optimization_point(ctx, true);
     ctx->rtvar_strings.push_back(token.view());
+    ctx->rtvar_idx_start_point.push();
 }
 
 void ignoring_this(Context_t *ctx, const Pos_t &pos) {
@@ -675,6 +714,15 @@ Identifier_t make_absolute_ident(Context_t *ctx, const Variable_t &var_sym) {
         abs_ident.push_back(segment);
 
     return abs_ident;
+}
+
+void note_rtvar_index_start_point(Context_t *ctx) {
+    ctx->rtvar_idx_start_point.top().push(ctx->program->size());
+}
+
+void rtvar_clean(Context_t *ctx) {
+    ctx->rtvar_strings.pop_back();
+    ctx->rtvar_idx_start_point.pop();
 }
 
 } // namespace Parser

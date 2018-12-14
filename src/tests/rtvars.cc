@@ -1137,3 +1137,110 @@ SCENARIO(
     }
 }
 
+SCENARIO(
+    "The builtin variable _parent optimalization",
+    "[vars][rtvarsx]"
+) {
+    GIVEN("Three nested fragments") {
+        Teng::Fragment_t root;
+        root.addVariable("var", "root-var");
+        auto &first = root.addFragment("first");
+        first.addVariable("var", "first-var");
+        auto &second = first.addFragment("second");
+        second.addVariable("var", "second-var");
+        auto &third = second.addFragment("third");
+        third.addVariable("var", "third-var");
+
+        WHEN("The _parent is after 'push_this_frag'") {
+            Teng::Error_t err;
+            auto t = "<?teng frag first?>${$$_parent.var}<?teng endfrag?>";
+            auto result = g(err, t, root);
+
+            THEN("The error report contains valid path") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "root-var");
+            }
+        }
+
+        WHEN("The _parent is after 'push_attr' in absolute var") {
+            Teng::Error_t err;
+            auto t = "${$$.first._parent.var}";
+            auto result = g(err, t, root);
+
+            THEN("The error report contains valid path") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "root-var");
+            }
+        }
+
+        WHEN("The _parent is after 'push_attr' in relative var") {
+            Teng::Error_t err;
+            auto t = "${$$first.second.third._parent.var}";
+            auto result = g(err, t, root);
+
+            THEN("The error report contains valid path") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "second-var");
+            }
+        }
+
+        WHEN("The multiple _parent vars are after 'push_this_frag'") {
+            Teng::Error_t err;
+            auto t = "<?teng frag first?><?teng frag second?>"
+                     "${$$_parent._parent.var}"
+                     "<?teng endfrag?><?teng endfrag?>";
+            auto result = g(err, t, root);
+
+            THEN("The error report contains valid path") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "root-var");
+            }
+        }
+
+        WHEN("The _parent is after 'push_attr_at'") {
+            Teng::Error_t err;
+            auto t = "${$$.first['second']._parent.var}";
+            auto result = g(err, t, root);
+
+            THEN("The error report contains valid path") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "first-var");
+            }
+        }
+
+        WHEN("The _parent is after 'push_attr_at' but violates root boundary") {
+            Teng::Error_t err;
+            auto t = "${$$.first['second']._parent._parent._parent.var}";
+            auto result = g(err, t, root);
+
+            THEN("The error report contains valid path") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 37},
+                    "The builtin _parent variable has crossed root "
+                    "boundary; converting it to _this"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "root-var");
+            }
+        }
+
+        WHEN("The _parent is after 'push_attr_at' with nested rtvar") {
+            Teng::Error_t err;
+            auto t = "${$$.first[$$.first['second']]._parent.var}";
+            auto result = g(err, t, root);
+
+            THEN("The error report contains valid path") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "first-var");
+            }
+        }
+    }
+}
+

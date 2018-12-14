@@ -620,6 +620,9 @@ InstrBox_t::InstrBox_t(ImplArg_t &&other) noexcept
     new (this) Impl_t(std::move(other));
 }
 
+template
+InstrBox_t::InstrBox_t(PushFrag_t &&);
+
 InstrBox_t::InstrBox_t(InstrBox_t &&other) noexcept
     : Instruction_t(nullptr)
 {

@@ -226,30 +226,31 @@ struct Context_t {
      */
     auto &curr_if_start_point() {return if_start_points.top();}
 
-    bool utf8;                          //!< true if templates are in utf-8
-    std::unique_ptr<Program_t> program; //!< program created by parser
-    const Dictionary_t *dict;           //!< language dictionary
-    const Configuration_t *params;      //!< config dictionary (param.conf)
-    const std::string fs_root;          //!< application root path
-    SourceCodes_t source_codes;         //!< parsed/compiled source codes
-    Lex1Stack_t lex1_stack;             //!< lexical analyzer (level 1)
-    Lex2_t lex2_value;                  //!< lexical analyzer (level 2)
-    Error_t coproc_err;                 //!< error log for optimalizer
-    Processor_t coproc;                 //!< coprocessor for expr optimizer
-    OpenFrames_t open_frames;           //!< stack of open fragment frames
-    Variable_t var_sym;                 //!< used to build variable
-    Options_t opts_sym;                 //!< used to build directive options
-    bool error_occurred;                //!< used to turn off consequent errors
-    Token_t unexpected_token;           //!< the last unexpected token
-    expr_start_t expr_start_point;      //!< address and pos where exprs starts
-    expr_starts_t if_start_points;      //!< addresses where if stmnts start
-    rtvar_strings_t rtvar_strings;      //!< positions where rtvar starts
-    addrs_stack_t branch_addrs;         //!< addresses of unfinished jumps
-    addrs_stack_t case_option_addrs;    //!< the list of addrs of case options
-    optim_points_t optimization_points; //!< adresses of "value generators"
-    ExprDiag_t expr_diag;               //!< list of expression diagnostic codes
-    Escaper_t escaper;                  //!< open content types / escaper
-    ExtendsBlock_t extends_block;       //!< stack of open 'extends' block
+    bool utf8;                           //!< true if templates are in utf-8
+    std::unique_ptr<Program_t> program;  //!< program created by parser
+    const Dictionary_t *dict;            //!< language dictionary
+    const Configuration_t *params;       //!< config dictionary (param.conf)
+    const std::string fs_root;           //!< application root path
+    SourceCodes_t source_codes;          //!< parsed/compiled source codes
+    Lex1Stack_t lex1_stack;              //!< lexical analyzer (level 1)
+    Lex2_t lex2_value;                   //!< lexical analyzer (level 2)
+    Error_t coproc_err;                  //!< error log for optimalizer
+    Processor_t coproc;                  //!< coprocessor for expr optimizer
+    OpenFrames_t open_frames;            //!< stack of open fragment frames
+    Variable_t var_sym;                  //!< used to build variable
+    Options_t opts_sym;                  //!< used to build directive options
+    bool error_occurred;                 //!< used to turn off consequent errors
+    Token_t unexpected_token;            //!< the last unexpected token
+    expr_start_t expr_start_point;       //!< address and pos where exprs starts
+    expr_starts_t if_start_points;       //!< addresses where if stmnts start
+    rtvar_strings_t rtvar_strings;       //!< positions where rtvar starts
+    addrs_stack_t rtvar_idx_start_point; //!< stack of stacks of a[] expressions
+    addrs_stack_t branch_addrs;          //!< addresses of unfinished jumps
+    addrs_stack_t case_option_addrs;     //!< the list of addrs of case options
+    optim_points_t optimization_points;  //!< adresses of "value generators"
+    ExprDiag_t expr_diag;                //!< list of expr diagnostic codes
+    Escaper_t escaper;                   //!< open content types / escaper
+    ExtendsBlock_t extends_block;        //!< stack of open 'extends' block
     OverriddenBlocks_t overridden_blocks;//!< used to impl. template inheritance
 };
 
