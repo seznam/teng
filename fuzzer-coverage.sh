@@ -32,5 +32,5 @@ OUT="${ROOT}/fuzzer-coverage-html"
 rm -f "${PROF_RAW}" "${PROF_DATA}"
 LLVM_PROFILE_FILE="${PROF_RAW}" "${BIN}" "$@"
 llvm-profdata merge -sparse "${PROF_RAW}" -o "${PROF_DATA}"
-llvm-cov show "${BIN}" -output-dir="${OUT}" -instr-profile="${PROF_DATA}" -format=html -Xdemangler c++filt -Xdemangler -n
+llvm-cov show "${BIN}" -output-dir="${OUT}" -instr-profile="${PROF_DATA}" -format=html -Xdemangler c++filt -Xdemangler -n -ignore-filename-regex=".*glib-2.0.*"
 
