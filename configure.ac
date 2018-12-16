@@ -85,7 +85,7 @@ AC_ARG_ENABLE(
 AC_ARG_ENABLE(
     [optimization],
     [AS_HELP_STRING([--enable-optimization], [compile optimized])],
-    [optimization=${enableval}; AS_IF([test x${enableval} = xyes], [CXXFLAGS="${CXXFLAGS} -O2"], [CXXFLAGS="${CXXFLAGS} -O0"])],
+    [optimization=${enableval}; AS_IF([test x${enableval} = xyes], [CXXFLAGS="${CXXFLAGS} -O3"], [CXXFLAGS="${CXXFLAGS} -O0"])],
     [optimization=no; CXXFLAGS="${CXXFLAGS} -O0"]
 )
 
