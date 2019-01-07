@@ -100,10 +100,10 @@ void generate_overrides(
 
     // at the end of code generation we have to generate RETURN
     // and generate code for next override if any
-    ctx->lex1_stack.top().action = [=] {
+    ctx->lex1_stack.add_action([=] (const Lex1_t &) {
         generate<Return_t>(ctx, ctx->pos());
         generate_overrides(ctx, name, inext_override, eoverride);
-    };
+    });
 }
 
 } // namespace
@@ -252,6 +252,7 @@ void reg_override_block(Context_t *ctx, const Token_t &end_block) {
 }
 
 void note_define_block(Context_t *ctx, const Token_t &ident) {
+
     // open override for base implementation and note its address
     auto &extends_block = ctx->extends_block;
     extends_block.open_override(ctx, ident.str(), ctx->program->size());
@@ -273,13 +274,15 @@ void reg_define_block(Context_t *ctx, const Token_t &end_block) {
     if (!ctx->extends_block.is_override_block_open())
         return;
 
+    auto &extends_block = ctx->extends_block;
+    auto &override_block = extends_block.override_block();
+
     // generate subroutine return instruction
     generate<Return_t>(ctx, end_block.pos);
 
     // the code for the base implementation has been generated
+    auto &name = override_block.name;
     auto &blocks = ctx->overridden_blocks;
-    auto &extends_block = ctx->extends_block;
-    auto &name = extends_block.override_block().name;
     auto block = extends_block.close_override(end_block.token_view.begin());
     auto &entry = blocks.reg_block(std::move(name), std::move(block));
 

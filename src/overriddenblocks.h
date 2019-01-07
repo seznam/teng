@@ -40,6 +40,9 @@
 #include <map>
 #include <vector>
 
+// TODO(burlog): remove
+#include <iostream>
+
 #include "position.h"
 #include "teng/stringview.h"
 
@@ -87,10 +90,11 @@ protected:
  */
 struct ExtendsBlock_t {
     struct OverrideBlock_t {
-        Pos_t pos;                  //!< position of override block
-        int64_t addr;               //!< address of first instruction
-        std::string name;           //!< the name/id of the block
-        const char *raw_data_begin; //!< pointer to the source to first char
+        struct range_t {const char *begin; const char *end;};
+        Pos_t pos;                   //!< position of override block
+        int64_t addr;                //!< address of first instruction
+        std::string name;            //!< the name/id of the block
+        std::vector<range_t> chunks; //!< chunks of blocks source code
     };
 
     /** Starts new overridden block of desired name. If is not the address of
@@ -98,17 +102,45 @@ struct ExtendsBlock_t {
      */
     template <typename Context_t>
     void open_override(Context_t *ctx, std::string &&name, int64_t addr) {
-        auto *begin = ctx->lex1().current();
-        override_blocks.push_back({ctx->pos(), addr, std::move(name), begin});
+        // append the first chunk, the nullptr will be replaced by lambda
+        // bellow or by close_override()
+        override_blocks.push_back({
+            ctx->pos(),
+            addr,
+            std::move(name),
+            {{ctx->lex1().current(), nullptr}}
+        });
+
+        // the lambda will be executed when the level 1 lexer will be popped,
+        // it replace nullptr of last data chunk with appropriate end pointer,
+        // and optionally appends new chunk of data if there is level 1 lexer
+        auto i = override_blocks.size() - 1;
+        ctx->lex1_stack.add_action([this, ctx, i] (auto &&lexer) {
+            if (is_override_block_open()) {
+                override_blocks[i].chunks.back().end = lexer.current();
+                if (!ctx->lex1_stack.empty()) {
+                    auto *begin = ctx->lex1().current();
+                    override_blocks[i].chunks.push_back({begin, nullptr});
+                }
+            }
+        });
     }
 
     /** Returns overridden block that consists from address of first
      * instruction of this block and range of source code that implements block.
      */
     OverriddenBlock_t close_override(const char *raw_data_end) {
+        // set end pointer of the block if it not set yet
         auto &top = override_blocks.back();
-        raw_data_end = std::max(raw_data_end, top.raw_data_begin);
-        std::string range = {top.raw_data_begin, raw_data_end};
+        if (top.chunks.back().end == nullptr)
+            top.chunks.back().end = raw_data_end;
+
+        // concat all chunks of the block's source code
+        std::string range;
+        for (auto chunk: top.chunks)
+            range.append(chunk.begin, chunk.end);
+
+        // create and return new block
         OverriddenBlock_t block = {top.pos, top.addr, std::move(range)};
         override_blocks.pop_back();
         return block;

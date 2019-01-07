@@ -2275,21 +2275,6 @@ SCENARIO(
                     "Unexpected token: name=INV, view=\x7f"
                 }, {
                     Teng::Error_t::ERROR,
-                    {1, 24},
-                    "Missing <?teng endif?> closing directive "
-                    "of <?teng if?> statement; "
-                    "discarding whole if statement"
-                }, {
-                    Teng::Error_t::ERROR,
-                    {1, 28},
-                    "Invalid expression, fix it please; "
-                    "replacing whole expression with undefined value"
-                }, {
-                    Teng::Error_t::ERROR,
-                    {1, 30},
-                    "Unexpected token: name=IDENT, view=if"
-                }, {
-                    Teng::Error_t::ERROR,
                     {1, 34},
                     "Unexpected token: name=<EOF>, view="
                 }};

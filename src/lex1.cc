@@ -621,7 +621,7 @@ std::ostream &operator<<(std::ostream &os, const Lex1_t::Token_t &token) {
        << ", name=" << token.name()
        << ", view='" << token.view() << "'"
        << ", size=" << token.view().size()
-       << ", at=" << token.pos << "')";
+       << ", at=" << token.pos << ")";
     return os;
 }
 

@@ -1201,7 +1201,7 @@ SCENARIO(
 
 SCENARIO(
     "Fuzzer problems in inheritance",
-    "[inheritance][fuzzerx]"
+    "[inheritance][fuzzer]"
 ) {
     GIVEN("Empty teng root") {
         Teng::Fragment_t root;
@@ -1221,7 +1221,60 @@ SCENARIO(
                 REQUIRE(result == "");
             }
         }
+
+        WHEN("The multiple define directives with same name") {
+            INFO(
+                "The additional problem is excessive level 2 tokens in lexer "
+                "for '<?teng ;>=<?define C?>'. Because it defines new block "
+                "which forces to load new source to level 1 lexer. The level 2 "
+                "lexer has to be reseted before processing next token."
+            );
+            Teng::Error_t err;
+            std::string t = "<?define A?>a<?define A?>b"
+                            "<?teng ;>=<?define C?>nam<?teng endfrag?>";
+            auto result = g(err, t, root);
+
+            THEN("The block's source code is valid") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 26},
+                    "Unknown Teng directive: <?teng ?>"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 26},
+                    "Unterminated <?teng...?> directive"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 33},
+                    "Unexpected character ';'"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 33},
+                    "Unexpected token: name=INV, view=;"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 34},
+                    "The <?teng define block?> is not closed"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 34},
+                    "Unexpected token: name=GE, view=>="
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 44},
+                    "Level 2 lexer contains unprocessed data and it is "
+                    "requested to load new data from other source: "
+                    "first-unprocessed-token=DEFINE_BLOCK"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 51},
+                    "The <?teng endfrag?> directive closes unopened "
+                    "fragment block"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "bnam");
+            }
+        }
     }
 }
-
 

@@ -43,7 +43,7 @@
 #include <string>
 #include <stdexcept>
 #include <functional>
-#include <stack>
+#include <vector>
 
 #include "position.h"
 #include "flexhelpers.h"
@@ -258,7 +258,7 @@ private:
  */
 struct Lex1Stack_t {
     // types
-    using Action_t = std::function<void ()>;
+    using Action_t = std::function<void (const Lex1_t &)>;
 
     /** The level 1 lexers stack entry.
      */
@@ -284,26 +284,44 @@ struct Lex1Stack_t {
 
     /** Return reference to the last inserted entry.
      */
-    Entry_t &top() {return lexers.top();}
+    Entry_t &top() {return lexers.back();}
+
+    /** Return reference to the i-th entry bellow the stack top.
+     *
+     * The i=0 means top().
+     */
+    Entry_t &bellow_top(int64_t i) {return lexers[lexers.size() - i - 1];}
 
     /** Removes the last inserted entry from stack.
      * It also run action bounded to pop.
      */
     void pop() {
-        auto action = std::move(lexers.top().action);
-        lexers.pop();
-        if (action) action();
+        auto entry = std::move(lexers.back());
+        lexers.pop_back();
+        if (entry.action) entry.action(entry.lexer);
     }
 
     /** Emplaces new entry to the stack.
      */
     template <typename... Args_t>
     void emplace(Args_t &&...args) {
-        lexers.emplace(std::forward<Args_t>(args)...);
+        lexers.emplace_back(std::forward<Args_t>(args)...);
+    }
+
+    /** Adds new waction bounded to entry popping.
+     */
+    template <typename NewAction_t>
+    void add_action(NewAction_t &&new_action) {
+        if (lexers.back().action) {
+             lexers.back().action = [
+                 old_action = std::move(lexers.back().action),
+                 new_action = std::move(new_action)
+             ] (const Lex1_t &lexer) {old_action(lexer); new_action(lexer);};
+        } else lexers.back().action = std::move(new_action);
     }
 
 protected:
-    std::stack<Entry_t> lexers; //!< the lexers stack
+    std::vector<Entry_t> lexers; //!< the lexers stack
 };
 
 /** Writes token description to the stream.

@@ -154,7 +154,7 @@ TENG        "<?"("teng"[[:space:]\0])?[[:space:]\0]*
 }
 
 <block_override>{
-    {TENG}"endoverride"([[:space:]\0]+"block")?/[[:space:]\0\?] {
+    {TENG}"endoverride"([[:space:]\0]+"block")?/[^[:alnum:]] {
         // match '<?teng endoverride block'
         BEGIN(INITIAL);
         make_token_start(yytext +  yyleng);
@@ -183,118 +183,118 @@ TENG        "<?"("teng"[[:space:]\0])?[[:space:]\0]*
     }
 }
 
-{TENG}"debug"/[[:space:]\0\?] {
+{TENG}"debug"/[^[:alnum:]] {
     // match '<?teng debug'
     return make_token(LEX2::DEBUG_FRAG, yytext, yytext + yyleng);
 }
 
-{TENG}"bytecode"/[[:space:]\0\?] {
+{TENG}"bytecode"/[^[:alnum:]] {
     // match '<?teng bytecode'
     return make_token(LEX2::BYTECODE_FRAG, yytext, yytext + yyleng);
 }
 
-{TENG}"include"/[[:space:]\0\?] {
+{TENG}"include"/[^[:alnum:]] {
     // match '<?teng include'
     return make_token(LEX2::INCLUDE, yytext, yytext + yyleng);
 }
 
-{TENG}"format"/[[:space:]\0\?] {
+{TENG}"format"/[^[:alnum:]] {
     // match '<?teng format'
     return make_token(LEX2::FORMAT, yytext, yytext + yyleng);
 }
 
-{TENG}"endformat"/[[:space:]\0\?] {
+{TENG}"endformat"/[^[:alnum:]] {
     // match '<?teng endformat'
     return make_token(LEX2::ENDFORMAT, yytext, yytext + yyleng);
 }
 
-{TENG}"frag"/[[:space:]\0\?] {
+{TENG}"frag"/[^[:alnum:]] {
     // match '<?teng frag'
     return make_token(LEX2::FRAGMENT, yytext, yytext + yyleng);
 }
 
-{TENG}"endfrag"/[[:space:]\0\?] {
+{TENG}"endfrag"/[^[:alnum:]] {
     // match '<?teng endfrag'
     return make_token(LEX2::ENDFRAGMENT, yytext, yytext + yyleng);
 }
 
-{TENG}"if"/[[:space:]\0\?] {
+{TENG}"if"/[^[:alnum:]] {
     // match '<?teng if'
     return make_token(LEX2::IF, yytext, yytext + yyleng);
 }
 
-{TENG}"endif"/[[:space:]\0\?] {
+{TENG}"endif"/[^[:alnum:]] {
     // match '<?teng endif'
     return make_token(LEX2::ENDIF, yytext, yytext + yyleng);
 }
 
-{TENG}"elseif"/[[:space:]\0\?] {
+{TENG}"elseif"/[^[:alnum:]] {
     // match '<?teng elseif'
     return make_token(LEX2::ELSEIF, yytext, yytext + yyleng);
 }
 
-{TENG}"elif"/[[:space:]\0\?] {
+{TENG}"elif"/[^[:alnum:]] {
     // match '<?teng elif'
     return make_token(LEX2::ELSEIF, yytext, yytext + yyleng);
 }
 
-{TENG}"else"/[[:space:]\0\?] {
+{TENG}"else"/[^[:alnum:]] {
     // match '<?teng else'
     return make_token(LEX2::ELSE, yytext, yytext + yyleng);
 }
 
-{TENG}"set"/[[:space:]\0\?] {
+{TENG}"set"/[^[:alnum:]] {
     // match '<?teng set'
     return make_token(LEX2::SET, yytext, yytext + yyleng);
 }
 
-{TENG}"expr"/[[:space:]\0\?] {
+{TENG}"expr"/[^[:alnum:]] {
     // match '<?teng expr'
     return make_token(LEX2::ESC_EXPR, yytext, yytext + yyleng);
 }
 
-{TENG}"ctype"/[[:space:]\0\?] {
+{TENG}"ctype"/[^[:alnum:]] {
     // match '<?teng ctype'
     return make_token(LEX2::CTYPE, yytext, yytext + yyleng);
 }
 
-{TENG}"endctype"/[[:space:]\0\?] {
+{TENG}"endctype"/[^[:alnum:]] {
     // match '<?teng endctype'
     return make_token(LEX2::ENDCTYPE, yytext, yytext + yyleng);
 }
 
-{TENG}"extends"/[[:space:]\0\?] {
+{TENG}"extends"/[^[:alnum:]] {
     // match '<?teng extends'
     return make_token(LEX2::EXTENDS, yytext, yytext + yyleng);
 }
 
-{TENG}"endextends"/[[:space:]\0\?] {
+{TENG}"endextends"/[^[:alnum:]] {
     // match '<?teng endextends'
     return make_token(LEX2::ENDEXTENDS, yytext, yytext + yyleng);
 }
 
-{TENG}"define"([[:space:]\0]+"block")?/[[:space:]\0\?] {
+{TENG}"define"([[:space:]\0]+"block")?/[^[:alnum:]] {
     // match '<?teng define block'
     return make_token(LEX2::DEFINE_BLOCK, yytext, yytext + yyleng);
 }
 
 <INITIAL,block_override>
-{TENG}"override"([[:space:]\0]+"block")?/[[:space:]\0\?] {
+{TENG}"override"([[:space:]\0]+"block")?/[^[:alnum:]] {
     // match '<?teng override block'
     return make_token(LEX2::OVERRIDE_BLOCK, yytext, yytext + yyleng);
 }
 
-{TENG}"enddefine"([[:space:]\0]+"block")?/[[:space:]\0\?] {
+{TENG}"enddefine"([[:space:]\0]+"block")?/[^[:alnum:]] {
     // match '<?teng enddefine block'
     return make_token(LEX2::ENDBLOCK_DEFINE, yytext, yytext + yyleng);
 }
 
-{TENG}"endoverride"([[:space:]\0]+"block")?/[[:space:]\0\?] {
+{TENG}"endoverride"([[:space:]\0]+"block")?/[^[:alnum:]] {
     // match '<?teng endoverride block'
     return make_token(LEX2::ENDBLOCK_OVERRIDE, yytext, yytext + yyleng);
 }
 
-{TENG}"super"([[:space:]\0]+"block")?/[[:space:]\0\?] {
+{TENG}"super"([[:space:]\0]+"block")?/[^[:alnum:]] {
     // match '<?teng super block'
     return make_token(LEX2::SUPER_BLOCK, yytext, yytext + yyleng);
 }

@@ -124,6 +124,24 @@ void make_last_print_unoptimalizable(Parser::Context_t *ctx) {
     ctx->program->back().as<Print_t>().unoptimizable = true;
 }
 
+/** Resets level 2 lexer.
+ */
+void finish_level_2_scanning(Parser::Context_t *ctx) {
+    if (ctx->lex2_value.in_use()) {
+        auto token = ctx->lex2_value.next();
+        if (token) {
+            logWarning(
+                ctx,
+                ctx->lex2_value.position(),
+                "Level 2 lexer contains unprocessed data and it is requested "
+                "to load new data from other source: first-unprocessed-token="
+                + token.token_name()
+            );
+        }
+        ctx->lex2_value.finish_scanning();
+    }
+}
+
 } // namespace
 
 std::unique_ptr<Program_t>
@@ -196,6 +214,9 @@ void Context_t::load_file(const string_view_t &path, const Pos_t &incl_pos) {
         // create the level 1 lexer for given source code
         lex1_stack.emplace(source_code, utf8, params, source_path);
 
+        // drop excessive tokens in level 2 lexers
+        finish_level_2_scanning(this);
+
     } catch (const std::exception &e) {
         logError(
             this,
@@ -215,6 +236,9 @@ void Context_t::load_source(const std::string &source, const Pos_t *pos) {
     pos != nullptr
         ? lex1_stack.emplace(source_codes.back(), utf8, params, *pos)
         : lex1_stack.emplace(source_codes.back(), utf8, params);
+
+    // drop excessive tokens in level 2 lexers
+    finish_level_2_scanning(this);
 }
 
 Token_t Context_t::next_token() {
