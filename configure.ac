@@ -36,7 +36,7 @@
 
 
 # initialize autoconf
-AC_INIT(teng, [2.3.22], opensource@firma.seznam.cz)
+AC_INIT(teng, [2.3.40], opensource@firma.seznam.cz)
 
 AC_PROG_LIBTOOL
 

@@ -1,3 +1,9 @@
+libteng (2.3.40) stable; urgency=low
+
+ version
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Thu, 31 Jan 2019 10:46:09 +0100
+
 libteng (2.3.22) stable; urgency=low
 
   * fix calling udf
