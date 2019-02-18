@@ -1,3 +1,9 @@
+libteng (3.0.0) UNRELEASED; urgency=medium
+
+  * Mainer version increased due to binary incompatibility
+
+ -- Frantisek Boranek <frantisek.boranek@firma.seznam.cz>  Mon, 18 Feb 2019 15:55:40 +0000
+
 libteng (2.3.32) stable; urgency=low
 
   * Cleanup of autotools warnings. Helpful comment about autotools-archive (#11)

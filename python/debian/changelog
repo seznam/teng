@@ -1,3 +1,9 @@
+python-teng (2.3.13) UNRELEASED; urgency=medium
+
+  * python (build) depends on libteng-dev (>= 3.0.0)
+
+ -- Frantisek Boranek <frantisek.boranek@firma.seznam.cz>  Mon, 18 Feb 2019 16:00:00 +0000
+
 python-teng (2.3.12) stable; urgency=low
 
   * python (build) depends on libteng-dev (>= 2.3.24)
