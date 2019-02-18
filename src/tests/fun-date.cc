@@ -34,6 +34,9 @@
  *             Created.
  */
 
+#include <ctime>
+#include <iomanip>
+#include <sstream>
 #include <teng/teng.h>
 #include <unistd.h>
 
@@ -186,6 +189,10 @@ SCENARIO(
         Teng::Fragment_t root;
 
         WHEN("The date has valid args") {
+            std::time_t utc = 1520035200; // UTC 2018-03-03T00:00:00+00:00
+            std::stringstream localTime; // For Time zone Europe/Prague (CET, +0100): 03.03.2018 01:00:00
+            localTime << std::put_time(std::localtime(&utc), "%d.%m.%Y %H:%M:%S");
+
             Teng::Error_t err;
             auto t = "${date('%d.%m.%Y %H:%M:%S', 1520035200)}";
             auto result = g(err, t, root);
@@ -193,7 +200,7 @@ SCENARIO(
             THEN("The result is formatted time") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 ERRLOG_TEST(err.getEntries(), errs);
-                REQUIRE(result == "03.03.2018 01:00:00");
+                REQUIRE(result == localTime.str());
             }
         }
     }
