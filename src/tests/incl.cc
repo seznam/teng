@@ -224,6 +224,42 @@ SCENARIO(
 }
 
 SCENARIO(
+    "The include directive with a relative path. All includes must be relative to the root.",
+    "[include]"
+) {
+    GIVEN("Template file with include relative to the template") {
+        WHEN("Generated") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            auto result = gFromFile(err, "subdir/include_test_fail.html", root);
+
+            THEN("The error contains missing include") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {TEST_ROOT "subdir/include_test_fail.html", 2, 0},
+                    "Error reading file '" TEST_ROOT "head.html' "
+                    "(No such file or directory)"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
+            }
+        }
+    }
+
+    GIVEN("Template file with include relative to the root path") {
+        WHEN("Generated") {
+            Teng::Error_t err;
+            Teng::Fragment_t root;
+            auto result = gFromFile(err, "subdir/include_test_success.html", root);
+
+            THEN("There is no error") {
+                std::vector<Teng::Error_t::Entry_t> errs = {};
+                ERRLOG_TEST(err.getEntries(), errs);
+            }
+        }
+    }
+}
+
+SCENARIO(
     "The syntax error in include directive",
     "[include]"
 ) {
