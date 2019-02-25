@@ -247,6 +247,17 @@ SCENARIO(
             }
         }
 
+        WHEN("Splitting the utf-8 character") {
+            Teng::Error_t err;
+            auto t = "${substr(\"Dlouhý text\", 6)}";
+            auto result = g(err, t, root);
+
+            THEN("The result is valid utf-8 string") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == " text");
+            }
+        }
     }
 }
 
