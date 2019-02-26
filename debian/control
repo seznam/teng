@@ -8,24 +8,24 @@ Vcs-Git: git://github.com/seznam/teng.git
 Vcs-Browser: https://github.com/seznam/teng
 
 
-Package: libteng2
+Package: libteng3
 Architecture: any
 Section: Seznam
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Teng -- general purpose templating system
  Teng is a powerful and easy to use templating system.
 
-Package: libteng2-dbg
+Package: libteng3-dbg
 Architecture: any
 Section: debug
-Depends: libteng2 (= ${binary:Version}), ${misc:Depends}
+Depends: libteng3 (= ${binary:Version}), ${misc:Depends}
 Description: Teng -- general purpose templating system
  Teng is a powerful and easy to use templating system.
 
 Package: libteng-dev
 Architecture: any
 Section: Seznam
-Depends: libteng2 (= ${binary:Version}), libpcre++-dev, libpcre++0 | libpcre++0v5, libglib2.0-dev, libcurl-dev
+Depends: libteng3 (= ${binary:Version}), libpcre++-dev, libpcre++0 | libpcre++0v5, libglib2.0-dev, libcurl-dev
 Description: Development files for teng library
  Here are files necessary for developing new applications
  that use teng library and its C/C++ interface.

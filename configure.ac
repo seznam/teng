@@ -78,7 +78,7 @@ AC_PROG_LIBTOOL
 # version info') before touching this. (this is *.so version number).
 TENG_MAJOR=3
 TENG_MINOR=0
-VERSION_INFO="-version-info $TENG_MAJOR:$TENG_MINOR:1"
+VERSION_INFO="-version-info $TENG_MAJOR:$TENG_MINOR:0"
 AC_SUBST(TENG_MAJOR)
 AC_SUBST(TENG_MINOR)
 AC_SUBST(VERSION_INFO)
