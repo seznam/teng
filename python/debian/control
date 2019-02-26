@@ -4,7 +4,7 @@ Priority: Extra
 Maintainer: Seznam.cz a.s. <opensource@firma.seznam.cz>
 XS-Python-Standards-Version: 0.4
 XS-Python-Version: all
-Build-Depends: debhelper, python-all-dev, dh-python, libteng-dev
+Build-Depends: debhelper, python-all-dev, dh-python, libteng-dev (>= 3.0.0)
 Vcs-Git: git://github.com/seznam/teng.git
 Vcs-Browser: https://github.com/seznam/teng
 
