@@ -18,8 +18,8 @@ config.*
 configure
 debhelper-build-stamp
 debian/libteng-dev*
-debian/libteng2-dbg*
-debian/libteng2/
+debian/libteng*-dbg*
+debian/libteng*/
 depcomp
 INSTALL
 install-sh
