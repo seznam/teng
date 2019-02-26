@@ -36,7 +36,7 @@
 
 
 # initialize autoconf
-AC_INIT(teng, [3.0.0], opensource@firma.seznam.cz)
+AC_INIT(teng, [3.0.1], opensource@firma.seznam.cz)
 
 AC_CONFIG_SRCDIR([src/teng.cc])
 
