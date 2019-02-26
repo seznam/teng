@@ -1,3 +1,15 @@
+libteng (3.0.1) stable; urgency=medium
+
+  * teng 3.0.0 (#14)
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Tue, 26 Feb 2019 14:04:35 +0100
+
+libteng (3.0.0) UNRELEASED; urgency=medium
+
+  * Mainer version increased due to binary incompatibility
+
+ -- Frantisek Boranek <frantisek.boranek@firma.seznam.cz>  Mon, 18 Feb 2019 15:55:40 +0000
+
 libteng (2.3.24) stable; urgency=low
 
   * add autoconf-archive to build-depends
