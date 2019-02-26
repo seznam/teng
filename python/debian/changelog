@@ -1,3 +1,18 @@
+python-teng (3.0.1) stable; urgency=medium
+
+  * teng 3.0.0 (#14)
+  * 
+  * packages:
+  * - libteng3 (3.0.0)
+  * - libteng3-dbg (3.0.0)
+  * - libteng-dev (3.0.0)
+  * - python-teng (2.3.13)
+  * lib:
+  * /usr/lib/libteng.so.3.0.0
+  * /usr/lib/libteng.so.3 -> libteng.so.3.0.0
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Tue, 26 Feb 2019 14:26:59 +0100
+
 python-teng (2.3.13) UNRELEASED; urgency=medium
 
   * python (build) depends on libteng-dev (>= 3.0.0)
