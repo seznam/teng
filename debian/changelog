@@ -1,3 +1,10 @@
+libteng (3.0.2) stable; urgency=medium
+
+  * teng 3.0.2
+  * fixed packaging
+
+ -- Filip Volejnik <filip.volejnik@firma.seznam.cz>  Wed, 27 Feb 2019 09:44:26 +0100
+
 libteng (3.0.1) stable; urgency=medium
 
   * teng 3.0.0 (#14)
