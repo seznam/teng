@@ -1,3 +1,24 @@
+libteng (4.0.5~burloglibteng4-1) stable; urgency=low
+
+  * fix args order of user defined functions
+  * add utf-8 substr test
+  * Save fuzzer exit code and re-use it later (#12)
+  * 
+  * Use saved exit code to indicate success or failure (useful for CI jobs).
+  * fix allocation source code for block consisting from multiple blocks
+  * for invalid data the end pointer can be smaller than begin one
+  * -O2 -> -O3
+  * ignore glib in coverage
+  * extending fuzzer dict
+  * fix crash if define directive is last, fix short teng directives syntax
+  * _parent implementation
+  * type queries
+  * tests for print escaping
+  * fix method names
+  * fix libteng.pc
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Tue, 04 Jun 2019 12:05:16 +0100
+
 libteng (4.0.5) stable; urgency=low
 
   * rc1
