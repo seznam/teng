@@ -126,8 +126,9 @@ Result_t func(Ctx_t *ctx, GetArg_t get_arg) {
 
     // prepare args
     FunctionArgs_t args;
+    args.resize(instr.nargs);
     for (auto i = instr.nargs; i > 0; --i)
-        args.push_back(get_arg());
+        args[i - 1] = get_arg();
 
     if (!instr.is_udf) {
         // builtin functions
