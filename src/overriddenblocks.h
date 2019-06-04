@@ -116,7 +116,7 @@ struct ExtendsBlock_t {
         // and optionally appends new chunk of data if there is level 1 lexer
         auto i = override_blocks.size() - 1;
         ctx->lex1_stack.add_action([this, ctx, i] (auto &&lexer) {
-            if (is_override_block_open()) {
+            if (this->is_override_block_open()) {
                 override_blocks[i].chunks.back().end = lexer.current();
                 if (!ctx->lex1_stack.empty()) {
                     auto *begin = ctx->lex1().current();
