@@ -1,3 +1,9 @@
+libteng (5.0.0) UNRELEASED; urgency=medium
+
+  * Added support for custom filesystem.
+
+ -- Frantisek Boranek <frantisek.boranek@firma.seznam.cz>  Mon, 18 Feb 2019 15:54:07 +0000
+
 libteng (4.0.8) stable; urgency=medium
 
   * fix: the broken functionality of function dump introduced in version 4.0.0
