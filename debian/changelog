@@ -1,3 +1,9 @@
+libteng (4.0.8) UNRELEASED; urgency=medium
+
+  * fix: the broken functionality of function dump introduced in version 4.0.0
+
+ -- Frantisek Boranek <frantisek.boranek@firma.seznam.cz>  Wed, 27 Nov 2019 15:13:44 +0000
+
 libteng (4.0.7) stable; urgency=low
 
   * Revert "fix args order of user defined functions"
