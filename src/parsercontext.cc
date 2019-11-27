@@ -66,38 +66,6 @@ namespace {
 using flex_string_value_t = Parser::flex_string_value_t;
 using flex_string_view_t = Parser::flex_string_view_t;
 
-/** Compose absolute filename.
- */
-std::string absfile(const std::string &fs_root, const string_view_t &filename) {
-    return !fs_root.empty() && !filename.empty() && !ISROOT(filename)
-         ? fs_root + "/" + filename
-         : filename.str();
-}
-
-/** Reads file content into string.
- */
-flex_string_value_t
-read_file(
-    Parser::Context_t *ctx,
-    const Pos_t &incl_pos,
-    const std::string &filename
-) {
-    // open file
-    std::ifstream file(filename, std::ios::binary);
-    if (!file.is_open()) {
-        logError(ctx, incl_pos, "Cannot open input file '" + filename + "'");
-        return flex_string_value_t(0);
-    }
-
-    // read whole file in one buffer
-    file.seekg(0, std::ios::end);
-    std::size_t size = file.tellg();
-    flex_string_value_t source_code(size);
-    file.seekg(0, std::ios::beg);
-    file.read(source_code.data(), size);
-    return source_code;
-}
-
 void compile(Parser::Context_t *ctx) {
     // parse input by bison generated parser and compile program
     Parser::Parser_t parser(ctx);
@@ -149,12 +117,12 @@ compile_file(
     Error_t &err,
     const Dictionary_t *dict,
     const Configuration_t *params,
-    const std::string &fs_root,
+    const FilesystemInterface_t *filesystem,
     const std::string &filename,
     const std::string &encoding,
     const std::string &contentType
 ) {
-    Parser::Context_t ctx(err, dict, params, fs_root, encoding, contentType);
+    Parser::Context_t ctx(err, dict, params, filesystem, encoding, contentType);
     ctx.load_file(filename, Pos_t(/*base level, no include reference*/));
     compile(&ctx);
     return std::move(ctx.program);
@@ -165,12 +133,12 @@ compile_string(
     Error_t &err,
     const Dictionary_t *dict,
     const Configuration_t *params,
-    const std::string &fs_root,
+    const FilesystemInterface_t *filesystem,
     const std::string &source,
     const std::string &encoding,
     const std::string &contentType
 ) {
-    Parser::Context_t ctx(err, dict, params, fs_root, encoding, contentType);
+    Parser::Context_t ctx(err, dict, params, filesystem, encoding, contentType);
     ctx.load_source(source);
     compile(&ctx);
     return std::move(ctx.program);
@@ -182,12 +150,12 @@ Context_t::Context_t(
     Error_t &err,
     const Dictionary_t *dict,
     const Configuration_t *params,
-    const std::string &fs_root,
+    const FilesystemInterface_t* filesystem,
     const std::string &encoding,
     const std::string &contentType
 ): utf8(encoding == "utf-8"),
    program(std::make_unique<Program_t>(err)), dict(dict), params(params),
-   fs_root(fs_root), source_codes(), lex1_stack(),
+   filesystem(filesystem), source_codes(), lex1_stack(),
    lex2_value(params, utf8, err),
    coproc_err(), coproc(coproc_err, *program, *dict, *params),
    open_frames(*program), var_sym(), opts_sym(),
@@ -203,13 +171,13 @@ void Context_t::load_file(const string_view_t &path, const Pos_t &incl_pos) {
     // register source into program sources list
     // the registration routine returns program lifetime durable pointer to
     // filename that can be used as pointer to filename in Pos_t instancies
-    std::string abs_path = absfile(fs_root, path);
+    std::string filename = path.str();
     try {
-        auto *source_path = program->addSource(abs_path).first;
-
         // load source code from file
-        source_codes.push_back(read_file(this, incl_pos, abs_path));
+        source_codes.push_back(flex_string_value_t(filesystem->read(filename)));
         auto &source_code = source_codes.back();
+
+        auto *source_path = program->addSource(filesystem, filename).first;
 
         // create the level 1 lexer for given source code
         lex1_stack.emplace(source_code, utf8, params, source_path);
@@ -221,7 +189,7 @@ void Context_t::load_file(const string_view_t &path, const Pos_t &incl_pos) {
         logError(
             this,
             incl_pos,
-            "Error reading file '" + abs_path + "' " + "(" + e.what() + ")"
+            "Error reading file '" + filename + "' " + "(" + e.what() + ")"
         );
     }
 }

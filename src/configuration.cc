@@ -44,8 +44,8 @@
 
 namespace Teng {
 
-Configuration_t::Configuration_t(Error_t &err, const std::string &fs_root)
-    : Dictionary_t(err, fs_root),
+Configuration_t::Configuration_t(Error_t &err, std::shared_ptr<const FilesystemInterface_t> filesystem)
+    : Dictionary_t(err, filesystem),
       debug(false), errorFragment(false), logToOutput(false), bytecode(false),
       watchFiles(true), alwaysEscape(true), shortTag(false), format(true),
       maxIncludeDepth(10), maxDebugValLength(40), printEscape(true)

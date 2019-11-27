@@ -55,14 +55,6 @@
 namespace Teng {
 namespace {
 
-/** Compose absolute filename.
- */
-std::string absfile(const std::string &fs_root, string_view_t filename) {
-    return !fs_root.empty() && !filename.empty() && !ISROOT(filename)
-         ? fs_root + "/" + filename
-         : filename.str();
-}
-
 /** Stripts whitespace characters.
  */
 string_view_t strip(const string_view_t &str) {
@@ -133,10 +125,10 @@ struct DictParser_t {
         Dictionary_t *dict,
         Error_t &err,
         SourceList_t &sources,
-        std::string &fs_root,
+        const FilesystemInterface_t *filesystem,
         bool &expandVars,
         string_view_t filename
-    ): dict(dict), err(err), sources(sources), fs_root(fs_root), pos(),
+    ): dict(dict), err(err), sources(sources), filesystem(filesystem), pos(),
        expandVars(expandVars), include_level(0)
     {load_file(filename, Pos_t(/*base level, no include reference*/));}
 
@@ -147,15 +139,11 @@ struct DictParser_t {
         string_view_t filename,
         const Pos_t &incl_pos
     ): dict(parent.dict), err(parent.err), sources(parent.sources),
-       fs_root(parent.fs_root), expandVars(parent.expandVars),
+       filesystem(parent.filesystem), expandVars(parent.expandVars),
        include_level(parent.include_level + 1)
     {load_file(filename, incl_pos);}
 
     void load_file(string_view_t filename, const Pos_t &incl_pos);
-
-    /** Loads dict file data.
-     */
-    void load_file(std::ifstream &file);
 
     /** Starts parsing the loaded data.
      */
@@ -197,7 +185,7 @@ struct DictParser_t {
     Dictionary_t *dict;     //!< dict with yet parsed values
     Error_t &err;           //!< the error log
     SourceList_t &sources;  //!< source files of dictionary entries
-    std::string &fs_root;   //!< the filesystem root for all relative paths
+    const FilesystemInterface_t *filesystem;   //!< the filesystem
     Pos_t pos;              //!< position in the dict file
     std::string data;       //!< the dict file data
     bool &expandVars;       //!< expand variables in dict values
@@ -205,25 +193,11 @@ struct DictParser_t {
 };
 
 void DictParser_t::load_file(string_view_t filename, const Pos_t &incl_pos) {
-    // if relative path => prepend root
-    std::string path = absfile(fs_root, filename);
-
+    auto path = filename.str();
     try {
+        data = filesystem->read(path);
         // insert source into source list and setup file position
-        pos = {sources.push(path).first, 1, 0};
-
-        // read file data
-        std::ifstream file(path);
-        load_file(file);
-
-    } catch (const std::system_error &e) {
-        logError(
-            err,
-            incl_pos,
-            "Error reading file '" + path + "' "
-            + "(" + e.code().message() + ")"
-        );
-
+        pos = {sources.push(filesystem, path).first, 1, 0};
     } catch (const std::exception &e) {
         logError(
             err,
@@ -232,24 +206,6 @@ void DictParser_t::load_file(string_view_t filename, const Pos_t &incl_pos) {
             + "(" + e.what() + ")"
         );
     }
-}
-
-void DictParser_t::load_file(std::ifstream &file) {
-    // restoring file stream exception settings
-    struct exception_restorer_t {
-        exception_restorer_t(std::ifstream *file)
-            : file(file), saved_exceptions(file->exceptions())
-        {file->exceptions(std::ios::failbit | std::ios::badbit);}
-        ~exception_restorer_t() {file->exceptions(saved_exceptions);}
-        std::ifstream *file;
-        std::ios::iostate saved_exceptions;
-    } restorer(&file);
-
-    // read whole file into memory
-    file.seekg(0, std::ios::end);
-    data.resize(file.tellg());
-    file.seekg(0, std::ios::beg);
-    file.read(&data[0], data.size());
 }
 
 template <typename type1_t, typename type2_t>
@@ -570,7 +526,7 @@ Dictionary_t::new_directive(
 }
 
 void Dictionary_t::parse(const std::string &filename) {
-    DictParser_t parser{this, err, sources, fs_root, expandVars, filename};
+    DictParser_t parser{this, err, sources, filesystem.get(), expandVars, filename};
     parser.parse(
         [&] (auto &&name, auto &&value, Pos_t name_pos, Pos_t value_pos) {
             auto result = this->new_directive(

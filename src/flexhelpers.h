@@ -41,6 +41,7 @@
 #define TENGHELPERSEX1_H
 
 #include <string>
+#include <algorithm>
 
 #include "teng/stringview.h"
 
@@ -56,6 +57,14 @@ struct flex_string_value_t: public string_value_t {
     explicit flex_string_value_t(std::size_t length)
         : string_value_t(new char[length + 2], length)
     {disposable_ptr[length] = disposable_ptr[length + 1 ] = '\0';}
+
+    /** C'tor: allocates new buffer finished by two zero bytes.
+     */
+    explicit flex_string_value_t(const std::string& data)
+        : flex_string_value_t(data.size())
+    {
+        std::copy(data.data(), data.data() + data.size(), disposable_ptr);
+    }
 
     /** Returns really allocated size including end-of-buffer bytes.
      */

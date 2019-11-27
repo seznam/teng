@@ -52,6 +52,7 @@
 #include "parserdiag.h"
 #include "contenttype.h"
 #include "overriddenblocks.h"
+#include "teng/filesystem.h"
 #include "teng/error.h"
 
 namespace Teng {
@@ -70,7 +71,7 @@ compile_file(
     Error_t &err,
     const Dictionary_t *dict,
     const Configuration_t *params,
-    const std::string &fs_root,
+    const FilesystemInterface_t *filesystem,
     const std::string &filename,
     const std::string &encoding,
     const std::string &contentType
@@ -90,7 +91,7 @@ compile_string(
     Error_t &err,
     const Dictionary_t *dict,
     const Configuration_t *params,
-    const std::string &fs_root,
+    const FilesystemInterface_t *filesystem,
     const std::string &source,
     const std::string &encoding,
     const std::string &contentType
@@ -107,7 +108,7 @@ struct Context_t {
         Error_t &err,
         const Dictionary_t *dict,
         const Configuration_t *params,
-        const std::string &fs_root,
+        const FilesystemInterface_t *filesystem,
         const std::string &encoding,
         const std::string &contentType
     );
@@ -230,7 +231,7 @@ struct Context_t {
     std::unique_ptr<Program_t> program;  //!< program created by parser
     const Dictionary_t *dict;            //!< language dictionary
     const Configuration_t *params;       //!< config dictionary (param.conf)
-    const std::string fs_root;           //!< application root path
+    const FilesystemInterface_t* filesystem; //!< application filesystem
     SourceCodes_t source_codes;          //!< parsed/compiled source codes
     Lex1Stack_t lex1_stack;              //!< lexical analyzer (level 1)
     Lex2_t lex2_value;                   //!< lexical analyzer (level 2)

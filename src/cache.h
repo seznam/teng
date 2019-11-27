@@ -55,12 +55,11 @@ namespace Teng {
  *
  * The key (normalizad filenanme) is added into given key vector.
  *
- * @param root root for relative paths
  * @param filename filename
  * @return key key vector
  */
 std::string
-createCacheKeyForFilename(const std::string &root, std::string filename);
+createCacheKeyForFilename(std::string filename);
 
 /**
  * @short Creates key for given string.

@@ -47,13 +47,7 @@
 namespace Teng {
 
 std::string
-createCacheKeyForFilename(const std::string &root, std::string filename) {
-    // if filename is relative prepend root
-    if (!filename.empty() && !ISROOT(filename))
-        filename = root + '/' + filename;
-
-    // normalize filename and return
-    normalizeFilename(filename);
+createCacheKeyForFilename(std::string filename) {
     return filename;
 }
 

@@ -70,7 +70,7 @@ SCENARIO(
             THEN("It contains data from text.txt") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
-                    {TEST_ROOT "text.txt", 1, 12},
+                    {"text.txt", 1, 12},
                     "Runtime: Variable '.var' is undefined "
                     "[open_frags=., iteration=0/1]"
                 }};
@@ -172,7 +172,7 @@ SCENARIO(
             THEN("It contains data from text.txt and fragment") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
-                    {TEST_ROOT "text.txt", 1, 12},
+                    {"text.txt", 1, 12},
                     "Runtime: Variable '.sample.var' is undefined "
                     "[open_frags=.sample, iteration=0/1]"
                 }};
@@ -213,8 +213,8 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
                     {1, 0},
-                    "Error reading file '" TEST_ROOT "missing.txt' "
-                    "(No such file or directory)"
+                    "Error reading file 'missing.txt' "
+                    "(Cannot open file '" TEST_ROOT "missing.txt')"
                 }};
                 ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "");
@@ -236,9 +236,9 @@ SCENARIO(
             THEN("The error contains missing include") {
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::ERROR,
-                    {TEST_ROOT "subdir/include_test_fail.html", 2, 0},
-                    "Error reading file '" TEST_ROOT "head.html' "
-                    "(No such file or directory)"
+                    {"subdir/include_test_fail.html", 2, 0},
+                    "Error reading file 'head.html' "
+                    "(Cannot open file '" TEST_ROOT "head.html')"
                 }};
                 ERRLOG_TEST(err.getEntries(), errs);
             }
@@ -357,22 +357,22 @@ SCENARIO(
                     "position have been ignored"
                 }, {
                     Teng::Error_t::WARNING,
-                    {TEST_ROOT "incl.error.txt", 2, 2},
+                    {"incl.error.txt", 2, 2},
                     "Runtime: Variable '.sample.missing' is undefined "
                     "[open_frags=.sample, iteration=0/4]"
                 }, {
                     Teng::Error_t::WARNING,
-                    {TEST_ROOT "incl.error.txt", 2, 2},
+                    {"incl.error.txt", 2, 2},
                     "Runtime: Variable '.sample.missing' is undefined "
                     "[open_frags=.sample, iteration=1/4]"
                 }, {
                     Teng::Error_t::WARNING,
-                    {TEST_ROOT "incl.error.txt", 2, 2},
+                    {"incl.error.txt", 2, 2},
                     "Runtime: Variable '.sample.missing' is undefined "
                     "[open_frags=.sample, iteration=2/4]"
                 }, {
                     Teng::Error_t::WARNING,
-                    {TEST_ROOT "incl.error.txt", 2, 2},
+                    {"incl.error.txt", 2, 2},
                     "The 1 other error message(s) for this source code "
                     "position have been ignored"
                 }, {

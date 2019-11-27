@@ -63,8 +63,8 @@ public:
      *
      * @param fs_root path of root for locating files
      */
-    Dictionary_t(Error_t &err, const std::string &fs_root)
-        : sources(), err(err), fs_root(fs_root),
+    Dictionary_t(Error_t &err, std::shared_ptr<const Teng::FilesystemInterface_t> filesystem)
+        : sources(), err(err), filesystem(filesystem),
           expandVars(false), replaceEntries(false)
     {}
 
@@ -107,7 +107,7 @@ public:
      *
      * @return 0 OK !0 changed
      */
-    int isChanged() const {return sources.isChanged();}
+    int isChanged() const {return sources.isChanged(filesystem.get());}
 
     /**
      * @short Fills dictionary with data parsed from filename.
@@ -155,7 +155,7 @@ protected:
     Entries_t entries;    //!< the dictionary entries
     SourceList_t sources; //!< source files of dictionary entries
     Error_t &err;         //!< the error log
-    std::string fs_root;  //!< the filesystem root for all relative paths
+    std::shared_ptr<const Teng::FilesystemInterface_t> filesystem;
     bool expandVars;      //!< expand variables in dict values
     bool replaceEntries;  //!< replace already present entries in dict
 };

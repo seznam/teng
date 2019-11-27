@@ -144,6 +144,7 @@ AC_PROG_CXX([$CXX_LIST])
 AC_HEADER_STDC
 AC_PROG_RANLIB
 AC_PROG_LIBTOOL
+AX_CHECK_COMPILE_FLAG([-std=c++14], [],[AC_MSG_ERROR([Compiler without c++14])])
 
 # check for flex and bison
 AM_PROG_LEX

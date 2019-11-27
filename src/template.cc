@@ -39,10 +39,10 @@
 namespace Teng {
 
 TemplateCache_t::TemplateCache_t(
-    const std::string &fs_root,
+    std::shared_ptr<const FilesystemInterface_t> filesystem,
     unsigned int programCacheSize,
     unsigned int dictCacheSize
-): fs_root(fs_root), programCache(programCacheSize),
+): filesystem(filesystem), programCache(programCacheSize),
    dictCache(dictCacheSize), paramsCache(dictCacheSize)
 {}
 
@@ -67,9 +67,9 @@ TemplateCache_t::createTemplate(
     std::vector<std::string> key;
     if (sourceType == SRC_STRING)
         key.push_back(createCacheKeyForString(source));
-    else key.push_back(createCacheKeyForFilename(fs_root, source));
-    key.push_back(createCacheKeyForFilename(fs_root, langFilename));
-    key.push_back(createCacheKeyForFilename(fs_root, configFilename));
+    else key.push_back(createCacheKeyForFilename(source));
+    key.push_back(createCacheKeyForFilename(langFilename));
+    key.push_back(createCacheKeyForFilename(configFilename));
 
     // cached program
     uint64_t dependSerial;
@@ -79,15 +79,15 @@ TemplateCache_t::createTemplate(
     // determine whether we have to reload program
     bool reload = !program
         || (configSerial != dependSerial)
-        || (params->isWatchFilesEnabled() && program->isChanged());
+        || (params->isWatchFilesEnabled() && program->isChanged(filesystem.get()));
 
     // create new program if reload requested
     if (reload) {
         auto *d = &*dict;
         auto *p = &*params;
         program = (sourceType == SRC_STRING)
-            ? compile_string(err, d, p, fs_root, {source}, encoding, ctype)
-            : compile_file(err, d, p, fs_root, source, encoding, ctype);
+            ? compile_string(err, d, p, filesystem.get(), {source}, encoding, ctype)
+            : compile_file(err, d, p, filesystem.get(), source, encoding, ctype);
         programCache.add(key, program, configSerial);
     }
 
@@ -107,7 +107,7 @@ std::tuple<
 {
     // key for config
     std::vector<std::string> key;
-    key.push_back(createCacheKeyForFilename(fs_root, configFilename));
+    key.push_back(createCacheKeyForFilename(configFilename));
 
     // find or create configuration
     uint64_t configSerial;
@@ -120,13 +120,13 @@ std::tuple<
 
     // reload params if needed
     if (reload_params) {
-        params = std::make_shared<Configuration_t>(err, fs_root);
+        params = std::make_shared<Configuration_t>(err, filesystem);
         if (!configFilename.empty()) params->parse(configFilename);
         configSerial = paramsCache.add(key, params);
     }
 
     // reuse key for dictionary
-    key.push_back(createCacheKeyForFilename(fs_root, dictFilename));
+    key.push_back(createCacheKeyForFilename(dictFilename));
 
     // find or create dictionary
     uint64_t dictSerial = 0;
@@ -141,7 +141,7 @@ std::tuple<
 
     // reload lang dict if needed
     if (reload_dict) {
-        dict = std::make_shared<Dictionary_t>(err, fs_root);
+        dict = std::make_shared<Dictionary_t>(err, filesystem);
         if (!dictFilename.empty()) dict->parse(dictFilename);
         dictCache.add(key, dict, configSerial);
     }

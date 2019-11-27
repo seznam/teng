@@ -45,6 +45,7 @@
 
 #include "position.h"
 #include "teng/error.h"
+#include "teng/filesystem.h"
 
 namespace Teng {
 
@@ -55,13 +56,7 @@ namespace Teng {
  */
 struct FileStat_t {
     std::string filename;   //!< name of associated file
-    struct Stat_t {
-        ino_t inode = 0;    //!< inode of file
-        off_t size = 0;     //!< size of file
-        time_t mtime = 0;   //!< last modification of file
-        time_t ctime = 0;   //!< last attribute modification of file
-        bool valid = false; //!< indicates that data came from stat(2)
-    } stat;
+    size_t hash; //!< hash of file statistic.
 };
 
 /**
@@ -79,7 +74,7 @@ public:
      *
      * @return index of added source in list
      */
-    std::pair<const std::string *, std::size_t> push(std::string filenam);
+    std::pair<const std::string *, std::size_t> push(const FilesystemInterface_t* filesystem, std::string filename);
 
     /** @short Check validity of all sources.
      *
@@ -87,7 +82,7 @@ public:
      *
      * @return true means modified; false not modified or error
      */
-    bool isChanged() const;
+    bool isChanged(const FilesystemInterface_t* filesystem) const;
 
     /** @short Get source by given index.
      *
