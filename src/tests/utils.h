@@ -83,6 +83,29 @@ inline std::string g(
     return result;
 }
 
+inline std::string gFromFile(
+    Teng::Error_t &err,
+    const std::string &filename,
+    const Teng::Fragment_t &data = {},
+    const std::string &params = "teng.conf",
+    const std::string &lang = "",
+    const std::string &ct = "text/html",
+    const std::string &encoding = "utf-8"
+) {
+    std::string result;
+    Teng::StringWriter_t writer(result);
+    Teng::Teng_t teng(TEST_ROOT);
+    Teng::Teng_t::GenPageArgs_t args;
+    args.contentType = ct;
+    args.encoding = encoding;
+    args.templateFilename = filename;
+    args.paramsFilename = TEST_ROOT + params;
+    args.lang = lang;
+    args.dictFilename = TEST_ROOT "dict.txt";
+    teng.generatePage(args, data, writer, err);
+    return result;
+}
+
 #define ERRLOG_TEST(LHS, RHS)                                                  \
     for (uint64_t i = 0; i < std::min(LHS.size(), RHS.size()); ++i) {          \
         INFO("i=" + std::to_string(i));                                        \

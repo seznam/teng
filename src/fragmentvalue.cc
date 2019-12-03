@@ -267,13 +267,13 @@ void FragmentValue_t::json(std::ostream &o) const {
 void FragmentValue_t::dump(std::ostream &o) const {
     switch (tag_value) {
     case tag::frag:
-        frag_value.json(o);
+        frag_value.dump(o);
         break;
     case tag::frag_ptr:
-        frag_ptr_value->json(o);
+        frag_ptr_value->dump(o);
         break;
     case tag::list:
-        list_value.json(o);
+        list_value.dump(o);
         break;
     case tag::string:
         o << '\'' << string_value << '\'';

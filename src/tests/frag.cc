@@ -39,6 +39,8 @@
 #include "catch.hpp"
 #include "utils.h"
 
+#include <sstream>
+
 SCENARIO(
     "Zero Teng fragments",
     "[frags]"
@@ -686,6 +688,37 @@ SCENARIO(
                 }};
                 ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "{x}{}");
+            }
+        }
+    }
+}
+
+SCENARIO(
+    "Dump Teng fragment",
+    "[frags]"
+) {
+    GIVEN("One teng fragment in root fragment") {
+        Teng::Fragment_t root;
+        auto& mediaFrag = root.addFragment("mediaFile");
+        mediaFrag.addVariable("tagContent", "cont");
+
+        WHEN("Dump fragment via method dump()") {
+            std::stringstream ss;
+            root.dump(ss);
+            auto result = ss.str();
+
+            THEN("It is string encoded like JSON but with single quote") {
+                REQUIRE(result == "{'mediaFile': [{'tagContent': 'cont'}]}");
+            }
+        }
+
+        WHEN("Dump fragment via method json()") {
+            std::stringstream ss;
+            root.json(ss);
+            auto result = ss.str();
+
+            THEN("It is string encoded as JSON") {
+                REQUIRE(result == R"({"mediaFile": [{"tagContent": "cont"}]})");
             }
         }
     }
