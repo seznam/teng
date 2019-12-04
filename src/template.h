@@ -85,7 +85,7 @@ public:
      *  @param dictCacheSizemaximal number of dictionaries in the cache
      */
     TemplateCache_t(
-        const std::string &fs_root,
+        std::shared_ptr<const FilesystemInterface_t> filesystem,
         unsigned int programCacheSize = 0,
         unsigned int dictCacheSize = 0
     );
@@ -153,7 +153,7 @@ private:
         unsigned long int *serial = 0
     );
 
-    std::string fs_root;              //!< root for relativa paths
+    std::shared_ptr<const FilesystemInterface_t> filesystem;
     ProgramCache_t programCache;      //!< cache of compiled templates
     DictionaryCache_t dictCache;      //!< cache of parsed language dictionaries
     ConfigurationCache_t paramsCache; //!< cahce of parsed config dictionaries

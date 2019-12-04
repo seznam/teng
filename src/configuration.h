@@ -59,7 +59,7 @@ public:
      *
      * @param root path of root for locating files
      */
-    Configuration_t(Error_t &err, const std::string &fs_root = std::string());
+    Configuration_t(Error_t &err, std::shared_ptr<const FilesystemInterface_t> filesystem);
 
     // @{ shortcuts to query configuration
     bool isDebugEnabled() const {return debug;}

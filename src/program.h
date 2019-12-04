@@ -74,7 +74,7 @@ public:
 
     /** @short Check source files for change.
       * @return 0=OK !0=changed. */
-    int isChanged() const {return sources.isChanged();}
+    int isChanged(const FilesystemInterface_t* filesystem) const {return sources.isChanged(filesystem);}
 
     /** @short Return error log.
       * @return Reference to error log object. */
@@ -87,7 +87,7 @@ public:
     /** @short Adds new source into the list.
       * @param filename Filename of source.  */
     std::pair<const std::string *, std::size_t>
-    addSource(const std::string &filename) {return sources.push(filename);}
+    addSource(const FilesystemInterface_t* filesystem, const std::string &filename) {return sources.push(filesystem, filename);}
 
     /** Returns list of sources.
       */

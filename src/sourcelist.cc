@@ -43,50 +43,9 @@
 #include "util.h"
 
 namespace Teng {
-namespace {
-
-/** Stats a file.
- */
-FileStat_t::Stat_t stat(const std::string &filename) {
-    // stat given file
-    struct stat buf;
-    if (::stat(filename.c_str(), &buf))
-        throw std::runtime_error(strerr(errno));
-
-    // check if not dir
-    if (S_ISDIR(buf.st_mode))
-        throw std::runtime_error("file is a directory");
-
-    // check read persmissions
-    if (::access(filename.c_str(), R_OK))
-        throw std::runtime_error("you have no right to read the file");
-
-    // populate members of stat struct
-    return {buf.st_ino, buf.st_size, buf.st_mtime, buf.st_ctime, true};
-}
-
-} // namespace
-
-/** @short Returns true if lhs equals to rhs.
- */
-bool operator==(const FileStat_t::Stat_t &lhs, const FileStat_t::Stat_t &rhs) {
-    return (lhs.inode == rhs.inode)
-        && (lhs.size == rhs.size)
-        && (lhs.mtime == rhs.mtime)
-        && (lhs.ctime == rhs.ctime);
-}
-
-/** @short Returns true if lhs does not equal to rhs.
- */
-bool operator!=(const FileStat_t::Stat_t &lhs, const FileStat_t::Stat_t &rhs) {
-    return !(lhs == rhs);
-}
 
 std::pair<const std::string *, std::size_t>
-SourceList_t::push(std::string filename) {
-    // normalize filename
-    normalizeFilename(filename);
-
+SourceList_t::push(const FilesystemInterface_t* filesystem, std::string filename) {
     // try to find existing entry
     for (std::size_t i = 0; i < sources.size(); ++i)
         if (sources[i]->filename == filename)
@@ -94,16 +53,15 @@ SourceList_t::push(std::string filename) {
 
     // stat file
     using ptr_t = std::unique_ptr<FileStat_t>;
-    auto new_stat = stat(filename);
-    sources.emplace_back(ptr_t(new FileStat_t{filename, new_stat}));
+    sources.emplace_back(ptr_t(new FileStat_t{filename, filesystem->hash(filename)}));
     return {&sources.back()->filename, sources.size() - 1};
 }
 
-bool SourceList_t::isChanged() const {
+bool SourceList_t::isChanged(const FilesystemInterface_t* filesystem) const {
     for (auto &source: sources) try {
-        auto new_stat = stat(source->filename);
-        if (new_stat != source->stat) return true;
-    } catch (const std::exception &e) {/*ignore exceptions*/}
+        auto new_hash = filesystem->hash(source->filename);
+        if (new_hash != source->hash) return true;
+    } catch (...) {/*ignore exceptions*/}
     return false;
 }
 

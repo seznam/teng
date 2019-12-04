@@ -48,6 +48,7 @@
 #include "template.h"
 #include "teng/structs.h"
 #include "teng/teng.h"
+#include "teng/filesystem.h"
 
 extern "C" int teng_library_present() {return 0;}
 
@@ -79,25 +80,24 @@ std::string prependBeforeExt(const std::string &str, const std::string &prep) {
     }
 }
 
-std::string normalize_root(std::string fs_root) {
-    // if not absolute path, prepend current working directory
-    if (fs_root.empty() || !ISROOT(fs_root)) {
-        char cwd[2048];
-        if (!getcwd(cwd, sizeof(cwd)))
-            throw std::runtime_error("cannot get cwd");
-        fs_root = std::string(cwd) + '/' + fs_root;
-    }
-    normalizeFilename(fs_root);
-    return fs_root;
-}
-
 } // namespace
 
-Teng_t::Teng_t(const std::string &fs_root, const Teng_t::Settings_t &settings)
-    : fs_root(normalize_root(fs_root)),
-      templateCache(std::make_unique<TemplateCache_t>(
-          this->fs_root, settings.programCacheSize, settings.dictCacheSize
-      ))
+struct Teng_t::PTeng_t {
+    PTeng_t(std::unique_ptr<TemplateCache_t> templateCache)
+        : templateCache(std::move(templateCache))
+    {}
+    ~PTeng_t() = default;
+
+    std::unique_ptr<TemplateCache_t> templateCache; //!< cache of dicts and templates
+};
+
+Teng_t::Teng_t(const std::string& fs_root, const Teng_t::Settings_t& settings)
+    : Teng_t(std::make_shared<Filesystem_t>(fs_root), settings)
+{}
+
+Teng_t::Teng_t(std::shared_ptr<FilesystemInterface_t> fs, const Settings_t& settings)
+    : p(std::make_unique<Teng_t::PTeng_t>(
+        std::make_unique<TemplateCache_t>(fs, settings.programCacheSize, settings.dictCacheSize)))
 {}
 
 Teng_t::~Teng_t() = default;
@@ -116,7 +116,7 @@ int Teng_t::generatePage(
         : prependBeforeExt(args.templateFilename, args.skin);
 
     // create template
-    auto templ = templateCache->createTemplate(
+    auto templ = p->templateCache->createTemplate(
         err,
         template_arg,
         prependBeforeExt(args.dictFilename, args.lang),
@@ -158,7 +158,7 @@ const std::string *Teng_t::dictionaryLookup(
 ) const {
     Error_t err;
     auto path = prependBeforeExt(dict, lang);
-    auto dictionary = templateCache->createDictionary(err, config, path);
+    auto dictionary = p->templateCache->createDictionary(err, config, path);
     return dictionary->lookup(key);
 }
 

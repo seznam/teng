@@ -51,7 +51,8 @@
 namespace Teng {
 
 // forwards
-class TemplateCache_t;
+class FilesystemInterface_t;
+
 
 /** @short Templating engine.
  */
@@ -68,16 +69,21 @@ public:
         uint32_t dictCacheSize;    //!< the max number of cached dicts
     };
 
-    // don't copy
-    Teng_t(const Teng_t &) = delete;
-    Teng_t &operator=(const Teng_t &) = delete;
-
     /** @short Create new engine.
      *  @param fs_root root of relative paths
      *  @param settings teng options
      */
     explicit Teng_t(
         const std::string &fs_root = {},
+        const Settings_t &setings = Settings_t()
+    );
+
+    /** @short Create new engine.
+     *  @param fs custom filesystem
+     *  @param settings teng options
+     */
+    explicit Teng_t(
+        std::shared_ptr<FilesystemInterface_t> fs,
         const Settings_t &setings = Settings_t()
     );
 
@@ -231,9 +237,8 @@ public:
     );
 
 private:
-    using CachePtr_t = std::unique_ptr<TemplateCache_t>;
-    std::string fs_root;      //!< root of relative paths
-    CachePtr_t templateCache; //!< cache of dicts and templates
+    struct PTeng_t;
+    std::unique_ptr<PTeng_t> p;
 };
 
 } // namespace Teng

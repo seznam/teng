@@ -56,7 +56,7 @@ SOURCES = teng.cc fragment.cc fragmentlist.cc util.cc fragmentvalue.cc         \
 		  parserfrag.cc parserdiag.cc semanticblock.cc semanticcase.cc         \
 		  semanticexpr.cc semanticfrag.cc semanticif.cc semanticother.cc       \
 		  semanticprint.cc semanticquery.cc semanticregex.cc semantictern.cc   \
-		  semanticvar.cc semanticinheritance.cc
+		  semanticvar.cc semanticinheritance.cc filesystem.cc
 
 # explicit rules for proper flex & bison sources compilation
 lex2.lo: lex2impl.cc

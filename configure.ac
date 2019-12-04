@@ -35,9 +35,9 @@
 #
 
 # initialize autoconf
-AC_INIT([teng], [4.0.8], [teng@firma.seznam.cz])
+AC_INIT([teng], [5.0.0], [teng@firma.seznam.cz])
 # https://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
-VERSION_INFO="-version-info 4:4:0"
+VERSION_INFO="-version-info 5:0:0"
 
 # enable silent builds (disable with --disable-silent-rules)
 # or simply do "make V=1"
@@ -144,6 +144,7 @@ AC_PROG_CXX([$CXX_LIST])
 AC_HEADER_STDC
 AC_PROG_RANLIB
 AC_PROG_LIBTOOL
+AX_CHECK_COMPILE_FLAG([-std=c++14], [],[AC_MSG_ERROR([Compiler without c++14])])
 
 # check for flex and bison
 AM_PROG_LEX
