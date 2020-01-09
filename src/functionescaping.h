@@ -99,10 +99,11 @@ Result_t urlescape(Ctx_t &ctx, const Args_t &args) {
         std::string escaped;
         for (auto ch: arg) {
             switch (ch) {
-            case 0x21:
-            case 0x3d:
-            case 0x24 ... 0x3b:
-            case 0x3e ... 0x7e:
+            case '.': case '-':
+            case '_': case '~':
+            case '0' ... '9':
+            case 'a' ... 'z':
+            case 'A' ... 'Z':
                 escaped.push_back(ch);
                 break;
             default:

@@ -43,17 +43,24 @@ SCENARIO(
     "Escaping string with urlencoding",
     "[fun][escaping]"
 ) {
-    WHEN("String with special characters - escaping print used") {
+    WHEN("String with special characters - raw print used") {
         THEN("Some of them are escaped") {
             auto t = "%{urlescape(\"'asdf!@#$%^&*\(\\\"\")}";
-            REQUIRE(g(t) == "'asdf!@%23$%^&*(%22");
+            REQUIRE(g(t) == "%27asdf%21%40%23%24%25%5E%26%2A%28%22");
         }
     }
 
-    WHEN("String with special characters - raw print used") {
+    WHEN("String with special characters - escaping print used") {
         THEN("Some of them are escaped") {
             auto t = "${urlescape(\"'asdf!@#$%^&*\(\\\"\")}";
-            REQUIRE(g(t) == "'asdf!@%23$%^&amp;*(%22");
+            REQUIRE(g(t) == "%27asdf%21%40%23%24%25%5E%26%2A%28%22");
+        }
+    }
+
+    WHEN("Real url - raw print used") {
+        THEN("Some of them are escaped") {
+            auto t = "%{urlescape(\"abccde&=+: #\")}";
+            REQUIRE(g(t) == "abccde%26%3D%2B%3A%20%23");
         }
     }
 
