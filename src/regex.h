@@ -497,7 +497,9 @@ protected:
      */
     std::vector<ReplaceReferencies_t>
     make_replace_referencies(string_view_t with) const {
-        static const Regex_t refs_re("\\$\\d+");
+        regex_flags_t flags;
+        flags->global = true;
+        static const Regex_t refs_re("\\$\\d+", flags);
         std::vector<ReplaceReferencies_t> references;
         if (auto refs_match = refs_re.match(with)) do {
             references.push_back(refs_match[0]);
