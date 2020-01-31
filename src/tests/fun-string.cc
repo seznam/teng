@@ -586,4 +586,41 @@ SCENARIO(
     }
 }
 
+SCENARIO(
+    "The regex_replace function",
+    "[fun][string]"
+) {
+    GIVEN("Some data") {
+        Teng::Fragment_t root;
+        root.addVariable("toReplace", "řeři");
+
+        WHEN("Replacing capture groups in utf-8 string") {
+            Teng::Error_t err;
+            auto t = "${regex_replace($toReplace, '^(ře)(ři)(cha)?', '$1$2$3')}";
+            auto result = g(err, t, root);
+
+            THEN("The result string is properly replaced") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "řeři");
+            }
+        }
+    }
+
+    GIVEN("No data") {
+        Teng::Fragment_t root;
+
+        WHEN("Replacing multiple capture groups") {
+            Teng::Error_t err;
+            auto t = "${regex_replace('abc', '^(a)(b)(c)', '$1 $2 $3')}";
+            auto result = g(err, t, root);
+
+            THEN("The result string is properly replaced") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "a b c");
+            }
+        }
+    }
+}
 
