@@ -35,7 +35,7 @@
 #
 
 # initialize autoconf
-AC_INIT([teng], [5.0.0~burloglibteng4], [teng@firma.seznam.cz])
+AC_INIT([teng], [5.0.0], [teng@firma.seznam.cz])
 # https://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
 VERSION_INFO="-version-info 5:0:0"
 
