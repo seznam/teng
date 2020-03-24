@@ -529,7 +529,7 @@ Result_t replace(Ctx_t &ctx, const Args_t &args) {
     tmp.reserve(2 * text->size());
 
     // empty pattern breaks algorithm bellow
-    if (!pattern->empty()) {
+    if (!pattern->empty() && text->size() >= pattern->size()) {
         auto i = 0lu;
         for (auto upto = text->size() - pattern->size() + 1; i < upto;) {
             if (text->compare(i, pattern->size(), *pattern) == 0) {
@@ -540,6 +540,8 @@ Result_t replace(Ctx_t &ctx, const Args_t &args) {
 
         // append text suffix (the tail that can't contain pattern)
         while (i < text->size()) tmp.push_back((*text)[i++]);
+    } else {
+        tmp = *text;
     }
 
     // done
