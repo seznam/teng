@@ -530,6 +530,54 @@ SCENARIO(
             }
         }
 
+        WHEN("The string is empty") {
+            Teng::Error_t err;
+            auto t = "${replace('', 'nono', 'repl')}";
+            auto result = g(err, t, root);
+
+            THEN("The result origin string") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "");
+            }
+        }
+
+        WHEN("The string is shorter then pattern") {
+            Teng::Error_t err;
+            auto t = "${replace('1', 'nono', 'repl')}";
+            auto result = g(err, t, root);
+
+            THEN("The result origin string") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "1");
+            }
+        }
+
+        WHEN("The string is the same langht as pattern") {
+            Teng::Error_t err;
+            auto t = "${replace('1234', 'nono', 'repl')}";
+            auto result = g(err, t, root);
+
+            THEN("The result origin string") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "1234");
+            }
+        }
+
+        WHEN("The string is the same as pattern") {
+            Teng::Error_t err;
+            auto t = "${replace('nono', 'nono', 'repl')}";
+            auto result = g(err, t, root);
+
+            THEN("The result origin string") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "repl");
+            }
+        }
+
         WHEN("The pattern found two times") {
             Teng::Error_t err;
             auto t = "${replace('some text some text', 'some', 'repl')}";
