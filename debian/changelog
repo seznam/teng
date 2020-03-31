@@ -1,3 +1,9 @@
+libteng (5.0.3) stable; urgency=medium
+
+  * fix residual local variables
+
+ -- Michal Bukovský <burlog@seznam.cz>  Tue, 31 Mar 2020 18:32:35 +0100
+
 libteng (5.0.2) stable; urgency=medium
 
   * fix: regression in func replace
