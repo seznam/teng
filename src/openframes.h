@@ -272,7 +272,7 @@ struct FrameRec_t {
      */
     bool next_frag() {
         if (move_to_next_list_item(open_frags.back().frag))
-            return true;
+            return open_frags.back().locals.clear(), true;
         open_frags.pop_back();
         return false;
     }

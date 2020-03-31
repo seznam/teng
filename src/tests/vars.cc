@@ -1315,3 +1315,42 @@ SCENARIO(
     }
 }
 
+
+SCENARIO(
+    "Variables setting in array",
+    "[vars][regvars][xxx]"
+) {
+    GIVEN("Some data with the same named fragment") {
+        Teng::Fragment_t root;
+        root.addFragment("dog");
+        root.addFragment("dog");
+        root.addFragment("dog");
+
+    WHEN("Setting variable in prevoius frame") {
+            Teng::Error_t err;
+            auto t = "<?frag dog?>"
+                     "<?if _index == 1 ?><?set var_set = 'var_set'?><?endif?>"
+                     "${var_set};"
+                     "<?endfrag?>";
+            auto result = g(err, t, root);
+
+            THEN("The set variable should not be visible in next frame, but it is") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 69},
+                    "Runtime: Variable '.dog.var_set' is undefined "
+                    "[open_frags=.dog, iteration=0/3]"
+                }, {
+                    Teng::Error_t::WARNING,
+                    {1, 69},
+                    "Runtime: Variable '.dog.var_set' is undefined "
+                    "[open_frags=.dog, iteration=2/3]"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "undefined;var_set;undefined;");
+            }
+        }
+    }
+}
+
+
