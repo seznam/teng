@@ -41,6 +41,7 @@
 
 #include <string>
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
 #include <pcre2.h>
@@ -618,4 +619,3 @@ RegexMatch_t RegexMatch_t::next_after_non_empty(size_type next_start_i) const {
 } // namespace Teng
 
 #endif /* TENG_TENGREGEX_H */
-
