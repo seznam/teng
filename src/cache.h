@@ -43,6 +43,7 @@
 #include <memory>
 #include <tuple>
 #include <algorithm>
+#include <stdexcept>
 
 #include "util.h"
 #include "teng/error.h"
@@ -299,4 +300,3 @@ private:
 } // namespace Teng
 
 #endif // TENGCACHE_H
-
