@@ -42,6 +42,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <stdexcept>
 
 #include <pcre2.h>
 
