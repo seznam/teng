@@ -42,6 +42,7 @@
 #include <string>
 #include <memory>
 #include <tuple>
+#include <stdexcept>
 #include <algorithm>
 #include <stdexcept>
 
