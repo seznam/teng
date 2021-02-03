@@ -43,3 +43,5 @@ src/test-teng
 test-driver
 version
 ylwrap
+fuzzer-corpus
+test-coverage-html
