@@ -42,6 +42,7 @@
 
 #include <vector>
 #include <string>
+#include <limits>
 #include <algorithm>
 
 #include "lex2.h"

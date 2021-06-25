@@ -42,6 +42,7 @@
 
 #include <string>
 #include <vector>
+#include <limits>
 #include <algorithm>
 
 #include "position.h"
