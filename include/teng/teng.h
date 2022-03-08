@@ -146,12 +146,12 @@ public:
             GenPageArgs_t{
                 templateFilename,
                 "",
+                params,
                 skin,
                 dict,
                 lang,
-                params,
-                contentType,
                 encoding,
+                contentType,
             }, data,
             writer,
             err
@@ -185,12 +185,12 @@ public:
             GenPageArgs_t{
                 "",
                 templateString,
+                params,
                 "",
                 dict,
                 lang,
-                params,
-                contentType,
                 encoding,
+                contentType
             }, data,
             writer,
             err
@@ -244,4 +244,3 @@ private:
 } // namespace Teng
 
 #endif // TENG_H
-
