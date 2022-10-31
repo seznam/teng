@@ -1,3 +1,18 @@
+libteng (5.0.4) stable; urgency=medium
+
+  * sectotime() alligns hours to at least two digit
+  * FIX compatibility methods (even when deprecated should work I guess) (#25)
+  * Co-authored-by: Lubos Vondra <lubos.vondra@firma.seznam.cz>
+  * Update configure.ac (#24)
+  * Update configure.ac to work with clang - do compilation tests using the compiler, preprocessor, and file extensions for C++.
+  * includes
+  * include
+  * gitignore
+  * add include (#22)
+  * Co-authored-by: Lubos Vondra <lubos.vondra@firma.seznam.cz>
+
+ -- Michal Bukovský <burlog@seznam.cz>  Mon, 31 Oct 2022 13:10:31 +0100
+
 libteng (5.0.3) stable; urgency=medium
 
   * fix residual local variables
