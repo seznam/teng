@@ -617,22 +617,32 @@ Result_t date(Ctx_t &ctx, const Args_t &args) {
  * @param result Function's result value.
  */
 Result_t sectotime(Ctx_t &ctx, const Args_t &args) {
-    if (args.size() != 1)
-        return wrongNumberOfArgs(ctx, "sectotime", 1);
+    if ((args.size() < 1) || (args.size() > 2))
+        return wrongNumberOfArgs(ctx, "sectotime", 1, 2);
+    auto iarg = args.rbegin();
 
-    // check args
-    if (!args.back().is_number())
-        return failed(ctx, "sectotime", "Arg must be a number");
-
-    // split
-    auto sec = args.back().integral();
+    // seconds
+    if (!iarg->is_number())
+        return failed(ctx, "sectotime", "First arg must be a number");
+    auto sec = iarg->integral();
     auto hours = sec / 3600;
     auto minutes = (sec % 3600) / 60;
     auto seconds = sec % 60;
 
+    // allign
+    bool allign = false;
+    if (++iarg != args.rend()) {
+        if (!iarg->is_number())
+            return failed(ctx, "sectotime", "Second arg must be a number");
+        allign = iarg->integral();
+    }
+
+    // what format use
+    const char *format = allign? "%02ld:%02ld:%02ld": "%ld:%02ld:%02ld";
+
     // convert to string
     char buf[64];
-    snprintf(buf, sizeof(buf), "%ld:%02ld:%02ld", hours, minutes, seconds);
+    snprintf(buf, sizeof(buf), format, hours, minutes, seconds);
     return Result_t(buf);
 }
 

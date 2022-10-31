@@ -34,6 +34,7 @@
  *             Created.
  */
 
+#include <limits>
 #include <teng/teng.h>
 
 #include "catch.hpp"

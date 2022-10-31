@@ -218,10 +218,46 @@ SCENARIO(
             auto t = "${sectotime(1520035263)}";
             auto result = g(err, t, root);
 
-            THEN("The result is current timestamp") {
+            THEN("The result is time in HH:MM::SS format") {
                 std::vector<Teng::Error_t::Entry_t> errs;
                 ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "422232:01:03");
+            }
+        }
+
+        WHEN("The date contains only one hour") {
+            Teng::Error_t err;
+            auto t = "${sectotime(3666)}";
+            auto result = g(err, t, root);
+
+            THEN("The result is H:MM:SS") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "1:01:06");
+            }
+        }
+
+        WHEN("The date contains only one hour") {
+            Teng::Error_t err;
+            auto t = "${sectotime(3666, 1)}";
+            auto result = g(err, t, root);
+
+            THEN("The result is alligned HH:MM:SS") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "01:01:06");
+            }
+        }
+
+        WHEN("The date contains only one hour") {
+            Teng::Error_t err;
+            auto t = "${sectotime(3666, 0)}";
+            auto result = g(err, t, root);
+
+            THEN("The result is not alligned H:MM:SS") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "1:01:06");
             }
         }
     }
