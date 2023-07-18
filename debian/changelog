@@ -1,3 +1,9 @@
+libteng (5.0.4~burloglibteng4-1) stable; urgency=medium
+
+  * autotools update
+
+ -- Michal Bukovský <burlog@seznam.cz>  Tue, 18 Jul 2023 19:55:05 +0100
+
 libteng (5.0.4) stable; urgency=medium
 
   * sectotime() alligns hours to at least two digit
