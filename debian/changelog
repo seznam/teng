@@ -1,3 +1,9 @@
+libteng (5.0.5) stable; urgency=medium
+
+  * fix for new gcc
+
+ -- Michal Bukovský <burlog@seznam.cz>  Tue, 18 Jul 2023 19:58:50 +0100
+
 libteng (5.0.4~burloglibteng4-1) stable; urgency=medium
 
   * autotools update
