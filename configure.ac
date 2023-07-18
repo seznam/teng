@@ -57,7 +57,7 @@ AM_INIT_AUTOMAKE(-Wall -Wno-portability foreign color-tests)
 AC_CONFIG_SRCDIR([src/teng.cc])
 
 # this forces debian autoconf to use version 2.53
-AC_PREREQ(2.50)
+AC_PREREQ([2.71])
 
 # replace autotools original defaults
 : ${CXXFLAGS="-W -Wall -Wextra -Wconversion -Wno-sign-conversion -fPIC -fno-omit-frame-pointer -g -ggdb -std=c++14"}
@@ -142,13 +142,11 @@ AS_IF([test x${FUZZER} = xyes], [CXX_LIST="clang++"], [CXX_LIST="g++ clang++ cxx
 # check for C++ compiler
 AC_PROG_CC([$CC_LIST])
 AC_PROG_CXX([$CXX_LIST])
-AC_HEADER_STDC
-AC_PROG_RANLIB
-AC_PROG_LIBTOOL
+LT_INIT
 AX_CHECK_COMPILE_FLAG([-std=c++14], [],[AC_MSG_ERROR([Compiler without c++14])])
 
 # check for flex and bison
-AM_PROG_LEX
+AC_PROG_LEX([noyywrap])
 AC_PROG_YACC
 
 # check for special header files
@@ -181,5 +179,5 @@ AC_CONFIG_FILES([
     libteng.pc
     version
 ])
-AC_OUTPUT()
+AC_OUTPUT
 
