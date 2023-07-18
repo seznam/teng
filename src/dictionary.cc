@@ -212,7 +212,7 @@ template <typename type1_t, typename type2_t>
 void DictParser_t::parse(type1_t new_directive, type2_t new_entry) {
     string_view_t line;
     std::string *last_inserted_value = nullptr;
-    auto iline = data.data(), eline = data.data() + data.size();
+    const char *iline = data.data(), *eline = data.data() + data.size();
 
     // increments file pos in d'tor
     struct pos_updater_t {
