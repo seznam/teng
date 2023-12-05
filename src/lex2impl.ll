@@ -50,8 +50,8 @@
 %option reentrant
 %option prefix="teng_"
 %option noyylineno
-%option outfile="lex2impl.cc"
-%option header-file="lex2impl.h"
+/* %option outfile="lex2impl.cc" */
+/* %option header-file="lex2impl.h" */
 
 /* additional lexer contexes */
 %x bad_number
@@ -814,4 +814,3 @@ void Teng::Parser::Lex2_t::set_start_condition(int start_condition) {
     if (start_condition == block_override)
         make_token_start(yytext);
 }
-

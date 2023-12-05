@@ -29,12 +29,14 @@ tengsyntax = custom_target('tengsyntax',
                            output: ['syntax.cc', 'syntax.hh'],
                            command: [bison, '-o', '@OUTPUT0@', '@INPUT@'])
 
-# tenglex2.cc is generated via flex from tenglex2.ll and tengsyntax.[hh,cc]
+# lex2impl.cc is generated via flex from lex2impl.ll and syntax.[hh,cc]
 tenglex2 = custom_target('tenglex2',
                          input: ['src/lex2impl.ll', tengsyntax],
-                         output: 'lex2impl.cc',
+                         output: ['lex2impl.cc', 'lex2impl.h'],
                          command: [flex, '-Php', '-o',
-                                   '@OUTPUT@', '@INPUT0@'])
+                                   '@OUTPUT0@',
+                                   '--header-file=@OUTPUT1@',
+                                   '@INPUT0@'])
 
 generated_sources = [tengsyntax, tenglex2]
 
