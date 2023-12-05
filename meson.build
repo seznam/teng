@@ -107,6 +107,19 @@ headers = [
   'include/teng/writer.h'
 ]
 
+# disable some pesky warnings that we don't have capacity and will to fix
+disable_warnings = [
+  '-Wno-unused-parameter',
+  '-Wno-implicit-fallthrough'
+]
+
+compiler = meson.get_compiler('cpp')
+add_project_arguments(
+        compiler.get_supported_arguments(
+          disable_warnings
+        ),
+        language : 'cpp')
+
 # '.' is for generated files
 inc = include_directories('src')
 
