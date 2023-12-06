@@ -40,6 +40,8 @@ tenglex2 = custom_target('tenglex2',
 
 generated_sources = [tengsyntax, tenglex2]
 
+subdir('include/teng')
+
 # source code
 src = [
   'src/teng.cc',
@@ -92,7 +94,6 @@ src = [
 ]
 
 headers = [
-  'include/teng/config.h.in',
   'include/teng/counted_ptr.h',
   'include/teng/error.h',
   'include/teng/filesystem.h',
@@ -140,6 +141,7 @@ if not fuzzer_build
   pkg.generate(lib, name: 'libteng')
 
   libteng_dep = declare_dependency(include_directories : inc,
+                                   sources: [ config_h ],
                                    dependencies: lib_deps,
                                    link_with : lib)
 
