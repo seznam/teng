@@ -123,16 +123,16 @@ add_project_arguments(
         language : 'cpp')
 
 # '.' is for generated files
-inc = include_directories('src')
+inc = include_directories('include')
 
 fuzzer_build = get_option('fuzzer')
 
 if not fuzzer_build
-     lib = library('teng',
-                   sources: [src, generated_sources],
-                   install: true,
-                   include_directories: inc,
-                   dependencies: lib_deps)
+  lib = library('teng',
+                sources: [src, generated_sources],
+                install: true,
+                include_directories: [inc, include_directories('src')],
+                dependencies: lib_deps)
 
   # teng5 installs files into subdir of /usr/include
   install_headers(headers, subdir: 'teng', preserve_path: false)
