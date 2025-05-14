@@ -34,58 +34,85 @@
 #             Created.
 #
 
-# enable subdir objects
+# extra compiler options
+AM_CPPFLAGS = -D_ISOC99_SOURCE -fPIC ${DEPENS_CFLAGS}                          \
+              -DGIT_REVISION="\"@GIT_REVISION@\""                              \
+			  -DSRC_DIR="\"$(realpath @abs_top_srcdir@)\""                     \
+			  -I$(top_srcdir)/include -I$(top_builddir)/include                \
+			  @TENG_DEPS_CFLAGS@
+
 AUTOMAKE_OPTIONS = subdir-objects
 
-# warn on all
-AM_CXXFLAGS = -Wall
-
-# extra compiler options
-AM_CPPFLAGS = -std=c++11 -D_ISOC99_SOURCE -fPIC ${DEPENS_CFLAGS}
-
 # these are generated and thus ought to be prepared before anything else
-BUILT_SOURCES = tenglex2.cc tengsyntax.cc
-
-# install these headers
-include_HEADERS = teng.h tengfilesystem.h tengstructs.h tengwriter.h \
-                  tengerror.h tengconfig.h tengudf.h
-
-noinst_HEADERS = tengcache.h tengcode.h tengcontenttype.h \
-                 tengdictionary.h tengformatter.h tengfragmentstack.h \
-                 tengfunction.h tenginstruction.h tenglex1.h \
-                 tengparsercontext.h tengparservalue.h tengprocessor.h \
-                 tengprogram.h tengsourcelist.h tengtemplate.h \
-                 tengutil.h tengwriter.h tengsyntax.hh tengconfiguration.h \
-                 tengplatform.h tengaux.h
-
-# compile this library
-lib_LTLIBRARIES = libteng.la
+BUILT_SOURCES = lex2impl.cc lex2impl.h syntax.cc syntax.hh
 
 # from the these sources
-libteng_la_SOURCES = teng.cc tengstructs.cc tengutil.cc tengcache.cc \
-                     tengsourcelist.cc tengdictionary.cc tengfilesystem.cc \
-                     tenginstruction.cc tengparservalue.cc \
-                     tengparsercontext.cc tengprogram.cc \
-                     tengfunction.cc tengprocessor.cc tengwriter.cc \
-                     tengformatter.cc tengcontenttype.cc \
-                     tengtemplate.cc tenglex1.cc tengsyntax.yy \
-                     tenglex2.ll tengcode.cc tengudf.cc \
-                     tengmd5.cc tengconfiguration.cc tengaux.cc
+SOURCES = teng.cc fragment.cc fragmentlist.cc util.cc fragmentvalue.cc         \
+		  sourcelist.cc dictionary.cc instruction.cc value.cc parsercontext.cc \
+		  program.cc function.cc processor.cc writer.cc formatter.cc cache.cc  \
+		  contenttype.cc error.cc template.cc lex1.cc syntax.yy position.cc    \
+		  lex2impl.ll udf.cc yystype.cc md5.cc configuration.cc aux.cc         \
+		  logging.cc semantic.cc hex.cc utf8.cc stringview.cc lex2.cc          \
+		  parserfrag.cc parserdiag.cc semanticblock.cc semanticcase.cc         \
+		  semanticexpr.cc semanticfrag.cc semanticif.cc semanticother.cc       \
+		  semanticprint.cc semanticquery.cc semanticregex.cc semantictern.cc   \
+		  semanticvar.cc semanticinheritance.cc filesystem.cc
+
+# explicit rules for proper flex & bison sources compilation
+lex2.lo: lex2impl.cc
+parsercontext.lo: syntax.cc
+lex2impl.h: lex2impl.cc
+syntax.hh: syntax.cc
+
+CLEANFILES = @top_builddir@/src/syntax.hh                                      \
+			 @top_builddir@/src/syntax.cc                                      \
+			 @top_builddir@/src/lex2impl.cc                                    \
+			 @top_builddir@/src/lex2impl.h
+
+# compile library or fuzzer
+if FUZZER
+
+# fuzzer
+bin_PROGRAMS = teng-fuzzer
+teng_fuzzer_SOURCES = tests/fuzz.cc ${SOURCES}
+teng_fuzzer_CXXFLAGS = $(AM_CXXFLAGS)
+teng_fuzzer_LDADD = @TENG_DEPS_LIBS@
+
+else # FUZZER
+
+# library
+lib_LTLIBRARIES = libteng.la
+libteng_la_SOURCES = ${SOURCES}
 
 # with these flags (version info etc.)
 libteng_la_LDFLAGS = @VERSION_INFO@
-libteng_la_LIBADD = $(LTLIBOBJS) ${DEPENS_LIBS}
-
-# explicit rules for proper flex & bison sources compilation
-tenglex2.cc: tenglex2.ll tengsyntax.hh tengsyntax.cc
-tengsyntax.hh: tengsyntax.yy
-tengsyntax.cc: tengsyntax.yy
+libteng_la_LIBADD = $(LTLIBOBJS) @TENG_DEPS_LIBS@
 
 # test program
-EXTRA_PROGRAMS = example
-example_SOURCES = @top_srcdir@/tests/example.cc
-example_LDADD = libteng.la
+EXTRA_PROGRAMS = teng-example teng-cache test-teng
+teng_example_LDFLAGS = -static
+teng_example_SOURCES = example/example.cc
+teng_example_LDADD = libteng.la
+teng_cache_LDFLAGS = -static
+teng_cache_SOURCES = example/cache.cc
+teng_cache_LDADD = libteng.la
+
+test_teng_LDFLAGS = -static
+test_teng_LDADD = libteng.la
+test_teng_SOURCES = tests/main.cc tests/old.cc tests/fun-escaping.cc           \
+					tests/frag.cc tests/vars.cc tests/simple.cc tests/incl.cc  \
+					tests/format.cc tests/expr-string.cc tests/expr-int.cc     \
+					tests/expr-real.cc tests/expr-other.cc tests/dict.cc       \
+					tests/expr-regex.cc tests/ctype.cc tests/cond.cc           \
+					tests/expr-tern.cc tests/expr-case.cc tests/fun-date.cc    \
+					tests/fun-number.cc tests/fun-string.cc tests/fun-other.cc \
+					tests/queries.cc tests/debug.cc tests/rtvars.cc            \
+					tests/builtin-vars.cc tests/inheritance.cc
+
+AM_COLOR_TESTS = always
+TESTS = test-teng
+
+endif # FUZZER
 
 doc:
 	doxygen
-

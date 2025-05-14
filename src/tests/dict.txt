@@ -1,0 +1,9 @@
+%expand         yes
+
+hello_world	hello world
+hello_europe	hello europe
+dict_txt        value
+html_value      &<b>some <i>HTML</i> text</b>&
+html_small      &<b>
+version         1.1.1
+text_version    version is #{version}!

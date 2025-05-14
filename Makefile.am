@@ -35,10 +35,10 @@
 #
 
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = . src tests
+SUBDIRS = . src tests include/teng
 # directories temporarily out of order: 'doc'
 
-#
+
 # Removed due to this request:
 #
 # From: Andrew Betts [mailto:andrew.betts@jasp.com]

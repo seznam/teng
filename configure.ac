@@ -34,108 +34,120 @@
 #             Created.
 #
 
-
 # initialize autoconf
-AC_INIT(teng, [3.0.1], opensource@firma.seznam.cz)
+AC_INIT([teng], [5.0.5], [teng@firma.seznam.cz])
+AC_LANG([C++])
+# https://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
+VERSION_INFO="-version-info 5:2:0"
 
-AC_CONFIG_SRCDIR([src/teng.cc])
+# enable silent builds (disable with --disable-silent-rules)
+# or simply do "make V=1"
+AM_SILENT_RULES([yes])
 
-AM_INIT_AUTOMAKE
+# install autotools scripts to build-aux dir
+AC_CONFIG_AUX_DIR([build-aux])
 
-AC_PROG_LIBTOOL
+# macros from http://www.gnu.org/software/autoconf-archive/The-Macros.html
+AC_CONFIG_MACRO_DIR([m4])
 
-AC_CONFIG_MACRO_DIRS([m4])
-
-AC_PREREQ(2.50)
-
-#
-AM_SILENT_RULES
+# initialize automake(use AC_INIT's arguments)
+AM_INIT_AUTOMAKE(-Wall -Wno-portability foreign color-tests)
 
 # tell autoconf where to find sources
 AC_CONFIG_SRCDIR([src/teng.cc])
 AC_CONFIG_FILES([tests/Makefile])
 
+# this forces debian autoconf to use version 2.53
+AC_PREREQ([2.71])
+
+# replace autotools original defaults
+: ${CXXFLAGS="-W -Wall -Wextra -Wconversion -Wno-sign-conversion -fPIC -fno-omit-frame-pointer -g -ggdb -std=c++14"}
+: ${LDFLAGS="-pthread -rdynamic"}
+
+# cxx flags for libfuzzer
+SANITIZE_CXXFLAGS="-fsanitize=undefined -fsanitize=address"
+CODE_COVERAGE_CXXFLAGS="-fprofile-instr-generate -fcoverage-mapping"
+FUZZER_CXXFLAGS="${SANITIZE_CXXFLAGS} -fsanitize=fuzzer"
+
+# --enable-package-version switch
+AC_ARG_ENABLE(
+    [package-version],
+    [AS_HELP_STRING([--enable-package-version], [compile with specific package version])],
+    [AS_IF(
+        [test x${enableval} = xyes],
+        [AC_MSG_ERROR([You must specify package version])],
+        [AS_IF(
+            [test x${enableval} = xyes],
+            [AC_DEFINE([DEBIAN_PACKAGE_VERSION], "\\\"${enableval}\\\"", [package version])]
+        )]
+    )]
+)
+
+# --enable-optimization switch
+AC_ARG_ENABLE(
+    [optimization],
+    [AS_HELP_STRING([--enable-optimization], [compile optimized])],
+    [optimization=${enableval}; AS_IF([test x${enableval} = xyes], [CXXFLAGS="${CXXFLAGS} -O3"], [CXXFLAGS="${CXXFLAGS} -O0"])],
+    [optimization=no; CXXFLAGS="${CXXFLAGS} -O0"]
+)
+
+# --enable-debug switch
+AC_ARG_ENABLE(
+    [debug],
+    [AS_HELP_STRING([--enable-debug], [enable the debug build])],
+    [AS_IF([test x${enableval} = xyes], [AC_DEFINE([DEBUG], 1, [allow debug build])])]
+)
+
+# --enable-sanitize switch
+AC_ARG_ENABLE(
+    [sanitize],
+    [AS_HELP_STRING([--enable-sanitize], [enable the sanitizer cxx flags])],
+    [AS_IF([test x${enableval} = xyes], [CXXFLAGS="${CXXFLAGS} ${SANITIZE_CXXFLAGS}"])]
+)
+
+# --enable-stl-debug switch
+AC_ARG_ENABLE(
+    [stl-debug],
+    [AS_HELP_STRING([--enable-stl-debug], [enable the STL debug version])],
+    [AS_IF([test x${enableval} = xyes], [CXXFLAGS="${CXXFLAGS} -D_GLIBCXX_DEBUG"])]
+)
+
+# --enable-code-coverage switch
+AC_ARG_ENABLE(
+    [code-coverage],
+    [AS_HELP_STRING([--enable-code-coverage], [enable the code coverage cxx flags])],
+    [AS_IF([test x${enableval} = xyes], [CXXFLAGS="${CXXFLAGS} ${CODE_COVERAGE_CXXFLAGS}"])]
+)
+
+# --disable-udf-lock switch
+AC_ARG_ENABLE(
+    [lock-udf],
+    [AS_HELP_STRING([--enable-lock-udf], [enable locking of udf registry])],
+    [AS_IF([test x${enableval} = xno], [AC_DEFINE([NO_UDF_LOCKS], 1, [disable locking of udf registry])])]
+)
+
+# --enable-fuzzer switch
+AC_ARG_ENABLE(
+   [fuzzer],
+   [AS_HELP_STRING([--enable-fuzzer], [compile with llvm libfuzzer])],
+   [FUZZER=${enableval}; AS_IF([test x${enableval} = xyes], [CXXFLAGS="${CXXFLAGS} ${FUZZER_CXXFLAGS}"; AC_DEFINE([FUZZER])])],
+   [FUZZER=no]
+)
+AM_CONDITIONAL([FUZZER], [test x${FUZZER} = xyes])
+
+# the AC_PROG_CC can't be in conditionals, so we are forced to replace default compiler list
+# see https://bug-autoconf.gnu.narkive.com/bTkajPb5/ac-prog-cc-does-not-work-correctly-inside-conditionals-autoconf-2-61
+AS_IF([test x${FUZZER} = xyes], [CC_LIST="clang"], [CC_LIST="gcc clang c1 cc"])
+AS_IF([test x${FUZZER} = xyes], [CXX_LIST="clang++"], [CXX_LIST="g++ clang++ cxx cc++ c++ g++"])
+
 # check for C++ compiler
-AC_PROG_CXX
-AC_LANG_CPLUSPLUS
-# needs autoconf-archive. Install that if you're getting
-# error: possibly undefined macro: AC_MSG_ERROR
-AX_CHECK_COMPILE_FLAG([-std=c++11], [], [AC_MSG_ERROR([Compiler without c++11])])
-
-# pkg config
-PKG_PROG_PKG_CONFIG([0.25])
-
-DEPENS_NAMES="glib-2.0 libcurl libpcre2-8"
-PKG_CHECK_MODULES([DEPENS], [${DEPENS_NAMES}])
-
-AC_SUBST(DEPENS_NAMES)
-AC_SUBST(DEPENS)
-
-
-
-# check for std C headers
-AC_HEADER_STDC
-
-# check for libtool
-AC_PROG_LIBTOOL
-
-# This version number needs to be changed in several different ways for each
-# release. Please read the libtool documentation (info libtool 'Updating
-# version info') before touching this. (this is *.so version number).
-TENG_MAJOR=3
-TENG_MINOR=0
-VERSION_INFO="-version-info $TENG_MAJOR:$TENG_MINOR:0"
-AC_SUBST(TENG_MAJOR)
-AC_SUBST(TENG_MINOR)
-AC_SUBST(VERSION_INFO)
-
-
-CPPFLAGS=""
-CXXFLAGS=""
-CFLAGS=""
-LDFLAGS=""
-
-AC_ARG_ENABLE(optimization,[  --enable-optimization compile optimized without debug logging],[
-    case "${enableval}" in
-        no)
-            AC_MSG_NOTICE([disabling optimization.])
-            CPPFLAGS="${CPPFLAGS} -DDEBUG=1 -O0 -g -ggdb"
-        ;;
-        yes)
-            AC_MSG_NOTICE([enabling optimization.])
-            CPPFLAGS="${CPPFLAGS} -O2 -g -ggdb"
-        ;;
-        *)
-            AC_MSG_ERROR([Say yes or no to --enable-optimization.])
-        ;;
-    esac
-], [
-   CPPFLAGS="${CPPFLAGS} -O2 -g -ggdb"
-])
-
-AC_ARG_ENABLE(lock-udf,[ --disable-udf-locks compile without thread safe UDF],[
-    case "${enableval}" in
-        no)
-            AC_MSG_NOTICE([enabling UDF locks])
-            CPPFLAGS="${CPPFLAGS} -UNO_UDF_LOCKS"
-            check_pthreads="no"
-        ;;
-        yes)
-            AC_MSG_NOTICE([enabling optimization.])
-            CPPFLAGS="${CPPFLAGS} -DNO_UDF_LOCKS=1"
-            check_pthreads="yes"
-        ;;
-        *)
-            AC_MSG_ERROR([Say yes or no to --disable-udf-locks])
-        ;;
-    esac
-], [
-   CPPFLAGS="${CPPFLAGS} -UNO_UDF_LOCKS"
-    check_pthreads="yes"
-])
+AC_PROG_CC([$CC_LIST])
+AC_PROG_CXX([$CXX_LIST])
+LT_INIT
+AX_CHECK_COMPILE_FLAG([-std=c++14], [],[AC_MSG_ERROR([Compiler without c++14])])
 
 # check for flex and bison
-AM_PROG_LEX
+AC_PROG_LEX([noyywrap])
 AC_PROG_YACC
 
 AX_BOOST_BASE([1.48],, [AC_MSG_ERROR([tests needs Boost, but it was not found in your system])])
@@ -153,19 +165,28 @@ AC_CHECK_HEADERS(fenv.h)
 AC_CHECK_LIB(m, floor)
 AC_REPLACE_FUNCS([trunc round])
 
-AX_CHECK_COMPILE_FLAG([-std=c++14], [
-    check_cpp14="true"
-    AC_MSG_NOTICE([Compiler with c++14, test are enabled.])
-],[AC_MSG_NOTICE([Compiler without c++14, test are disabled.])])
+# check pkgconfig
+PKG_PROG_PKG_CONFIG([0.25])
+TENG_PKG_CONFIG_MODULES=m4_flatten("
+    glib-2.0
+    libpcre2-8
+")
+PKG_CHECK_MODULES([TENG_DEPS], [$TENG_PKG_CONFIG_MODULES])
 
-AM_CONDITIONAL([CPP14], [test x$check_cpp14 == xtrue])
+# define this variables in Makefile.am
+AC_SUBST(GIT_REVISION)
+AC_SUBST(VERSION_INFO)
+AC_SUBST(TENG_DEPS)
+AC_SUBST(TENG_PKG_CONFIG_MODULES)
 
-AS_IF([test x$check_pthreads == xyes], [
-    # Check for nonglibc header from serr library. The library is not
-    # needed just this header.
-    AC_CHECK_LIB(pthread, pthread_rwlock_rdlock,, AC_MSG_ERROR([pthread_rwlock_rdlock not found]))
-], [])
+# generated files
+AC_CONFIG_FILES([
+    Makefile
+    src/Makefile
+    include/teng/Makefile
+    include/teng/config.h
+    libteng.pc
+    version
+])
+AC_OUTPUT
 
-# generate Makefile
-AC_OUTPUT(version Makefile src/Makefile src/tengconfig.h libteng.pc)
-#          doc/Makefile doc/manual/Makefile doc/manual/en/Makefile)

@@ -1,0 +1,3 @@
+hello_world	Hello world!
+hello_europe	Hello Europe!
+dict_en_txt     value
