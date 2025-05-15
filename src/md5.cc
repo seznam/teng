@@ -72,6 +72,7 @@
 
 
 #include <cstring>
+#include <endian.h>
 
 // all goes to anonymos namespace
 namespace {

@@ -545,7 +545,7 @@ Processor_t::Processor_t(
     const string_view_t &contentType
 ): err(err), program(program), dict(dict), params(params),
    encoding(encoding), contentType(contentType)
-{srand(static_cast<uint32_t>(time(0) ^ getpid()));}
+{srand(static_cast<uint32_t>(time(nullptr) ^ getpid()));}
 
 void Processor_t::run(const FragmentValue_t &data, Writer_t &writer) {
     // ensure content type

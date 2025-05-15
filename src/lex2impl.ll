@@ -77,6 +77,8 @@
 // at the end of input execute following stuff
 #define yyterminate() return Teng::Parser::Token_t{LEX2_EOF, token_pos, {}}
 
+#pragma GCC diagnostic ignored "-Wuseless-cast"
+
 %}
 
  // basic tokens

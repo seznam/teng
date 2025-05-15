@@ -98,7 +98,7 @@ void set_var_impl(Context_t *ctx, const Variable_t &var) {
                 }
             }
         }
-        // pass through
+        [[fallthrough]];
     case LEX2::LT_DIGRAPH:
     case LEX2::LE_DIGRAPH:
     case LEX2::GT_DIGRAPH:
@@ -191,7 +191,7 @@ void generate_var_impl(Context_t *ctx, const Variable_t &var) {
                 }
             }
         }
-        // pass through
+        [[fallthrough]];
 
     case LEX2::LT_DIGRAPH:
     case LEX2::LE_DIGRAPH:
@@ -288,7 +288,7 @@ generate_auto_rtvar_path(
                 generate<PushErrorFrag_t>(ctx, true, var_sym.pos);
                 break;
             }
-            // pass through
+            [[fallthrough]];
 
         default:
             generate<PushAttr_t>(ctx, segment.str(), path, var_sym.pos);
@@ -514,7 +514,7 @@ generate_rtvar_segment(Context_t *ctx, const Token_t &token, bool is_first) {
             generate<PushErrorFrag_t>(ctx, true, token.pos);
             break;
         }
-        // pass through
+        [[fallthrough]];
     default:
         generate<PushAttr_t>(ctx, token.str(), rtvar_string.str(), token.pos);
         break;

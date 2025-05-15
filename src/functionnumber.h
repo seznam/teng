@@ -264,11 +264,9 @@ Result_t round(Ctx_t &ctx, const Args_t &args) {
     auto precision = (iarg++)->as_int();
 
     // done
-    return Result_t(
-        number.is_integral()
+    return number.is_integral()
         ? round_integer(number.as_int(), precision)
-        : round_real(number.as_real(), precision)
-    );
+        : round_real(number.as_real(), precision);
 }
 
 /** Makes Teng integer from Teng real.

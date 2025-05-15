@@ -151,6 +151,10 @@ string_view_t l2_token_name(int token_id) {
     case LEX2::ENDBLOCK_OVERRIDE: return "ENDBLOCK_OVERRIDE";
     case LEX2::ENDBLOCK_DEFINE: return "ENDBLOCK_DEFINE";
     case LEX2::SUPER_BLOCK: return "SUPER_BLOCK";
+    case LEX2::YYEMPTY:
+    case LEX2::YYEOF:
+    case LEX2::YYerror:
+    case LEX2::YYUNDEF: break;
     }
     return token_id == LEX2_EOF? "<EOF>": "<UNEXPECTED>";
 }
@@ -176,7 +180,7 @@ auto scan(flex_string_view_t &d, void *yyscanner) {
 
 Lex2_t::Lex2_t(const Configuration_t *params, bool utf8, Error_t &err)
   : yyscanner(nullptr), buffer(nullptr), err(err), params(params), utf8(utf8),
-    pos(), token_pos(), token_ipos(nullptr), directive(empty_directive),
+    token_ipos(nullptr), directive(empty_directive),
     current_start_condition(INITIAL)
 {
     if (teng_lex_init(&yyscanner))

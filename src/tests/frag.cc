@@ -36,7 +36,7 @@
 
 #include <teng/teng.h>
 
-#include "catch.hpp"
+#include "catch2/catch_test_macros.hpp"
 #include "utils.h"
 
 #include <sstream>
@@ -238,7 +238,7 @@ SCENARIO(
         WHEN("Generated with empty parent fragment") {
             Teng::Error_t err;
             Teng::Fragment_t root;
-            auto &parent = root.addFragment("parent");
+            root.addFragment("parent");
             auto result = g(err, t, root);
 
             THEN("It contains data from parent fragment") {
@@ -358,7 +358,7 @@ SCENARIO(
         WHEN("Generated with empty parent fragment") {
             Teng::Error_t err;
             Teng::Fragment_t root;
-            auto &parent = root.addFragment("parent");
+            root.addFragment("parent");
             auto result = g(err, t, root);
 
             THEN("It contains data from 'both' parent fragments") {
@@ -735,8 +735,8 @@ SCENARIO(
             Teng::Error_t err;
             Teng::Fragment_t root;
             auto &a = root.addFragment("a");
-            auto &r = a.addFragment("r");
-            auto &er = a.addFragment("er");
+            a.addFragment("r");
+            a.addFragment("er");
             auto result = g(err, t, root);
 
             THEN("The path of undefined variable is valid") {

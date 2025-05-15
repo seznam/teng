@@ -126,7 +126,7 @@ public:
         Value_t value = std::move(stack.back());
         stack.pop_back();
         return value;
-    };
+    }
 
 protected:
     std::vector<Value_t> &stack; //!< where are arguments stored
@@ -134,27 +134,27 @@ protected:
 
 /** Returns position of instruction in template source.
  */
-Pos_t position(const Instruction_t *instr) {
+inline Pos_t position(const Instruction_t *instr) {
     return instr? instr->pos(): Pos_t();
 }
 
 /** Writes fatal message to log.
  */
-void logFatal(EvalCtx_t &ctx, const std::string &msg) {
+inline void logFatal(EvalCtx_t &ctx, const std::string &msg) {
     if (ctx.log_suppressed) return;
     logFatal(ctx.err, position(ctx.instr), "Runtime: " + msg);
 }
 
 /** Writes error message to log.
  */
-void logError(EvalCtx_t &ctx, const std::string &msg) {
+inline void logError(EvalCtx_t &ctx, const std::string &msg) {
     if (ctx.log_suppressed) return;
     logError(ctx.err, position(ctx.instr), "Runtime: " + msg);
 }
 
 /** Writes warning message to log.
  */
-void logWarning(EvalCtx_t &ctx, const std::string &msg) {
+inline void logWarning(EvalCtx_t &ctx, const std::string &msg) {
     if (ctx.log_suppressed) return;
     logWarning(ctx.err, position(ctx.instr), "Runtime: " + msg);
 }

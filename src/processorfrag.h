@@ -71,7 +71,7 @@ void warn(Ctx_t ctx, const string_view_t &msg) {
 
 /** Implementation of the variable lookup.
  */
-Result_t var(RunCtxPtr_t ctx, bool escape) {
+inline Result_t var(RunCtxPtr_t ctx, bool escape) {
     auto &instr = ctx->instr->as<Var_t>();
 
     // if variable does not exist then return empty string
@@ -99,7 +99,7 @@ Result_t var(RunCtxPtr_t ctx, bool escape) {
 
 /** Set variable value.
  */
-void set_var(RunCtxPtr_t ctx, GetArg_t get_arg) {
+inline void set_var(RunCtxPtr_t ctx, GetArg_t get_arg) {
     auto &instr = ctx->instr->as<Set_t>();
     if (!ctx->frames.set_var(instr, get_arg())) {
         warn(
@@ -112,20 +112,20 @@ void set_var(RunCtxPtr_t ctx, GetArg_t get_arg) {
 
 /** Opens new frame.
  */
-void open_frame(RunCtxPtr_t ctx) {
+inline void open_frame(RunCtxPtr_t ctx) {
     ctx->frames.open_frame();
 }
 
 /** Closes the most recent frame.
  */
-void close_frame(RunCtxPtr_t ctx) {
+inline void close_frame(RunCtxPtr_t ctx) {
     ctx->frames.close_frame();
 }
 
 /** Open new fragment in current frame if there is at least one frag of such
  * name or jump over frag block.
  */
-int64_t open_frag(RunCtxPtr_t ctx) {
+inline int64_t open_frag(RunCtxPtr_t ctx) {
     auto &instr = ctx->instr->as<OpenFrag_t>();
     return ctx->frames.open_frag(instr.name)
         ? 0
@@ -134,7 +134,7 @@ int64_t open_frag(RunCtxPtr_t ctx) {
 
 /** Open error fragment in current frame.
  */
-int64_t open_error_frag(RunCtxPtr_t ctx) {
+inline int64_t open_error_frag(RunCtxPtr_t ctx) {
     auto &instr = ctx->instr->as<OpenErrorFrag_t>();
     auto enabled = ctx->params.isErrorFragmentEnabled();
     return enabled && ctx->frames.open_error_frag(ctx->err.getFrags())
@@ -144,7 +144,7 @@ int64_t open_error_frag(RunCtxPtr_t ctx) {
 
 /** Pop frag from top of the stack of open frags.
  */
-int64_t close_frag(RunCtxPtr_t ctx) {
+inline int64_t close_frag(RunCtxPtr_t ctx) {
     auto &instr = ctx->instr->as<CloseFrag_t>();
     return ctx->frames.next_frag()
         ? instr.open_frag_offset
@@ -153,7 +153,7 @@ int64_t close_frag(RunCtxPtr_t ctx) {
 
 /** Returns the number of fragments in current opened fragment list.
  */
-Result_t frag_count(RunCtxPtr_t ctx) {
+inline Result_t frag_count(RunCtxPtr_t ctx) {
     auto &instr = ctx->instr->as<PushFragCount_t>();
     if (auto list_pos = ctx->frames.get_list_pos(instr))
         return Result_t(list_pos.size);
@@ -163,7 +163,7 @@ Result_t frag_count(RunCtxPtr_t ctx) {
 
 /** Returns the number of fragments in current opened fragment list.
  */
-Result_t frag_count(RunCtxPtr_t ctx, GetArg_t get_arg) {
+inline Result_t frag_count(RunCtxPtr_t ctx, GetArg_t get_arg) {
     auto &instr = ctx->instr->as<PushValCount_t>();
     auto arg = get_arg();
     switch (arg.type()) {
@@ -174,7 +174,7 @@ Result_t frag_count(RunCtxPtr_t ctx, GetArg_t get_arg) {
     case Value_t::tag::frag_ref:
         if (ctx->frames.root_frag()->fragment() == arg.as_frag_ref().ptr)
             return Result_t(1); // (backward compatibility)
-        // pass through
+        [[fallthrough]];
     default:
         warn(
             ctx,
@@ -189,7 +189,7 @@ Result_t frag_count(RunCtxPtr_t ctx, GetArg_t get_arg) {
 
 /** Returns index of current fragmnet in opened fragment list.
  */
-Result_t frag_index(RunCtxPtr_t ctx) {
+inline Result_t frag_index(RunCtxPtr_t ctx) {
     auto &instr = ctx->instr->as<PushFragIndex_t>();
     if (auto list_pos = ctx->frames.get_list_pos(instr))
         return Result_t(list_pos.i);
@@ -199,7 +199,7 @@ Result_t frag_index(RunCtxPtr_t ctx) {
 
 /** Returns index of current fragmnet in opened fragment list.
  */
-Result_t frag_index(RunCtxPtr_t ctx, GetArg_t get_arg) {
+inline Result_t frag_index(RunCtxPtr_t ctx, GetArg_t get_arg) {
     auto &instr = ctx->instr->as<PushValIndex_t>();
     auto arg = get_arg();
     switch (arg.type()) {
@@ -228,7 +228,7 @@ Result_t frag_index(RunCtxPtr_t ctx, GetArg_t get_arg) {
     case Value_t::tag::frag_ref:
         if (ctx->frames.root_frag()->fragment() == arg.as_frag_ref().ptr)
             return Result_t(0); // (backward compatibility)
-        // pass through
+        [[fallthrough]];
     default:
         warn(
             ctx,
@@ -243,7 +243,7 @@ Result_t frag_index(RunCtxPtr_t ctx, GetArg_t get_arg) {
 
 /** Returns true if current fragment is the first in opened fragment list.
  */
-Result_t is_first_frag(RunCtxPtr_t ctx) {
+inline Result_t is_first_frag(RunCtxPtr_t ctx) {
     auto &instr = ctx->instr->as<PushFragFirst_t>();
     if (auto list_pos = ctx->frames.get_list_pos(instr))
         return Result_t(list_pos.i == 0);
@@ -253,7 +253,7 @@ Result_t is_first_frag(RunCtxPtr_t ctx) {
 
 /** Returns true if current fragment is the first in opened fragment list.
  */
-Result_t is_first_frag(RunCtxPtr_t ctx, GetArg_t get_arg) {
+inline Result_t is_first_frag(RunCtxPtr_t ctx, GetArg_t get_arg) {
     auto &instr = ctx->instr->as<PushValFirst_t>();
     auto arg = get_arg();
     switch (arg.type()) {
@@ -282,7 +282,7 @@ Result_t is_first_frag(RunCtxPtr_t ctx, GetArg_t get_arg) {
     case Value_t::tag::frag_ref:
         if (ctx->frames.root_frag()->fragment() == arg.as_frag_ref().ptr)
             return Result_t(1); // (backward compatibility)
-        // pass through
+        [[fallthrough]];
     default:
         warn(
             ctx,
@@ -297,7 +297,7 @@ Result_t is_first_frag(RunCtxPtr_t ctx, GetArg_t get_arg) {
 
 /** Returns true if current fragment is the last in opened fragment list.
  */
-Result_t is_last_frag(RunCtxPtr_t ctx) {
+inline Result_t is_last_frag(RunCtxPtr_t ctx) {
     auto &instr = ctx->instr->as<PushFragLast_t>();
     if (auto list_pos = ctx->frames.get_list_pos(instr))
         return Result_t((list_pos.i + 1) == list_pos.size);
@@ -307,7 +307,7 @@ Result_t is_last_frag(RunCtxPtr_t ctx) {
 
 /** Returns true if current fragment is the last in opened fragment list.
  */
-Result_t is_last_frag(RunCtxPtr_t ctx, GetArg_t get_arg) {
+inline Result_t is_last_frag(RunCtxPtr_t ctx, GetArg_t get_arg) {
     auto &instr = ctx->instr->as<PushValLast_t>();
     auto arg = get_arg();
     switch (arg.type()) {
@@ -339,7 +339,7 @@ Result_t is_last_frag(RunCtxPtr_t ctx, GetArg_t get_arg) {
     case Value_t::tag::frag_ref:
         if (ctx->frames.root_frag()->fragment() == arg.as_frag_ref().ptr)
             return Result_t(1); // (backward compatibility)
-        // pass through
+        [[fallthrough]];
     default:
         warn(
             ctx,
@@ -354,7 +354,7 @@ Result_t is_last_frag(RunCtxPtr_t ctx, GetArg_t get_arg) {
 
 /** Returns true if the current fragment is not the first neither the last.
  */
-Result_t is_inner_frag(RunCtxPtr_t ctx) {
+inline Result_t is_inner_frag(RunCtxPtr_t ctx) {
     auto &instr = ctx->instr->as<PushFragInner_t>();
     if (auto list_pos = ctx->frames.get_list_pos(instr))
         return Result_t((list_pos.i > 0) && ((list_pos.i + 1) < list_pos.size));
@@ -364,7 +364,7 @@ Result_t is_inner_frag(RunCtxPtr_t ctx) {
 
 /** Returns true if the current fragment is not the first neither the last.
  */
-Result_t is_inner_frag(RunCtxPtr_t ctx, GetArg_t get_arg) {
+inline Result_t is_inner_frag(RunCtxPtr_t ctx, GetArg_t get_arg) {
     auto &instr = ctx->instr->as<PushValInner_t>();
     auto arg = get_arg();
     switch (arg.type()) {
@@ -396,7 +396,7 @@ Result_t is_inner_frag(RunCtxPtr_t ctx, GetArg_t get_arg) {
     case Value_t::tag::frag_ref:
         if (ctx->frames.root_frag()->fragment() == arg.as_frag_ref().ptr)
             return Result_t(0); // (backward compatibility)
-        // pass through
+        [[fallthrough]];
     default:
         warn(
             ctx,
@@ -412,22 +412,22 @@ Result_t is_inner_frag(RunCtxPtr_t ctx, GetArg_t get_arg) {
 /** Pushes root frag (regardless of the name it can be any value) to value
  * stack.
  */
-Result_t push_root_frag(EvalCtx_t *ctx) {
+inline Result_t push_root_frag(EvalCtx_t *ctx) {
     auto &instr = ctx->instr->as<PushRootFrag_t>();
-    return Result_t(ctx->frames_ptr->value_at(0, instr.root_frag_offset));
+    return ctx->frames_ptr->value_at(0, instr.root_frag_offset);
 }
 
 /** Pushes this frag (regardless of the name it can be any value) to value
  * stack.
  */
-Result_t push_this_frag(EvalCtx_t *ctx) {
-    return Result_t(ctx->frames_ptr->value_at(0, 0));
+inline Result_t push_this_frag(EvalCtx_t *ctx) {
+    return ctx->frames_ptr->value_at(0, 0);
 }
 
 /** Pushes error fragment on value stack. Error fragment is stored in current
  * open fragment and create only if it does not exists.
  */
-Result_t push_error_frag(RunCtxPtr_t ctx, GetArg_t get_arg) {
+inline Result_t push_error_frag(RunCtxPtr_t ctx, GetArg_t get_arg) {
     auto &instr = ctx->instr->as<PushErrorFrag_t>();
     if (instr.discard_stack_value)
         get_arg();
@@ -435,12 +435,12 @@ Result_t push_error_frag(RunCtxPtr_t ctx, GetArg_t get_arg) {
         return Result_t();
     if (!ctx->frames.current_error_frag())
         ctx->frames.store_error_frag(ctx->err.getFrags());
-    return Result_t(ctx->frames.current_error_frag());
+    return ctx->frames.current_error_frag();
 }
 
 /** Pushes the frag (regardless of the name it can be any value) to value stack.
  */
-Result_t push_frag(RunCtxPtr_t ctx) {
+inline Result_t push_frag(RunCtxPtr_t ctx) {
     auto &instr = ctx->instr->as<PushFrag_t>();
 
     // we have to lookup variable in current frame and current frag
@@ -457,9 +457,7 @@ Result_t push_frag(RunCtxPtr_t ctx) {
     // if there is no variable of such name then return frag at given offsets
     // note that no name is needed because the instruction is intended to
     // accessing yet open fragments
-    return Result_t(
-        ctx->frames_ptr->value_at(instr.frame_offset, instr.frag_offset)
-    );
+    return ctx->frames_ptr->value_at(instr.frame_offset, instr.frag_offset);
 }
 
 /** If current value on value stack is fragment or item of list that is
@@ -524,7 +522,7 @@ Result_t push_attr(Ctx_t *ctx, GetArg_t get_arg) {
 
 /** Push frag attribute to value stack.
  */
-Result_t push_attr_at(EvalCtx_t *ctx, GetArg_t get_arg) {
+inline Result_t push_attr_at(EvalCtx_t *ctx, GetArg_t get_arg) {
     auto index = get_arg();
     auto arg = get_arg();
 
@@ -612,7 +610,7 @@ Result_t push_attr_at(EvalCtx_t *ctx, GetArg_t get_arg) {
 
 /** Pops the last segment of path.
  */
-Result_t pop_attr(EvalCtx_t *ctx, GetArg_t get_arg) {
+inline Result_t pop_attr(EvalCtx_t *ctx, GetArg_t get_arg) {
     warn(ctx, "Not implemented yet - _parent segment ignored");
     return get_arg();
 }
@@ -620,7 +618,7 @@ Result_t pop_attr(EvalCtx_t *ctx, GetArg_t get_arg) {
 /** Applies current escaping on the string values and other values left
  * untouched.
  */
-Result_t repr(EvalCtx_t *ctx, GetArg_t get_arg) {
+inline Result_t repr(EvalCtx_t *ctx, GetArg_t get_arg) {
     auto arg = get_arg();
     switch (arg.type()) {
     case Value_t::tag::string:
@@ -643,21 +641,21 @@ Result_t repr(EvalCtx_t *ctx, GetArg_t get_arg) {
 /** Applies current escaping on the string values and other values left
  * untouched.
  */
-Result_t query_repr(EvalCtx_t *ctx, GetArg_t get_arg) {
+inline Result_t query_repr(EvalCtx_t *ctx, GetArg_t get_arg) {
     --ctx->log_suppressed;
     return repr(ctx, get_arg);
 }
 
 /** Returns the number of elements in the fragment list.
  */
-Result_t query_count(RunCtxPtr_t ctx, GetArg_t get_arg) {
+inline Result_t query_count(RunCtxPtr_t ctx, GetArg_t get_arg) {
     --ctx->log_suppressed;
     auto arg = get_arg();
     switch (arg.type()) {
     case Value_t::tag::frag_ref:
         if (ctx->frames.root_frag()->fragment() == arg.as_frag_ref().ptr)
             return Result_t(1); // (backward compatibility)
-        // pass through
+        [[fallthrough]];
     case Value_t::tag::string:
     case Value_t::tag::string_ref:
     case Value_t::tag::integral:
@@ -679,7 +677,7 @@ Result_t query_count(RunCtxPtr_t ctx, GetArg_t get_arg) {
 
 /** Returns the type of desired argument.
  */
-Result_t query_type(RunCtxPtr_t ctx, GetArg_t get_arg) {
+inline Result_t query_type(RunCtxPtr_t ctx, GetArg_t get_arg) {
     --ctx->log_suppressed;
     return Result_t(get_arg().type_str());
 }
@@ -696,7 +694,7 @@ Result_t query_type(RunCtxPtr_t ctx, GetArg_t get_arg) {
  * >>> t.generatePage(templateString="${defined($$b)}", data={'b':''})['output']
  * '1'
  */
-Result_t query_defined(RunCtxPtr_t ctx, GetArg_t get_arg) {
+inline Result_t query_defined(RunCtxPtr_t ctx, GetArg_t get_arg) {
     --ctx->log_suppressed;
     auto arg = get_arg();
     switch (arg.type()) {
@@ -718,7 +716,7 @@ Result_t query_defined(RunCtxPtr_t ctx, GetArg_t get_arg) {
 
 /** Returns true if object exists.
  */
-Result_t query_exists(EvalCtx_t *ctx, GetArg_t get_arg) {
+inline Result_t query_exists(EvalCtx_t *ctx, GetArg_t get_arg) {
     --ctx->log_suppressed;
     auto arg = get_arg();
     return ctx->frames_ptr->exists(arg);
@@ -726,7 +724,7 @@ Result_t query_exists(EvalCtx_t *ctx, GetArg_t get_arg) {
 
 /** Returns true if frag or fraglist is empty.
  */
-Result_t query_isempty(RunCtxPtr_t ctx, GetArg_t get_arg) {
+inline Result_t query_isempty(RunCtxPtr_t ctx, GetArg_t get_arg) {
     --ctx->log_suppressed;
     auto arg = get_arg();
     switch (arg.type()) {
@@ -753,7 +751,7 @@ Result_t query_isempty(RunCtxPtr_t ctx, GetArg_t get_arg) {
 
 /** Returns true if arg is undefined.
  */
-Result_t query_isundefined(RunCtxPtr_t ctx, GetArg_t get_arg) {
+inline Result_t query_isundefined(RunCtxPtr_t ctx, GetArg_t get_arg) {
     --ctx->log_suppressed;
     auto arg = get_arg();
     return Result_t(arg.is_undefined());
@@ -761,7 +759,7 @@ Result_t query_isundefined(RunCtxPtr_t ctx, GetArg_t get_arg) {
 
 /** Returns true if arg is integral.
  */
-Result_t query_isintegral(RunCtxPtr_t ctx, GetArg_t get_arg) {
+inline Result_t query_isintegral(RunCtxPtr_t ctx, GetArg_t get_arg) {
     --ctx->log_suppressed;
     auto arg = get_arg();
     return Result_t(arg.is_integral());
@@ -769,7 +767,7 @@ Result_t query_isintegral(RunCtxPtr_t ctx, GetArg_t get_arg) {
 
 /** Returns true if arg is real.
  */
-Result_t query_isreal(RunCtxPtr_t ctx, GetArg_t get_arg) {
+inline Result_t query_isreal(RunCtxPtr_t ctx, GetArg_t get_arg) {
     --ctx->log_suppressed;
     auto arg = get_arg();
     return Result_t(arg.is_real());
@@ -777,7 +775,7 @@ Result_t query_isreal(RunCtxPtr_t ctx, GetArg_t get_arg) {
 
 /** Returns true if arg is string.
  */
-Result_t query_isstring(RunCtxPtr_t ctx, GetArg_t get_arg) {
+inline Result_t query_isstring(RunCtxPtr_t ctx, GetArg_t get_arg) {
     --ctx->log_suppressed;
     auto arg = get_arg();
     return Result_t(arg.is_string());
@@ -785,7 +783,7 @@ Result_t query_isstring(RunCtxPtr_t ctx, GetArg_t get_arg) {
 
 /** Returns true if arg is fragment.
  */
-Result_t query_isfrag(RunCtxPtr_t ctx, GetArg_t get_arg) {
+inline Result_t query_isfrag(RunCtxPtr_t ctx, GetArg_t get_arg) {
     --ctx->log_suppressed;
     auto arg = get_arg();
     return Result_t(arg.is_frag_ref());
@@ -793,7 +791,7 @@ Result_t query_isfrag(RunCtxPtr_t ctx, GetArg_t get_arg) {
 
 /** Returns true if arg is list.
  */
-Result_t query_isfraglist(RunCtxPtr_t ctx, GetArg_t get_arg) {
+inline Result_t query_isfraglist(RunCtxPtr_t ctx, GetArg_t get_arg) {
     --ctx->log_suppressed;
     auto arg = get_arg();
     return Result_t(arg.is_list_ref());
@@ -801,7 +799,7 @@ Result_t query_isfraglist(RunCtxPtr_t ctx, GetArg_t get_arg) {
 
 /** Returns true if arg is regular expression.
  */
-Result_t query_isregex(RunCtxPtr_t ctx, GetArg_t get_arg) {
+inline Result_t query_isregex(RunCtxPtr_t ctx, GetArg_t get_arg) {
     --ctx->log_suppressed;
     auto arg = get_arg();
     return Result_t(arg.is_regex());

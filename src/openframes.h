@@ -45,8 +45,9 @@
 
 #include "teng/error.h"
 #include "teng/value.h"
-#include "teng/structs.h"
+#include "teng/fragment.h"
 #include "teng/stringview.h"
+#include "teng/fragmentvalue.h"
 #include "openframesapi.h"
 
 namespace Teng {
@@ -219,9 +220,9 @@ inline ListPos_t get_list_pos_impl(const Value_t &self) {
 /** The frame of open frags.
  */
 struct FrameRec_t {
-    FrameRec_t(const FragmentValue_t *root)
-        : open_frags()
-    {open_frags.emplace_back(root);}
+    FrameRec_t(const FragmentValue_t *root) {
+        open_frags.emplace_back(root);
+    }
 
     /** Returns true if fragment has been opened.
      */
@@ -305,7 +306,7 @@ struct FrameRec_t {
         std::string result;
         auto count = open_frags.size() - var.frag_offset;
         for (uint64_t i = 1/*skip root frag*/; i < count; ++i) {
-            auto &frag_name = open_frags[i].name;
+            const auto &frag_name = open_frags[i].name;
             result.push_back('.');
             result.append(frag_name.data(), frag_name.size());
         }
@@ -418,7 +419,7 @@ struct FrameRec_t {
         if (frag_offset >= open_frags.size())
             throw std::runtime_error(__PRETTY_FUNCTION__);
         auto i = open_frags.size() - frag_offset - 1;
-        return Value_t(get_value_at(open_frags[i].frag));
+        return get_value_at(open_frags[i].frag);
     }
 
     /** Returns open fragments joined by dot.
@@ -459,19 +460,19 @@ protected:
         /** C'tor: for root frag.
          */
         FragRec_t(const FragmentValue_t *root)
-            : frag(root), locals(), name(), error_frag()
+            : frag(root)
         {}
 
         /** C'tor: for regular fragments.
          */
         FragRec_t(const string_view_t &name, Value_t frag)
-            : frag(std::move(frag)), locals(), name(name), error_frag()
+            : frag(std::move(frag)), name(name)
         {}
 
         /** C'tor: for error frag.
          */
         FragRec_t(FragmentList_t &&errors)
-            : frag(), locals(), name("_error"),
+            : name("_error"),
               error_frag(std::make_unique<FragmentList_t>(std::move(errors)))
         {frag = Value_t(error_frag.get());}
 
@@ -521,7 +522,7 @@ public:
     /** C'tor.
      */
     OpenFrames_t(const FragmentValue_t *root)
-        : root(root), frames()
+        : root(root)
     {frames.emplace_back(root);}
 
     /** Returns the root fragment.
@@ -675,9 +676,7 @@ public:
         case Value_t::tag::string_ref:
             return value_at(arg, idx.as_string_ref(), ambiguous);
         case Value_t::tag::frag_ref:
-            return Value_t();
         case Value_t::tag::list_ref:
-            return Value_t();
         case Value_t::tag::regex:
             return Value_t();
         }

@@ -42,11 +42,11 @@
 
 namespace Teng {
 
-/** Teng library major version (libtool's CURRENT version component).
+/** Teng library major version.
  */
 #define TENG_MAJOR @TENG_MAJOR@
 
-/** Teng library minor version (libtool's REVISION version component).
+/** Teng library minor version.
  */
 #define TENG_MINOR @TENG_MINOR@
 

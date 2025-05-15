@@ -36,7 +36,7 @@
 
 #include <teng/teng.h>
 
-#include "catch.hpp"
+#include "catch2/catch_test_macros.hpp"
 #include "utils.h"
 
 SCENARIO(
@@ -51,7 +51,7 @@ SCENARIO(
         auto &first = root.addFragment("first");
         auto &second = first.addFragment("second");
         second.addVariable("test", "TEST");
-        auto &third = second.addFragment("third");
+        second.addFragment("third");
         root.addFragment("first");
         root.addFragment("first").addVariable("last_first", "LAST");
 

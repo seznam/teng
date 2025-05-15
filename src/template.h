@@ -150,7 +150,7 @@ private:
         Error_t &err,
         const std::string &configFilename,
         const std::string &dictFilename,
-        unsigned long int *serial = 0
+        uint64_t *serial = nullptr
     );
 
     std::shared_ptr<const FilesystemInterface_t> filesystem;

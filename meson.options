@@ -1,0 +1,2 @@
+option('docs', type : 'boolean', value : false, description : 'generate documentation')
+option('no-udf-locks', type : 'boolean', value : false, description : 'do not use locks for executing User Defined Functions')

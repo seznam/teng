@@ -39,9 +39,7 @@
 #ifndef TENGFP_H
 #define TENGFP_H
 
-#ifdef HAVE_FENV_H
 #include <fenv.h>
-#endif /* HAVE_FENV_H */
 
 namespace Teng {
 
@@ -50,14 +48,10 @@ namespace Teng {
  */
 template <typename fp_calculation_t, typename error_t>
 auto fp_safe(fp_calculation_t calculation, error_t error) {
-#ifdef HAVE_FENV_H
         feclearexcept(FE_ALL_EXCEPT);
-#endif /* HAVE_FENV_H */
         auto result = calculation();
-#ifdef HAVE_FENV_H
         if (fetestexcept(FE_ALL_EXCEPT) & (~FE_INEXACT) & (~FE_INVALID))
             return error();
-#endif /* HAVE_FENV_H */
         return result;
 }
 

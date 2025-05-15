@@ -58,10 +58,10 @@ Result_t val(EvalCtx_t *ctx) {
         case Value_t::tag::regex:
         case Value_t::tag::frag_ref:
         case Value_t::tag::list_ref:
-            return Result_t(instr.value);
+            return instr.value;
         case Value_t::tag::string:
             // saves some allocation, instruction lives longer than value
-            return Result_t(string_view_t(instr.value.string()));
+            return Result_t(instr.value.string());
     }
     throw std::runtime_error(__PRETTY_FUNCTION__);
 }
@@ -74,12 +74,12 @@ Result_t dict(RunCtxPtr_t ctx, GetArg_t get_arg) {
     // dict member?
     if (auto *item = ctx->dict.lookup(arg.string()))
         // saves some allocation, dict lives longer than value
-        return Result_t(string_view_t(*item));
+        return Result_t(*item);
 
     // config member?
     if (auto *item = ctx->params.lookup(arg.string()))
         // saves some allocation, params lives longer than value
-        return Result_t(string_view_t(*item));
+        return Result_t(*item);
 
     logWarning(*ctx, "Dictionary item '" + arg.string() + "' was not found");
     return arg;
@@ -136,7 +136,7 @@ Result_t func(Ctx_t *ctx, GetArg_t get_arg) {
 
     } else {
         // we don't know what udf function does so it can't be optimized out
-        if (!std::is_same<std::decay_t<Ctx_t>, RunCtx_t>::value)
+        if (!std::is_same_v<std::decay_t<Ctx_t>, RunCtx_t>)
             throw runtime_ctx_needed_t();
 
         // user defined functions
@@ -145,7 +145,7 @@ Result_t func(Ctx_t *ctx, GetArg_t get_arg) {
     }
 
     // if function does not exist then rather skip optimization
-    if (!std::is_same<std::decay_t<Ctx_t>, RunCtx_t>::value)
+    if (!std::is_same_v<std::decay_t<Ctx_t>, RunCtx_t>)
         throw runtime_ctx_needed_t{};
 
     // no such function
@@ -273,8 +273,8 @@ int64_t return_impl(std::vector<Value_t> &prg_stack) {
 /** Pushes return address to prg_stack and jumps to subroutine
  */
 int64_t call_impl(EvalCtx_t *ctx, std::vector<Value_t> &prg_stack, int64_t ip) {
-    auto &instr = ctx->instr->template as<Call_t>();
-    prg_stack.push_back(Value_t(ip));
+    const auto &instr = ctx->instr->template as<Call_t>();
+    prg_stack.emplace_back(ip);
     return instr.addr;
 }
 

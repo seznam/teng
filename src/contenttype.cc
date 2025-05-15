@@ -37,30 +37,29 @@
 #include <cctype>
 #include <iomanip>
 #include <cstring>
-#include <memory>
 #include <utility>
 #include <algorithm>
-#include <vector>
 
 #include "contenttype.h"
 
 namespace Teng {
 
 // forward decls of all creators
-ContentType_t* htmlCreator();
-ContentType_t* shellCreator();
-ContentType_t* cCreator();
-ContentType_t* qstringCreator();
-ContentType_t* jshtmlCreator();
-ContentType_t* jsCreator();
-ContentType_t* jsonCreator();
+std::unique_ptr<ContentType_t> htmlCreator();
+std::unique_ptr<ContentType_t> shellCreator();
+std::unique_ptr<ContentType_t> cCreator();
+std::unique_ptr<ContentType_t> qstringCreator();
+std::unique_ptr<ContentType_t> jshtmlCreator();
+std::unique_ptr<ContentType_t> jsCreator();
+std::unique_ptr<ContentType_t> jsonCreator();
 
 namespace {
+
 /**
  * @short Function which creates content type descriptor
  * @return content type descriptor
  */
-typedef ContentType_t* (*Creator_t)();
+using Creator_t = std::unique_ptr<ContentType_t> (*)();
 
 /**
  * @short Entry in table of content type descriptor creating
@@ -110,8 +109,8 @@ static CreatorEntry_t creators[] = {
     }
 };
 
-std::map<std::string, ContentType_t::Descriptor_t*> descriptors;
-std::vector<ContentType_t::Descriptor_t*> descriptorIndex;
+std::map<std::string, std::unique_ptr<ContentType_t::Descriptor_t>> descriptors;
+std::vector<ContentType_t::Descriptor_t *> descriptorIndex;
 
 ContentType_t::Descriptor_t *init_descriptors() {
     using Descriptor_t = ContentType_t::Descriptor_t;
@@ -153,7 +152,7 @@ ContentType_t::Descriptor_t *init_descriptors() {
         descriptors.emplace(icreator->alias, std::move(descriptor));
     }
 
-    return unknown;
+    return descriptorIndex.front();
 }
 
 ContentType_t::Descriptor_t *unknown = init_descriptors();
@@ -366,7 +365,7 @@ void ContentType_t::compileUnescaper() {
 /** @short Create descriptor of HTML/XHTML/XML content type.
  * @return HTML descriptor
  */
-ContentType_t* htmlCreator() {
+std::unique_ptr<ContentType_t> htmlCreator() {
     // create HTML descriptor
     auto html = std::make_unique<ContentType_t>();
 
@@ -387,7 +386,7 @@ ContentType_t* htmlCreator() {
 /** @short Create descriptor of shell.
  * @return shell descriptor
  */
-ContentType_t* shellCreator() {
+std::unique_ptr<ContentType_t> shellCreator() {
     // create SHELL descriptor
     auto shell = std::make_unique<ContentType_t>();
 
@@ -401,7 +400,7 @@ ContentType_t* shellCreator() {
 /** @short Create descriptor of C language.
  * @return C descriptor
  */
-ContentType_t* cCreator() {
+std::unique_ptr<ContentType_t> cCreator() {
     // create C descriptor
     auto c = std::make_unique<ContentType_t>();
 
@@ -415,9 +414,9 @@ ContentType_t* cCreator() {
 /** @short Create descriptor of quoted string.
  * @return quoted string descriptor
  */
-ContentType_t* qstringCreator() {
+std::unique_ptr<ContentType_t> qstringCreator() {
     // create quoted-string descriptor
-    ContentType_t *qs = new ContentType_t();
+    auto qs = std::make_unique<ContentType_t>();
 
     qs->addEscape('\\', "\\\\");
     qs->addEscape('\n', "\\n");
@@ -438,9 +437,9 @@ ContentType_t* qstringCreator() {
 /** @short Create descriptor of quoted string.
  * @return quoted string descriptor
  */
-ContentType_t* jshtmlCreator() {
+std::unique_ptr<ContentType_t> jshtmlCreator() {
     // create quoted-string descriptor
-    ContentType_t *jshtml = new ContentType_t();
+    auto jshtml = std::make_unique<ContentType_t>();
 
     jshtml->addEscape('\\', "\\\\");
     jshtml->addEscape('\n', "\\n");
@@ -464,9 +463,9 @@ ContentType_t* jshtmlCreator() {
 /** @short Create descriptor of quoted string.
  * @return quoted string descriptor
  */
-ContentType_t* jsCreator() {
+std::unique_ptr<ContentType_t> jsCreator() {
     // create quoted-string descriptor
-    ContentType_t *js = new ContentType_t();
+    auto js = std::make_unique<ContentType_t>();
 
     js->addEscape('\\', "\\\\");
     js->addEscape('\n', "\\n");
@@ -485,9 +484,9 @@ ContentType_t* jsCreator() {
     return js;
 }
 
-ContentType_t* jsonCreator() {
+std::unique_ptr<ContentType_t> jsonCreator() {
     // create quoted-string descriptor
-    ContentType_t *js = new ContentType_t();
+    auto js = std::make_unique<ContentType_t>();
 
     js->addEscape('"', "\\\"");
     js->addEscape('\\', "\\\\");
@@ -500,7 +499,8 @@ ContentType_t* jsonCreator() {
 
     for (unsigned char i = 0; i <= 0x1F; ++i) {
         std::stringstream ss;
-        ss << "\\u" << std::hex << std::uppercase <<  std::setfill('0') << std::setw(4) << std::hex << i;
+        ss << "\\u" << std::hex << std::uppercase
+           <<  std::setfill('0') << std::setw(4) << std::hex << i;
         js->addEscape(i, ss.str());
     }
 

@@ -123,7 +123,7 @@ public:
      */
     template <
         typename type_t,
-        std::enable_if_t<std::is_integral<type_t>::value, bool> = true
+        std::enable_if_t<std::is_integral_v<type_t>, bool> = true
     > explicit Value_t(type_t value) noexcept
         : tag_value(tag::integral), integral_value(value)
     {}
@@ -132,7 +132,7 @@ public:
      */
     template <
         typename type_t,
-        std::enable_if_t<std::is_floating_point<type_t>::value, bool> = true
+        std::enable_if_t<std::is_floating_point_v<type_t>, bool> = true
     > explicit Value_t(type_t value) noexcept
         : tag_value(tag::real), real_value(value)
     {}
@@ -344,6 +344,7 @@ public:
             break;
         case tag::regex:
             dispose_regex(regex_value);
+            [[fallthrough]];
         default:
             new (&string_value) string_type(std::move(value));
             tag_value = tag::string;
@@ -411,6 +412,7 @@ public:
             break;
         case tag::string:
             string_value.~string_type();
+            [[fallthrough]];
         default:
             new (&regex_value) regex_type(std::move(value));
             tag_value = tag::regex;

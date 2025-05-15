@@ -263,6 +263,7 @@ void DictParser_t::parse(type1_t new_directive, type2_t new_entry) {
         default:
             last_inserted_value = nullptr;
             logWarning(err, pos, "Illegal identifier: line=" + line.str());
+            break;
         }
     }
 }
@@ -274,8 +275,8 @@ void DictParser_t::process_directive(
     string_view_t line
 ) {
     // space splits name and value
-    auto iline = line.begin() + 1; // skip leading '%' character
-    auto ivalue = std::find_if(iline, line.end(), isspace);
+    const auto *iline = line.begin() + 1; // skip leading '%' character
+    const auto *ivalue = std::find_if(iline, line.end(), isspace);
 
     // prepare directive name and value
     string_view_t name = {iline, ivalue};
@@ -343,20 +344,27 @@ DictParser_t::parse_entry_value(string_view_t value, Pos_t value_pos) {
             switch (*ivalue) {
             case 'n':
                 result.push_back('\n');
+                break;
             case 'r':
                 result.push_back('\r');
+                break;
             case 't':
                 result.push_back('\t');
+                break;
             case 'v':
                 result.push_back('\v');
+                break;
             case '\\':
                 result.push_back('\\');
+                break;
             case '"':
                 result.push_back('"');
+                break;
             default:
                 // other chars are not allowed to be escaped
                 logWarning(err, make_pos(ivalue), "Invalid escape sequence");
                 result.push_back(*ivalue);
+                break;
             }
             break;
 

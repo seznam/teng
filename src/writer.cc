@@ -68,9 +68,8 @@ int StringWriter_t::write(const std::string &, StringSpan_t interval) {
 }
 
 FileWriter_t::FileWriter_t(const std::string &filename)
-    : Writer_t(), file(0), borrowed(false)
+    : file(fopen(filename.c_str(), "w")), borrowed(false)
 {
-    file = fopen(filename.c_str(), "w");
     if (!file && err) {
         logFatal(
             *err,
