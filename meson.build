@@ -19,7 +19,6 @@ dependencies = [
   dependency('dl', required: false),
   dependency('libpcre2-8'),
   dependency('glib-2.0'),
-  dependency('boost', modules: ['system', 'filesystem']),
 ]
 
 includes = include_directories(
