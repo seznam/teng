@@ -42,7 +42,7 @@
 #define SRC_DIR "."
 #endif /* SRC_DIR */
 
-#define TEST_ROOT SRC_DIR "/src/tests/"
+#define TEST_ROOT SRC_DIR "/tests/"
 
 using Catch::Approx;
 

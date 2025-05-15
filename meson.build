@@ -153,34 +153,34 @@ sources = [
 ]
 
 test_sources = [
-  'src/tests/builtin-vars.cc',
-  'src/tests/cond.cc',
-  'src/tests/ctype.cc',
-  'src/tests/debug.cc',
-  'src/tests/dict.cc',
-  'src/tests/expr-case.cc',
-  'src/tests/expr-int.cc',
-  'src/tests/expr-other.cc',
-  'src/tests/expr-real.cc',
-  'src/tests/expr-regex.cc',
-  'src/tests/expr-string.cc',
-  'src/tests/expr-tern.cc',
-  'src/tests/format.cc',
-  'src/tests/frag.cc',
-  'src/tests/fun-date.cc',
-  'src/tests/fun-escaping.cc',
-  'src/tests/fun-number.cc',
-  'src/tests/fun-other.cc',
-  'src/tests/fun-string.cc',
-  'src/tests/fuzz.cc',
-  'src/tests/incl.cc',
-  'src/tests/inheritance.cc',
-  'src/tests/old.cc',
-  'src/tests/queries.cc',
-  'src/tests/rtvars.cc',
-  'src/tests/simple.cc',
-  'src/tests/vars.cc',
-  'src/tests/utils.h',
+  'tests/builtin-vars.cc',
+  'tests/cond.cc',
+  'tests/ctype.cc',
+  'tests/debug.cc',
+  'tests/dict.cc',
+  'tests/expr-case.cc',
+  'tests/expr-int.cc',
+  'tests/expr-other.cc',
+  'tests/expr-real.cc',
+  'tests/expr-regex.cc',
+  'tests/expr-string.cc',
+  'tests/expr-tern.cc',
+  'tests/format.cc',
+  'tests/frag.cc',
+  'tests/fun-date.cc',
+  'tests/fun-escaping.cc',
+  'tests/fun-number.cc',
+  'tests/fun-other.cc',
+  'tests/fun-string.cc',
+  'tests/fuzz.cc',
+  'tests/incl.cc',
+  'tests/inheritance.cc',
+  'tests/old.cc',
+  'tests/queries.cc',
+  'tests/rtvars.cc',
+  'tests/simple.cc',
+  'tests/vars.cc',
+  'tests/utils.h',
 ]
 
 generated_sources = []
@@ -337,7 +337,7 @@ test(
   executable(
     'test-teng',
     test_sources,
-    include_directories: [includes, 'src/tests'],
+    include_directories: [includes, 'tests'],
     dependencies: [
       libteng_dep,
       catch2_with_main_dep,
@@ -345,59 +345,6 @@ test(
     install: false
   ),
 )
-
-# test_ssl = executable(
-#   'server',
-#   test_ssl_sources,
-#   dependencies: libmtd_dep,
-#   install: false)
-#
-# run_sh = find_program(
-#   meson.current_source_dir() + '/test/ssl/run.sh'
-# )
-#
-# conf_data = configuration_data()
-# conf_data.set('TEST_DIR', meson.current_build_dir())
-# configure_file(
-#   output: 'mtd.conf',
-#   input: 'test/ssl/mtd.conf.in',
-#   configuration : conf_data
-# )
-#
-# test(
-#   'test_ssl',
-#   run_sh,
-#   depends: test_ssl,
-#   timeout: 240,
-#   env: [
-#     'TEST_DIR=' + meson.current_source_dir(),
-#     'EXE_DIR=' + meson.current_build_dir()
-#   ],
-#   is_parallel : false
-# )
-#
-# test_network = executable(
-#   'server-network',
-#   test_network_sources,
-#   dependencies: libmtd_dep,
-#   install: false
-# )
-#
-# run_network_sh = find_program(
-#   meson.current_source_dir() + '/test/network/run.sh'
-# )
-#
-# test(
-#   'test_network',
-#   run_network_sh,
-#   depends: test_network,
-#   timeout: 20,
-#   env: [
-#     'TEST_DIR=' + meson.current_source_dir(),
-#     'EXE_DIR=' + meson.current_build_dir(),
-#     'SOURCE_DIR=' + meson.project_source_root()
-#   ]
-# )
 
 clang_tidy = find_program('clang-tidy', required: false)
 if clang_tidy.found()
