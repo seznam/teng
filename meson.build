@@ -197,7 +197,7 @@ generated_sources += custom_target(
   install_dir: 'include/teng',
   install: true,
   command: [
-    'python',
+    'python3',
     '-c',
     'import sys, os;'
     + 'cdata = open(sys.argv[1], "r").read();'
