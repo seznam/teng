@@ -4,7 +4,7 @@ It's not in active development, but it works and is used in production.
 
 # Doc
 
-Doc is available unfortunately only in Czech language, accessible in intranet.
+Doc is available unfortunately only in intranet.
 
 # Versions
 
