@@ -39,7 +39,7 @@
 #define TENGCONFIGURATION_H
 
 #include <iosfwd>
-#include <string>
+#include <cstdint>
 
 #include "dictionary.h"
 
