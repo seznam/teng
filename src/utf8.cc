@@ -38,6 +38,7 @@
 
 #include <memory>
 #include <glib.h>
+#include <cstdint>
 
 #include "utf8.h"
 
