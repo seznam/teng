@@ -44,7 +44,7 @@
 #include <tuple>
 #include <stdexcept>
 #include <algorithm>
-#include <stdexcept>
+#include <cstdint>
 
 #include "util.h"
 #include "teng/error.h"

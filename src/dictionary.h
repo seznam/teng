@@ -43,7 +43,7 @@
 #include <map>
 #include <iosfwd>
 #include <string>
-#include <vector>
+#include <cstdint>
 
 #include "sourcelist.h"
 #include "teng/error.h"
