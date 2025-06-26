@@ -50,8 +50,6 @@
 %option reentrant
 %option prefix="teng_"
 %option noyylineno
-%option outfile="lex2impl.cc"
-%option header-file="lex2impl.h"
 
 /* additional lexer contexes */
 %x bad_number
