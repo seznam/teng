@@ -207,7 +207,9 @@ generated_sources += custom_target(
     + 'open(sys.argv[3] + "/config.h", "w").write(cdata);',
     '@INPUT@',
     '@OUTPUT@',
-    meson.project_build_root() / 'include/teng',
+    meson.project_build_root()
+    / (meson.is_subproject()? 'subprojects' + meson.project_name() : '')
+    / 'include/teng',
     meson.project_version().split('.')[0],
     meson.project_version().split('.')[1],
   ],
