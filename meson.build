@@ -22,6 +22,7 @@ dependencies = [
 ]
 
 includes = include_directories(
+  '.',
   'include',
   'src',
 )
@@ -205,11 +206,10 @@ generated_sources += custom_target(
     + 'open(sys.argv[2], "w").write(cdata);'
     + 'os.makedirs(sys.argv[3] + "", exist_ok=True);'
     + 'open(sys.argv[3] + "/config.h", "w").write(cdata);'
-    + 'print("The config.h file has been generated: {}".format(sys.argv[2]))',
+    + 'print("The config.h file has been generated: {}".format(sys.argv[3]))',
     '@INPUT@',
     '@OUTPUT@',
     meson.project_build_root()
-    / (meson.is_subproject()? 'subprojects' + meson.project_name() : '')
     / 'include/teng',
     meson.project_version().split('.')[0],
     meson.project_version().split('.')[1],
