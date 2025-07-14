@@ -204,7 +204,8 @@ generated_sources += custom_target(
     + 'cdata.replace("@TENG_MINOR@", sys.argv[5]);'
     + 'open(sys.argv[2], "w").write(cdata);'
     + 'os.makedirs(sys.argv[3] + "", exist_ok=True);'
-    + 'open(sys.argv[3] + "/config.h", "w").write(cdata);',
+    + 'open(sys.argv[3] + "/config.h", "w").write(cdata);'
+    + 'print("The config.h file has been generated: {}".format(sys.argv[2]))',
     '@INPUT@',
     '@OUTPUT@',
     meson.project_build_root()
