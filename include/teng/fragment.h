@@ -42,7 +42,7 @@
 #include <cstdint>
 #include <type_traits>
 
-#include <teng/config.h>
+#include <teng/types.h>
 
 namespace Teng {
 

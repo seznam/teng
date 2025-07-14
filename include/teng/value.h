@@ -43,7 +43,6 @@
 #include <string>
 #include <stdexcept>
 
-#include <teng/config.h>
 #include <teng/stringify.h>
 #include <teng/stringview.h>
 #include <teng/counted_ptr.h>

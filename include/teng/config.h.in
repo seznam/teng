@@ -54,10 +54,6 @@ namespace Teng {
  */
 #define TENG_VERSION "@TENG_MAJOR@.@TENG_MINOR@"
 
-/** Integral type used inside teng
- */
-typedef intmax_t IntType_t;
-
 } // namespace Teng
 
 #endif /* TENGVERSION_H */

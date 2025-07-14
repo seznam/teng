@@ -1,4 +1,4 @@
-/*
+/* -*- C++ -*-
  * Teng -- a general purpose templating engine.
  * Copyright (C) 2004  Seznam.cz, a.s.
  *
@@ -21,56 +21,31 @@
  * http://www.seznam.cz, mailto:teng@firma.seznam.cz
  *
  *
+ * $Id: tengconfig.h.in,v 1.1 2007-05-21 15:43:28 vasek Exp $
  *
  * DESCRIPTION
- * User defined functions.
+ * Teng engine.
  *
  * AUTHORS
- * Jan Nemec <jan.nemec@firma.seznam.cz>
  * Vaclav Blazek <blazek@firma.seznam.cz>
- * Michal Bukovsky <michal.bukovsky@firma.seznam.cz>
  *
  * HISTORY
- * 2003-09-26  (jan)
+ * 2007-05-21  (vasek)
  *             Created.
- * 2018-06-07  (burlog)
- *             Rewrite to C++.
  */
 
-#ifndef TENGUDF_H
-#define TENGUDF_H
 
-#include <vector>
-#include <string>
-#include <functional>
+#ifndef TENGTYPES_H
+#define TENGTYPES_H
 
-#include <teng/invoke.h>
+#include <cstdint>
 
 namespace Teng {
-namespace udf {
 
-// List of values are udf arguments.
-using Args_t = FunctionArgs_t;
-using Result_t = FunctionResult_t;
-
-// Type for user defined functions.
-using Function_t = std::function<Result_t(const Args_t &)>;
-
-/**
- * @short Registers user-defined function.
- * @param name name of the function (without udf.prefix)
- * @param udf user-defined callable object
+/** Integral type used inside teng
  */
-void registerFunction(const std::string &name, Function_t udf);
+typedef intmax_t IntType_t;
 
-/**
- * @short finds function in global UDF list, returns pointer or 0
- * @param name name of the function (with udf. prefix)
- */
-Invoker_t<Function_t> findFunction(const std::string &name);
-
-} // namespace udf
 } // namespace Teng
 
-#endif /* TENGUDF_H */
-
+#endif /* TENGTYPES_H */

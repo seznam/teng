@@ -41,8 +41,6 @@
 #include <vector>
 #include <cstdint>
 
-#include <teng/config.h>
-
 namespace Teng {
 
 // forwards

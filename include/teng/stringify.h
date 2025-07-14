@@ -41,8 +41,8 @@
 #include <string>
 #include <cfloat>
 
-#include <teng/config.h>
 #include <teng/stringview.h>
+#include <teng/types.h>
 
 namespace Teng {
 

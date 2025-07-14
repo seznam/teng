@@ -37,7 +37,6 @@
 */
 
 #include "jsonutils.h"
-#include "teng/config.h"
 #include "teng/fragmentvalue.h"
 #include "teng/fragmentlist.h"
 #include "teng/fragment.h"

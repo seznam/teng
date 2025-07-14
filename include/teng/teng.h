@@ -45,7 +45,6 @@
 
 #include <teng/writer.h>
 #include <teng/error.h>
-#include <teng/config.h>
 #include <teng/fragmentvalue.h>
 
 namespace Teng {

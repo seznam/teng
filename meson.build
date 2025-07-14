@@ -201,16 +201,15 @@ generated_sources += custom_target(
     '-c',
     'import sys, os;'
     + 'cdata = open(sys.argv[1], "r").read();'
-    + 'cdata.replace("@TENG_MAJOR@", sys.argv[4]);'
-    + 'cdata.replace("@TENG_MINOR@", sys.argv[5]);'
+    + 'cdata = cdata.replace("@TENG_MAJOR@", sys.argv[4]);'
+    + 'cdata = cdata.replace("@TENG_MINOR@", sys.argv[5]);'
     + 'open(sys.argv[2], "w").write(cdata);'
     + 'os.makedirs(sys.argv[3] + "", exist_ok=True);'
     + 'open(sys.argv[3] + "/config.h", "w").write(cdata);'
     + 'print("The config.h file has been generated: {}".format(sys.argv[3]))',
     '@INPUT@',
     '@OUTPUT@',
-    meson.project_build_root()
-    / 'include/teng',
+    meson.project_build_root() / 'include/teng',
     meson.project_version().split('.')[0],
     meson.project_version().split('.')[1],
   ],

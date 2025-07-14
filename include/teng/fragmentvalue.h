@@ -43,7 +43,6 @@
 #include <vector>
 #include <cstdint>
 
-#include <teng/config.h>
 #include <teng/fragment.h>
 #include <teng/fragmentlist.h>
 

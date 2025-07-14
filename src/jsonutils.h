@@ -39,7 +39,6 @@
 #include <iomanip>
 #include <sstream>
 
-#include "teng/config.h"
 #include "teng/stringview.h"
 
 namespace Teng {
