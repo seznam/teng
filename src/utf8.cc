@@ -36,6 +36,7 @@
  *             Moved from tengfunction.cc.
  */
 
+#include <cstdint>
 #include <memory>
 #include <glib.h>
 #include <cstdint>
@@ -264,4 +265,3 @@ std::string toupper(const string_view_t &str) {
 
 } // namespace utf8
 } // namespace Teng
-
