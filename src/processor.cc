@@ -45,6 +45,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "debug.h"
 #include "instructionpointer.h"
 #include "processorcontext.h"
 #include "processorother.h"
@@ -52,12 +53,6 @@
 #include "processorfrag.h"
 #include "processorops.h"
 #include "processor.h"
-
-#ifdef DEBUG
-#define DBG(...) __VA_ARGS__
-#else /* DEBUG */
-#define DBG(...)
-#endif /* DEBUG */
 
 namespace Teng {
 namespace {

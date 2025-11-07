@@ -36,19 +36,13 @@
  *             Moved from syntax.yy.
  */
 
+#include "debug.h"
 #include "program.h"
 #include "logging.h"
 #include "parserdiag.h"
 #include "instruction.h"
 #include "parsercontext.h"
 #include "semanticcase.h"
-
-#ifdef DEBUG
-#include <iostream>
-#define DBG(...) __VA_ARGS__
-#else /* DEBUG */
-#define DBG(...)
-#endif /* DEBUG */
 
 namespace Teng {
 namespace Parser {

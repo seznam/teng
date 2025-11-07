@@ -38,18 +38,12 @@
 
 #include <string>
 
+#include "debug.h"
 #include "syntax.hh"
 #include "program.h"
 #include "logging.h"
 #include "parsercontext.h"
 #include "semanticif.h"
-
-#ifdef DEBUG
-#include <iostream>
-#define DBG(...) __VA_ARGS__
-#else /* DEBUG */
-#define DBG(...)
-#endif /* DEBUG */
 
 namespace Teng {
 namespace Parser {

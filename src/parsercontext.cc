@@ -44,6 +44,7 @@
 #include <algorithm>
 #include <fstream>
 
+#include "debug.h"
 #include "lex1.h"
 #include "program.h"
 #include "platform.h"
@@ -52,12 +53,6 @@
 #include "contenttype.h"
 #include "configuration.h"
 #include "parsercontext.h"
-
-#ifdef DEBUG
-#define DBG(...) __VA_ARGS__
-#else /* DEBUG */
-#define DBG(...)
-#endif /* DEBUG */
 
 namespace Teng {
 namespace {

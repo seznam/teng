@@ -40,17 +40,11 @@
 #include <string>
 
 #include "lex2.h"
+#include "debug.h"
 #include "program.h"
 #include "instruction.h"
 #include "parsercontext.h"
 #include "semantic.h"
-
-#ifdef DEBUG
-#include <iostream>
-#define DBG(...) __VA_ARGS__
-#else /* DEBUG */
-#define DBG(...)
-#endif /* DEBUG */
 
 namespace Teng {
 namespace Parser {

@@ -39,7 +39,8 @@
 
 #include <string>
 #include <vector>
-#include <cstdint>
+
+#include <teng/types.h>
 
 namespace Teng {
 
@@ -190,7 +191,7 @@ public:
     /**
      * @short Returns the items count.
      */
-    size_type size() const {return items.size();}
+    size_type size() const;
 
     /**
      * @short Returns true if list is empty.
@@ -220,12 +221,12 @@ public:
     /**
      * @short Returns i-th fragment in the list.
      */
-    const FragmentValue_t &operator[](size_type i) const {return items[i];}
+    const FragmentValue_t &operator[](size_type i) const;
 
     /**
      * @short Returns i-th fragment in the list.
      */
-    FragmentValue_t &operator[](size_type i) {return items[i];}
+    FragmentValue_t &operator[](size_type i);
 
 protected:
     Items_t items; //!< the fragment list items

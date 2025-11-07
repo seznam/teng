@@ -86,6 +86,10 @@ void FragmentList_t::json(std::ostream &o) const {
     o << ']';
 }
 
+FragmentList_t::size_type FragmentList_t::size() const {
+    return items.size();
+}
+
 void FragmentList_t::dump(std::ostream &o) const {
     o << '[';
     for (auto ifrag = begin(), efrag = end(); ifrag != efrag; ++ifrag) {
@@ -93,6 +97,14 @@ void FragmentList_t::dump(std::ostream &o) const {
         ifrag->dump(o);
     }
     o << ']';
+}
+
+const FragmentValue_t &FragmentList_t::operator[](size_type i) const {
+    return items[i];
+}
+
+FragmentValue_t &FragmentList_t::operator[](size_type i) {
+    return items[i];
 }
 
 } // namespace Teng
