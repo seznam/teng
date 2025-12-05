@@ -105,6 +105,13 @@ public:
      * @param name variable name
      * @param value variable value
      */
+    void addVariable(const std::string &name, std::string &&value);
+
+    /**
+     * @short Add variable to fragment.
+     * @param name variable name
+     * @param value variable value
+     */
     template <
         typename type_t,
         std::enable_if_t<std::is_integral<type_t>::value, bool> = true

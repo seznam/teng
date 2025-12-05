@@ -80,6 +80,11 @@ Fragment_t::addVariable(const std::string &name, const std::string &value) {
     replace_item(items, name, value);
 }
 
+void
+Fragment_t::addVariable(const std::string &name, std::string &&value) {
+    replace_item(items, name, std::move(value));
+}
+
 void Fragment_t::addIntVariable(const std::string &name, IntType_t value) {
     replace_item(items, name, value);
 }
