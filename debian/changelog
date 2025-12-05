@@ -1,3 +1,85 @@
+libteng (5.0.6) stable; urgency=medium
+
+  * feat: add move-aware Fragment::addVariable
+  * feat: move DEBUG macro to debug.h
+  * build: config.h is now only for external users
+  * build: fix building as subprojects
+  * build: debug print
+  * fix: place config.h to build/subprojects/libteng/
+  * fix: building as a subproject
+  * build: includes
+  * build: includes
+  * build: includes
+  * doc: update
+  * only static library will supported since now
+  * no boost needed
+  * packaging
+  * use python3
+  * doc
+  * move src/tests to tests
+  * c++17, meson build system, warning fixes
+  * include
+  * add include (#23)
+  * Co-authored-by: Lubos Vondra <lubos.vondra@firma.seznam.cz>
+  * doc
+  * #! python3.0.1
+  * #! v3.0.1
+  * teng 3.0.0 (#14)
+  * packages:
+  * - libteng3 (3.0.0)
+  * - libteng3-dbg (3.0.0)
+  * - libteng-dev (3.0.0)
+  * - python-teng (2.3.13)
+  * lib:
+  * /usr/lib/libteng.so.3.0.0
+  * /usr/lib/libteng.so.3 -> libteng.so.3.0.0
+  * #! v2.3.32
+  * Cleanup of autotools warnings. Helpful comment about autotools-archive (#11)
+  * #! v2.3.31
+  * remove pcre++ dependencies from -dev
+  * update control (#10)
+  * add libpcre2-dev package as a dependency
+  * #! v2.3.29
+  * fix bad replace references pattern, check capture boundaries
+  * #! v2.3.28
+  * PCRE2_NEWLINE_NUL is missing in older pcre2
+  * #! v2.3.27
+  * another build depends
+  * #! v2.3.26
+  * fix build dependencies
+  * #! v2.3.25
+  * reimplementation of regex support
+  * #! python2.3.12
+  * python (build) depends on libteng-dev (>= 2.3.24)
+  * #! python2.3.11
+  * #! v2.3.24
+  * add autoconf-archive to build-depends
+  * #! v2.3.23
+  * Custom filesystem support (#8)
+  * * git ignore for generated files
+  * * Add FilesystemInterface_t support
+  * * use std::hash and C++11
+  * #! v2.3.22
+  * fix calling udf
+  * Revert "modernize some part of teng"
+  * This reverts commit 6f1b9215d5d54c27aa0bb7bbe13f3198921197aa.
+  * Revert "fix unicode format"
+  * This reverts commit 21192e3fba7f5fe7f14a51a30bf3883e3b36d823.
+  * Revert "sec_to_time and substr_word function removed"
+  * This reverts commit 393c8b4d293125f36e697b06e4f4dac2bb98b637.
+  * Revert "tests, memory leak fix, remove curl dependency"
+  * This reverts commit 72cfa2912d70b5724c1bbdef752d375493e3fe88.
+  * Revert "tests"
+  * This reverts commit a45f29a78fdb34468f66eb08da3f6d5de91b34bf.
+  * Revert "bison parser cleaning in progress"
+  * This reverts commit e053c065eb5bf745a670ce1d4ed3d8f461c49969.
+  * Revert "revert"
+  * This reverts commit ffbb8fe35bbe0e18a7b78dcef77b3e7226e19f67.
+  * revert
+  * bison parser cleaning in progress
+
+ -- Michal Bukovský <burlog@seznam.cz>  Fri, 05 Dec 2025 16:04:27 +0100
+
 libteng (5.0.5) stable; urgency=medium
 
   * fix for new gcc
