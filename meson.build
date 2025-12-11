@@ -39,6 +39,7 @@ headers = [
   'include/teng/stringview.h',
   'include/teng/structs.h',
   'include/teng/teng.h',
+  'include/teng/types.h',
   'include/teng/udf.h',
   'include/teng/value.h',
   'include/teng/writer.h',
