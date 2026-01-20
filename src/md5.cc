@@ -460,7 +460,6 @@ std::string MD5Hexdigest(const std::string &data) {
         sprintf(hexOutput + di * 2, "%02x", digest[di]);
 
     return hexOutput;
-};
+}
 
 } // namespace Teng
-
