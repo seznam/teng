@@ -196,7 +196,7 @@ generated_sources += custom_target(
   input: 'include/teng/config.h.in',
   output: 'config.h',
   install_dir: 'include/teng',
-  install: true,
+  install: install_files,
   command: [
     'python3',
     '-c',
