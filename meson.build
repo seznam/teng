@@ -1,7 +1,7 @@
 project(
   'libteng',
   'cpp',
-  version: '5.0.7',
+  version: '5.0.8',
   default_options : [
     'cpp_std=c++17',
     'warning_level=2',

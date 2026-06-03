@@ -1,3 +1,10 @@
+libteng (5.0.8) stable; urgency=medium
+
+  * build: be compatible with older bison versions
+  * build: fix install_files usage
+
+ -- Michal Bukovský <burlog@seznam.cz>  Wed, 03 Jun 2026 12:05:41 +0200
+
 libteng (5.0.7) stable; urgency=medium
 
   * fix: install types.h header file (#28)
