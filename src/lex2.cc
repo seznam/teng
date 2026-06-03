@@ -151,10 +151,12 @@ string_view_t l2_token_name(int token_id) {
     case LEX2::ENDBLOCK_OVERRIDE: return "ENDBLOCK_OVERRIDE";
     case LEX2::ENDBLOCK_DEFINE: return "ENDBLOCK_DEFINE";
     case LEX2::SUPER_BLOCK: return "SUPER_BLOCK";
+#ifdef TENG_BISON_RESERVED_TOKENS
     case LEX2::YYEMPTY:
     case LEX2::YYEOF:
     case LEX2::YYerror:
     case LEX2::YYUNDEF: break;
+#endif
     }
     return token_id == LEX2_EOF? "<EOF>": "<UNEXPECTED>";
 }

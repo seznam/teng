@@ -232,6 +232,14 @@ generated_sources += custom_target(
   command: [bison, '-o', '@OUTPUT0@', '@INPUT@']
 )
 
+# bison >= 3.6 emits the reserved YYEMPTY/YYEOF/YYerror/YYUNDEF token kinds
+bison_version = run_command(
+  bison, '--version', check: true
+).stdout().split('\n')[0].split(' ')[-1]
+if bison_version.version_compare('>=3.6')
+  add_project_arguments('-DTENG_BISON_RESERVED_TOKENS', language: 'cpp')
+endif
+
 git_revision = 'no revision'
 git = find_program('git', required: false)
 fs = import('fs')
