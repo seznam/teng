@@ -38,6 +38,7 @@
 #ifndef TENGCACHE_H
 #define TENGCACHE_H
 
+#include <cstdint>
 #include <map>
 #include <string>
 #include <memory>
