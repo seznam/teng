@@ -102,7 +102,7 @@ std::vector<Error_t::Entry_t> make_error_log(const Records_t &records) {
         };
     };
 
-    // appends entry to log with according to source code positions
+    // appends entry to log according to source code positions
     auto push_back = [] (auto &&result, Error_t::Entry_t &&entry) {
         result.push_back(std::move(entry));
         for (auto i = result.size() - 1; i > 0; --i) {
