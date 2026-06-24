@@ -186,7 +186,7 @@ Lex2_t::Lex2_t(const Configuration_t *params, bool utf8, Error_t &err)
     current_start_condition(INITIAL)
 {
     if (teng_lex_init(&yyscanner))
-        throw std::runtime_error("can't initalize lex2: " + strerr(errno));
+        throw std::runtime_error("can't initialize lex2: " + strerr(errno));
 }
 
 Lex2_t::~Lex2_t() {

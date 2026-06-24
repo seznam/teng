@@ -53,7 +53,7 @@ namespace {
  * program.
  */
 void finalize_if_branch(Context_t *ctx, int32_t shift) {
-    // TODO(burlog): optimalize if
+    // TODO(burlog): optimize if
 
     // calculate real jump address for last elif/else branch
     auto branch_addr = ctx->curr_branch_addrs().pop();
@@ -98,8 +98,8 @@ void generate_if(Context_t *ctx, const Token_t &token, bool valid_expr) {
 
     // warn about invalid expression
     if (!valid_expr) {
-        auto msg_end_if = "You forgot write condition of the if statement";
-        auto msg_end_el = "You forgot write condition of the elif statement";
+        auto msg_end_if = "You forgot to write the condition of the if statement";
+        auto msg_end_el = "You forgot to write the condition of the elif statement";
         auto msg_def_if = "Invalid expression in the if statement condition";
         auto msg_def_el = "Invalid expression in the elif statement condition";
         switch (ctx->unexpected_token) {
@@ -123,7 +123,7 @@ void generate_endif(Context_t *ctx, const Pos_t *inv_pos) {
     // update if/else condition jump
     finalize_if_branch(ctx, 1);
 
-    // now is known the endif address so we can update if brachnes end jumps
+    // now is known the endif address so we can update if branches end jumps
     while (!ctx->curr_branch_addrs().empty()) {
         auto branch_addr = ctx->curr_branch_addrs().pop();
         auto &instr = (*ctx->program)[branch_addr].as<Jmp_t>();
@@ -133,7 +133,7 @@ void generate_endif(Context_t *ctx, const Pos_t *inv_pos) {
     // break possible invalid print optimization
     generate<Noop_t>(ctx);
 
-    // warn if there is invalid tokens
+    // warn if there are invalid tokens
     if (inv_pos) {
         logWarning(
             ctx,
@@ -152,7 +152,7 @@ void generate_else(Context_t *ctx, const Token_t &token, bool invalid) {
     ctx->curr_branch_addrs().push(ctx->program->size());
     generate<Jmp_t>(ctx, token.pos);
 
-    // warn if there is invalid tokens
+    // warn if there are invalid tokens
     if (invalid) {
         logWarning(
             ctx,

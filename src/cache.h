@@ -55,7 +55,7 @@ namespace Teng {
 /**
  * @short Creates key for given file.
  *
- * The key (normalizad filenanme) is added into given key vector.
+ * The key (normalized filename) is added into given key vector.
  *
  * @param filename filename
  * @return key key vector
