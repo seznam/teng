@@ -1,3 +1,31 @@
+libteng (5.0.9) stable; urgency=medium
+
+  * silence clang warnings across hand-written and generated sources
+  * - drop stray ';' after function bodies at namespace scope
+  * (contenttype.cc, lex1.cc, md5.cc, teng.cc) -> -Wc++98-compat-extra-semi
+  * - functiondate.h: sectotime() now calls snprintf with a literal format per
+  * branch (no runtime format pointer); the generic formatValue<T> printf
+  * wrapper is a variadic template, so the format attribute is impossible
+  * (GCC requires C variadics) -- suppress -Wformat-nonliteral and
+  * -Wmissing-format-attribute locally for clang instead
+  * - syntax.yy: %initial-action references yynerrs_ so the bison-generated
+  * parser no longer reports it as set-but-unused (+ include <tuple>)
+  * - lex2impl.ll: guard the GCC-only -Wuseless-cast pragma behind
+  * __GNUC__ && !__clang__, and suppress the flex skeleton's
+  * -Wzero-as-null-pointer-constant for clang
+  * Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+  * docs: fix typos and grammar errors in comments and error messages (#29)
+  * Fix 9 issues across 4 files:
+  * - cache.h: "normalizad filenanme" → "normalized filename"
+  * - lex2.cc: "initalize" → "initialize" in error message
+  * - error.cc: "with according to" → "according to" (extraneous word)
+  * - semanticif.cc: "optimalize" → "optimize"
+  * - semanticif.cc: "brachnes" → "branches"
+  * - semanticif.cc: "You forgot write condition" → "You forgot to write the condition" (×2)
+  * - semanticif.cc: "there is invalid tokens" → "there are invalid tokens" (×2)
+
+ -- Michal Bukovsky <michal.bukovsky@firma.seznam.cz>  Wed, 08 Jul 2026 14:09:13 +0200
+
 libteng (5.0.8) stable; urgency=medium
 
   * build: be compatible with older bison versions
