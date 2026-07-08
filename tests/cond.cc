@@ -619,7 +619,7 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::DIAG,
                     {1, 0},
-                    "You forgot write condition of the if statement"
+                    "You forgot to write condition of the if statement"
                 }, {
                     Teng::Error_t::ERROR,
                     {1, 10},
@@ -735,7 +735,7 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::DIAG,
                     {1, 25},
-                    "You forgot write condition of the elif statement"
+                    "You forgot to write condition of the elif statement"
                 }, {
                     Teng::Error_t::ERROR,
                     {1, 37},
@@ -1973,7 +1973,7 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::DIAG,
                     {1, 0},
-                    "You forgot write condition of the if statement"
+                    "You forgot to write condition of the if statement"
                 }, {
                     Teng::Error_t::ERROR,
                     {1, 10},
@@ -1986,7 +1986,7 @@ SCENARIO(
                 }, {
                     Teng::Error_t::DIAG,
                     {1, 13},
-                    "You forgot write condition of the elif statement"
+                    "You forgot to write condition of the elif statement"
                 }, {
                     Teng::Error_t::ERROR,
                     {1, 27},
@@ -2015,7 +2015,7 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::DIAG,
                     {1, 1},
-                    "You forgot write condition of the if statement"
+                    "You forgot to write condition of the if statement"
                 }, {
                     Teng::Error_t::ERROR,
                     {1, 1},
@@ -2239,7 +2239,7 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::DIAG,
                     {1, 0},
-                    "You forgot write condition of the if statement"
+                    "You forgot to write condition of the if statement"
                 }, {
                     Teng::Error_t::ERROR,
                     {1, 0},
