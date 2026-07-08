@@ -276,12 +276,20 @@ addDateString(uint32_t index, const string_view_t &setup, std::string &out) {
     return 0;
 }
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-nonliteral"
+#pragma clang diagnostic ignored "-Wmissing-format-attribute"
+#endif
 template <typename T1, typename... T>
 void formatValue(std::string &out, const char *format, T1 v1, T &&...v) {
     char buf[60];
     auto len = snprintf(buf, sizeof(buf), format, v1, std::forward<T>(v)...);
     out.append(buf, (std::size_t(len) > sizeof(buf))? sizeof(buf): len);
 }
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 /** Function for formating dates like strftime() from struct tm.
  * @return Status: 0=ok, -1=error.
@@ -637,12 +645,12 @@ Result_t sectotime(Ctx_t &ctx, const Args_t &args) {
         allign = iarg->integral();
     }
 
-    // what format use
-    const char *format = allign? "%02ld:%02ld:%02ld": "%ld:%02ld:%02ld";
-
     // convert to string
     char buf[64];
-    snprintf(buf, sizeof(buf), format, hours, minutes, seconds);
+    if (allign)
+        snprintf(buf, sizeof(buf), "%02ld:%02ld:%02ld", hours, minutes, seconds);
+    else
+        snprintf(buf, sizeof(buf), "%ld:%02ld:%02ld", hours, minutes, seconds);
     return Result_t(buf);
 }
 

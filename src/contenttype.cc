@@ -536,7 +536,7 @@ ContentType_t::listSupported() {
         result.push_back(std::make_pair(icreators->name, comment));
     }
     return result;
-};
+}
 
 void Escaper_t::pop() {
     if (!escapers.empty()) escapers.pop();

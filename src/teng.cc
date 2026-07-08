@@ -188,7 +188,7 @@ Teng_t::dictionaryLookup(
 void
 Teng_t::listSupportedContentTypes(
     std::vector<std::pair<std::string, std::string>> &s
-) {for (auto &e: listSupportedContentTypes()) s.push_back(e);};
+) {for (auto &e: listSupportedContentTypes()) s.push_back(e);}
 
 } // namespace Teng
 

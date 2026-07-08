@@ -260,14 +260,14 @@ bool incr_until(
         }
     }
     return false;
-};
+}
 
 /** Increments position in the input by the length of the given string.
  */
 template <std::size_t n, typename incr_col_pos_t>
 void incr_col_pos_by(const char (&)[n], incr_col_pos_t incr_col_pos) {
     incr_col_pos(n - 1); // the padding zero
-};
+}
 
 } // namespace
 

@@ -75,7 +75,15 @@
 // at the end of input execute following stuff
 #define yyterminate() return Teng::Parser::Token_t{LEX2_EOF, token_pos, {}}
 
+// -Wuseless-cast is a GCC-only warning group unknown to clang
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic ignored "-Wuseless-cast"
+#endif
+
+// flex-generated skeleton uses 0 as a null pointer constant
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
 
 %}
 

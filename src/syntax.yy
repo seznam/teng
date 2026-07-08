@@ -103,6 +103,8 @@
 
 // add forward declaration to the begin of tengsyntax.cc
 %code {
+    #include <tuple>
+
     namespace Teng {
     namespace Parser {
     namespace Impl {
@@ -130,6 +132,12 @@
 // the type of the lexical symbol
 // %define api.value.type {Teng::Parser::Symbol_t}
 %define api.value.type variant
+
+// reference the bison-generated error counter so it is not reported as a
+// set-but-unused variable in the generated parser
+%initial-action {
+    std::ignore = yynerrs_;
+}
 
  /******************************************* BISON DECLARATIONS: lex tokens. */
 
