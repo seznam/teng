@@ -1,3 +1,15 @@
+libteng (5.0.11) stable; urgency=medium
+
+  * fix: silence glib -Wuseless-cast noise around <glib.h> include
+  * glib.h transitively pulls in glib-autocleanups.h, whose
+  * G_DEFINE_AUTOPTR_CLEANUP_FUNC macro casts a pointer to its own type
+  * (gmacros.h:1049), which GCC reports as -Wuseless-cast ~50 times per TU.
+  * It is third-party header noise, so guard the include with a scoped
+  * #pragma GCC diagnostic push/ignored/pop.
+  * Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+
+ -- Michal Bukovský <burlog@seznam.cz>  Wed, 15 Jul 2026 10:34:59 +0200
+
 libteng (5.0.10) stable; urgency=medium
 
   * fix: silence -Wuseless-cast and -Wimplicit-fallthrough under GCC 10
