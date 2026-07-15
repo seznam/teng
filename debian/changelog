@@ -1,3 +1,19 @@
+libteng (5.0.10) stable; urgency=medium
+
+  * fix: silence -Wuseless-cast and -Wimplicit-fallthrough under GCC 10
+  * - processor.cc: return std::move(stack.back()) instead of the redundant
+  * Value_t(std::move(stack.back())) functional cast; stack.back() is
+  * already a Value_t.
+  * - lex2.cc: drop the (yyscan_t)yyscanner cast; yyscanner is already void*
+  * (= yyscan_t).
+  * - regex.h: replace the /*[[fallthrough]]*/ comment with a real
+  * [[fallthrough]]; attribute so GCC recognizes the intentional fall-through.
+  * Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+  * Fix error messages for missing conditions (#31)
+  * Fix typo in error messages for conditions (#30)
+
+ -- Michal Bukovský <burlog@seznam.cz>  Wed, 15 Jul 2026 09:43:39 +0200
+
 libteng (5.0.9) stable; urgency=medium
 
   * silence clang warnings across hand-written and generated sources
