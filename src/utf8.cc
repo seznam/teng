@@ -37,7 +37,14 @@
  */
 
 #include <memory>
+// glib.h transitively includes glib-autocleanups.h, whose
+// G_DEFINE_AUTOPTR_CLEANUP_FUNC expansion casts a pointer to its own type,
+// which GCC flags as -Wuseless-cast (~50 times). It is third-party header
+// noise, so silence it around the include.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuseless-cast"
 #include <glib.h>
+#pragma GCC diagnostic pop
 #include <cstdint>
 
 #include "utf8.h"
