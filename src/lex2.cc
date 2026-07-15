@@ -191,7 +191,7 @@ Lex2_t::Lex2_t(const Configuration_t *params, bool utf8, Error_t &err)
 
 Lex2_t::~Lex2_t() {
     if (buffer) finish_scanning();
-    teng_lex_destroy((yyscan_t)yyscanner);
+    teng_lex_destroy(yyscanner);
 }
 
 void Lex2_t::switch_to_override_block() {

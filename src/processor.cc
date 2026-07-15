@@ -582,7 +582,7 @@ Processor_t::eval(const OFFApi_t *frames, int64_t start) {
     if (!process(&ctx, stack, {start, end, program})) return Value_t();
     if (!opt_err.empty()) return Value_t();
     if (stack.size() != 1) return Value_t();
-    return Value_t(std::move(stack.back()));
+    return std::move(stack.back());
 }
 
 } // namespace Teng
