@@ -73,6 +73,12 @@ logError(Error_t &err, const Pos_t &pos, const string_view_t &msg);
 void
 logFatal(Error_t &err, const Pos_t &pos, const string_view_t &msg);
 
+/** @short Logs new error that is not bound to any file/position.
+ * @param msg additional message
+ */
+void
+logError(Error_t &err, Error_t::Level_t level, const string_view_t &msg);
+
 /** @short Logs DEBUGGING for given file/position.
  */
 void

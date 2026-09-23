@@ -77,6 +77,11 @@ logFatal(Error_t &err, const Pos_t &pos, const string_view_t &msg) {
 }
 
 void
+logError(Error_t &err, Error_t::Level_t level, const string_view_t &msg) {
+    err.append(level, nullptr, 0, 0, msg.str());
+}
+
+void
 logDebug(Error_t &err, const string_view_t &msg) {
     logError(err, Error_t::DEBUGING, msg);
 }

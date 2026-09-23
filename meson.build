@@ -181,6 +181,7 @@ test_sources = [
   'tests/rtvars.cc',
   'tests/simple.cc',
   'tests/vars.cc',
+  'tests/writer.cc',
   'tests/utils.h',
 ]
 
