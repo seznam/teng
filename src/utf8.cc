@@ -36,6 +36,7 @@
  *             Moved from tengfunction.cc.
  */
 
+#include <cstdint>
 #include <memory>
 // glib.h transitively includes glib-autocleanups.h, whose
 // G_DEFINE_AUTOPTR_CLEANUP_FUNC expansion casts a pointer to its own type,
@@ -271,4 +272,3 @@ std::string toupper(const string_view_t &str) {
 
 } // namespace utf8
 } // namespace Teng
-

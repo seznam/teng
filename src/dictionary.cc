@@ -39,6 +39,7 @@
  *             Cleaned.
  */
 
+#include <cstdint>
 #include <sstream>
 #include <fstream>
 #include <algorithm>
@@ -591,4 +592,3 @@ void Dictionary_t::parse(const std::string &filename) {
 }
 
 } // namespace Teng
-

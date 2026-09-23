@@ -38,6 +38,7 @@
 #ifndef TENGCONFIGURATION_H
 #define TENGCONFIGURATION_H
 
+#include <cstdint>
 #include <iosfwd>
 #include <cstdint>
 
@@ -108,4 +109,3 @@ protected:
 } // namespace Teng
 
 #endif // TENGCONFIGURATION_H
-
