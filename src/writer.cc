@@ -70,19 +70,19 @@ int StringWriter_t::write(const std::string &, StringSpan_t interval) {
 FileWriter_t::FileWriter_t(const std::string &filename)
     : file(fopen(filename.c_str(), "w")), borrowed(false)
 {
-    if (!file && err) {
-        logFatal(
-            *err,
-            "Cannot open file '" + filename + "' (" + strerr(errno) + ")"
-        );
+    // the error log is not available yet, so keep the reason for later
+    if (!file) {
+        not_opened_reason
+            = "Cannot open file '" + filename + "' (" + strerr(errno) + ")";
     }
 }
 
 FileWriter_t::FileWriter_t(FILE *file)
     : Writer_t(), file(file), borrowed(true)
 {
-    if (!file && err)
-        logFatal(*err, "Got invalid file handle (nullptr)");
+    // the error log is not available yet, so keep the reason for later
+    if (!file)
+        not_opened_reason = "Got invalid file handle (nullptr)";
 }
 
 FileWriter_t::~FileWriter_t() {
@@ -90,8 +90,16 @@ FileWriter_t::~FileWriter_t() {
         fclose(file);
 }
 
+int FileWriter_t::logNotOpened() {
+    if (err && !not_opened_reason.empty()) {
+        logFatal(*err, not_opened_reason);
+        not_opened_reason.clear();
+    }
+    return -1;
+}
+
 int FileWriter_t::write(const std::string &str) {
-    if (!file) return -1;
+    if (!file) return logNotOpened();
     fwrite(str.data(), 1, str.length(), file);
     if (feof(file) || ferror(file)) {
         logFatal(*err, "Error writing to output (" + strerr(errno) + ")");
@@ -105,7 +113,7 @@ int FileWriter_t::write(const char *str) {
 }
 
 int FileWriter_t::write(const char *str, std::size_t size) {
-    if (!file) return -1;
+    if (!file) return logNotOpened();
     fwrite(str, 1, size, file);
     if (feof(file) || ferror(file)) {
         logFatal(*err, "Error writing to output (" + strerr(errno) + ")");
@@ -115,6 +123,7 @@ int FileWriter_t::write(const char *str, std::size_t size) {
 }
 
 int FileWriter_t::write(const std::string &str, StringSpan_t interval) {
+    if (!file) return logNotOpened();
     const char *cstr = str.data() + std::distance(str.begin(), interval.first);
     size_t len = std::distance(interval.first, interval.second);
     fwrite(cstr, 1, len, file);
@@ -126,7 +135,7 @@ int FileWriter_t::write(const std::string &str, StringSpan_t interval) {
 }
 
 int FileWriter_t::flush() {
-    if (!file) return -1;
+    if (!file) return logNotOpened();
     return (fflush(file) ? -1 : 0);
 }
 

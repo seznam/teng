@@ -220,6 +220,13 @@ public:
     int flush() override;
 
 private:
+    /** @short Logs the reason why there is no file to write to.
+     *  The reason is logged just once and only if the error log is
+     *  already available.
+     *  @return -1 (writer is unusable)
+     */
+    int logNotOpened();
+
     /** @short Output file.
      */
     FILE *file;
@@ -227,6 +234,12 @@ private:
     /** @short Indicates whether file is borrowed.
      */
     bool borrowed;
+
+    /** @short The reason why there is no file to write to.
+     *  The error log is not available when the writer is created, so the
+     *  reason is kept here until the first write/flush can log it.
+     */
+    std::string not_opened_reason;
 };
 
 } // namespace Teng
