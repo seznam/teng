@@ -1,3 +1,25 @@
+libteng (5.0.12) stable; urgency=medium
+
+  * missing includes (#26)
+  * Co-authored-by: Lubos Vondra <lubos.vondra@firma.seznam.cz>
+  * Report FileWriter_t open failures in error log (#32)
+  * FileWriter_t logged the "Cannot open file" reason only if the error log
+  * was already attached, but the log is attached by Teng_t::generatePage()
+  * after the writer is constructed, so err was always nullptr there and the
+  * failure was silently dropped: no exception, no error log entry, status 0
+  * and an empty output file that was never created.
+  * The reason is now kept in the writer and logged by the first write/flush,
+  * i.e. as soon as the error log is available. The write() overload taking
+  * a string span also lacked the !file check and called fwrite() on nullptr.
+  * While on it, add the missing logError(err, level, msg) overload. Without
+  * it, the no-position logDebug/logWarning/logError/logFatal helpers silently
+  * resolved to logError(err, pos, msg) -- the level was implicitly converted
+  * to Pos_t, so every such message was logged as ERROR on a bogus line
+  * instead of on the requested level.
+  * Co-authored-by: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
+ -- Michal Bukovský <burlog@seznam.cz>  Wed, 23 Sep 2026 14:43:38 +0200
+
 libteng (5.0.11) stable; urgency=medium
 
   * fix: silence glib -Wuseless-cast noise around <glib.h> include
