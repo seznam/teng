@@ -102,7 +102,7 @@ Result_t round_real(double number, int64_t precision) {
 
 } // namespace
 
-/** Random integer
+/** Random real number from interval [0, arg)
  *
  * @param args Teng function arguments
  * @param ctx Teng function ctx

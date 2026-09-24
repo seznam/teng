@@ -67,7 +67,7 @@ FunctionStub_t builtin_functions[] = {
     // number
     {"int", builtin::toint},                   // like (int) in C
     {"isnumber", builtin::isnumber},           // true if arg is number
-    {"random",  builtin::random},              // random integer
+    {"random",  builtin::random},              // random real from [0, n)
     {"round", builtin::round},                 // round(number, precision)
     {"numformat", builtin::numformat},         // format number for display
 
