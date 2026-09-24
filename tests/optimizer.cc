@@ -40,6 +40,7 @@
 #include <vector>
 
 #include <teng/teng.h>
+#include <teng/udf.h>
 #include <teng/invoke.h>
 #include <teng/filesystem.h>
 
@@ -487,6 +488,71 @@ SCENARIO(
                 REQUIRE(err.getEntries().empty());
                 REQUIRE(g(err, t, root) == "&lt;b&gt;");
                 REQUIRE(err.getEntries().empty());
+            }
+        }
+
+        WHEN("The unescape() function is compiled") {
+            Teng::Error_t err;
+            auto t = "%{unescape('&lt;b&gt;')}";
+            auto program = c(err, t);
+
+            THEN("It is called in runtime without errors") {
+                REQUIRE(contains(program, "FUNC"));
+                REQUIRE(err.getEntries().empty());
+                REQUIRE(g(err, t, root) == "<b>");
+                REQUIRE(err.getEntries().empty());
+            }
+        }
+
+        WHEN("The escape() function is used in different content types") {
+            Teng::Error_t err;
+            auto t = "<?teng ctype 'quoted-string'?>"
+                     "%{escape('a\"b')}"
+                     "<?teng endctype?>"
+                     "%{escape('a\"b')}";
+            auto result = g(err, t, root);
+
+            THEN("The escaping of current content type is used") {
+                REQUIRE(result == "a\\\"ba&quot;b");
+                REQUIRE(err.getEntries().empty());
+            }
+        }
+
+        WHEN("User defined function is compiled") {
+            Teng::udf::registerFunction(
+                "optimizer_test",
+                [] (const Teng::udf::Args_t &args) {
+                    return Teng::udf::Result_t(args.front().as_int() * 2);
+                }
+            );
+            Teng::Error_t err;
+            auto t = "${udf.optimizer_test(1 + 2)}";
+            auto program = c(err, t);
+
+            THEN("It is called in runtime but its args are folded") {
+                REQUIRE(contains(program, "FUNC"));
+                REQUIRE(contains(program, "VAL integral(3)"));
+                REQUIRE(err.getEntries().empty());
+                REQUIRE(g(err, t, root) == "6");
+                REQUIRE(err.getEntries().empty());
+            }
+        }
+
+        WHEN("Unknown function is compiled") {
+            Teng::Error_t err;
+            auto t = "${unknown_function(1)}";
+            auto program = c(err, t);
+
+            THEN("The error is reported once in runtime") {
+                REQUIRE(contains(program, "FUNC"));
+                REQUIRE(err.getEntries().empty());
+                g(err, t, root);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 2},
+                    "Runtime: Call of unknown function unknown_function()"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
             }
         }
 
