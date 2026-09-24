@@ -177,6 +177,7 @@ test_sources = [
   'tests/incl.cc',
   'tests/inheritance.cc',
   'tests/old.cc',
+  'tests/optimizer.cc',
   'tests/queries.cc',
   'tests/rtvars.cc',
   'tests/simple.cc',

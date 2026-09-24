@@ -494,10 +494,12 @@ process(Ctx_t *ctx, std::vector<Value_t> &stack, const SubProgram_t &program) {
     }
 
     // warn about relicts on value and program stack
+    // (the evaluated expression leaves its result on value stack in eval mode)
     if (!prg_stack.empty())
         logError(*ctx, "Program stack is not empty");
-    if (!stack.empty())
-        logError(*ctx, "Value stack is not empty");
+    if constexpr (std::is_same_v<std::decay_t<Ctx_t>, RunCtx_t>)
+        if (!stack.empty())
+            logError(*ctx, "Value stack is not empty");
     DBG(std::cerr << "## END\n" << std::endl);
     return true;
 }

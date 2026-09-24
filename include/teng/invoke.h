@@ -123,12 +123,16 @@ struct Invoker_t {
     auto invoke(const call_t &call, Ctx_t &, const Args_t &args) const
     -> decltype(call(args)) {return call(args);}
 
-    /** Invokes held function and translates all exceptions to errors.
+    /** Invokes held function and translates all exceptions to errors except
+     * the runtime_functx_needed_t that is used to abort the compile time
+     * evaluation during optimization.
      */
     template <typename PCtx_t>
     Result_t operator()(PCtx_t &pctx, Ctx_t &ctx, const Args_t &args) const {
         try {
             return invoke(function, ctx, args);
+        } catch (const runtime_functx_needed_t &) {
+            throw;
         } catch (const std::invalid_argument &e) {
             logError(*pctx, name +  "(): invalid arguments: " + e.what());
         } catch (const std::exception &e) {

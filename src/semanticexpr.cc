@@ -103,6 +103,11 @@ void optimize_expr(Context_t *ctx, uint32_t arity, bool lazy_evaluated) {
         // try to evaluate given part of program
         Value_t result = ctx->coproc.eval(&ctx->open_frames, args_point);
         if (!result.is_undefined()) {
+            // the string ref may point to the instructions that are going to
+            // be removed so the value has to own the string
+            if (result.type() == Value_t::tag::string_ref)
+                result = Value_t(result.string().str());
+
             // remove expression's program and replace it with its value
             DBG(std::cerr << "$$$$ optimized => " << result << std::endl);
             auto pos = (*ctx->program)[args_point].pos();
