@@ -640,11 +640,20 @@ teng_endif
 
 
 teng_expr
-    : ESC_EXPR expr_up_to_end END {generate_print(ctx);}
+    : ESC_EXPR expr_up_to_end END {
+        release_expr_start_point(ctx);
+        generate_print(ctx);
+    }
     | ESC_EXPR expr_up_to_end INV {generate_inv_print(ctx, *$3);}
-    | SHORT_ESC_EXPR expr_up_to_short_end SHORT_END {generate_print(ctx);}
+    | SHORT_ESC_EXPR expr_up_to_short_end SHORT_END {
+        release_expr_start_point(ctx);
+        generate_print(ctx);
+    }
     | SHORT_ESC_EXPR expr_up_to_short_end INV {generate_inv_print(ctx, *$3);}
-    | SHORT_RAW_EXPR expr_up_to_short_end SHORT_END {generate_raw_print(ctx);}
+    | SHORT_RAW_EXPR expr_up_to_short_end SHORT_END {
+        release_expr_start_point(ctx);
+        generate_raw_print(ctx);
+    }
     | SHORT_RAW_EXPR expr_up_to_short_end INV {generate_inv_print(ctx, *$3);}
     ;
 

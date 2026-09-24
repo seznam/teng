@@ -165,11 +165,7 @@ SCENARIO(
 
             THEN("They are replaced with their values") {
                 std::vector<std::string> expected = {
-                    "VAL integral(-5)",
-                    "PRINT",
-                    "VAL integral(1)",
-                    "PRINT",
-                    "VAL integral(-1)",
+                    "VAL string(-51-1)",
                     "PRINT",
                     "HALT",
                 };
@@ -203,9 +199,7 @@ SCENARIO(
 
             THEN("They are replaced with their values") {
                 std::vector<std::string> expected = {
-                    "VAL integral(1)",
-                    "PRINT",
-                    "VAL integral(0)",
+                    "VAL string(10)",
                     "PRINT",
                     "HALT",
                 };
@@ -222,11 +216,7 @@ SCENARIO(
 
             THEN("They are replaced with their values") {
                 std::vector<std::string> expected = {
-                    "VAL string(x)",
-                    "PRINT",
-                    "VAL integral(2)",
-                    "PRINT",
-                    "VAL integral(0)",
+                    "VAL string(x20)",
                     "PRINT",
                     "HALT",
                 };
@@ -245,10 +235,8 @@ SCENARIO(
 
             THEN("The values are owned by the program") {
                 std::vector<std::string> expected = {
-                    "VAL string(the string longer than short string buffer)",
-                    "PRINT",
-                    "VAL string(another string longer than short string "
-                    "buffer)",
+                    "VAL string(the string longer than short string buffer"
+                    "another string longer than short string buffer)",
                     "PRINT",
                     "HALT",
                 };
@@ -301,11 +289,7 @@ SCENARIO(
 
             THEN("They are replaced with their values") {
                 std::vector<std::string> expected = {
-                    "VAL integral(3)",
-                    "PRINT",
-                    "VAL string(ABC)",
-                    "PRINT",
-                    "VAL string(el)",
+                    "VAL string(3ABCel)",
                     "PRINT",
                     "HALT",
                 };
@@ -341,11 +325,7 @@ SCENARIO(
 
             THEN("They are replaced with their values") {
                 std::vector<std::string> expected = {
-                    "VAL integral(1)",
-                    "PRINT",
-                    "VAL integral(0)",
-                    "PRINT",
-                    "VAL string(default)",
+                    "VAL string(10default)",
                     "PRINT",
                     "HALT",
                 };
@@ -358,24 +338,200 @@ SCENARIO(
 }
 
 SCENARIO(
-    "Folded expressions surrounded by text",
+    "Folded expressions are merged with surrounding text",
     "[optimizer]"
 ) {
-    GIVEN("Template with text and constant expressions") {
+    GIVEN("Data with some variables") {
         Teng::Fragment_t root;
+        root.addVariable("x", 1);
+        root.addVariable("y", 0);
 
-        WHEN("It is compiled") {
+        WHEN("Escaping print of folded expressions is compiled") {
             Teng::Error_t err;
             auto t = "a${1 + 2}b${'<' ++ '>'}c";
             auto program = c(err, t);
 
-            THEN("The expressions are folded and escaped on print") {
-                REQUIRE(contains(program, "VAL integral(3)"));
-                REQUIRE(contains(program, "VAL string(<>)"));
-                REQUIRE_FALSE(contains(program, "PLUS"));
-                REQUIRE_FALSE(contains(program, "CONCAT"));
+            THEN("The whole template is printed at once") {
+                std::vector<std::string> expected = {
+                    "VAL string(a3b&lt;&gt;c)",
+                    "PRINT",
+                    "HALT",
+                };
+                REQUIRE(program == expected);
                 REQUIRE(g(err, t, root) == "a3b&lt;&gt;c");
                 REQUIRE(err.getEntries().empty());
+            }
+        }
+
+        WHEN("Raw print of folded expressions is compiled") {
+            Teng::Error_t err;
+            auto t = "a%{'<' ++ 'b>'}c";
+            auto program = c(err, t);
+
+            THEN("The whole template is printed at once without escaping") {
+                std::vector<std::string> expected = {
+                    "VAL string(a<b>c)",
+                    "PRINT",
+                    "HALT",
+                };
+                REQUIRE(program == expected);
+                REQUIRE(g(err, t, root) == "a<b>c");
+                REQUIRE(err.getEntries().empty());
+            }
+        }
+
+        WHEN("Folded expression and dict item are compiled") {
+            Teng::Error_t err;
+            auto t = "#{hello_world} ${1 + 1}!";
+            auto program = c(err, t);
+
+            THEN("The whole template is printed at once") {
+                std::vector<std::string> expected = {
+                    "VAL string(hello world 2!)",
+                    "PRINT",
+                    "HALT",
+                };
+                REQUIRE(program == expected);
+                REQUIRE(g(err, t, root) == "hello world 2!");
+                REQUIRE(err.getEntries().empty());
+            }
+        }
+
+        WHEN("Non constant expression is between folded expressions") {
+            Teng::Error_t err;
+            auto t = "a${1 + 1}${x}b${2 + 2}c";
+            auto program = c(err, t);
+
+            THEN("Only prints around non constant expression are merged") {
+                std::vector<std::string> expected = {
+                    "VAL string(a2)",
+                    "PRINT",
+                    "VAR",
+                    "PRINT",
+                    "VAL string(b4c)",
+                    "PRINT",
+                    "HALT",
+                };
+                REQUIRE(program == expected);
+                REQUIRE(g(err, t, root) == "a21b4c");
+                REQUIRE(err.getEntries().empty());
+            }
+        }
+
+        WHEN("Folded expressions around if statement are compiled") {
+            Teng::Error_t err;
+            auto t = "a${1}<?teng if x?>b${2}<?teng endif?>c${3}"
+                     "<?teng if y?>d${4}<?teng else?>e${5}<?teng endif?>f";
+            auto program = c(err, t);
+
+            THEN("The prints are not merged across the branches") {
+                REQUIRE(contains(program, "VAL string(a1)"));
+                REQUIRE(contains(program, "VAL string(b2)"));
+                REQUIRE(contains(program, "VAL string(c3)"));
+                REQUIRE(contains(program, "VAL string(d4)"));
+                REQUIRE(contains(program, "VAL string(e5)"));
+                REQUIRE(contains(program, "VAL string(f)"));
+                REQUIRE(g(err, t, root) == "a1b2c3e5f");
+                REQUIRE(err.getEntries().empty());
+            }
+        }
+
+        WHEN("Folded expression in different content type is compiled") {
+            Teng::Error_t err;
+            auto t = "a${'\"'}<?teng ctype 'quoted-string'?>"
+                     "b${'\"'}c<?teng endctype?>";
+            auto result = g(err, t, root);
+
+            THEN("The escaping of current content type is used") {
+                REQUIRE(result == "a&quot;b\\\"c");
+                REQUIRE(err.getEntries().empty());
+            }
+        }
+
+        WHEN("Folded expressions with print escaping disabled are rendered") {
+            Teng::Error_t err;
+            auto t = "a${'<' ++ '>'}b";
+            auto result = g(err, t, root, "teng.no-print-escape.conf");
+
+            THEN("The values are not escaped") {
+                REQUIRE(result == "a<>b");
+                REQUIRE(err.getEntries().empty());
+            }
+        }
+    }
+}
+
+SCENARIO(
+    "Invalid expressions are not merged with surrounding text",
+    "[optimizer]"
+) {
+    GIVEN("The empty data") {
+        Teng::Fragment_t root;
+
+        WHEN("Invalid expression is compiled") {
+            Teng::Error_t err;
+            auto t = "a${1 +}b";
+            auto program = c(err, t);
+
+            THEN("The undefined replacement is printed separately") {
+                std::vector<std::string> expected = {
+                    "VAL string(a)",
+                    "PRINT",
+                    "VAL undefined",
+                    "PRINT",
+                    "VAL string(b)",
+                    "PRINT",
+                    "HALT",
+                };
+                REQUIRE(program == expected);
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 3},
+                    "Invalid expression, fix it please; replacing whole "
+                    "expression with undefined value"
+                }, {
+                    Teng::Error_t::ERROR,
+                    {1, 6},
+                    "Unexpected token: name=SHORT_END, view=}"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
+            }
+        }
+
+        WHEN("Expression with excessive tokens is compiled") {
+            Teng::Error_t err;
+            auto t = "a${1 + 2 3}b";
+            auto program = c(err, t);
+
+            THEN("The undefined replacement is printed separately") {
+                std::vector<std::string> expected = {
+                    "VAL string(a)",
+                    "PRINT",
+                    "VAL undefined",
+                    "PRINT",
+                    "VAL string(b)",
+                    "PRINT",
+                    "HALT",
+                };
+                REQUIRE(program == expected);
+                REQUIRE_FALSE(err.getEntries().empty());
+            }
+        }
+
+        WHEN("Set statement with invalid variable is compiled") {
+            Teng::Error_t err;
+            auto t = "a<?teng set _count = 1 + 2?>b${3}c";
+            auto program = c(err, t);
+
+            THEN("The expression is discarded and the rest is merged") {
+                REQUIRE_FALSE(contains(program, "SET"));
+                REQUIRE(contains(program, "VAL string(b3c)"));
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::ERROR,
+                    {1, 12},
+                    "Builtin variable '_count' can't be set"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
             }
         }
     }

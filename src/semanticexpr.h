@@ -68,6 +68,12 @@ void discard_expr(Context_t *ctx);
  */
 void finish_expr(Context_t *ctx);
 
+/** Forgets the start point of valid expression that has been consumed by
+ * statement, so the instructions of expression are no longer protected
+ * against print optimization. The start point of discarded expression is kept.
+ */
+void release_expr_start_point(Context_t *ctx);
+
 /** Prepares new expression.
  */
 void prepare_expr(Context_t *ctx, const Pos_t &pos);

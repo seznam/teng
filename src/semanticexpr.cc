@@ -133,6 +133,7 @@ void discard_expr(Context_t *ctx) {
     if (ctx->expr_start_point.update_allowed)
         note_expr_start_point(ctx, ctx->unexpected_token.pos);
     ctx->expr_start_point.update_allowed = true;
+    ctx->expr_start_point.discarded = true;
 
     // discard whole expression code and replace it with undefined
     ctx->program->erase_from(ctx->expr_start_point.addr);
@@ -158,6 +159,11 @@ void discard_expr(Context_t *ctx) {
 
     // reset error marker
     reset_error(ctx);
+}
+
+void release_expr_start_point(Context_t *ctx) {
+    if (!ctx->expr_start_point.discarded)
+        ctx->expr_start_point.addr = -1;
 }
 
 void finish_expr(Context_t *ctx) {

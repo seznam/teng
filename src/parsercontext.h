@@ -187,7 +187,12 @@ struct Context_t {
     /** The pair of instruction address and source code position. It's used to
      * remember where expression begins.
      */
-    struct expr_start_t {Pos_t pos; int64_t addr; bool update_allowed;};
+    struct expr_start_t {
+        Pos_t pos;              //!< the position of expression in source
+        int64_t addr;           //!< the address of expression in program
+        bool update_allowed;    //!< true if no expression is being parsed
+        bool discarded = false; //!< true if expression has been discarded
+    };
     using expr_starts_t = std::stack<expr_start_t>;
 
     /** The pair of instruction address and optimizable flag. It's used to note
