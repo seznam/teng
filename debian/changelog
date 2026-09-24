@@ -1,3 +1,58 @@
+libteng (5.0.13) stable; urgency=medium
+
+  * fix: merge prints of folded expressions with surrounding text
+  * The start point of expression protects the instructions of expression
+  * against the print optimization because they can be discarded by error
+  * recovery. But it has never been reset, so it has been protecting the
+  * last expression until the next one starts, and the value of folded
+  * expression has never been merged with the surrounding text:
+  * a${1 + 2}b  =>  VAL a, PRINT, VAL 3, PRINT, VAL b, PRINT
+  * The start point of valid expression is now released once the print
+  * statement consumes it, so the template above is compiled to single
+  * VAL "a3b" and PRINT. The start point of discarded expression is kept,
+  * so its undefined replacement is still printed separately.
+  * Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+  * docs: fix description of random() function
+  * It returns real number from interval [0, n), not integer.
+  * Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+  * test: cover all functions that must not be folded
+  * Add tests for unescape(), escape() in different content types, user
+  * defined functions and unknown functions.
+  * Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+  * fix: make compile-time expression folding work again
+  * The optimizer has never folded any expression since teng4. It evaluates
+  * constant expressions by Processor_t::eval() that expects the result to
+  * be left on the value stack, but process() logged "Value stack is not
+  * empty" for any non-empty stack, and eval() discarded every result that
+  * came with an error. The check is now done only for runtime.
+  * Enabling the folding revealed two latent bugs:
+  * - The folded string values were string refs pointing into instructions
+  * of the folded expression that are erased right after the evaluation,
+  * so the program referenced freed memory. The folded value now owns its
+  * string.
+  * - Invoker_t swallowed runtime_functx_needed_t in its catch (...) and
+  * logged it as "unknown exception". It is now rethrown so that the
+  * compile-time evaluation during optimization is aborted as intended.
+  * Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+  * docs: add AGENTS.md and CODEBASE_MAP.md
+  * Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+  * Report missing dict items only if they are evaluated
+  * Dictionary lookups with literal keys (#{key} and #key in expressions)
+  * are resolved at compile time and a missing key has been reported there
+  * too, i.e. regardless of whether the lookup is ever evaluated. So there
+  * was no way to silence the warning by guarding the lookup:
+  * <?teng if dictexist("key")?>#{key}<?teng else?>fallback<?teng endif?>
+  * still warned "Dictionary item 'key' was not found".
+  * Existing keys are still replaced by their values at compile time, but
+  * the lookup of missing key is now postponed to runtime (the same code
+  * as for @"key"), so the warning is emitted only when the lookup is
+  * really executed. The message is prefixed with "Runtime: " as other
+  * runtime warnings are, and the lookup of missing key is no longer
+  * optimizable.
+  * Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+
+ -- Michal Bukovský <burlog@seznam.cz>  Thu, 24 Sep 2026 22:24:14 +0200
+
 libteng (5.0.12) stable; urgency=medium
 
   * missing includes (#26)
