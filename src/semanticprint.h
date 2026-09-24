@@ -51,8 +51,11 @@ namespace Parser {
 void generate_print(Context_t *ctx, bool print_escape = true);
 
 /** Generates lookup to dictionary instruction.
+ *
+ * Returns true if the item has been found at compile time and the generated
+ * code is optimizable.
  */
-void generate_dict_lookup(Context_t *ctx, const Token_t &token);
+bool generate_dict_lookup(Context_t *ctx, const Token_t &token);
 
 /** Generates raw print instruction.
  */

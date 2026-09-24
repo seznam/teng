@@ -148,22 +148,24 @@ void generate_print(Context_t *ctx, bool print_escape) {
     ctx->program->pop_back();
 }
 
-void generate_dict_lookup(Context_t *ctx, const Token_t &token) {
+bool generate_dict_lookup(Context_t *ctx, const Token_t &token) {
     // find item in dictionary
-    if (auto *item = ctx->dict->lookup(token.view()))
-        return generate<Val_t>(ctx, *item, token.pos);
+    if (auto *item = ctx->dict->lookup(token.view())) {
+        generate<Val_t>(ctx, *item, token.pos);
+        return true;
+    }
 
     // find item in param/config dictionary
-    if (auto *item = ctx->params->lookup(token.view()))
-        return generate<Val_t>(ctx, *item, token.pos);
+    if (auto *item = ctx->params->lookup(token.view())) {
+        generate<Val_t>(ctx, *item, token.pos);
+        return true;
+    }
 
-    // use ident as result value
-    logWarning(
-        ctx,
-        token.pos,
-        "Dictionary item '" + token.view() + "' was not found"
-    );
+    // postpone the lookup of missing item to runtime so that it is reported
+    // only if it is really evaluated (e.g. not guarded by dictexist())
     generate<Val_t>(ctx, token.str(), token.pos);
+    generate<Dict_t>(ctx, token.pos);
+    return false;
 }
 
 void generate_raw_print(Context_t *ctx) {

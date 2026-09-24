@@ -716,7 +716,7 @@ nullary_expression
     : VAR variable {generate_var(ctx, std::move(*$2)); $$ = false;}
     | variable {generate_var(ctx, std::move(*$1)); $$ = false;}
     | value_literal {generate_val(ctx, $1->pos, $1->value); $$ = true;}
-    | DICT identifier {generate_dict_lookup(ctx, *$2); $$ = true;}
+    | DICT identifier {$$ = generate_dict_lookup(ctx, *$2);}
     | REGEX {generate_val(ctx, $1->pos, Value_t(generate_regex(ctx, *$1)));}
     ;
 

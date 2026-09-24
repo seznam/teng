@@ -224,7 +224,8 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 3},
-                    "Dictionary item 'hello_world_missing' was not found"
+                    "Runtime: Dictionary item 'hello_world_missing' "
+                    "was not found"
                 }};
                 ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "hello_world_missing");
@@ -304,7 +305,8 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 3},
-                    "Dictionary item 'hello_world_missing' was not found"
+                    "Runtime: Dictionary item 'hello_world_missing' "
+                    "was not found"
                 }};
                 ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "hello_world_missing");
@@ -379,7 +381,8 @@ SCENARIO(
                 std::vector<Teng::Error_t::Entry_t> errs = {{
                     Teng::Error_t::WARNING,
                     {1, 3},
-                    "Dictionary item 'hello_world_missing' was not found"
+                    "Runtime: Dictionary item 'hello_world_missing' "
+                    "was not found"
                 }};
                 ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "hello_world_missing");
@@ -412,6 +415,73 @@ SCENARIO(
                 }};
                 ERRLOG_TEST(err.getEntries(), errs);
                 REQUIRE(result == "hello_world_missing");
+            }
+        }
+    }
+}
+
+SCENARIO(
+    "Missing dict items are reported only if they are evaluated",
+    "[dict][expr]"
+) {
+    GIVEN("Dictionary (see dict.txt)") {
+        Teng::Fragment_t root;
+
+        WHEN("Regular lookup of the missing key") {
+            Teng::Error_t err;
+            auto t = "#{hello_world_missing}";
+            auto result = g(err, t, root);
+
+            THEN("Replaced with dict entry name") {
+                std::vector<Teng::Error_t::Entry_t> errs = {{
+                    Teng::Error_t::WARNING,
+                    {1, 2},
+                    "Runtime: Dictionary item 'hello_world_missing' "
+                    "was not found"
+                }};
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "hello_world_missing");
+            }
+        }
+
+        WHEN("Regular lookup of the missing key guarded by dictexist()") {
+            Teng::Error_t err;
+            auto t = "<?teng if dictexist('hello_world_missing')?>"
+                     "#{hello_world_missing}"
+                     "<?teng else?>fallback<?teng endif?>";
+            auto result = g(err, t, root);
+
+            THEN("The fallback is used without warning") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "fallback");
+            }
+        }
+
+        WHEN("Lookup of the missing key guarded by dictexist()") {
+            Teng::Error_t err;
+            auto t = "${dictexist('hello_world_missing')"
+                     " ? #hello_world_missing: 'fallback'}";
+            auto result = g(err, t, root);
+
+            THEN("The fallback is used without warning") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "fallback");
+            }
+        }
+
+        WHEN("Regular lookup of the existing key guarded by dictexist()") {
+            Teng::Error_t err;
+            auto t = "<?teng if dictexist('hello_world')?>"
+                     "#{hello_world}"
+                     "<?teng else?>fallback<?teng endif?>";
+            auto result = g(err, t, root);
+
+            THEN("Replaced with dict entry value") {
+                std::vector<Teng::Error_t::Entry_t> errs;
+                ERRLOG_TEST(err.getEntries(), errs);
+                REQUIRE(result == "hello world");
             }
         }
     }
